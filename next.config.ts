@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   allowedDevOrigins: ["https://*.space-z.ai"],
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   reactStrictMode: true,
   images: {

@@ -221,7 +221,9 @@ function HeroCarousel({ featured }: { featured: MediaItem[] }) {
         <div className="s5" style={{ display: 'flex', gap: '.85rem', flexWrap: 'wrap' }}>
           <button className="btn-p" onClick={() => router.push(`/details/${F.id}`)}>▶ Play Now</button>
           <button className="btn-g" onClick={() => router.push(`/details/${F.id}`)}>ℹ More Info</button>
-          <button className="btn-g">+ My List</button>
+          <button className="btn-g" onClick={() => toggleHeroWatchlist(F)}>
+            {heroWatchlist.has(F.id) ? '✓ In My List' : '+ My List'}
+          </button>
         </div>
       </div>
       <div className="hfloat" style={{ position: 'absolute', right: 'clamp(2rem,6vw,7%)', top: '50%', transform: 'translateY(-50%)', width: 'clamp(175px,17vw,245px)', zIndex: 3, animation: 'float2 7s ease-in-out infinite' }}>
@@ -464,6 +466,7 @@ export default function Home({
   const [recommendedItems, setRecommendedItems] = useState<MediaItem[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [timeGreeting, setTimeGreeting] = useState('Good Evening');
+  const [heroWatchlist, setHeroWatchlist] = useState<Set<number>>(new Set());
   const router = useRouter();
 
   // Time-aware greeting
@@ -517,6 +520,42 @@ export default function Home({
       } catch { /* silent */ }
     })();
   }, [profile]);
+
+  // Fetch hero featured watchlist status
+  useEffect(() => {
+    if (!profile || featured.length === 0) return;
+    (async () => {
+      try {
+        const { isInWatchlist } = await import('@/actions/watchlist');
+        const ids = await Promise.all(
+          featured.slice(0, 10).map(async (item) => {
+            const inList = await isInWatchlist(profile.id, item.id, item.media_type || 'tv');
+            return { id: item.id, inList };
+          })
+        );
+        setHeroWatchlist(new Set(ids.filter(i => i.inList).map(i => i.id)));
+      } catch { /* silent */ }
+    })();
+  }, [profile, featured]);
+
+  const toggleHeroWatchlist = async (item: MediaItem) => {
+    if (!profile) { router.push('/login'); return; }
+    const mediaType = item.media_type || 'tv';
+    try {
+      if (heroWatchlist.has(item.id)) {
+        const { removeFromWatchlist } = await import('@/actions/watchlist');
+        await removeFromWatchlist(profile.id, item.id, mediaType);
+        setHeroWatchlist(prev => { const next = new Set(prev); next.delete(item.id); return next; });
+      } else {
+        await fetch('/api/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId: profile.id, mediaId: item.id, mediaType, title: item.title, poster_path: item.poster_path || null, status: 'plan_to_watch' }),
+        });
+        setHeroWatchlist(prev => new Set([...prev, item.id]));
+      }
+    } catch { /* silent */ }
+  };
 
   // "Because You Watched" recommendations
   useEffect(() => {

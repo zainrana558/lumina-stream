@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
             .insert({
               name: finalName,
               account_id: user.id,
+              avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=8B78FF&color=fff&size=128`,
             })
             .select('id')
             .single();

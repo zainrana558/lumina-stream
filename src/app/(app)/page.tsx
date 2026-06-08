@@ -10,6 +10,7 @@ interface RowData {
   items: MediaItem[];
   endpoint: string;
   params?: Record<string, string>;
+  ranked?: boolean;
 }
 
 export interface GenreFeatured {
@@ -66,6 +67,8 @@ async function getTMDBData() {
 
     // ── Trending & Popular (3 rows) ──
     if (popular.length) rows.push({ title: 'Trending Now', sub: 'Most watched this week', items: popular.slice(0, 20).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week' });
+    // Top 10 — Netflix-style ranked row (first 10 from trending)
+    if (popular.length) rows.push({ title: 'Top 10 This Week', sub: '#1 trending right now', items: popular.slice(0, 10).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week', ranked: true });
     if (tvPopular.length) rows.push({ title: 'Popular TV', sub: 'Most popular TV shows', items: tvPopular.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/popular' });
     if (topRated.length) rows.push({ title: 'Top Rated', sub: 'Highest rated of all time', items: topRated.slice(0, 20).map(r => tmdbToMedia(r)), endpoint: '/movie/top_rated' });
     if (upcoming.results?.length) rows.push({ title: 'Coming Soon', sub: 'Upcoming releases', items: upcoming.results.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/upcoming' });

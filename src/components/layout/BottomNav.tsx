@@ -33,19 +33,12 @@ export default function BottomNav({ page, go, openSearch }: BottomNavProps) {
             aria-current={page === key ? 'page' : undefined}
             onClick={() => {
               if (key === 'search') { openSearch(); return; }
-              if (key === 'activity') {
-                if (typeof window !== 'undefined') window.location.href = '/activity';
-                return;
-              }
               go(key);
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 if (key === 'search') openSearch();
-                else if (key === 'activity') {
-                  if (typeof window !== 'undefined') window.location.href = '/activity';
-                }
                 else go(key);
               }
             }}

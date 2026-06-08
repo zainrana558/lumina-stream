@@ -302,7 +302,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     ? initialCredits
     : show.cast.map(name => ({ name, character: '', profile_path: null, id: 0 }));
 
-  const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['comments', 'Comments'], ['related', 'More Like This']];
+  const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
 
   const handlePostComment = async () => {
     if (!user || !profile || !commentText.trim() || !show) return;
@@ -566,6 +566,43 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {tab === 'trailers' && (
+          <div>
+            {fullDetails?.videos?.results?.length ? (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1rem' }}>
+                  {fullDetails.videos.results
+                    .filter((v: { type: string; site: string }) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
+                    .slice(0, 8)
+                    .map((v: { id: string; key: string; name: string; type: string }, i: number) => (
+                      <div key={v.id} style={{ animation: `card-in .42s ${i * 0.06}s both` }}>
+                        <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
+                          <iframe
+                            src={`https://www.youtube.com/embed/${v.key}?rel=0`}
+                            title={v.name}
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            loading="lazy"
+                          />
+                        </div>
+                        <div style={{ padding: '.6rem 0' }}>
+                          <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
+                          <span style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif" }}>{v.type}</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", fontSize: '.82rem', letterSpacing: '.1em' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '.8rem', opacity: .4 }}>🎬</div>
+                No trailers available
+              </div>
+            )}
           </div>
         )}
 

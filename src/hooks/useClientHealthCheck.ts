@@ -72,13 +72,16 @@ export function useClientHealthCheck() {
   useEffect(() => {
     // Run first check after a short random delay (1-5 min) to stagger across users
     const initialDelay = 60 * 1000 + Math.random() * 4 * 60 * 1000;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
     const initialTimer = setTimeout(() => {
       runCheck();
       // Then check every 2 minutes
-      const interval = setInterval(runCheck, CHECK_INTERVAL_MS);
-      return () => clearInterval(interval);
+      intervalId = setInterval(runCheck, CHECK_INTERVAL_MS);
     }, initialDelay);
 
-    return () => clearTimeout(initialTimer);
+    return () => {
+      clearTimeout(initialTimer);
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [runCheck]);
 }
