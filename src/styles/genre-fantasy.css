@@ -1,0 +1,4 @@
+@keyframes cloud-fl{0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(18px,-10px) scale(1.04)}70%{transform:translate(-12px,-5px) scale(.97)}}
+@keyframes sparkle-p{0%,100%{transform:scale(0) rotate(0deg);opacity:0}50%{transform:scale(1) rotate(180deg);opacity:1}}
+@keyframes mist-d{0%,100%{transform:translateX(0);opacity:.18}50%{transform:translateX(28px);opacity:.36}}
+@keyframes star-dr{0%,100%{transform:translateY(0) translateX(0)}50%{transform:translateY(-12px) translateX(8px)}}

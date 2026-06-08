@@ -1,28 +1,86 @@
 'use client';
 
-import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useState, lazy, Suspense } from 'react';
+const ShortcutOverlay = lazy(() => import('@/components/common/ShortcutOverlay'));
 
-const tabs = [
-  { label: 'Home', href: '/', icon: '🏠' },
-  { label: 'Browse', href: '/browse', icon: '🔍' },
-  { label: 'Genre', href: '/genre/action', icon: '🎭' },
-  { label: 'Profile', href: '/', icon: '👤' },
+interface BottomNavProps {
+  page: string;
+  go: (target: string) => void;
+  openSearch: () => void;
+}
+
+const ITEMS: { key: string; label: string }[] = [
+  { key: 'home', label: 'Home' },
+  { key: 'shows', label: 'Browse' },
+  { key: 'search', label: 'Search' },
+  { key: 'activity', label: 'Activity' },
+  { key: 'login', label: 'Account' },
 ];
 
-export default function BottomNav() {
-  const pathname = usePathname();
+export default function BottomNav({ page, go, openSearch }: BottomNavProps) {
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
   return (
-    <nav className="bottom-nav" role="navigation" aria-label="Mobile navigation">
-      {tabs.map(tab => (
-        <Link key={tab.href + tab.label} href={tab.href} style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer',
-          color: pathname === tab.href ? '#FFB347' : 'rgba(255,245,232,.35)', textDecoration: 'none', transition: 'color .25s',
-        }}>
-          <span style={{ fontSize: '1.15rem' }}>{tab.icon}</span>
-          <span style={{ fontFamily: "'Cinzel',serif", fontSize: '.5rem', letterSpacing: '.08em' }}>{tab.label}</span>
-        </Link>
-      ))}
-    </nav>
+    <>
+      <nav className="bottom-nav" aria-label="Mobile navigation">
+        {ITEMS.map(({ key, label }) => (
+          <div
+            key={key}
+            className={`bn${page === key ? ' on' : ''}`}
+            role="button"
+            tabIndex={0}
+            aria-label={label}
+            aria-current={page === key ? 'page' : undefined}
+            onClick={() => {
+              if (key === 'search') { openSearch(); return; }
+              if (key === 'activity') {
+                if (typeof window !== 'undefined') window.location.href = '/activity';
+                return;
+              }
+              go(key);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (key === 'search') openSearch();
+                else if (key === 'activity') {
+                  if (typeof window !== 'undefined') window.location.href = '/activity';
+                }
+                else go(key);
+              }
+            }}
+          >
+            <span className="em">{label[0]}</span>
+            <span className="lb">{label}</span>
+          </div>
+        ))}
+
+        {/* Keyboard shortcuts help button */}
+        <div
+          className="bn"
+          role="button"
+          tabIndex={0}
+          aria-label="Keyboard shortcuts"
+          onClick={() => setShowShortcuts(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowShortcuts(true);
+            }
+          }}
+          style={{ position: 'relative' }}
+        >
+          <span className="em" style={{ fontSize: '1.05rem', fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>?</span>
+          <span className="lb">Keys</span>
+        </div>
+      </nav>
+
+      {/* Shortcuts overlay from bottom nav */}
+      {showShortcuts && (
+        <Suspense fallback={null}>
+          <ShortcutOverlay visible={showShortcuts} onClose={() => setShowShortcuts(false)} />
+        </Suspense>
+      )}
+    </>
   );
 }

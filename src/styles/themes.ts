@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// LUMINA STREAM — Theme Constants
-// ═══════════════════════════════════════════
-
 import type { ColorScheme, GenreCard, Mood } from '@/types';
 
 export const CS: ColorScheme[] = [
@@ -16,30 +12,22 @@ export const CS: ColorScheme[] = [
 ];
 
 export const GCARDS: GenreCard[] = [
-  { key: 'anime',   name: 'Anime',    em: '⚡', col: 'linear-gradient(135deg,#0A0012,#2A0055)', tc: '#FF0096', desc: 'Explore Japanese animation' },
-  { key: 'cartoon', name: 'Cartoon',  em: '🌸', col: 'linear-gradient(135deg,#001A33,#003366)', tc: '#2D5A1B', desc: 'Animated worlds await' },
-  { key: 'horror',  name: 'Horror',   em: '👁', col: 'linear-gradient(135deg,#000,#3D0000)',    tc: '#DC143C', desc: 'Face your darkest fears' },
-  { key: 'romance', name: 'Romance',  em: '💕', col: 'linear-gradient(135deg,#1A0005,#5A001A)', tc: '#FF6B8A', desc: 'Love stories to melt hearts' },
-  { key: 'mystery', name: 'Mystery',  em: '🔍', col: 'linear-gradient(135deg,#050A15,#0A1A35)', tc: '#FFB347', desc: 'Unravel the unknown' },
-  { key: 'fantasy', name: 'Fantasy',  em: '✨', col: 'linear-gradient(135deg,#0D0520,#1A0840)', tc: '#C39BD3', desc: 'Enter magical realms' },
+  { key: 'anime',   name: 'Anime',   em: '⚡', col: 'linear-gradient(135deg,#0A0012,#2A0055)', tc: '#FF0096' },
+  { key: 'cartoon', name: 'Cartoon', em: '🌸', col: 'linear-gradient(135deg,#87CEEB,#B0E2FF)', tc: '#2D5A1B' },
+  { key: 'horror',  name: 'Horror',  em: '👁', col: 'linear-gradient(135deg,#000,#3D0000)',       tc: '#DC143C' },
+  { key: 'romance', name: 'Romance', em: '💕', col: 'linear-gradient(135deg,#1A0005,#5A001A)',      tc: '#FF6B8A' },
+  { key: 'mystery', name: 'Mystery', em: '🔍', col: 'linear-gradient(135deg,#050A15,#0A1A35)',      tc: '#FFB347' },
+  { key: 'fantasy', name: 'Fantasy', em: '✨', col: 'linear-gradient(135deg,#0D0520,#1A0840)',      tc: '#C39BD3' },
 ];
 
 export const MOODS: Mood[] = [
-  { em: '🌙', name: 'Melancholy', col: '#8B78FF', desc: 'Rainy nights & deep thoughts' },
-  { em: '⚡', name: 'Pumped',     col: '#FFB347', desc: 'Adrenaline & pure energy' },
-  { em: '💕', name: 'Romantic',   col: '#FF6B8A', desc: 'Love stories & warm feels' },
-  { em: '😱', name: 'Thrilling',  col: '#FF4A4A', desc: 'Edge-of-seat suspense' },
-  { em: '🌿', name: 'Chill',      col: '#78D621', desc: 'Relax & unwind' },
-  { em: '🔥', name: 'Epic',       col: '#FF8C00', desc: 'Legends & grand adventures' },
+  { em: '🌙', name: 'Melancholy', col: '#8B78FF' },
+  { em: '⚡', name: 'Pumped',     col: '#FFB347' },
+  { em: '💕', name: 'Romantic',   col: '#FF6B8A' },
+  { em: '😱', name: 'Thrilling',  col: '#FF4A4A' },
+  { em: '🌿', name: 'Chill',      col: '#78D621' },
+  { em: '🔥', name: 'Epic',       col: '#FF8C00' },
 ];
-
-// Genre ID mapping for TMDB discovery
-export const GENRE_IDS: Record<string, number> = {
-  action: 28, adventure: 12, animation: 16, comedy: 35, crime: 80,
-  documentary: 99, drama: 18, family: 10751, fantasy: 14, horror: 27,
-  music: 10402, mystery: 9648, romance: 10749, scifi: 878, thriller: 53, war: 10752,
-  western: 37, anime: 16, cartoon: 16,
-};
 
 export const GENRES_ALL = [
   'All', 'Action', 'Adventure', 'Animation', 'Comedy', 'Drama',

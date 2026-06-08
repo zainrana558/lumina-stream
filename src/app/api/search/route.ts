@@ -1,40 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const TMDB_BASE = 'https://api.themoviedb.org/3';
+import { getValidatedEnv } from '@/lib/env';
+import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q');
-  const page = searchParams.get('page') || '1';
-
-  if (!query) {
-    return NextResponse.json({ error: 'Missing query parameter' }, { status: 400 });
-  }
-
-  const apiKey = process.env.TMDB_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: 'TMDB_API_KEY not configured' }, { status: 500 });
-  }
-
   try {
-    const url = new URL(`${TMDB_BASE}/search/multi`);
-    url.searchParams.set('api_key', apiKey);
-    url.searchParams.set('query', query);
-    url.searchParams.set('page', page);
+    // Rate limit: 20 req / 10s per IP
+    const rl = await checkRateLimit(request, 'search');
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: 'Too many searches. Please slow down.', results: [] },
+        { status: 429, headers: rateLimitHeaders(rl) }
+      );
+    }
 
-    const res = await fetch(url.toString(), {
-      next: { revalidate: 60 },
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('q');
+
+    if (!query || query.trim().length < 2) {
+      return NextResponse.json({ results: [] });
+    }
+
+    const env = getValidatedEnv();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const params = new URLSearchParams({ query: query.trim() });
+
+    if (env.TMDB_BEARER_TOKEN) {
+      headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+    } else {
+      params.set('api_key', env.TMDB_API_KEY!);
+    }
+
+    const res = await fetch(
+      `https://api.themoviedb.org/3/search/multi?${params}`,
+      { headers, next: { revalidate: 60 } }
+    );
 
     if (!res.ok) {
-      return NextResponse.json({ error: `TMDB API error: ${res.status}` }, { status: res.status });
+      throw new Error(`TMDB API error: ${res.status}`);
     }
 
     const data = await res.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('[Search API Error]', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+
+    return NextResponse.json(data, {
+      headers: {
+        ...rateLimitHeaders(rl),
+        'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message, results: [] }, { status: 500 });
   }
 }
