@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().min(1),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().min(1).optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
   TMDB_BEARER_TOKEN: z.string().min(1).optional(),
   TMDB_API_KEY: z.string().min(1).optional(),
   // Upstash Redis (for rate limiting + caching)
@@ -18,8 +18,8 @@ declare global {
 
 function parseEnv(): EnvSchema {
   const raw = {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || undefined,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || undefined,
     TMDB_BEARER_TOKEN: process.env.TMDB_BEARER_TOKEN,
     TMDB_API_KEY: process.env.TMDB_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
@@ -30,8 +30,9 @@ function parseEnv(): EnvSchema {
 
   if (!parsed.success) {
     const missing = parsed.error.flatten().fieldErrors;
+    // Only fail on TMDB missing — Supabase and Upstash are optional
     const fields = Object.entries(missing)
-      .filter(([k]) => !k.startsWith('UPSTASH_')) // Upstash is optional
+      .filter(([k]) => k.startsWith('TMDB_'))
       .map(([k]) => k)
       .join(', ');
     if (fields) {
@@ -42,13 +43,12 @@ function parseEnv(): EnvSchema {
     }
   }
 
-  // At least one TMDB credential is required
   const data = parsed.data;
   if (!data) {
-    // This shouldn't happen since we only filter non-Upstash errors
     throw new Error('Environment validation failed unexpectedly.');
   }
 
+  // At least one TMDB credential is required
   if (!data.TMDB_BEARER_TOKEN && !data.TMDB_API_KEY) {
     throw new Error(
       'Either TMDB_BEARER_TOKEN or TMDB_API_KEY must be set in environment variables.'
