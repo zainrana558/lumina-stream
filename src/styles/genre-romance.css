@@ -1,0 +1,3 @@
+@keyframes heart-rise{0%{transform:translateY(0) scale(1) rotate(var(--rot));opacity:.9}100%{transform:translateY(-100vh) scale(.2) rotate(calc(var(--rot)*2));opacity:0}}
+@keyframes rose-fall{0%{transform:translateY(-5vh) rotate(0deg);opacity:0}8%{opacity:.8}100%{transform:translateY(105vh) rotate(var(--rs));opacity:0}}
+@keyframes love-g{0%,100%{filter:drop-shadow(0 0 12px rgba(255,77,109,.45))}50%{filter:drop-shadow(0 0 28px rgba(255,77,109,.75))}}

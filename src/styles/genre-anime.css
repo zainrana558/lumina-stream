@@ -1,0 +1,4 @@
+@keyframes speed-sweep{0%{transform:translateX(-110%);opacity:0}30%{opacity:.07}70%{opacity:.05}100%{transform:translateX(210%);opacity:0}}
+@keyframes neon-pulse{0%,100%{filter:drop-shadow(0 0 8px #FF0096) drop-shadow(0 0 20px #FF009655)}50%{filter:drop-shadow(0 0 16px #FF0096) drop-shadow(0 0 40px #FF009688)}}
+@keyframes scan{0%{top:-2px}100%{top:100%}}
+@keyframes glitch{0%,88%,100%{transform:translateX(0)}90%{transform:translateX(-3px)}92%{transform:translateX(3px)}94%{transform:translateX(-1px)}96%{transform:translateX(2px) scaleX(1.01)}}
