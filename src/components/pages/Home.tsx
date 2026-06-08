@@ -141,7 +141,7 @@ const MOOD_SCENES: Record<string, {
 /* ══════════════════════════════════════════════════
    HERO CAROUSEL (unchanged)
    ══════════════════════════════════════════════════ */
-function HeroCarousel({ featured }: { featured: MediaItem[] }) {
+function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featured: MediaItem[]; heroWatchlist: Set<number>; toggleHeroWatchlist: (item: MediaItem) => void }) {
   const [idx, setIdx] = useState(0);
   const [tick, setTick] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -633,7 +633,7 @@ export default function Home({
 
   return (
     <div className="page">
-      <HeroCarousel featured={filteredFeatured} />
+      <HeroCarousel featured={filteredFeatured} heroWatchlist={heroWatchlist} toggleHeroWatchlist={toggleHeroWatchlist} />
 
       {/* ── Content Rows ── */}
       <section style={{ padding: '0 0 3.5rem', position: 'relative', zIndex: 3 }}>
