@@ -138,7 +138,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                 background: '#0C091A',
                 border: '1px solid rgba(255,255,255,.06)',
                 borderRadius: 14,
-                boxShadow: '8px 8px 24px rgba(0,0,0,.85), -3px -3px 10px rgba(45,25,90,.22), 0 0 0 1px rgba(255,179,71,.08)',
+                boxShadow: '10px 10px 28px rgba(0,0,0,.88),-4px -4px 12px rgba(45,25,90,.25),inset 0 1.5px 0 rgba(255,255,255,.05),inset 0 -1px 0 rgba(0,0,0,.15),0 0 0 1px rgba(255,255,255,.05)',
                 padding: '6px',
                 zIndex: 997,
                 animation: 'fi .15s ease both',

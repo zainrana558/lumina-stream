@@ -40,6 +40,11 @@ function getItemStyle(variant: SkeletonVariant, index: number): CSSProperties {
       width: index === 0 ? '55%' : index === 1 ? '70%' : '40%',
     };
   }
+  if (variant === 'card') {
+    return {
+      boxShadow: '8px 8px 22px rgba(0,0,0,.65),-3px -3px 8px rgba(45,25,90,.18),inset 0 1.5px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.18),0 0 0 1px rgba(255,255,255,.03)',
+    };
+  }
   return {};
 }
 

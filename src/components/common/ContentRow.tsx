@@ -89,17 +89,17 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
               disabled={loadingMore}
               style={{
                 width: '100%', height: 'clamp(140px,18vw,215px)',
-                borderRadius: 12, border: `1px dashed rgba(255,179,71,.25)`,
+                borderRadius: 12, border: '1px solid rgba(255,179,71,.18)',
                 background: 'rgba(255,179,71,.04)',
                 color: loadingMore ? 'rgba(255,179,71,.4)' : 'rgba(255,179,71,.7)',
                 fontFamily: "'Cinzel',serif", fontSize: '.6rem',
                 letterSpacing: '.06em', cursor: loadingMore ? 'wait' : 'pointer',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 gap: 6, transition: 'all .2s',
-                boxShadow: 'none',
+                boxShadow: '7px 7px 18px rgba(0,0,0,.7),-3px -3px 9px rgba(45,25,90,.22),inset 0 1.5px 0 rgba(255,255,255,.05),inset 0 -1px 0 rgba(0,0,0,.12),0 0 0 1px rgba(255,179,71,.15)',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,179,71,.1)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,179,71,.04)'; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,179,71,.12)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,179,71,.04)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
             >
               {loadingMore ? (
                 <div style={{ animation: 'spin 1.5s linear infinite', fontSize: '1.2rem' }}>✦</div>

@@ -474,8 +474,8 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 fontFamily: "'Cinzel',serif", fontSize: '.6rem', fontWeight: 600,
                 background: userRating === n ? 'linear-gradient(135deg,#FFE566,#FFB347)' : '#090716',
                 color: userRating === n ? '#05020A' : 'rgba(255,245,232,.45)',
-                boxShadow: userRating === n ? '0 2px 8px rgba(255,140,0,.4)' : 'inset 2px 2px 6px rgba(0,0,0,.6),inset -1px -1px 3px rgba(35,20,75,.15)',
-                transition: 'all .2s',
+                boxShadow: userRating === n ? '0 0 0 2px rgba(255,179,71,.35),0 3px 12px rgba(255,140,0,.35),inset 0 1.5px 0 rgba(255,255,255,.3)' : '5px 5px 12px rgba(0,0,0,.65),-2px -2px 6px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.12),0 0 0 1px rgba(255,255,255,.04)',
+                transition: 'all .22s cubic-bezier(.34,1.56,.64,1)',
               }}>{n}</button>
             ))}
             {userRating && <span style={{ fontSize: '.68rem', color: 'rgba(255,179,71,.6)', fontFamily: "'Cinzel',serif", marginLeft: 6 }}>Your rating: {userRating}</span>}
