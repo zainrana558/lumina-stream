@@ -16,18 +16,30 @@ interface NavProps {
   onShowShortcuts?: () => void;
 }
 
+const GENRE_LINKS = [
+  { key: 'anime', label: 'Anime', color: '#FF0096' },
+  { key: 'cartoon', label: 'Cartoon', color: '#74B9FF' },
+  { key: 'horror', label: 'Horror', color: '#DC143C' },
+  { key: 'romance', label: 'Romance', color: '#FF6B8A' },
+  { key: 'mystery', label: 'Mystery', color: '#FFB347' },
+  { key: 'fantasy', label: 'Fantasy', color: '#C39BD3' },
+];
+
 export default function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }: NavProps) {
   const router = useRouter();
   const [drop, setDrop] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [genreDrop, setGenreDrop] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const genreRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
     const fn = (e: MouseEvent) => {
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDrop(false);
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (genreRef.current && !genreRef.current.contains(e.target as Node)) setGenreDrop(false);
     };
     document.addEventListener('mousedown', fn);
     return () => document.removeEventListener('mousedown', fn);
@@ -36,11 +48,11 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
   // Close dropdown on Escape
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setDrop(false); setMenuOpen(false); }
+      if (e.key === 'Escape') { setDrop(false); setMenuOpen(false); setGenreDrop(false); }
     };
-    if (drop || menuOpen) document.addEventListener('keydown', fn);
+    if (drop || menuOpen || genreDrop) document.addEventListener('keydown', fn);
     return () => document.removeEventListener('keydown', fn);
-  }, [drop, menuOpen]);
+  }, [drop, menuOpen, genreDrop]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -55,6 +67,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
   const menuItems = [
     { key: 'home', label: 'Home' },
     { key: 'shows', label: 'Browse' },
+    { key: 'genre', label: 'Genres' },
     { key: 'watchlist', label: 'Watchlist' },
     { key: 'collections', label: 'Collections' },
     { key: 'activity', label: 'Activity' },
@@ -63,6 +76,10 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
 
   const handleMenuNav = (item: { key: string }) => {
     setMenuOpen(false);
+    if (item.key === 'genre') {
+      router.push('/genre/anime');
+      return;
+    }
     go(item.key);
   };
 
@@ -87,6 +104,72 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
         {([['home', 'Home'], ['shows', 'Browse']] as const).map(([p, l]) => (
           <span key={p} className={`nl${page === p ? ' on' : ''}`} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(p); } }} onClick={() => go(p)}>{l}</span>
         ))}
+        {/* Genre dropdown */}
+        <div
+          ref={genreRef}
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setGenreDrop(true)}
+          onMouseLeave={() => setGenreDrop(false)}
+        >
+          <span
+            className={`nl${page === 'genre' ? ' on' : ''}`}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setGenreDrop(!genreDrop); } }}
+            onClick={() => setGenreDrop(!genreDrop)}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            Genres
+            <svg width="10" height="6" viewBox="0 0 10 6" style={{ transition: 'transform .2s', transform: genreDrop ? 'rotate(180deg)' : 'rotate(0)' }}>
+              <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          {genreDrop && (
+            <div
+              role="menu"
+              aria-label="Genre links"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                marginTop: 12,
+                minWidth: 180,
+                background: '#0C091A',
+                border: '1px solid rgba(255,255,255,.06)',
+                borderRadius: 14,
+                boxShadow: '8px 8px 24px rgba(0,0,0,.85), -3px -3px 10px rgba(45,25,90,.22), 0 0 0 1px rgba(255,179,71,.08)',
+                padding: '6px',
+                zIndex: 997,
+                animation: 'fi .15s ease both',
+              }}
+            >
+              {GENRE_LINKS.map((g) => (
+                <div
+                  key={g.key}
+                  role="menuitem"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setGenreDrop(false); router.push(`/genre/${g.key}`); } }}
+                  onClick={() => { setGenreDrop(false); router.push(`/genre/${g.key}`); }}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    transition: 'background .15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: g.color, flexShrink: 0 }} />
+                  <span style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', letterSpacing: '.06em', color: '#FFF5E8' }}>{g.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center' }}>
