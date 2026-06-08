@@ -11,8 +11,8 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 
-const CHECK_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
-const PING_TIMEOUT_MS = 6000; // 6 seconds
+const CHECK_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes (was 2 min)
+const PING_TIMEOUT_MS = 3000; // 3 seconds (was 6s)
 
 // Provider sample URLs for health pinging
 const PROVIDER_PING_URLS: { name: string; url: string }[] = [
@@ -71,7 +71,7 @@ export function useClientHealthCheck() {
 
   useEffect(() => {
     // Run first check after a short random delay (1-5 min) to stagger across users
-    const initialDelay = 60 * 1000 + Math.random() * 4 * 60 * 1000;
+    const initialDelay = 2 * 60 * 1000 + Math.random() * 5 * 60 * 1000;
     let intervalId: ReturnType<typeof setInterval> | null = null;
     const initialTimer = setTimeout(() => {
       runCheck();

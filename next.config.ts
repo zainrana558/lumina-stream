@@ -8,7 +8,6 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   images: {
-    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "image.tmdb.org", pathname: "/t/p/**" },
       { protocol: "https", hostname: "s4.anilist.co" },
@@ -16,6 +15,7 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    scrollRestoration: true,
     optimizePackageImports: ['lucide-react', 'clsx', 'tailwind-merge'],
     serverActions: {
       bodySizeLimit: '2mb',

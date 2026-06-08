@@ -50,6 +50,13 @@ interface DetailsContentProps {
   initialSimilar?: MediaItem[];
 }
 
+interface SubtitleSettings {
+  fontSize: 'small' | 'medium' | 'large';
+  fontColor: 'white' | 'yellow' | 'cyan';
+  bg: 'none' | 'black' | 'darkgray';
+  position: 'bottom' | 'top';
+}
+
 export default function DetailsContent({ showId, initialShow, initialCredits = [], initialSimilar = [] }: DetailsContentProps) {
   const router = useRouter();
   const { user, profile, openPip, triggerConfetti } = useApp();
@@ -63,13 +70,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [ccOpen, setCcOpen] = useState(false);
   const ccRef = useRef<HTMLDivElement>(null);
 
-  // Subtitle settings
-  interface SubtitleSettings {
-    fontSize: 'small' | 'medium' | 'large';
-    fontColor: 'white' | 'yellow' | 'cyan';
-    bg: 'none' | 'black' | 'darkgray';
-    position: 'bottom' | 'top';
-  }
   const [subSettings, setSubSettings] = useState<SubtitleSettings>({ fontSize: 'medium', fontColor: 'white', bg: 'black', position: 'bottom' });
 
   // Load subtitle settings from localStorage
@@ -508,10 +508,14 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
                 {epData.map((e, i) => {
                   const ac = epIdx === e.ep;
+                  const epStill = seasonEpisodes.find(se => se.episode_number === e.ep)?.still_path;
                   return (
                     <button key={e.ep} type="button" role="button" aria-label={`Episode ${e.ep}: ${e.title}`} tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); vibrateMedium(); setEpIdx(e.ep); } }} className={`ep-row${ac ? ' playing' : ''}`} onClick={() => { vibrateMedium(); setEpIdx(e.ep); }} style={{ padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `el .4s ease ${i * 0.038}s both` }}>
                       <div style={{ width: 100, height: 60, borderRadius: 9, flexShrink: 0, background: s.bg, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2)' }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: ac ? s.acc : 'rgba(7,4,15,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.72rem', color: ac ? '#05020A' : '#FFF5E8', boxShadow: ac ? `0 0 14px ${s.acc}80,3px 3px 8px rgba(0,0,0,.6)` : '' }}>{ac ? '▶' : e.ep}</div>
+                        {epStill && (
+                          <Image src={getTmdbImageUrl(epStill, 'w300')!} alt="" fill style={{ objectFit: 'cover', zIndex: 0 }} sizes="100px" loading="lazy" />
+                        )}
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: ac ? s.acc : 'rgba(7,4,15,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.72rem', color: ac ? '#05020A' : '#FFF5E8', position: 'relative', zIndex: 1, boxShadow: ac ? `0 0 14px ${s.acc}80,3px 3px 8px rgba(0,0,0,.6)` : '' }}>{ac ? '▶' : e.ep}</div>
                         {e.done && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${s.acc},${s.acc}88)`, boxShadow: `0 0 8px ${s.acc}` }} />}
                       </div>
                       <div style={{ flex: 1 }}>

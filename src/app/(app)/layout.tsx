@@ -7,6 +7,7 @@ import { AppProvider, useApp } from '@/contexts/AppContext';
 import Nav from '@/components/common/Nav';
 import BottomNav from '@/components/layout/BottomNav';
 import ThemeSwitcher from '@/components/common/ThemeSwitcher';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 // Dynamic imports for heavy/rarely-used components — reduces initial JS bundle
 const Stars = lazy(() => import('@/components/common/Stars'));
@@ -291,7 +292,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <AppProvider>
       <ToastProvider>
-        <AppShell>{children}</AppShell>
+        <ErrorBoundary>
+          <AppShell>{children}</AppShell>
+        </ErrorBoundary>
       </ToastProvider>
     </AppProvider>
   );

@@ -145,8 +145,19 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
   const [idx, setIdx] = useState(0);
   const [tick, setTick] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false
+  );
   const bgRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     if (featured.length === 0 || paused) return;
@@ -155,6 +166,7 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
   }, [featured.length, paused]);
 
   useEffect(() => {
+    if (reducedMotion) return;
     let raf: number | undefined;
     const fn = (e: MouseEvent) => {
       if (raf) return;
@@ -172,8 +184,17 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
 
   if (featured.length === 0) {
     return (
-      <section style={{ position: 'relative', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '1.2rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.1em' }}>Loading...</div>
+      <section style={{ position: 'relative', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: 'linear-gradient(135deg,#07040F 0%,#18063A 40%,#2D1B5E 100%)' }}>
+        <div style={{ width: 'clamp(280px,50vw,500px)', display: 'flex', flexDirection: 'column', gap: 16, padding: '0 clamp(1rem,5vw,4rem)' }}>
+          <div className="skeleton" style={{ height: 18, width: '30%', borderRadius: 20 }} />
+          <div className="skeleton" style={{ height: 'clamp(2rem,5vw,4rem)', width: '80%' }} />
+          <div className="skeleton" style={{ height: 14, width: '60%' }} />
+          <div className="skeleton" style={{ height: 14, width: '50%' }} />
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <div className="skeleton" style={{ height: 48, width: 140, borderRadius: 50 }} />
+            <div className="skeleton" style={{ height: 48, width: 140, borderRadius: 50 }} />
+          </div>
+        </div>
       </section>
     );
   }
@@ -595,7 +616,7 @@ export default function Home({
     };
     loadRecs();
     return () => { cancelled = true; };
-  }, [profile, continueWatching.length > 0]);
+  }, [profile, continueWatching.length]);
 
   const P = 'clamp(1rem,5vw,3rem)';
 

@@ -44,6 +44,25 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
     });
   }, []);
 
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (raf.current || !e.touches[0]) return;
+    raf.current = requestAnimationFrame(() => {
+      raf.current = undefined;
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = (touch.clientX - rect.left) / rect.width - 0.5;
+      const y = (touch.clientY - rect.top) / rect.height - 0.5;
+      el.style.transform = `perspective(750px) rotateY(${x * 12}deg) rotateX(${y * -12}deg) scale3d(1.03,1.03,1.03)`;
+      const sh = el.querySelector('.cshine');
+      if (sh) {
+        (sh as HTMLElement).style.opacity = '1';
+        (sh as HTMLElement).style.background = `radial-gradient(circle at ${(x + 0.5) * 100}% ${(y + 0.5) * 100}%,rgba(255,255,255,.1) 0%,transparent 55%)`;
+      }
+    });
+  }, []);
+
   const onLeave = useCallback(() => {
     const el = ref.current;
     if (el) {
@@ -56,7 +75,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
   useEffect(() => () => { if (raf.current) cancelAnimationFrame(raf.current); }, []);
 
   return (
-    <div ref={ref} className="card" style={{ height: h }} onMouseMove={onMove} onMouseLeave={onLeave} onClick={() => {
+    <div ref={ref} className="card" style={{ height: h }} onMouseMove={onMove} onTouchMove={onTouchMove} onMouseLeave={onLeave} onClick={() => {
       vibrateTap();
       if (onClick) {
         const rect = ref.current?.getBoundingClientRect();

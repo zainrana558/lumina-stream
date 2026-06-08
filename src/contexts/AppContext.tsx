@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { createElement, createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 
 export interface UserProfile {
@@ -38,9 +38,6 @@ interface AppContextValue {
   // Search
   searchOpen: boolean;
   setSearchOpen: (open: boolean) => void;
-  // Card rect for shared element transitions
-  cardRect: DOMRect | null;
-  setCardRect: (rect: DOMRect | null) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -59,7 +56,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [confettiActive, setConfettiActive] = useState(false);
   const [kidsMode, setKidsMode] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [cardRect, setCardRect] = useState<DOMRect | null>(null);
   const lastFetchedUserId = useRef<string | null>(null);
 
   // Shared profile fetcher
@@ -88,10 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Auth init — rely solely on onAuthStateChange to avoid double fetch.
-  // INITIAL_SESSION fires immediately with the current session, so
-  // calling getSession() separately would set user → trigger fetchProfile
-  // → then INITIAL_SESSION fires → trigger fetchProfile again (wasted /api/active-profile call).
+  // Auth init
   const [supabaseReady, setSupabaseReady] = useState(true);
 
   useEffect(() => {
@@ -146,7 +139,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetchProfile(user?.id ?? null);
   }, [user, fetchProfile]);
 
-  // Expose refreshProfile — resets the cache so it always re-fetches
   const refreshProfile = useCallback(async () => {
     lastFetchedUserId.current = null;
     await fetchProfile(user?.id ?? null);
@@ -176,16 +168,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setConfettiActive(false), 500);
   }, []);
 
-  return (
-    <AppContext.Provider value={{
-      user, profile, authLoading, supabaseReady, handleSignOut, refreshProfile,
-      pipState, openPip, closePip,
-      confettiActive, triggerConfetti,
-      kidsMode,
-      searchOpen, setSearchOpen,
-      cardRect, setCardRect,
-    }}>
-      {children}
-    </AppContext.Provider>
-  );
+  const value = {
+    user, profile, authLoading, supabaseReady, handleSignOut, refreshProfile,
+    pipState, openPip, closePip,
+    confettiActive, triggerConfetti,
+    kidsMode,
+    searchOpen, setSearchOpen,
+  };
+
+  return createElement(AppContext.Provider, { value }, children);
 }
