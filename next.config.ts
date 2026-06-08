@@ -8,11 +8,11 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "image.tmdb.org", pathname: "/t/p/**" },
-      { protocol: "https", hostname: "s4.anilist.co" },
-      { protocol: "https", hostname: "img.youtube.com" },
-    ],
+    // Use custom loader to bypass Vercel Image Optimization
+    // (free tier = 1,000/month, streaming app needs thousands)
+    // TMDB/AniList/YouTube already serve optimized images at multiple sizes
+    loader: 'custom',
+    loaderFile: './src/lib/imageLoader.ts',
   },
   experimental: {
     scrollRestoration: true,

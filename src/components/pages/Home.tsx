@@ -743,8 +743,36 @@ export default function Home({
       <footer style={{ position: 'relative', zIndex: 3, background: '#04020A', borderTop: '1px solid rgba(255,255,255,.055)', padding: '3rem clamp(1rem,5vw,3rem) 2.5rem', boxShadow: '0 -8px 0 rgba(0,0,0,.5),0 -10px 35px rgba(0,0,0,.45)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
           <div><span className="logo" style={{ fontSize: '1.25rem', display: 'block', marginBottom: '.6rem' }}>LUMINA</span><p style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.88rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.68 }}>The dreamlike world of anime streaming.</p></div>
-          {([['Genres', GCARDS.map(g => g.name)], ['Account', ['Sign In', 'Register', 'My List', 'History']], ['Support', ['Help', 'Contact', 'Privacy', 'Terms']]] as const).map(([t, ls]) => (
-            <div key={String(t)}><div style={{ fontFamily: "'Cinzel',serif", fontSize: '.65rem', letterSpacing: '.14em', color: 'rgba(255,179,71,.6)', marginBottom: '.9rem' }}>{String(t).toUpperCase()}</div>{ls.map(l => <div key={l} style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.86rem', color: 'rgba(255,245,232,.38)', marginBottom: '.42rem', cursor: 'pointer', transition: 'color .25s' }}>{l}</div>)}</div>
+          {([
+            ['Genres', GCARDS.map(g => ({ label: g.name, href: `/genre/${g.key}` }))],
+            ['Account', [
+              { label: 'Sign In', href: '/login' },
+              { label: 'Register', href: '/signup' },
+              { label: 'My List', href: '/watchlist' },
+              { label: 'History', href: '/activity' },
+            ]],
+            ['Support', [
+              { label: 'Help', href: '/settings' },
+              { label: 'Contact', href: '/settings' },
+              { label: 'Privacy', href: '/settings' },
+              { label: 'Terms', href: '/settings' },
+            ]],
+          ] as const).map(([t, links]) => (
+            <div key={String(t)}>
+              <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.65rem', letterSpacing: '.14em', color: 'rgba(255,179,71,.6)', marginBottom: '.9rem' }}>{String(t).toUpperCase()}</div>
+              {links.map(l => (
+                <div
+                  key={l.label}
+                  onClick={() => router.push(l.href)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') router.push(l.href); }}
+                  role="link"
+                  tabIndex={0}
+                  style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.86rem', color: 'rgba(255,245,232,.38)', marginBottom: '.42rem', cursor: 'pointer', transition: 'color .25s' }}
+                >
+                  {l.label}
+                </div>
+              ))}
+            </div>
           ))}
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,.055)', paddingTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
