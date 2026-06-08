@@ -38,6 +38,7 @@ interface FullDetails {
   id?: number;
   credits?: { cast: TMDBCastMember[] };
   similar?: { results: TMDBShow[] };
+  videos?: { results: Array<{ id: string; key: string; name: string; type: string; site: string }> };
   number_of_seasons?: number;
   production_companies?: Array<{ name: string }>;
 }
