@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
+import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
 import ActivityFeed from '@/components/common/ActivityFeed';
 
 export default function ActivityPage() {
-  const { user, profile, authLoading } = useApp();
+  const { user, profile, authLoading, supabaseReady } = useApp();
   const router = useRouter();
   const [tab, setTab] = useState<'feed' | 'my'>('feed');
 
@@ -30,6 +31,8 @@ export default function ActivityPage() {
       router.replace('/profiles');
     }
   }, [user, profile, authLoading, router]);
+
+  if (!supabaseReady) return <SupabaseNotConfigured />;
 
   if (!user) {
     return (

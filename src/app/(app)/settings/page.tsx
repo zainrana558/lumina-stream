@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
+import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
 import Image from 'next/image';
 
 interface SettingsSection {
@@ -21,7 +22,7 @@ const SECTIONS: SettingsSection[] = [
 ];
 
 export default function SettingsPage() {
-  const { user, profile, authLoading, handleSignOut } = useApp();
+  const { user, profile, authLoading, handleSignOut, supabaseReady } = useApp();
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<string>('account');
   const [saving, setSaving] = useState(false);
@@ -33,6 +34,8 @@ export default function SettingsPage() {
       router.replace('/profiles');
     }
   }, [user, profile, authLoading, router]);
+
+  if (!supabaseReady) return <SupabaseNotConfigured />;
 
   if (!user) {
     return (

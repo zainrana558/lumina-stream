@@ -23,6 +23,7 @@ interface AppContextValue {
   user: User | null;
   profile: UserProfile | null;
   authLoading: boolean;
+  supabaseReady: boolean;
   handleSignOut: () => void;
   refreshProfile: () => Promise<void>;
   // PiP
@@ -91,13 +92,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // INITIAL_SESSION fires immediately with the current session, so
   // calling getSession() separately would set user → trigger fetchProfile
   // → then INITIAL_SESSION fires → trigger fetchProfile again (wasted /api/active-profile call).
+  const [supabaseReady, setSupabaseReady] = useState(true);
+
   useEffect(() => {
     let cancelled = false;
     let unsubscribe: (() => void) | null = null;
 
     const initAuth = async () => {
       try {
-        const { createClient } = await import('@/lib/supabase/client');
+        const { createClient, isSupabaseConfigured } = await import('@/lib/supabase/client');
+
+        if (!isSupabaseConfigured()) {
+          if (!cancelled) {
+            setSupabaseReady(false);
+            setUser(null);
+            setProfile(null);
+            setAuthLoading(false);
+          }
+          return;
+        }
+
         const supabase = createClient();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -164,7 +178,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      user, profile, authLoading, handleSignOut, refreshProfile,
+      user, profile, authLoading, supabaseReady, handleSignOut, refreshProfile,
       pipState, openPip, closePip,
       confettiActive, triggerConfetti,
       kidsMode,

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
+import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
 import Image from 'next/image';
 import { getPosterUrl } from '@/lib/images';
 
@@ -66,7 +67,7 @@ function StatCard({ icon, label, value, suffix, color, delay }: {
 }
 
 export default function StatsPage() {
-  const { user, profile, authLoading } = useApp();
+  const { user, profile, authLoading, supabaseReady } = useApp();
   const router = useRouter();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,6 +92,8 @@ export default function StatsPage() {
       router.replace('/profiles');
     }
   }, [user, profile, authLoading, router]);
+
+  if (!supabaseReady) return <SupabaseNotConfigured />;
 
   if (!user) {
     return (

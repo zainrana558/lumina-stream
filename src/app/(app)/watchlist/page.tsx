@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { MediaItem } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/components/common/ToastProvider';
+import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
 import Image from 'next/image';
 import { getPosterUrl } from '@/lib/images';
 
@@ -37,7 +38,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function WatchlistPage() {
-  const { user, profile, authLoading } = useApp();
+  const { user, profile, authLoading, supabaseReady } = useApp();
   const { addToast } = useToast();
   const router = useRouter();
   const [items, setItems] = useState<WatchlistItem[]>([]);
@@ -183,6 +184,8 @@ export default function WatchlistPage() {
       router.replace('/profiles');
     }
   }, [user, profile, authLoading, router]);
+
+  if (!supabaseReady) return <SupabaseNotConfigured />;
 
   if (!user) {
     return (

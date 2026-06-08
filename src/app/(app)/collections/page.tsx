@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
+import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
 import { CollectionCard, CreateCollectionModal, CollectionDetail } from '@/components/common/Collections';
 
 interface Collection {
@@ -18,7 +19,7 @@ interface Collection {
 }
 
 export default function CollectionsPage() {
-  const { user, profile, authLoading } = useApp();
+  const { user, profile, authLoading, supabaseReady } = useApp();
   const router = useRouter();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +83,8 @@ export default function CollectionsPage() {
       router.replace('/profiles');
     }
   }, [user, profile, authLoading, router]);
+
+  if (!supabaseReady) return <SupabaseNotConfigured />;
 
   if (!user) {
     return (
