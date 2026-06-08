@@ -1,4 +1,0 @@
-@keyframes flicker{0%,86%,88%,94%,96%,100%{opacity:1}87%{opacity:.25}95%{opacity:.15}}
-@keyframes blood-drip{from{transform:scaleY(0);transform-origin:top}to{transform:scaleY(1);transform-origin:top}}
-@keyframes fog-d{0%,100%{transform:translateX(0);opacity:.28}50%{transform:translateX(4%);opacity:.42}}
-@keyframes h-shake{0%,92%,100%{transform:translateX(0)}93%{transform:translateX(-2px) rotate(-.5deg)}95%{transform:translateX(3px) rotate(.5deg)}97%{transform:translateX(-1px)}}

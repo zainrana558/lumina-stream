@@ -1,4 +1,0 @@
-@keyframes rain-f{0%{transform:translateY(-5vh) translateX(var(--rx));opacity:0}8%{opacity:.5}100%{transform:translateY(108vh) translateX(calc(var(--rx)+15px));opacity:.08}}
-@keyframes lamp-f{0%,84%,88%,92%,100%{opacity:1;filter:brightness(1)}86%{opacity:.6;filter:brightness(.6)}90%{opacity:.8;filter:brightness(.8)}}
-@keyframes t-blink{0%,100%{opacity:1}50%{opacity:0}}
-@keyframes clue-in{from{opacity:0;transform:translateY(10px) rotate(-2deg)}to{opacity:1;transform:translateY(0) rotate(0)}}
