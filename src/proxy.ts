@@ -126,7 +126,7 @@ function isBot(userAgent: string | null): boolean {
   return BOT_PATTERNS.some(p => p.test(userAgent));
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   try {
     const { createServerClient } = await import("@supabase/ssr");
 
