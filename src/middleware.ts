@@ -10,12 +10,7 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/browse") ||
     pathname.startsWith("/genre/") ||
     pathname.startsWith("/details/") ||
-    pathname.startsWith("/watchlist") ||
-    pathname.startsWith("/profiles") ||
-    pathname.startsWith("/stats") ||
-    pathname.startsWith("/collections") ||
-    pathname.startsWith("/activity") ||
-    pathname.startsWith("/settings")
+    pathname.startsWith("/profiles")
   );
 }
 

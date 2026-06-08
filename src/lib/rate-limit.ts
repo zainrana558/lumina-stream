@@ -11,7 +11,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { getRedis } from '@/lib/redis';
 
 // ---- Rate limiter presets ----
-type LimiterType = 'global' | 'tmdb' | 'search' | 'auth' | 'write' | 'embed' | 'stats';
+type LimiterType = 'global' | 'tmdb' | 'search' | 'auth' | 'write' | 'embed' | 'stats' | 'leaderboard';
 
 // Duration strings matching Upstash's `${number} ${Unit}` type
 type DurationStr = `${number} s` | `${number} m` | `${number} h`;
@@ -31,6 +31,8 @@ const LIMITS: Record<LimiterType, { tokens: number; window: DurationStr }> = {
   embed:       { tokens: 20, window: '10 s' },
   // Stats: 15 req per 60s (moderate — user stats, not super expensive but 3 queries)
   stats:       { tokens: 15, window: '60 s' },
+  // Leaderboard: 30 req per 60s (cached, low DB cost)
+  leaderboard: { tokens: 30, window: '60 s' },
 };
 
 type RatelimitInstance = Ratelimit;
@@ -121,6 +123,7 @@ export async function rateLimit(
     write: 10_000,
     embed: 10_000,
     stats: 60_000,
+    leaderboard: 60_000,
   };
   const tokens = LIMITS[type].tokens;
   const windowMs = windowMap[type] || 10_000;

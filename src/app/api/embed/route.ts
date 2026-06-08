@@ -54,13 +54,12 @@ export async function GET(request: NextRequest) {
       providers = getAllEmbedUrls(type, tmdbId, season, episode);
     }
 
-    // NexStream requires an API key — route through server-side proxy
-    // to keep the key out of client-visible URLs
-    const nexstreamKey = process.env.NEXSTREAM_API_KEY;
-    if (nexstreamKey) {
+    // NexStream requires an API key — route through server-side proxy.
+    // The key is read from env inside embed-proxy; never passed in the URL.
+    if (process.env.NEXSTREAM_API_KEY) {
       for (const p of providers) {
         if (p.url.includes('codespecters.com')) {
-          p.url = `/api/embed-proxy?url=${encodeURIComponent(p.url)}&key=${encodeURIComponent(nexstreamKey)}`;
+          p.url = `/api/embed-proxy?url=${encodeURIComponent(p.url)}`;
         }
       }
     }

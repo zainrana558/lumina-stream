@@ -22,10 +22,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const targetUrl = searchParams.get('url');
-    const key = searchParams.get('key');
+
+    // Key is read server-side from env — never accepted from the caller.
+    // This prevents the key appearing in request logs, referrer headers, or URLs.
+    const key = process.env.NEXSTREAM_API_KEY;
 
     if (!targetUrl || !key) {
-      return NextResponse.json({ error: 'Missing url or key' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing url or key configuration' }, { status: 400 });
     }
 
     // Validate the target URL is a known embed provider (prevent open redirect)

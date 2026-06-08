@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { requireAuth, verifyProfileOwnership } from '@/lib/auth';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { activityLogSchema } from '@/lib/schemas';
@@ -14,6 +13,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Require authentication — unauthenticated callers get nothing
+    let auth: Awaited<ReturnType<typeof requireAuth>>;
+    try {
+      auth = await requireAuth();
+    } catch {
+      return NextResponse.json({ activities: [] }, { status: 401 });
+    }
+    const { supabase, userId } = auth;
+
     const { searchParams } = new URL(request.url);
     const profileId = searchParams.get('profileId') || '';
     const feed = searchParams.get('feed') === 'true';
@@ -23,7 +31,15 @@ export async function GET(request: NextRequest) {
 
     if (!profileId) return NextResponse.json({ activities: [] });
 
-    const supabase = await createClient();
+    // For feed requests the caller must own the profileId — prevents reading
+    // another user's personal activity feed by swapping the query param.
+    if (feed) {
+      try {
+        await verifyProfileOwnership(supabase, profileId, userId);
+      } catch {
+        return NextResponse.json({ activities: [] }, { status: 403 });
+      }
+    }
 
     if (feed) {
       // Activity feed: activities from followed users + own

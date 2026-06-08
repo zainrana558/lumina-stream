@@ -93,6 +93,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // → then INITIAL_SESSION fires → trigger fetchProfile again (wasted /api/active-profile call).
   useEffect(() => {
     let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
+
     const initAuth = async () => {
       try {
         const { createClient } = await import('@/lib/supabase/client');
@@ -105,7 +107,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         });
 
-        return () => subscription.unsubscribe();
+        unsubscribe = () => subscription.unsubscribe();
       } catch {
         if (!cancelled) {
           setUser(null);
@@ -116,8 +118,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setAuthLoading(false);
       }
     };
+
     initAuth();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
   // Fetch active profile when user changes
