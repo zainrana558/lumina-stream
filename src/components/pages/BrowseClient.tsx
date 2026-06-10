@@ -38,10 +38,6 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     setLoadingMore(true);
     try {
       const nextPage = currentPageRef.current + 1;
-      if (nextPage > 10) {
-        setHasMore(false);
-        return;
-      }
       const res = await fetch(`/api/tmdb?endpoint=/trending/all/week&page=${nextPage}`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {

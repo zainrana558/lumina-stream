@@ -140,13 +140,13 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
         fetchTmdbPages(config.mediaType, {
           with_genres: config.genreId.toString(),
           ...config.extraParams,
-        }, 4),
+        }, 5),
         // Fetch by "cartoon" keyword for titles tagged as cartoon specifically
         fetchTmdbPages(config.mediaType, {
           with_keywords: '210755', // TMDB keyword: "cartoon"
           sort_by: 'popularity.desc',
           vote_count_gte: '30',
-        }, 2).catch(() => []),
+        }, 3).catch(() => []),
       ]);
 
       // Merge and deduplicate
@@ -165,13 +165,13 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
       shows = [];
     }
   } else {
-    // All other genres use TMDB — fetch 3 pages (up to 60 items)
+    // All other genres use TMDB — fetch 5 pages (up to 100 items)
     try {
       const paramsMap: Record<string, string> = {
         with_genres: config.genreId.toString(),
         ...config.extraParams,
       };
-      const results = await fetchTmdbPages(config.mediaType, paramsMap, 3);
+      const results = await fetchTmdbPages(config.mediaType, paramsMap, 5);
       shows = results.map(r => tmdbToMedia({ ...r, media_type: config.mediaType }));
     } catch {
       shows = [];

@@ -21,7 +21,7 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
   const [shows, setShows] = useState(initialShows);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const pageRef = useRef(1);
+  const pageRef = useRef(5);
 
   useEffect(() => { trackGenreVisit('cartoon'); }, []);
 
@@ -30,7 +30,6 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
     setLoadingMore(true);
     try {
       const nextPage = pageRef.current + 1;
-      if (nextPage > 10) { setHasMore(false); return; }
       const res = await fetch(`/api/tmdb?endpoint=/discover/tv&with_genres=16&with_original_language=en&sort_by=popularity.desc&vote_count_gte=50&page=${nextPage}`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
