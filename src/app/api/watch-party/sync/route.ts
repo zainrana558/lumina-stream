@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAuth, verifyProfileOwnership } from "@/lib/auth";
+import { requireAuth, verifyProfileOwnership, getVerifiedProfileId } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { watchPartySyncSchema } from "@/lib/schemas";
 
@@ -66,9 +66,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: rateLimitHeaders(rl) });
     }
 
-    // Require auth — playback sync is for authenticated participants only
+    // Require auth + verify caller is a participant of this room (IDOR prevention)
+    let authResult;
     try {
-      await requireAuth();
+      authResult = await requireAuth();
     } catch {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -81,6 +82,21 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient();
+
+    // Verify the caller is an active participant of this room
+    const profileId = await getVerifiedProfileId(authResult.userId);
+    if (profileId) {
+      const { data: participant } = await supabase
+        .from("watch_party_participants")
+        .select("profile_id")
+        .eq("room_id", roomId)
+        .eq("profile_id", profileId)
+        .maybeSingle();
+
+      if (!participant) {
+        return NextResponse.json({ error: "Not a participant of this room" }, { status: 403 });
+      }
+    }
 
     const { data: room, error } = await supabase
       .from("watch_party_rooms")

@@ -35,6 +35,7 @@ interface AppContextValue {
   triggerConfetti: () => void;
   // Kids Mode
   kidsMode: boolean;
+  setKidsMode: (mode: boolean) => void;
   // Search
   searchOpen: boolean;
   setSearchOpen: (open: boolean) => void;
@@ -172,7 +173,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     user, profile, authLoading, supabaseReady, handleSignOut, refreshProfile,
     pipState, openPip, closePip,
     confettiActive, triggerConfetti,
-    kidsMode,
+    kidsMode, setKidsMode,
     searchOpen, setSearchOpen,
   };
 
