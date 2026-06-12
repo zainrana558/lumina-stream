@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/global.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://luminaa2-vum6.vercel.app';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
 
 export const metadata: Metadata = {
   title: {

@@ -71,7 +71,7 @@ export async function GET() {
 
   // Embed providers health
   try {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://luminaa2-vum6.vercel.app';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
     const embedRes = await fetch(
       `${siteUrl}/api/embed-health`,
       { signal: AbortSignal.timeout(3000) }

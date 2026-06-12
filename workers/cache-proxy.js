@@ -18,8 +18,7 @@
  *   cd workers && wrangler deploy
  */
 
-const VERCEL_ORIGIN = 'https://lumina-stream-omega.vercel.app';
-const VERCEL_HOST   = 'lumina-stream-omega.vercel.app';
+const DEFAULT_VERCEL_ORIGIN = 'https://lumina-stream-omega.vercel.app';
 
 // ─── Headers to REMOVE before forwarding request to Vercel ────────────────
 // Cloudflare injects these; Vercel doesn't need them and some cause issues.
@@ -54,8 +53,10 @@ function isNeverCache(pathname) {
 
 export default {
   async fetch(request, env, ctx) {
+    const VERCEL_ORIGIN = env.VERCEL_ORIGIN || DEFAULT_VERCEL_ORIGIN;
+    const VERCEL_HOST   = new URL(VERCEL_ORIGIN).hostname;
     try {
-      return await proxyToVercel(request);
+      return await proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST);
     } catch (err) {
       // If Vercel is unreachable, return a clean error
       return new Response(
@@ -72,7 +73,7 @@ export default {
   },
 };
 
-async function proxyToVercel(request) {
+async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST) {
   const incomingUrl = new URL(request.url);
   const targetUrl   = new URL(request.url);
 

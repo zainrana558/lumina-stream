@@ -11,4 +11,9 @@ name = "cache-proxy"
 [observability]
 enabled = true
 
+# Override Vercel origin (optional — defaults to lumina-stream-omega.vercel.app)
+# Set via: wrangler secret put VERCEL_ORIGIN
+[vars]
+# VERCEL_ORIGIN = "https://your-vercel-app.vercel.app"
+
 # No KV / Durable Objects / D1 needed — pure passthrough proxy
