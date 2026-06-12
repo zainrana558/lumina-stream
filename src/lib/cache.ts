@@ -36,6 +36,7 @@ export const CACHE_TTL = {
   stats:        5 * 60,        // 5 min (per-user stats)
   leaderboard:  30 * 60,       // 30 min (global leaderboard, aggregated data)
   reminders:    10 * 60,       // 10 min (episode reminder checks)
+  warm:         6 * 60 * 60,   // 6 hours — full genre warm lists (stable, pre-warmed catalogs)
 } as const;
 
 type CacheCategory = keyof typeof CACHE_TTL;

@@ -1,0 +1,14 @@
+name            = "cache-proxy"
+main            = "cache-proxy.js"
+compatibility_date = "2024-12-01"
+
+# Route: all traffic on the worker subdomain → this worker
+# Change to your custom domain if you have one pointed at this worker
+[env.production]
+name = "cache-proxy"
+
+# Logging (tail with: wrangler tail)
+[observability]
+enabled = true
+
+# No KV / Durable Objects / D1 needed — pure passthrough proxy
