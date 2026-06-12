@@ -118,7 +118,7 @@ function isBot(ua: string | null): boolean {
 }
 
 // ── Middleware ──────────────────────────────────────────────────────────────
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   try {
     const { createServerClient } = await import("@supabase/ssr");
     let supabaseResponse = NextResponse.next({ request });
