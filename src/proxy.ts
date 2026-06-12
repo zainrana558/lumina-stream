@@ -227,4 +227,4 @@ export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|robots.txt|logo.svg|sw.js|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?|ico)$).*)",
   ],
-} as const;
+};
