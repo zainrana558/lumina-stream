@@ -34,7 +34,7 @@ export async function setRating(data: z.infer<typeof ratingSchema>) {
   if (error) return { error: error.message };
 
   // Dual invalidation: origin + edge
-  revalidateTag("user-ratings");
+  revalidateTag("user-ratings", "default");
 
   // Ensure purgeEdgeCache runs in the background reliably
   after(async () => {

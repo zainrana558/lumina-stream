@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const profileId = searchParams.get('profileId') || '';
     const feed = searchParams.get('feed') === 'true';
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
     const offset = (page - 1) * limit;
 
     if (!profileId) return NextResponse.json({ activities: [] });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAuth, verifyProfileOwnership } from '@/lib/auth';
+import { requireAuth, verifyProfileOwnership, getVerifiedProfileId } from '@/lib/auth';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { collectionUpdateSchema } from '@/lib/schemas';
 
@@ -21,6 +21,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .maybeSingle();
 
     if (error || !data) return NextResponse.json({ collection: null });
+
+    if (!data.is_public) {
+      const { supabase: authedSupabase, userId } = await requireAuth();
+      await verifyProfileOwnership(authedSupabase, data.profile_id, userId);
+    }
 
     const { data: items } = await supabase
       .from('collection_items')

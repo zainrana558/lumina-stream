@@ -53,62 +53,75 @@ export default function Confetti({ active, onComplete }: ConfettiProps) {
   const animRef = useRef<number>(0);
   const particlesRef = useRef<Particle[]>([]);
   const activeRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
 
-  const animate = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    let alive = 0;
-    particlesRef.current.forEach(p => {
-      if (p.life >= p.maxLife) return;
-      alive++;
-
-      p.life++;
-      p.vy += 0.15; // gravity
-      p.vx *= 0.99; // drag
-      p.x += p.vx;
-      p.y += p.vy;
-      p.rotation += p.rotationSpeed;
-      p.opacity = Math.max(0, 1 - p.life / p.maxLife);
-
-      ctx.save();
-      ctx.globalAlpha = p.opacity;
-      ctx.translate(p.x, p.y);
-      ctx.rotate((p.rotation * Math.PI) / 180);
-      ctx.fillStyle = p.color;
-
-      if (p.shape === 'circle') {
-        ctx.beginPath();
-        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
-      }
-      ctx.restore();
-    });
-
-    if (alive > 0) {
-      animRef.current = requestAnimationFrame(animate);
-    } else {
-      activeRef.current = false;
-      onComplete?.();
-    }
+  // Keep onCompleteRef in sync (in effect, not during render)
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
   }, [onComplete]);
+
+  // Store animate in a ref to allow self-reference in rAF loop
+  const animateRef = useRef<() => void>(() => {});
+
+  // Define the animation function via ref to avoid "access before declaration"
+  useEffect(() => {
+    animateRef.current = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let alive = 0;
+      particlesRef.current.forEach(p => {
+        if (p.life >= p.maxLife) return;
+        alive++;
+
+        p.life++;
+        p.vy += 0.15; // gravity
+        p.vx *= 0.99; // drag
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.rotationSpeed;
+        p.opacity = Math.max(0, 1 - p.life / p.maxLife);
+
+        ctx.save();
+        ctx.globalAlpha = p.opacity;
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+
+        if (p.shape === 'circle') {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        }
+        ctx.restore();
+      });
+
+      if (alive > 0) {
+        animRef.current = requestAnimationFrame(animateRef.current);
+      } else {
+        activeRef.current = false;
+        onCompleteRef.current?.();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (active && !activeRef.current) {
       activeRef.current = true;
       particlesRef.current = createParticles(70);
-      animRef.current = requestAnimationFrame(animate);
+      animRef.current = requestAnimationFrame(animateRef.current);
     }
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [active, animate]);
+  }, [active]);
 
+  // Early return AFTER all hooks (React rules of hooks)
   if (!active) return null;
 
   return (

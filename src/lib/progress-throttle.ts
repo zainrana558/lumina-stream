@@ -4,6 +4,10 @@
  * During video playback, progress updates fire every few seconds.
  * This debounces/throttles saves to avoid hammering Supabase.
  *
+ * State is keyed by profile_id so that multiple users on the same
+ * serverless instance don't collide (Vercel serverless can serve
+ * concurrent users from a single isolate).
+ *
  * Usage in player component:
  *   import { throttledSaveProgress } from '@/lib/progress-throttle';
  *   throttledSaveProgress(profileId, mediaId, mediaType, title, poster, progress, duration, season, episode);
@@ -23,32 +27,46 @@ type ProgressPayload = {
   episode_number?: number;
 };
 
-let lastSaveTime = 0;
 const SAVE_INTERVAL = 15_000; // Save at most every 15 seconds
-let pendingSave: ProgressPayload | null = null;
-let saveTimer: ReturnType<typeof setTimeout> | null = null;
-let consecutiveFailures = 0;
 const MAX_CONSECUTIVE_FAILURES = 3;
 
+interface ThrottleState {
+  lastSaveTime: number;
+  pendingSave: ProgressPayload | null;
+  saveTimer: ReturnType<typeof setTimeout> | null;
+  consecutiveFailures: number;
+}
+
+const stateMap = new Map<string, ThrottleState>();
+
+function getState(profileId: string): ThrottleState {
+  if (!stateMap.has(profileId)) {
+    stateMap.set(profileId, { lastSaveTime: 0, pendingSave: null, saveTimer: null, consecutiveFailures: 0 });
+  }
+  return stateMap.get(profileId)!;
+}
+
 export async function throttledSaveProgress(payload: ProgressPayload): Promise<void> {
+  const state = getState(payload.profile_id);
+
   // Stop retrying after too many consecutive failures
-  if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) return;
+  if (state.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) return;
 
   const now = Date.now();
 
   // Always store the latest payload
-  pendingSave = payload;
+  state.pendingSave = payload;
 
   // If enough time has passed since last save, save immediately
-  if (now - lastSaveTime >= SAVE_INTERVAL) {
-    await flushProgress();
+  if (now - state.lastSaveTime >= SAVE_INTERVAL) {
+    await flushProgress(payload.profile_id);
     return;
   }
 
   // Otherwise schedule a delayed save
-  if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    flushProgress();
+  if (state.saveTimer) clearTimeout(state.saveTimer);
+  state.saveTimer = setTimeout(() => {
+    flushProgress(payload.profile_id);
   }, SAVE_INTERVAL);
 
   return;
@@ -57,27 +75,37 @@ export async function throttledSaveProgress(payload: ProgressPayload): Promise<v
 /**
  * Force-flush any pending progress save (call on unmount/page leave)
  */
-export async function flushProgress(): Promise<void> {
-  if (saveTimer) {
-    clearTimeout(saveTimer);
-    saveTimer = null;
+export async function flushProgress(profileId?: string): Promise<void> {
+  // When called without an explicit profileId (legacy / unmount path),
+  // flush every profile that has pending state.
+  if (profileId === undefined) {
+    const ids = Array.from(stateMap.keys());
+    await Promise.all(ids.map((id) => flushProgress(id)));
+    return;
   }
 
-  if (!pendingSave) return;
+  const state = getState(profileId);
 
-  const payload = pendingSave;
-  pendingSave = null;
-  lastSaveTime = Date.now();
+  if (state.saveTimer) {
+    clearTimeout(state.saveTimer);
+    state.saveTimer = null;
+  }
+
+  if (!state.pendingSave) return;
+
+  const payload = state.pendingSave;
+  state.pendingSave = null;
+  state.lastSaveTime = Date.now();
 
   try {
     await saveProgress(payload);
-    consecutiveFailures = 0; // Reset on success
+    state.consecutiveFailures = 0; // Reset on success
   } catch {
     // Silent fail — progress save is non-critical
-    consecutiveFailures++;
+    state.consecutiveFailures++;
     // Don't put payload back if max failures reached — stop retrying
-    if (consecutiveFailures < MAX_CONSECUTIVE_FAILURES) {
-      pendingSave = payload;
+    if (state.consecutiveFailures < MAX_CONSECUTIVE_FAILURES) {
+      state.pendingSave = payload;
     }
   }
 }

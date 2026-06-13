@@ -69,7 +69,10 @@ export default function ActivityFeed({ feedMode = false }: { feedMode?: boolean 
   };
 
   useEffect(() => {
-    fetchActivities(1);
+    let cancelled = false;
+    const load = async () => { if (!cancelled) await fetchActivities(1); };
+    load();
+    return () => { cancelled = true; };
   }, [user, profile, feedMode]);
 
   // Infinite scroll

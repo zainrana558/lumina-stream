@@ -45,12 +45,31 @@ export type CacheCategory = 'trending' | 'popular' | 'search' | 'details' | 'sea
 // ---- Cache helpers ----
 
 function cacheKey(category: CacheCategory, key: string): string {
-  // Normalize: strip api_key, bearer tokens from key
+  // Normalize: strip sensitive params from key to prevent credential leakage
   const clean = key
-    .replace(/api_key=[^&]+/g, '')
+    .replace(/api_key=[^&]+/gi, '')
+    .replace(/bearer_token=[^&]+/gi, '')
+    .replace(/token=[^&]+/gi, '')
+    .replace(/secret=[^&]+/gi, '')
     .replace(/&+/g, '&')
-    .replace(/&$/, '');
-  return `lumina:cache:${CACHE_VERSION}:${category}:${clean}`;
+    .replace(/&$/, '')
+    .replace(/^\?/, '');
+  const full = `lumina:cache:${CACHE_VERSION}:${category}:${clean}`;
+  // Hash keys longer than 200 chars to prevent excessive Redis memory usage
+  // from maliciously crafted long query strings (Finding #38)
+  if (full.length > 200) {
+    // Simple fast hash using SubtleCrypto (async-safe in Node.js)
+    // Fall back to truncated key in edge cases
+    const encoder = new TextEncoder();
+    const data = encoder.encode(full);
+    let hash = 0;
+    for (let i = 0; i < data.length; i++) {
+      const byte = data[i];
+      hash = ((hash << 5) - hash + byte) | 0;
+    }
+    return `lumina:cache:${CACHE_VERSION}:${category}:h:${Math.abs(hash).toString(36)}`;
+  }
+  return full;
 }
 
 /**

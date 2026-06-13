@@ -65,39 +65,48 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const showId = Number(id);
 
+  // Detect media type and fetch data outside of try/catch to avoid JSX in try/catch
+  let mediaType: 'tv' | 'movie' | null = null;
+  let rawData: TMDBShowData | null = null;
+  let fullData: TMDBShowData & TMDBDetails | null = null;
+
   try {
     // Step 1: Detect media type (try TV first, then Movie) — 2 parallel calls, not 4
     const [tvRes, movieRes] = await Promise.all([
-      tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => ({ id: 0 })),
-      tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => ({ id: 0 })),
+      tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => ({ id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 })),
+      tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => ({ id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 })),
     ]);
 
-    const mediaType = tvRes.id ? 'tv' : movieRes.id ? 'movie' : null;
-    const rawData = mediaType === 'tv' ? tvRes : movieRes;
+    mediaType = tvRes.id ? 'tv' : movieRes.id ? 'movie' : null;
+    rawData = mediaType === 'tv' ? tvRes : movieRes;
 
     if (!rawData?.id) {
-      return <DetailsContent showId={showId} initialShow={null} />;
+      // No data found — return the component with null
+    } else {
+      // Step 2: Fetch full details only for the matched type — 1 call instead of 2
+      fullData = await tmdbFetch<TMDBShowData & TMDBDetails>(
+        `/${mediaType}/${showId}`,
+        { append_to_response: 'credits,similar' }
+      ).catch(() => rawData as TMDBShowData & TMDBDetails);
     }
-
-    // Step 2: Fetch full details only for the matched type — 1 call instead of 2
-    const fullData = await tmdbFetch<TMDBShowData & TMDBDetails>(
-      `/${mediaType}/${showId}`,
-      { append_to_response: 'credits,similar' }
-    ).catch(() => rawData as TMDBShowData & TMDBDetails);
-
-    const show = tmdbToMedia({ ...rawData, media_type: mediaType } as TMDBShow);
-
-    return (
-      <DetailsContent
-        showId={showId}
-        initialShow={show}
-        initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
-        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
-      />
-    );
   } catch {
+    // fall through to render with null
+  }
+
+  if (!rawData?.id || !mediaType) {
     return <DetailsContent showId={showId} initialShow={null} />;
   }
+
+  const show = tmdbToMedia({ ...rawData, media_type: mediaType } as TMDBShow);
+
+  return (
+    <DetailsContent
+      showId={showId}
+      initialShow={show}
+      initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
+      initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
+    />
+  );
 }
 
 function getJsonLd(data: TMDBShowData & TMDBDetails, mediaType: 'movie' | 'tv') {

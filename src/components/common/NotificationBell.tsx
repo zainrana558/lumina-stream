@@ -62,7 +62,11 @@ export default function NotificationBell() {
   }, [user]);
 
   useEffect(() => {
-    if (open && user) fetchNotifications();
+    if (!open || !user) return;
+    let cancelled = false;
+    const load = async () => { if (!cancelled) await fetchNotifications(); };
+    load();
+    return () => { cancelled = true; };
   }, [open, user, fetchNotifications]);
 
   // Poll for unread count every 30s

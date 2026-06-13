@@ -1,5 +1,9 @@
 import SignupForm from '@/components/auth/SignupForm';
 
+// Auth pages use Supabase client at component top-level which requires
+// runtime env vars — prevent static prerendering at build time.
+export const dynamic = 'force-dynamic';
+
 export default function SignupPage() {
   return (
     <>

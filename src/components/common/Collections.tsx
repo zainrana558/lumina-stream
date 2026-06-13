@@ -103,7 +103,7 @@ export function CreateCollectionModal({ open, onClose, onCreate }: { open: boole
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (open) { setName(''); setDesc(''); setIsPublic(true); setCreating(false); }
+    if (open) { queueMicrotask(() => { setName(''); setDesc(''); setIsPublic(true); setCreating(false); }); }
   }, [open]);
 
   if (!open) return null;

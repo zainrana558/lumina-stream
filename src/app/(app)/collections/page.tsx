@@ -38,7 +38,10 @@ export default function CollectionsPage() {
   }, [profile]);
 
   useEffect(() => {
-    fetchCollections();
+    let cancelled = false;
+    const load = async () => { if (!cancelled) await fetchCollections(); };
+    load();
+    return () => { cancelled = true; };
   }, [fetchCollections]);
 
   const handleCreate = async (data: { name: string; description: string; isPublic: boolean }) => {

@@ -85,15 +85,16 @@ interface GenreTriviaProps {
 }
 
 export default function GenreTrivia({ genre, color = 'rgba(255,245,232,.35)' }: GenreTriviaProps) {
-  const [fact, setFact] = useState('');
+  const [fact, setFact] = useState(() => {
+    const facts = TRIVIA[genre];
+    if (!facts || facts.length === 0) return '';
+    return facts[Math.floor(Math.random() * facts.length)];
+  });
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
     const facts = TRIVIA[genre];
     if (!facts || facts.length === 0) return;
-
-    // Pick random initial fact
-    setFact(facts[Math.floor(Math.random() * facts.length)]);
 
     const interval = setInterval(() => {
       setFading(true);

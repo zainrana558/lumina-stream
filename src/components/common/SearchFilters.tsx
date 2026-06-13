@@ -31,7 +31,7 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
 
   useEffect(() => {
-    setLocalFilters(filters);
+    queueMicrotask(() => setLocalFilters(filters));
   }, [filters]);
 
   const handleChange = (key: keyof FilterState, value: string) => {

@@ -27,8 +27,18 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const personId = Number(id);
 
+  // Fetch data outside try/catch to avoid JSX in try/catch
+  type PersonData = {
+    id: number; name: string; profile_path: string | null; biography: string;
+    birthday: string | null; deathday: string | null; place_of_birth: string | null;
+    homepage: string | null; also_known_as: string[]; known_for_department: string;
+    combined_credits?: { cast: Array<{ id: number; title?: string; name?: string; poster_path: string | null; backdrop_path: string | null; media_type: 'movie' | 'tv'; character?: string; job?: string; department?: string; episode_count?: number; vote_average?: number; release_date?: string; first_air_date?: string; genre_ids?: number[]; popularity?: number; overview?: string }>; crew: Array<{ id: number; title?: string; name?: string; poster_path: string | null; media_type: 'movie' | 'tv'; job?: string; department?: string; popularity?: number }> };
+  };
+  let data: PersonData | null = null;
+  let notFound = false;
+
   try {
-    const data = await tmdbFetch<{
+    data = await tmdbFetch<{
       id: number;
       name: string;
       profile_path: string | null;
@@ -70,13 +80,17 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
         }>;
       };
     }>(`/person/${personId}`, { append_to_response: 'combined_credits' });
-
-    return <PersonPageClient person={data} />;
   } catch {
+    notFound = true;
+  }
+
+  if (notFound || !data) {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.4)' }}>Person not found</div>
       </div>
     );
   }
+
+  return <PersonPageClient person={data} />;
 }

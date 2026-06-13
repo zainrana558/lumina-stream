@@ -12,7 +12,7 @@ export async function POST() {
       success: false,
       message: "Please run the SQL migration manually in your Supabase Dashboard.",
       instructions: [
-        "1. Go to https://supabase.com/dashboard/project/koucyokdqncnywzzwmow",
+        "1. Go to your Supabase Dashboard project page (supabase.com/dashboard)",
         "2. Click 'SQL Editor' in the left sidebar",
         "3. Copy and run the contents of supabase/migrations/001_create_missing_tables.sql",
         "4. After running, all features will work.",

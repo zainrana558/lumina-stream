@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-// ── IMPORTANT: Do NOT rename this file. Next.js requires middleware.ts. ─────
+// ── Next.js 16 "proxy" convention (renamed from middleware.ts) ───────────────
 
 // ── Public paths — no auth required ────────────────────────────────────────
 // ONLY truly public pages. Protected pages (/watchlist, /settings, /stats,
@@ -26,7 +26,7 @@ function isPublicPath(pathname: string): boolean {
 // Cloudflare Worker (workers/cache-proxy.js) so that video embed iframes
 // inside detail pages work. CSP frame-src already whitelists those domains.
 // Do NOT strip CSP — it provides XSS / script-src protection.
-function setSecurityHeaders(response: NextResponse, pathname: string) {
+function setSecurityHeaders(response: NextResponse, pathname: string, request: NextRequest) {
   const isApi    = pathname.startsWith("/api/");
   const isStatic = pathname.startsWith("/_next") || /\.(svg|png|jpg|jpeg|gif|webp|ico|woff2?)$/.test(pathname);
 
@@ -62,7 +62,11 @@ function setSecurityHeaders(response: NextResponse, pathname: string) {
     // NEXT_PUBLIC_SITE_URL must be set to the Cloudflare Worker URL in production
     // (e.g. https://cache-proxy.zainrana553.workers.dev or custom domain).
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lumina-stream-omega.vercel.app";
-    response.headers.set("Access-Control-Allow-Origin",  siteUrl);
+    const origin  = request.headers.get("Origin") || "";
+    const vercelUrl = "https://lumina-stream-omega.vercel.app";
+    const allowedOrigins = new Set([siteUrl, vercelUrl]);
+    const reflected = origin && allowedOrigins.has(origin) ? origin : siteUrl;
+    response.headers.set("Access-Control-Allow-Origin",  reflected);
     response.headers.set("Vary",                          "Origin");
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -75,6 +79,8 @@ function setSecurityHeaders(response: NextResponse, pathname: string) {
 // Cloudflare Worker forwards the real client IP via x-forwarded-for /
 // x-real-ip after stripping cf-connecting-ip. Read both headers.
 function getClientIp(request: NextRequest): string {
+  // Security assumption: This middleware only runs behind Cloudflare or Vercel,
+  // which overwrites x-forwarded-for with the real client IP, so spoofing is not a concern.
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
   return request.headers.get("x-real-ip") || "unknown";
@@ -126,9 +132,13 @@ export default async function middleware(request: NextRequest) {
     const { createServerClient } = await import("@supabase/ssr");
     let supabaseResponse = NextResponse.next({ request });
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    if (!supabaseUrl && !supabaseAnonKey) return NextResponse.next({ request });
+
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         cookies: {
           getAll() {
@@ -208,7 +218,7 @@ export default async function middleware(request: NextRequest) {
       }
     }
 
-    setSecurityHeaders(supabaseResponse, pathname);
+    setSecurityHeaders(supabaseResponse, pathname, request);
     return supabaseResponse;
 
   } catch {
@@ -221,7 +231,7 @@ export default async function middleware(request: NextRequest) {
     }
 
     const response = NextResponse.next({ request });
-    setSecurityHeaders(response, pathname);
+    setSecurityHeaders(response, pathname, request);
     return response;
   }
 }

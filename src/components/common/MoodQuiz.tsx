@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface QuizStep {
@@ -78,14 +78,10 @@ export default function MoodQuiz() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [result, setResult] = useState<string | null>(null);
-  const [lastMood, setLastMood] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('lumina-mood-quiz');
-      if (saved) setLastMood(saved);
-    } catch {}
-  }, []);
+  const [lastMood, setLastMood] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try { return localStorage.getItem('lumina-mood-quiz'); } catch { return null; }
+  });
 
   const handleSelect = (optIdx: number) => {
     const next = [...answers, optIdx];

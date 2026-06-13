@@ -10,8 +10,9 @@
  *     frame-src for embed players, stripping it removes XSS protection)
  *   - Strip Vercel-internal headers (age, x-vercel-cache, x-vercel-id)
  *   - Forward real client IP via x-forwarded-for (needed for rate limiting)
- *   - Retry once on Vercel 500 errors (cold starts)
- *   - Bypass Cloudflare edge cache for all routes (stale JS/API bugs)
+ *   - Retry on Vercel 5xx errors (cold starts and transient errors)
+ *   - Cache public static assets and ISR pages at the edge
+ *   - Bypass edge cache for API/auth/admin routes
  *   - Rewrite Vercel origin URLs in Location headers (auth redirects)
  *
  * Deploy:
@@ -42,7 +43,7 @@ const RESPONSE_HEADERS_TO_DROP = new Set([
   'server',            // Security: hide server identity
 ]);
 
-// ─── API & auth routes — never cache ──────────────────────────────────────
+// ─── API & auth routes — never cache at edge ─────────────────────────────
 function isNeverCache(pathname) {
   return (
     pathname.startsWith('/api/') ||
@@ -51,6 +52,23 @@ function isNeverCache(pathname) {
   );
 }
 
+// ─── Static asset extensions — always cache at edge ─────────────────────
+const CACHEABLE_EXTENSIONS = new Set([
+  '.js', '.css', '.woff', '.woff2', '.ttf', '.otf',
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico',
+]);
+
+function isStaticAsset(pathname) {
+  const dot = pathname.lastIndexOf('.');
+  if (dot === -1) return false;
+  const ext = pathname.slice(dot).toLowerCase();
+  return CACHEABLE_EXTENSIONS.has(ext);
+}
+
+// ─── Edge cache TTL (seconds) ───────────────────────────────────────────
+const EDGE_TTL_STATIC = 86400 * 30;   // 30 days for static assets
+const EDGE_TTL_PAGE   = 300;           // 5 minutes for ISR pages
+
 export default {
   async fetch(request, env, ctx) {
     const VERCEL_ORIGIN = env.VERCEL_ORIGIN || DEFAULT_VERCEL_ORIGIN;
@@ -58,9 +76,9 @@ export default {
     try {
       return await proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST);
     } catch (err) {
-      // If Vercel is unreachable, return a clean error
+      // If Vercel is unreachable, return a clean error WITHOUT leaking internals
       return new Response(
-        JSON.stringify({ error: 'Origin unreachable', details: String(err) }),
+        JSON.stringify({ error: 'Origin unreachable' }),
         {
           status: 502,
           headers: {
@@ -95,19 +113,22 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST) {
 
   // Forward real client IP so Next.js rate limiting sees the actual IP
   // (not the worker's egress IP which would rate-limit all users together)
+  // Append to existing x-forwarded-for chain instead of overwriting
   const clientIp =
     request.headers.get('cf-connecting-ip') ||
     request.headers.get('x-real-ip') ||
     '127.0.0.1';
-  forwardHeaders.set('x-forwarded-for', clientIp);
+  const existingChain = request.headers.get('x-forwarded-for');
+  forwardHeaders.set('x-forwarded-for', existingChain ? `${existingChain}, ${clientIp}` : clientIp);
   forwardHeaders.set('x-real-ip', clientIp);
 
   // ── First attempt ────────────────────────────────────────────────────
   const forwardRequest = buildRequest(targetUrl.toString(), request, forwardHeaders);
   let response = await fetch(forwardRequest);
 
-  // ── Retry once on 500 (Vercel cold start / transient error) ──────────
-  if (response.status === 500) {
+  // ── Retry on 5xx (Vercel cold start / transient errors) ─────────────
+  // Vercel cold starts can return 500, 502, 503, or 504
+  if (response.status >= 500 && response.status <= 504) {
     const retryUrl = new URL(targetUrl.toString());
     retryUrl.searchParams.set('_nocache', String(Date.now()));
     const retryRequest = buildRequest(retryUrl.toString(), request, forwardHeaders);
@@ -123,17 +144,23 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST) {
     }
   }
 
-  // Force Cloudflare edge to never cache this response
-  responseHeaders.set('x-cf-cache', 'BYPASS');
+  // ── Edge caching strategy ────────────────────────────────────────────
+  const pathname = incomingUrl.pathname;
 
-  // Error responses must never be cached anywhere
-  if (response.status >= 500) {
-    responseHeaders.set('cache-control', 'no-store');
-  }
-
-  // API/auth routes: hard no-store regardless of what Vercel sent
-  if (isNeverCache(incomingUrl.pathname)) {
-    responseHeaders.set('cache-control', 'no-store, no-cache');
+  if (isNeverCache(pathname)) {
+    // API/auth/admin: never cache at edge
+    responseHeaders.set('Cache-Control', 'no-store, no-cache');
+  } else if (isStaticAsset(pathname)) {
+    // Static assets: long edge TTL
+    responseHeaders.set('Cache-Control', `public, max-age=${EDGE_TTL_STATIC}`);
+    responseHeaders.set('CDN-Cache-Control', `public, max-age=${EDGE_TTL_STATIC}`);
+  } else if (response.status >= 200 && response.status < 300) {
+    // Successful page responses: short edge TTL (ISR already handles revalidation)
+    responseHeaders.set('Cache-Control', `public, s-maxage=${EDGE_TTL_PAGE}, stale-while-revalidate=600`);
+    responseHeaders.set('CDN-Cache-Control', `public, max-age=${EDGE_TTL_PAGE}`);
+  } else {
+    // Error responses: never cache anywhere
+    responseHeaders.set('Cache-Control', 'no-store');
   }
 
   // ── Rewrite Location headers on redirects ────────────────────────────

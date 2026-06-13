@@ -30,7 +30,7 @@ export async function addToWatchlist(data: z.infer<typeof watchlistSchema>) {
   if (error) return { error: error.message };
 
   // Dual invalidation: origin + edge
-  revalidateTag("user-watchlist");
+  revalidateTag("user-watchlist", "default");
 
   // Ensure purgeEdgeCache runs in the background reliably
   after(async () => {
@@ -54,7 +54,7 @@ export async function removeFromWatchlist(profileId: string, mediaId: number, me
   if (error) return { error: error.message };
 
   // Dual invalidation: origin + edge
-  revalidateTag("user-watchlist");
+  revalidateTag("user-watchlist", "default");
 
   // Ensure purgeEdgeCache runs in the background reliably
   after(async () => {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAuth, verifyProfileOwnership } from "@/lib/auth";
+import { requireAuth, verifyProfileOwnership, getVerifiedProfileId } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { watchPartyMessageSchema } from "@/lib/schemas";
 
@@ -73,6 +73,23 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient();
+    const { userId } = await requireAuth();
+
+    const profileId = await getVerifiedProfileId(userId);
+    if (!profileId) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const { data: participant } = await supabase
+      .from("watch_party_participants")
+      .select("id")
+      .eq("room_id", roomId)
+      .eq("profile_id", profileId)
+      .maybeSingle();
+
+    if (!participant) {
+      return NextResponse.json({ error: "Not a room participant" }, { status: 403 });
+    }
 
     let query = supabase
       .from("watch_party_messages")

@@ -33,7 +33,7 @@ export const commentPostSchema = z.object({
   profileId: z.string().min(1),
   mediaId: z.number().int().positive(),
   mediaType: z.enum(['movie', 'tv']),
-  content: z.string().trim().min(1).max(2000),
+  content: z.string().trim().min(1).max(2000).transform(v => v.replace(/<[^>]*>/g, '')),
   rating: z.number().min(1).max(5).optional(),
 });
 
@@ -85,16 +85,16 @@ export const activityLogSchema = z.object({
 // ---- Collections ----
 export const collectionCreateSchema = z.object({
   profileId: z.string().min(1),
-  name: z.string().trim().min(1).max(100),
-  description: z.string().trim().max(500).optional(),
+  name: z.string().trim().min(1).max(100).transform(v => v.replace(/<[^>]*>/g, '')),
+  description: z.string().trim().max(500).optional().transform(v => v ? v.replace(/<[^>]*>/g, '') : v),
   isPublic: z.boolean().optional().default(true),
 });
 
 export const collectionUpdateSchema = z.object({
   profileId: z.string().min(1),
   collectionId: z.string().min(1),
-  name: z.string().trim().min(1).max(100).optional(),
-  description: z.string().trim().max(500).optional(),
+  name: z.string().trim().min(1).max(100).optional().transform(v => v ? v.replace(/<[^>]*>/g, '') : v),
+  description: z.string().trim().max(500).optional().transform(v => v ? v.replace(/<[^>]*>/g, '') : v),
   isPublic: z.boolean().optional(),
   coverPath: z.string().nullable().optional(),
 });

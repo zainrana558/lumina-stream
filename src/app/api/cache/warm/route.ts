@@ -21,8 +21,8 @@ import { setCache, getCached, CACHE_TTL } from '@/lib/cache';
 // Turbopack aggressively caches type info from imported modules.
 // Cast 'warm' to bypass stale CacheCategory type resolution.
 const WARM = 'warm' as Parameters<typeof getCached>[0];
-import { getPopularAnime } from '@/lib/anilist/client';
-import { anilistToMediaItem } from '@/lib/anilist/client';
+import { getPopularAnime, anilistToMediaItem } from '@/lib/anilist/client';
+import type { AniListMedia } from '@/lib/anilist/client';
 import { tmdbToMedia } from '@/types';
 import type { TMDBShow } from '@/types';
 import type { MediaItem } from '@/types';
@@ -61,7 +61,39 @@ const TMDB_GENRES = [
 // TMDB caps meaningful results at ~500 pages.
 // 100 pages × 20 results = up to 2000 quality items per genre.
 const WARM_PAGES = 100;
-const BATCH_SIZE = 10; // concurrent TMDB requests per batch
+const BATCH_SIZE = 5; // concurrent TMDB requests per batch (reduced from 10 to stay within rate limits)
+
+// ─── Concurrency limiter ──────────────────────────────────────────────────
+// Prevents more than MAX_CONCURRENT in-flight TMDB/AniList requests at once.
+const MAX_CONCURRENT = 10; // Reduced from 15 — combined TMDB+AniList was exceeding safe limits
+let inFlight = 0;
+const waitQueue: Array<() => void> = [];
+
+function acquireSlot(): Promise<void> {
+  if (inFlight < MAX_CONCURRENT) {
+    inFlight++;
+    return Promise.resolve();
+  }
+  return new Promise<void>(resolve => waitQueue.push(resolve));
+}
+
+function releaseSlot() {
+  inFlight--;
+  const next = waitQueue.shift();
+  if (next) {
+    inFlight++;
+    next();
+  }
+}
+
+async function limitedFetch<T>(fn: () => Promise<T>): Promise<T> {
+  await acquireSlot();
+  try {
+    return await fn();
+  } finally {
+    releaseSlot();
+  }
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -99,10 +131,12 @@ async function fetchPages(
 
     const batch = await Promise.all(
       Array.from({ length: end - start + 1 }, (_, i) =>
-        tmdbFetch<{ results?: TMDBShow[]; total_pages?: number }>(
-          `/discover/${mediaType}`,
-          { ...params, page: String(start + i) },
-        ).catch(() => ({ results: [] as TMDBShow[], total_pages: 0 }))
+        limitedFetch(() =>
+          tmdbFetch<{ results?: TMDBShow[]; total_pages?: number }>(
+            `/discover/${mediaType}`,
+            { ...params, page: String(start + i) },
+          ).catch(() => ({ results: [] as TMDBShow[], total_pages: 0 }))
+        )
       )
     );
 
@@ -159,11 +193,21 @@ async function warmAnime(): Promise<{ slug: string; count: number; cached: boole
   }
 
   // Fetch 15 pages × 20 = 300 anime items from AniList
-  const pages = await Promise.all(
-    Array.from({ length: 15 }, (_, i) =>
-      getPopularAnime(i + 1, 20).catch(() => ({ media: [] }))
-    )
-  );
+  // Stagger into batches of 3 to avoid combined concurrency spike with TMDB
+  const ANIME_BATCH = 3;
+  const ANIME_PAGES = 15;
+  const allPages: Array<{ media: AniListMedia[] }> = [];
+  for (let b = 0; b < Math.ceil(ANIME_PAGES / ANIME_BATCH); b++) {
+    const start = b * ANIME_BATCH;
+    const end = Math.min(start + ANIME_BATCH, ANIME_PAGES);
+    const batch = await Promise.all(
+      Array.from({ length: end - start }, (_, i) =>
+        limitedFetch(() => getPopularAnime(start + i + 1, 20).catch(() => ({ media: [] })))
+      )
+    );
+    allPages.push(...batch);
+  }
+  const pages = allPages;
 
   const seen = new Set<number>();
   const items: MediaItem[] = pages
@@ -220,13 +264,23 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
 // ─── Route handler ───────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  // Verify secret (skip check in dev)
+  // Auth is ALWAYS required — this endpoint triggers 100+ API calls.
+  // In dev, use a default secret or set CACHE_WARM_SECRET in .env.local.
   const secret = process.env.CACHE_WARM_SECRET;
-  if (secret) {
-    const auth = request.headers.get('authorization') ?? '';
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  if (!secret) {
+    console.warn(
+      '[warm] CACHE_WARM_SECRET is not set. ' +
+      'Set it in .env.local to enable the cache warm endpoint.'
+    );
+    return NextResponse.json(
+      { error: 'CACHE_WARM_SECRET not configured' },
+      { status: 503 }
+    );
+  }
+
+  const auth = request.headers.get('authorization') ?? '';
+  if (auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const startTime = Date.now();
@@ -273,11 +327,16 @@ export async function POST(request: NextRequest) {
 // GET: quick status check — returns current warm cache sizes
 export async function GET(request: NextRequest) {
   const secret = process.env.CACHE_WARM_SECRET;
-  if (secret) {
-    const auth = request.headers.get('authorization') ?? '';
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  if (!secret) {
+    return NextResponse.json(
+      { error: 'CACHE_WARM_SECRET not configured' },
+      { status: 503 }
+    );
+  }
+
+  const auth = request.headers.get('authorization') ?? '';
+  if (auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const slugs = [...TMDB_GENRES.map(g => g.slug), 'anime'];

@@ -17,24 +17,26 @@ const MOOD_COLORS: Record<string, string> = {
 };
 
 export default function AmbientSoundscape({ mood }: { mood?: string }) {
-  const [playing, setPlaying] = useState(false);
-  const [selectedMood, setSelectedMood] = useState(mood || 'Chill');
+  const [selectedMood, setSelectedMood] = useState(() => {
+    if (typeof window === 'undefined') return mood || 'Chill';
+    try {
+      const saved = localStorage.getItem('lumina-soundscape');
+      if (saved) { const data = JSON.parse(saved); return data.mood || mood || 'Chill'; }
+    } catch {}
+    return mood || 'Chill';
+  });
+  const [playing, setPlaying] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const saved = localStorage.getItem('lumina-soundscape');
+      if (saved) { const data = JSON.parse(saved); return !!data.enabled; }
+    } catch {}
+    return false;
+  });
   const [volume, setVolume] = useState(0.15);
   const [panelOpen, setPanelOpen] = useState(false);
   const ctxRef = useRef<AudioContext | null>(null);
   const nodesRef = useRef<{ oscs: (OscillatorNode | AudioBufferSourceNode)[]; gains: GainNode[]; master: GainNode } | null>(null);
-
-  // Load saved state
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('lumina-soundscape');
-      if (saved) {
-        const data = JSON.parse(saved);
-        if (data.mood) setSelectedMood(data.mood);
-        if (data.enabled) setPlaying(true);
-      }
-    } catch {}
-  }, []);
 
   const stopAll = useCallback(() => {
     const nodes = nodesRef.current;

@@ -451,13 +451,10 @@ function AppearanceSection({ showToast }: { showToast: (msg: string) => void }) 
 /* ============ NOTIFICATIONS SECTION ============ */
 
 function NotificationsSection({ showToast }: { showToast: (msg: string) => void }) {
-  const [permission, setPermission] = useState<NotificationPermission>('default');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setPermission(Notification.permission);
-    }
-  }, []);
+  const [permission, setPermission] = useState<NotificationPermission>(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'default';
+    return Notification.permission;
+  });
 
   return (
     <div style={{ animation: 'card-in .3s both' }}>

@@ -19,12 +19,11 @@ interface GenreIntroProps {
 }
 
 export default function GenreIntro({ text, genre }: GenreIntroProps) {
-  const [revealed, setRevealed] = useState<boolean[]>([]);
+  const [revealed, setRevealed] = useState<boolean[]>(() => new Array(text.split('').length).fill(false));
   const s = GENRE_STYLES[genre] || GENRE_STYLES.anime;
   const chars = text.split('');
 
   useEffect(() => {
-    setRevealed(new Array(chars.length).fill(false));
     const timers: ReturnType<typeof setTimeout>[] = [];
     chars.forEach((_, i) => {
       timers.push(setTimeout(() => {
@@ -36,7 +35,6 @@ export default function GenreIntro({ text, genre }: GenreIntroProps) {
       }, i * s.stagger));
     });
     return () => timers.forEach(clearTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, genre]);
 
   return (

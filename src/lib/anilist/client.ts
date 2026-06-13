@@ -161,14 +161,19 @@ interface AniListRateState {
   resetTime: number;
 }
 
+// Proper type augmentation for globalThis
+declare global {
+  var __anilistRateState: AniListRateState | undefined;
+}
+
 function getRateState(): AniListRateState {
-  if (!(globalThis as Record<string, unknown>).__anilistRateState) {
-    (globalThis as Record<string, unknown>).__anilistRateState = {
+  if (!globalThis.__anilistRateState) {
+    globalThis.__anilistRateState = {
       requestCount: 0,
       resetTime: 0,
     };
   }
-  return (globalThis as Record<string, unknown>).__anilistRateState as AniListRateState;
+  return globalThis.__anilistRateState;
 }
 
 async function rateLimitedFetch(body: string): Promise<Response> {
@@ -179,10 +184,22 @@ async function rateLimitedFetch(body: string): Promise<Response> {
     state.resetTime = now + WINDOW_MS;
   }
   if (state.requestCount >= RATE_LIMIT) {
-    const waitMs = state.resetTime - now;
-    await new Promise(r => setTimeout(r, waitMs));
-    state.requestCount = 0;
-    state.resetTime = Date.now() + WINDOW_MS;
+    // Instead of throwing (which wastes the entire serverless function),
+    // sleep until the window resets. Cap at 10s to avoid burning function time.
+    const waitMs = Math.min(state.resetTime - now, 10_000);
+    if (waitMs > 0) {
+      await new Promise<void>(resolve => setTimeout(resolve, waitMs));
+    }
+    // Re-check after waiting
+    const afterWait = Date.now();
+    if (afterWait > state.resetTime) {
+      state.requestCount = 0;
+      state.resetTime = afterWait + WINDOW_MS;
+    }
+    // If still over limit after capped wait, throw
+    if (state.requestCount >= RATE_LIMIT) {
+      throw new Error(`AniList rate limit reached. Retry after ${Math.ceil((state.resetTime - Date.now()) / 1000)}s`);
+    }
   }
   state.requestCount++;
 

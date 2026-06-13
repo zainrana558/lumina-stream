@@ -153,7 +153,6 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mq.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
@@ -486,18 +485,15 @@ export default function Home({
   const [continueWatching, setContinueWatching] = useState<MediaItem[]>([]);
   const [recommendedItems, setRecommendedItems] = useState<MediaItem[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(false);
-  const [timeGreeting, setTimeGreeting] = useState('Good Evening');
+  const [timeGreeting] = useState(() => {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return 'Good Morning';
+    if (h >= 12 && h < 17) return 'Good Afternoon';
+    if (h >= 17 && h < 21) return 'Good Evening';
+    return 'Late Night Vibes';
+  });
   const [heroWatchlist, setHeroWatchlist] = useState<Set<number>>(new Set());
   const router = useRouter();
-
-  // Time-aware greeting
-  useEffect(() => {
-    const h = new Date().getHours();
-    if (h >= 5 && h < 12) setTimeGreeting('Good Morning');
-    else if (h >= 12 && h < 17) setTimeGreeting('Good Afternoon');
-    else if (h >= 17 && h < 21) setTimeGreeting('Good Evening');
-    else setTimeGreeting('Late Night Vibes');
-  }, []);
 
   // Time-aware mood highlight index
   const highlightedMood = useMemo(() => {

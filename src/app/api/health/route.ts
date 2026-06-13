@@ -11,9 +11,7 @@ export async function GET() {
     const hasCredentials = !!(env.TMDB_BEARER_TOKEN || env.TMDB_API_KEY);
     checks.tmdb_credentials = {
       ok: hasCredentials,
-      detail: hasCredentials
-        ? env.TMDB_BEARER_TOKEN ? 'Using Bearer token' : 'Using API key'
-        : 'No TMDB credentials configured',
+      detail: hasCredentials ? 'Configured' : 'Not configured',
     };
 
     // Test actual TMDB API call

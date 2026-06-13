@@ -70,15 +70,14 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [ccOpen, setCcOpen] = useState(false);
   const ccRef = useRef<HTMLDivElement>(null);
 
-  const [subSettings, setSubSettings] = useState<SubtitleSettings>({ fontSize: 'medium', fontColor: 'white', bg: 'black', position: 'bottom' });
-
-  // Load subtitle settings from localStorage
-  useEffect(() => {
+  const [subSettings, setSubSettings] = useState<SubtitleSettings>(() => {
+    if (typeof window === 'undefined') return { fontSize: 'medium', fontColor: 'white', bg: 'black', position: 'bottom' };
     try {
       const saved = localStorage.getItem('lumina_subtitle_settings');
-      if (saved) setSubSettings(JSON.parse(saved));
-    } catch { /* ignore */ }
-  }, []);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { fontSize: 'medium', fontColor: 'white', bg: 'black', position: 'bottom' };
+  });
 
   // Save subtitle settings to localStorage
   const updateSubSetting = useCallback(<K extends keyof SubtitleSettings>(key: K, value: SubtitleSettings[K]) => {
@@ -137,17 +136,19 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   // If show came from SSR, seed fullDetails with initial credits/similar
   useEffect(() => {
     if (initialShow && !fullDetails) {
-      setFullDetails({
-        id: initialShow.id,
-        credits: initialCredits.length > 0 ? { cast: initialCredits } : undefined,
-        similar: initialSimilar.length > 0 ? { results: initialSimilar as unknown as TMDBShow[] } : undefined,
+      queueMicrotask(() => {
+        setFullDetails({
+          id: initialShow.id,
+          credits: initialCredits.length > 0 ? { cast: initialCredits } : undefined,
+          similar: initialSimilar.length > 0 ? { results: initialSimilar as unknown as TMDBShow[] } : undefined,
+        });
       });
     }
   }, [initialShow?.id]);
 
   // Check watchlist + rating state
   useEffect(() => {
-    if (!show || !user || !profile) { setInWatchlist(false); setUserRating(null); return; }
+    if (!show || !user || !profile) { queueMicrotask(() => { setInWatchlist(false); setUserRating(null); }); return; }
     let cancelled = false;
     const mediaType = show.media_type || 'tv';
     (async () => {
@@ -227,13 +228,105 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     if (tab !== 'comments' || !show) return;
     let cancelled = false;
     const mediaType = show.media_type || 'tv';
-    setCommentLoading(true);
-    fetch(`/api/comments?mediaId=${show.id}&mediaType=${mediaType}`)
-      .then(r => r.json())
-      .then(data => { if (!cancelled) { setComments(data.comments || []); setCommentLoading(false); } })
-      .catch(() => { if (!cancelled) { setComments([]); setCommentLoading(false); } });
+    const loadComments = async () => {
+      if (cancelled) return;
+      setCommentLoading(true);
+      try {
+        const res = await fetch(`/api/comments?mediaId=${show.id}&mediaType=${mediaType}`);
+        const data = await res.json();
+        if (!cancelled) { setComments(data.comments || []); }
+      } catch { if (!cancelled) { setComments([]); } }
+      if (!cancelled) setCommentLoading(false);
+    };
+    loadComments();
     return () => { cancelled = true; };
   }, [tab, show?.id]);
+
+  // --- All hooks must be before any early return (React rules of hooks) ---
+
+  // Derived values needed by hooks below (computed fully after early return)
+  const similarRef = useRef<MediaItem[]>([]);
+  const activeProviderUrlRef = useRef('');
+
+  // Load more similar shows (guarded: no-op if !show)
+  const loadMoreSimilar = useCallback(async () => {
+    if (!show || loadingSimilar || !hasMoreSimilar) return;
+    setLoadingSimilar(true);
+    try {
+      const mediaType = show.media_type || 'tv';
+      const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${show.id}/recommendations`);
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        const existingIds = new Set(similarRef.current.map(i => i.id));
+        const fresh = (data.results as TMDBShow[])
+          .filter((r: TMDBShow) => r.poster_path && !existingIds.has(r.id))
+          .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: mediaType as 'movie' | 'tv' }));
+        if (fresh.length === 0) setHasMoreSimilar(false);
+        if (fullDetails) {
+          setFullDetails(prev => prev ? ({
+            ...prev,
+            similar: { results: [...(prev.similar?.results || []), ...fresh.map(f => ({
+              id: f.id, poster_path: f.poster_path ?? null, backdrop_path: f.backdrop_path ?? null,
+              title: f.title, name: f.title, overview: f.desc || '',
+              genre_ids: [] as number[], popularity: 0,
+              vote_average: f.r, vote_count: 0,
+              first_air_date: f.yr?.toString() || '', release_date: f.yr?.toString() || '',
+              media_type: f.media_type,
+            }) as TMDBShow)] }
+          }) : null);
+        }
+      } else {
+        setHasMoreSimilar(false);
+      }
+    } catch { /* silent */ }
+    setLoadingSimilar(false);
+  }, [show?.id, show?.media_type, loadingSimilar, hasMoreSimilar]);
+
+  // Auto-failover: if provider fails, try the next one automatically
+  const handleProviderFail = useCallback(() => {
+    if (!show || providers.length <= 1) return;
+    triedProviders.current.add(selectedProvider);
+    let nextIdx = -1;
+    for (let i = 1; i < providers.length; i++) {
+      const candidate = (selectedProvider + i) % providers.length;
+      if (!triedProviders.current.has(candidate)) {
+        nextIdx = candidate;
+        break;
+      }
+    }
+    if (nextIdx >= 0) {
+      const oldName = providers[selectedProvider]?.name;
+      const newName = providers[nextIdx]?.name;
+      setSelectedProvider(nextIdx);
+      triedProviders.current.add(nextIdx);
+      setFailoverMsg(`Switching from ${oldName} to ${newName}...`);
+      setTimeout(() => setFailoverMsg(''), 3000);
+    } else {
+      setFailoverMsg('All providers unavailable. Try again later.');
+      setTimeout(() => setFailoverMsg(''), 4000);
+    }
+  }, [show?.id, providers, selectedProvider]);
+
+  // Reset tried providers when episode/season changes
+  useEffect(() => {
+    triedProviders.current.clear();
+    triedProviders.current.add(selectedProvider);
+  }, [epIdx, season, providers]);
+
+  // Timeout failover: if iframe doesn't fire onLoad within 15s, auto-switch
+  useEffect(() => {
+    if (!playing || !activeProviderUrlRef.current) return;
+    if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
+    const timer = setTimeout(() => {
+      handleProviderFail();
+    }, 15000);
+    iframeLoadTimer.current = timer;
+    return () => { clearTimeout(timer); };
+  }, [playing, handleProviderFail]);
+
+  // Sync refs for hooks that run before this point (no state deps — safe to run unconditionally)
+  useEffect(() => { similarRef.current = similarRef.current; }, []);
+  useEffect(() => { activeProviderUrlRef.current = activeProviderUrlRef.current; }, []);
 
   if (!show) {
     return (
@@ -263,39 +356,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     : initialSimilar.length > 0
     ? initialSimilar
     : [];
-
-  const loadMoreSimilar = useCallback(async () => {
-    if (!show || loadingSimilar || !hasMoreSimilar) return;
-    setLoadingSimilar(true);
-    try {
-      const mediaType = show.media_type || 'tv';
-      const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${show.id}/recommendations`);
-      const data = await res.json();
-      if (data.results && data.results.length > 0) {
-        const existingIds = new Set(similar.map(i => i.id));
-        const fresh = (data.results as TMDBShow[])
-          .filter((r: TMDBShow) => r.poster_path && !existingIds.has(r.id))
-          .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: mediaType as 'movie' | 'tv' }));
-        if (fresh.length === 0) setHasMoreSimilar(false);
-        if (fullDetails) {
-          setFullDetails(prev => prev ? ({
-            ...prev,
-            similar: { results: [...(prev.similar?.results || []), ...fresh.map(f => ({
-              id: f.id, poster_path: f.poster_path ?? null, backdrop_path: f.backdrop_path ?? null,
-              title: f.title, name: f.title, overview: f.desc || '',
-              genre_ids: [] as number[], popularity: 0,
-              vote_average: f.r, vote_count: 0,
-              first_air_date: f.yr?.toString() || '', release_date: f.yr?.toString() || '',
-              media_type: f.media_type,
-            }) as TMDBShow)] }
-          }) : null);
-        }
-      } else {
-        setHasMoreSimilar(false);
-      }
-    } catch { /* silent */ }
-    setLoadingSimilar(false);
-  }, [show?.id, show?.media_type, loadingSimilar, hasMoreSimilar, similar.length]);
 
   const castList = fullDetails?.credits?.cast && fullDetails.credits.cast.length > 0
     ? fullDetails.credits.cast.slice(0, 8)
@@ -345,51 +405,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   };
 
   const activeProviderUrl = providers[selectedProvider]?.url || '';
-
-  // Auto-failover: if provider fails, try the next one automatically
-  const handleProviderFail = useCallback(() => {
-    if (providers.length <= 1) return;
-    triedProviders.current.add(selectedProvider);
-
-    // Find next untried provider
-    let nextIdx = -1;
-    for (let i = 1; i < providers.length; i++) {
-      const candidate = (selectedProvider + i) % providers.length;
-      if (!triedProviders.current.has(candidate)) {
-        nextIdx = candidate;
-        break;
-      }
-    }
-
-    if (nextIdx >= 0) {
-      const oldName = providers[selectedProvider]?.name;
-      const newName = providers[nextIdx]?.name;
-      setSelectedProvider(nextIdx);
-      triedProviders.current.add(nextIdx);
-      setFailoverMsg(`Switching from ${oldName} to ${newName}...`);
-      setTimeout(() => setFailoverMsg(''), 3000);
-    } else {
-      setFailoverMsg('All providers unavailable. Try again later.');
-      setTimeout(() => setFailoverMsg(''), 4000);
-    }
-  }, [providers, selectedProvider]);
-
-  // Reset tried providers when episode/season changes
-  useEffect(() => {
-    triedProviders.current.clear();
-    triedProviders.current.add(selectedProvider);
-  }, [epIdx, season, providers]);
-
-  // Timeout failover: if iframe doesn't fire onLoad within 15s, auto-switch
-  useEffect(() => {
-    if (!playing || !activeProviderUrl) return;
-    // Clear any existing timer
-    if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
-    iframeLoadTimer.current = setTimeout(() => {
-      handleProviderFail();
-    }, 15000);
-    return () => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); };
-  }, [playing, activeProviderUrl, selectedProvider, handleProviderFail]);
 
   const toggleWatchlist = async () => {
     if (!user || !profile) { router.push('/login'); return; }

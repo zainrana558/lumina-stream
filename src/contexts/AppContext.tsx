@@ -1,6 +1,6 @@
 'use client';
 
-import { createElement, createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 
 export interface UserProfile {
@@ -137,7 +137,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch active profile when user changes
   useEffect(() => {
-    fetchProfile(user?.id ?? null);
+    let mounted = true;
+    const load = async () => { if (mounted) await fetchProfile(user?.id ?? null); };
+    load();
+    return () => { mounted = false; };
   }, [user, fetchProfile]);
 
   const refreshProfile = useCallback(async () => {
@@ -177,5 +180,5 @@ export function AppProvider({ children }: { children: ReactNode }) {
     searchOpen, setSearchOpen,
   };
 
-  return createElement(AppContext.Provider, { value }, children);
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

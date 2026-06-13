@@ -96,11 +96,17 @@ export async function POST(request: NextRequest) {
     const { supabase, userId } = await requireAuth();
     await verifyProfileOwnership(supabase, profileId, userId);
 
+    // Defense-in-depth: verify content length after schema transform
+    const sanitized = content.trim();
+    if (Buffer.byteLength(sanitized, 'utf-8') > 10_000) {
+      return NextResponse.json({ error: 'Comment too long' }, { status: 400 });
+    }
+
     const insertData: Record<string, unknown> = {
       profile_id: profileId,
       media_id: mediaId,
       media_type: mediaType,
-      content: content.trim(),
+      content: sanitized,
     };
     if (rating && rating > 0) insertData.rating = rating;
 

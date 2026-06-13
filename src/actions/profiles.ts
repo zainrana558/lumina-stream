@@ -79,6 +79,34 @@ export async function deleteProfile(profileId: string) {
   const { supabase, userId } = await requireAuth();
   await verifyProfileOwnership(supabase, profileId, userId);
 
+  // Simple cascade deletes — run in parallel for speed
+  await Promise.all([
+    supabase.from('watchlist').delete().eq('profile_id', profileId),
+    supabase.from('ratings').delete().eq('profile_id', profileId),
+    supabase.from('comments').delete().eq('profile_id', profileId),
+    supabase.from('watch_progress').delete().eq('profile_id', profileId),
+    supabase.from('watch_history').delete().eq('profile_id', profileId),
+    supabase.from('reminders').delete().eq('profile_id', profileId),
+    supabase.from('notifications').delete().eq('profile_id', profileId),
+    supabase.from('notifications').delete().eq('from_profile_id', profileId),
+    supabase.from('follows').delete().eq('follower_id', profileId),
+    supabase.from('follows').delete().eq('following_id', profileId),
+    supabase.from('watch_party_participants').delete().eq('profile_id', profileId),
+    supabase.from('watch_party_messages').delete().eq('profile_id', profileId),
+  ]);
+
+  // Collections: delete items first, then collections themselves
+  const { data: collections } = await supabase
+    .from('collections')
+    .select('id')
+    .eq('profile_id', profileId);
+
+  if (collections && collections.length > 0) {
+    const collectionIds = collections.map((c) => c.id);
+    await supabase.from('collection_items').delete().in('collection_id', collectionIds);
+  }
+  await supabase.from('collections').delete().eq('profile_id', profileId);
+
   const { error } = await supabase
     .from("profiles")
     .delete()

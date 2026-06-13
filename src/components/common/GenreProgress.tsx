@@ -39,12 +39,12 @@ interface GenreProgressProps {
 }
 
 export default function GenreProgress({ genre }: GenreProgressProps) {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(() => {
+    if (typeof window === 'undefined') return 0;
+    return getVisits()[genre] || 0;
+  });
 
   useEffect(() => {
-    const visits = getVisits();
-    setCount(visits[genre] || 0);
-
     const handler = () => {
       const v = getVisits();
       setCount(v[genre] || 0);
