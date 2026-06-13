@@ -67,24 +67,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Collection not found or access denied' }, { status: 404 });
     }
 
-    // Get next order_index
-    const { data: existing } = await supabase
-      .from('collection_items')
-      .select('order_index')
-      .eq('collection_id', id)
-      .order('order_index', { ascending: false })
-      .limit(1);
-
-    const nextOrder = (existing && existing[0]?.order_index || 0) + 1;
-
-    const { error } = await supabase.from('collection_items').insert({
-      collection_id: id,
-      media_id: mediaId,
-      media_type: mediaType,
-      title: title || '',
-      poster_path: posterPath || null,
-      order_index: nextOrder,
-    });
+    // Atomic: single RPC handles MAX + INSERT in one transaction
+    const { data: inserted, error } = await supabase.rpc(
+      'insert_collection_item_atomically',
+      {
+        p_collection_id: id,
+        p_media_id: mediaId,
+        p_media_type: mediaType,
+        p_title: title || '',
+        p_poster_path: posterPath || null,
+      }
+    );
 
     if (error) {
       if (error.code === '23505') {

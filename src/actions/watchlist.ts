@@ -1,8 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireAuth, verifyProfileOwnership } from "@/lib/auth";
+import { purgeEdgeCache } from "@/lib/cloudflare-purge";
 
 const watchlistSchema = z.object({
   profile_id: z.string().min(1),
@@ -26,7 +28,15 @@ export async function addToWatchlist(data: z.infer<typeof watchlistSchema>) {
   );
 
   if (error) return { error: error.message };
-  revalidatePath("/");
+
+  // Dual invalidation: origin + edge
+  revalidateTag("user-watchlist");
+
+  // Ensure purgeEdgeCache runs in the background reliably
+  after(async () => {
+    await purgeEdgeCache("user-watchlist");
+  });
+
   return { success: true };
 }
 
@@ -42,7 +52,15 @@ export async function removeFromWatchlist(profileId: string, mediaId: number, me
     .eq("media_type", mediaType);
 
   if (error) return { error: error.message };
-  revalidatePath("/");
+
+  // Dual invalidation: origin + edge
+  revalidateTag("user-watchlist");
+
+  // Ensure purgeEdgeCache runs in the background reliably
+  after(async () => {
+    await purgeEdgeCache("user-watchlist");
+  });
+
   return { success: true };
 }
 

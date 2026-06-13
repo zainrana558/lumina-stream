@@ -1,8 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireAuth, verifyProfileOwnership } from "@/lib/auth";
+import { purgeEdgeCache } from "@/lib/cloudflare-purge";
 
 const ratingSchema = z.object({
   profile_id: z.string().min(1),
@@ -18,13 +20,27 @@ export async function setRating(data: z.infer<typeof ratingSchema>) {
   const parsed = ratingSchema.safeParse(data);
   if (!parsed.success) return { error: "Invalid data" };
 
-  const { error } = await supabase.from("ratings").upsert(
-    parsed.data,
-    { onConflict: "profile_id,media_id,media_type" }
+  // Atomic upsert via single RPC
+  const { error } = await supabase.rpc(
+    "upsert_rating_atomically",
+    {
+      p_profile_id: parsed.data.profile_id,
+      p_media_id: parsed.data.media_id,
+      p_media_type: parsed.data.media_type,
+      p_rating: parsed.data.rating,
+    }
   );
 
   if (error) return { error: error.message };
-  revalidatePath("/");
+
+  // Dual invalidation: origin + edge
+  revalidateTag("user-ratings");
+
+  // Ensure purgeEdgeCache runs in the background reliably
+  after(async () => {
+    await purgeEdgeCache("user-ratings");
+  });
+
   return { success: true };
 }
 
