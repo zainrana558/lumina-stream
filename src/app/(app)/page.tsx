@@ -59,7 +59,7 @@ async function getTMDBData() {
       action, comedy, scifi, animation,
       nowPlaying, airingToday, onTheAir, drama,
       thriller, crime, romance, family,
-      hiddenGems, acclaimed, documentary, warHistory,
+      hiddenGems, acclaimed, warHistory,
     ] = await Promise.all([
       // Core trending + popular
       safeFetch('/trending/all/week'),
@@ -85,9 +85,8 @@ async function getTMDBData() {
       // Curated collections
       safeFetch('/discover/movie', { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' }),
       safeFetch('/discover/movie', { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' }),
-      safeFetch('/discover/movie', { with_genres: '99', sort_by: 'popularity.desc' }),
       safeFetch('/discover/movie', { with_genres: '10752,36', sort_by: 'popularity.desc' }),
-    ]);
+    });
 
     const featured = trending.slice(0, 10).map(r => tmdbToMedia(r));
     const rows: RowData[] = [];
@@ -120,7 +119,6 @@ async function getTMDBData() {
     // ── Curated collections ──
     if (hiddenGems.length) rows.push({ title: 'Hidden Gems', sub: 'Underrated treasures waiting to be found', items: hiddenGems.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' } });
     if (acclaimed.length) rows.push({ title: 'Critically Acclaimed', sub: 'Certified hits with top ratings', items: acclaimed.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' } });
-    if (documentary.length) rows.push({ title: 'Documentary', sub: 'Real stories from the real world', items: documentary.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '99', sort_by: 'popularity.desc' } });
     if (warHistory.length) rows.push({ title: 'War & History', sub: 'Epic battles & lessons from the past', items: warHistory.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '10752,36', sort_by: 'popularity.desc' } });
 
     // Genre featured backdrops for portal cards (run in parallel with everything above)
@@ -129,7 +127,7 @@ async function getTMDBData() {
         const data = await tmdbFetch<{ results?: TMDBShow[]; total_results?: number }>(config.endpoint, config.params);
         const results = data.results || [];
         const withBackdrop = results.filter(r => r.backdrop_path);
-        const pick = withBackdrop[0] || results[0];
+        const pick = withBackdrop.length > 1 ? withBackdrop[Math.floor(Math.random() * withBackdrop.length)] : (withBackdrop[0] || results[0]);
         return { key, name: key.charAt(0).toUpperCase() + key.slice(1), backdrop: pick?.backdrop_path || null, title: pick?.title || pick?.name || '', count: data.total_results || results.length, tagline: GENRE_TAGLINES[key] || '' };
       } catch {
         return { key, name: key.charAt(0).toUpperCase() + key.slice(1), backdrop: null, title: '', count: 0, tagline: GENRE_TAGLINES[key] || '' };
