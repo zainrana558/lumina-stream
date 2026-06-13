@@ -111,14 +111,14 @@ export default function PlayerControls({
           }}>⏭</button>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {/* Speed dropdown */}
           <div style={{ position: 'relative' }}>
             <button className="f-mono"
               onClick={() => setSpeedOpen(!speedOpen)}
               style={{
                 padding: '6px 12px', borderRadius: 8, fontSize: '.65rem',
-                
+
                 background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.1)',
                 color: '#FFF5E8', cursor: 'pointer',
               }}
@@ -149,16 +149,16 @@ export default function PlayerControls({
           </div>
           {/* Subtitles */}
           <button className="f-cinzel" onClick={onToggleSubtitles} title="Toggle Subtitles" style={{
-            padding: '6px 10px', borderRadius: 8, fontSize: '.65rem',
+            padding: '7px 14px', borderRadius: 8, fontSize: '.65rem',
             background: subtitlesOn ? 'rgba(255,179,71,.15)' : 'rgba(255,255,255,.08)',
             border: `1px solid ${subtitlesOn ? 'rgba(255,179,71,.4)' : 'rgba(255,255,255,.1)'}`,
             color: subtitlesOn ? 'rgba(255,179,71,.9)' : '#FFF5E8', cursor: 'pointer',
-            
+            flexShrink: 0,
           }}>CC</button>
           {/* PiP */}
-          <button onClick={onPip} title="Picture in Picture" className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem' }}>⟶ PiP</button>
+          <button onClick={onPip} title="Picture in Picture" className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem', flexShrink: 0, whiteSpace: 'nowrap' }}>PiP</button>
           {/* Exit */}
-          <button onClick={onExit} className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem' }}>✕ Exit</button>
+          <button onClick={onExit} className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem', flexShrink: 0, whiteSpace: 'nowrap' }}>Exit</button>
         </div>
       </div>
     </div>
