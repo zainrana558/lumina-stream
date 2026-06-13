@@ -48,7 +48,7 @@ function setSecurityHeaders(response: NextResponse, pathname: string) {
         "media-src 'self' https: blob:",
         // frame-src whitelist — keep in sync with embed-proxy allowedHosts
         "frame-src 'self' https://vidsrc.fyi https://vidsrc.cc https://vidsrc.xyz https://vidsrc.to https://vidsrc.net https://vidsrc.pro https://vidsrc.app https://vidsrc.ic https://www.2embed.online https://autoembed.co https://vidphantom.com https://api.codespecters.com https://embed.su https://embedvip.com https://multiembed.mov https://moviesapi.club",
-        "connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.themoviedb.org https://*.upstash.io https://graphql.anilist.co https://accounts.google.com https://github.com",
+        "connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.themoviedb.org https://*.upstash.io https://graphql.anilist.co https://accounts.google.com https://github.com https://fonts.googleapis.com https://fonts.gstatic.com",
         "worker-src 'self' blob:",
       ].join("; ")
     );
