@@ -35,10 +35,15 @@ function NotificationBanner() {
     // - Permission is default (not yet asked)
     // - User hasn't dismissed the prompt before
     if (isSupported && permissionStatus === 'default' && !hasPromptBeenDismissed()) {
-      const timer = setTimeout(() => setVisible(true), 4000);
-      return () => clearTimeout(timer);
+      const showTimer = setTimeout(() => setVisible(true), 4000);
+      // Auto-dismiss 5.5 seconds after appearing
+      const hideTimer = setTimeout(() => {
+        dismissPrompt();
+        setVisible(false);
+      }, 9500); // 4s delay + 5.5s visible
+      return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
     }
-  }, [isSupported, permissionStatus, hasPromptBeenDismissed]);
+  }, [isSupported, permissionStatus, hasPromptBeenDismissed, dismissPrompt]);
 
   if (!visible) return null;
 
