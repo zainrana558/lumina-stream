@@ -11,6 +11,7 @@ import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
 import '@/styles/genre-romance.css';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 const ROMANCE_GENRES = ['Romance', 'Drama', 'Comedy', 'Fantasy', 'Animation', 'Music'];
 
@@ -25,8 +26,13 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
 
   useEffect(() => { trackGenreVisit('romance'); }, []);
 
+  const loadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  hasMoreRef.current = hasMore;
+
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    if (loadingRef.current || !hasMoreRef.current) return;
+    loadingRef.current = true;
     setLoadingMore(true);
     try {
       const nextPage = pageRef.current + 1;
@@ -43,8 +49,10 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
         });
         pageRef.current = nextPage;
       } else { setHasMore(false); }
-    } catch { /* silent — user can retry */ } finally { setLoadingMore(false); }
-  }, [loadingMore, hasMore]);
+    } catch { /* silent — user can retry */ } finally { loadingRef.current = false; setLoadingMore(false); }
+  }, []);
+
+  const { sentinelRef } = useInfiniteScroll(loadMore, hasMore, loadingMore);
 
   const filteredShows = useMemo(() => {
     let result = [...shows];
@@ -202,21 +210,23 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
               color: 'rgba(255,107,138,0.3)',  fontStyle: 'italic', letterSpacing: '.1em',
             }}>No results found</div>
           ) : filteredShows.map((s, i) => (
-            <div key={s.id} style={{ animation: `card-in .5s ${i * 0.05}s both` }}>
+            <div key={s.id}>
               <Card show={s} ring="linear-gradient(135deg,#FF4D6D,#FFB3C1,#FF4D6D,#FFD700)" />
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0 4rem' }}>
-          <button
-            onClick={loadMore}
-            disabled={loadingMore || !hasMore}
-            className="btn-g f-cinzel"
-            style={{ padding: '12px 32px', fontSize: '.82rem',  letterSpacing: '.06em', minWidth: 200, opacity: loadingMore ? 0.6 : 1, cursor: loadingMore ? 'wait' : 'pointer' }}
-          >
-            {loadingMore ? '✦ Loading...' : hasMore ? 'Load More' : '— End of catalog —'}
-          </button>
-        </div>
+        {/* Infinite scroll sentinel */}
+        <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
+        {loadingMore && (
+          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em' }}>
+            ✦ Loading...
+          </div>
+        )}
+        {!hasMore && (
+          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.2)', fontSize: '.75rem', letterSpacing: '.06em' }}>
+            — End of catalog —
+          </div>
+        )}
       </div>
   );
 }
