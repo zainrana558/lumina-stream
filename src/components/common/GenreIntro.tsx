@@ -69,13 +69,18 @@ export default function GenreIntro({ text, genre }: GenreIntroProps) {
               fontWeight: 'inherit',
               letterSpacing: 'inherit',
               color,
-              filter: isRevealed ? 'blur(0px)' : `blur(${s.blurPx}px)`,
+              /* Override inherited -webkit-text-fill-color: transparent from parent h1
+                 that uses background-clip: text for gradient. Without this, the span's
+                 text fill is transparent and only the parent's filter: drop-shadow
+                 (which rasterizes to a bitmap) is visible — causing permanent blur. */
+              WebkitTextFillColor: color,
+              filter: isRevealed ? 'none' : `blur(${s.blurPx}px)`,
               opacity: isRevealed ? 1 : 0,
               transform: isRevealed
                 ? (isCartoon ? `scale(1) rotate(0deg)` : 'translateX(0)')
                 : (isCartoon ? `scale(0.3) rotate(${(i % 2 === 0 ? -15 : 15)}deg)` : `translateX(${jx}px)`),
-              transition: `all ${isCartoon ? '0.4s cubic-bezier(.34,1.56,.64,1)' : '0.35s ease-out'}`,
-              textShadow: isRevealed ? `0 0 20px ${color}40` : 'none',
+              transition: `filter ${isCartoon ? '0.4s cubic-bezier(.34,1.56,.64,1)' : '0.35s ease-out'}, opacity ${isCartoon ? '0.4s cubic-bezier(.34,1.56,.64,1)' : '0.35s ease-out'}, transform ${isCartoon ? '0.4s cubic-bezier(.34,1.56,.64,1)' : '0.35s ease-out'}`,
+              textShadow: isRevealed ? `0 0 15px ${color}80, 0 0 30px ${color}40` : 'none',
               // mystery cursor blink on last char
               animation: (isMystery && i === chars.length - 1 && isRevealed) ? 'cursor-blink 1s step-end infinite' : 'none',
             }}

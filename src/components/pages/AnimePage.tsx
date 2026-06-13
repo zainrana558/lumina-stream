@@ -140,7 +140,7 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
             animation: 'g-flow 4s ease infinite',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 0 20px rgba(255,0,150,0.4)) drop-shadow(0 0 40px rgba(0,255,255,0.2))',
+            
             marginBottom: '0.5rem',
           }}><GenreIntro text="ANIME VAULT" genre="anime" /></h1>
           <p className="f-cinzel" style={{

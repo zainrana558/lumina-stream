@@ -183,7 +183,7 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
             animation: 'g-flow 5s ease infinite',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 0 20px rgba(195,155,211,0.3)) drop-shadow(0 0 40px rgba(255,215,0,0.15))',
+            
             marginBottom: '0.5rem',
             lineHeight: 1.1,
           }}><GenreIntro text="Fantasy" genre="fantasy" /></h1>
