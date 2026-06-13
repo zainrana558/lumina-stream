@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
       headers: {
         ...rateLimitHeaders(rl),
         'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+        'X-Cache-Category': 'tmdb-search',
       },
     });
   } catch (error: unknown) {

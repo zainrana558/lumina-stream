@@ -30,6 +30,18 @@ export async function GET(request: NextRequest) {
     const season = searchParams.get('season') as 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL' | undefined;
     const year = searchParams.get('year') ? parseInt(searchParams.get('year')!) : undefined;
 
+    // Map AniList query types to edge cache categories
+    const typeToCategory: Record<string, string> = {
+      trending: 'anilist-trending',
+      popular: 'anilist-popular',
+      seasonal: 'anilist-seasonal',
+      top: 'anilist-popular',
+      airing: 'anilist-airing',
+      upcoming: 'anilist-upcoming',
+      search: 'anilist-search',
+    };
+    const cacheCategory = typeToCategory[type] || 'anilist-search';
+
     let results;
 
     switch (type) {
@@ -66,7 +78,10 @@ export async function GET(request: NextRequest) {
       results: mediaItems,
       pageInfo: results.pageInfo,
     }, {
-      headers: rateLimitHeaders(rl),
+      headers: {
+        ...rateLimitHeaders(rl),
+        'X-Cache-Category': cacheCategory,
+      },
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';

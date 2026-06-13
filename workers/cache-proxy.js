@@ -95,16 +95,26 @@ const EDGE_TTL_PAGE   = 300;           // 5 minutes for ISR pages
 // Vercel strips s-maxage from API responses, so we use X-Cache-Category
 // header set by the API route to determine edge TTL.
 const API_CATEGORY_TTL = {
+  // TMDB categories
   trending:     900,         // 15 min
   popular:      1800,        // 30 min
   search:       900,         // 15 min
+  'tmdb-search': 1800,       // 30 min — /api/search multi-search
   details:      10800,       // 3 hours
   season:       10800,       // 3 hours
   discover:     1800,        // 30 min
+  'tmdb-discover': 1800,     // 30 min — /api/browse discover
   genre:        21600,       // 6 hours
   credits:      10800,       // 3 hours
   videos:       10800,       // 3 hours
   warm:         21600,       // 6 hours
+  // AniList categories
+  'anilist-trending':  900,  // 15 min — trending anime changes frequently
+  'anilist-popular':   1800, // 30 min — popular/top anime
+  'anilist-seasonal':  1800, // 30 min — seasonal anime lists
+  'anilist-airing':    900,  // 15 min — currently airing changes often
+  'anilist-upcoming':  3600, // 1 hour — upcoming season is stable
+  'anilist-search':    600,  // 10 min — search results, shorter to stay fresh
 };
 
 // ─── Determine edge cache TTL for a request ─────────────────────────────
