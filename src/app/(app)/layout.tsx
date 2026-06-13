@@ -73,22 +73,22 @@ function NotificationBanner() {
     }}>
       <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>🔔</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', color: '#FFB347', fontWeight: 600, marginBottom: 2, letterSpacing: '.04em' }}>
+        <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFB347', fontWeight: 600, marginBottom: 2, letterSpacing: '.04em' }}>
           Stay Updated
         </div>
-        <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.82rem', color: 'rgba(255,245,232,.6)', lineHeight: 1.4 }}>
+        <div className="f-crimson" style={{  fontSize: '.82rem', color: 'rgba(255,245,232,.6)', lineHeight: 1.4 }}>
           Enable notifications for new episode alerts?
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-        <button
+        <button className="f-cinzel"
           onClick={handleEnable}
           style={{
             padding: '7px 16px',
             borderRadius: '50px',
             border: 'none',
             cursor: 'pointer',
-            fontFamily: "'Cinzel',serif",
+            
             fontSize: '.68rem',
             fontWeight: 600,
             background: 'linear-gradient(175deg,#FFE566 0%,#FFB347 50%,#E07200 100%)',
@@ -99,14 +99,14 @@ function NotificationBanner() {
         >
           Enable
         </button>
-        <button
+        <button className="f-cinzel"
           onClick={handleDismiss}
           style={{
             padding: '7px 14px',
             borderRadius: '50px',
             border: 'none',
             cursor: 'pointer',
-            fontFamily: "'Cinzel',serif",
+            
             fontSize: '.68rem',
             fontWeight: 500,
             background: '#0C091A',

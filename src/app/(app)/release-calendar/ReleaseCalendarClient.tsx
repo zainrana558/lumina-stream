@@ -40,7 +40,7 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
           <span style={{ fontSize: '1.5rem' }}>📅</span>
           <h1 className="sec" style={{ fontSize: 'clamp(1.3rem,3vw,2rem)' }}>Release Calendar</h1>
         </div>
-        <p className="s2" style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.45)', fontSize: '1rem' }}>
+        <p className="s2 f-crimson" style={{  color: 'rgba(255,245,232,.45)', fontSize: '1rem' }}>
           Upcoming movie releases · {sortedMonths.length} months
         </p>
       </div>
@@ -62,8 +62,8 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                 borderBottom: '1px solid rgba(255,255,255,.06)',
                 animation: `card-in .5s ${monthIdx * 0.08}s both`,
               }}>
-                <h2 style={{
-                  fontFamily: "'Cinzel',serif",
+                <h2 className="f-cinzel" style={{
+                  
                   fontSize: 'clamp(1rem,2vw,1.3rem)',
                   color: '#FFF5E8',
                   fontWeight: 700,
@@ -71,10 +71,10 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                 }}>
                   {monthName} {yearStr}
                 </h2>
-                <span style={{
+                <span className="f-mono" style={{
                   fontSize: '.68rem',
                   color: 'rgba(255,179,71,.6)',
-                  fontFamily: "'JetBrains Mono',monospace",
+                  
                   background: '#0D0A1E',
                   padding: '2px 8px',
                   borderRadius: 6,
@@ -124,8 +124,8 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                         textAlign: 'center',
                         paddingTop: 2,
                       }}>
-                        <div style={{
-                          fontFamily: "'Cinzel',serif",
+                        <div className="f-cinzel" style={{
+                          
                           fontSize: '1.3rem',
                           fontWeight: 700,
                           color: CS[cs].acc,
@@ -133,10 +133,10 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                         }}>
                           {String(day).padStart(2, '0')}
                         </div>
-                        <div style={{
+                        <div className="f-cinzel" style={{
                           fontSize: '.58rem',
                           color: 'rgba(255,245,232,.3)',
-                          fontFamily: "'Cinzel',serif",
+                          
                           letterSpacing: '.08em',
                           textTransform: 'uppercase',
                         }}>
@@ -182,8 +182,8 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
 
                       {/* Title & Info */}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontFamily: "'Cinzel',serif",
+                        <div className="f-cinzel" style={{
+                          
                           fontWeight: 600,
                           fontSize: '.88rem',
                           color: '#FFF5E8',
@@ -194,10 +194,10 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                         }}>
                           {movie.title}
                         </div>
-                        <div style={{
+                        <div className="f-mono" style={{
                           fontSize: '.68rem',
                           color: 'rgba(255,245,232,.4)',
-                          fontFamily: "'JetBrains Mono',monospace",
+                          
                           marginBottom: isExpanded ? 8 : 0,
                         }}>
                           {formattedDate}
@@ -206,8 +206,8 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
 
                         {/* Expanded overview */}
                         {isExpanded && movie.overview && (
-                          <div style={{
-                            fontFamily: "'Crimson Pro',serif",
+                          <div className="f-crimson" style={{
+                            
                             fontSize: '.88rem',
                             color: 'rgba(255,245,232,.65)',
                             lineHeight: 1.7,

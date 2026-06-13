@@ -150,25 +150,25 @@ export default function AIMoodDetector({ onMoodDetected }: AIMoodDetectorProps) 
           overflow: 'hidden',
         }}
       >
-        <span style={{
+        <span className="f-cinzel" style={{
           fontSize: '1.1rem',
-          fontFamily: "'Cinzel',serif",
+          
           fontWeight: 700,
           color: 'rgba(78,208,196,.8)',
           filter: 'drop-shadow(0 0 6px rgba(78,208,196,.5))',
           animation: status === 'scanning' ? 'pulse-dot 1s ease-in-out infinite' : 'none',
         }}>AI</span>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <span style={{
-            fontFamily: "'Cinzel',serif", fontSize: 'clamp(.55rem,.72vw,.65rem)',
+          <span className="f-cinzel" style={{
+             fontSize: 'clamp(.55rem,.72vw,.65rem)',
             letterSpacing: '.14em', color: 'rgba(78,208,196,.6)',
             textTransform: 'uppercase', fontWeight: 600,
           }}>
             {status === 'scanning' ? 'Scanning...' : status === 'result' && mood ? `Your vibe: ${mood.name}` : status === 'error' ? 'Camera unavailable' : 'AI Mood'}
           </span>
           {status === 'result' && mood && (
-            <span style={{
-              fontFamily: "'Crimson Pro',serif", fontSize: '.66rem',
+            <span className="f-crimson" style={{
+               fontSize: '.66rem',
               color: `${mood.col}80`, fontStyle: 'italic',
               animation: 'fi .3s ease both',
             }}>

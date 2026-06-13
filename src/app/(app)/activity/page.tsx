@@ -45,7 +45,7 @@ export default function ActivityPage() {
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
         </div>
-        <h2 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to see activity</h2>
+        <h2 className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to see activity</h2>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
     );
@@ -58,7 +58,7 @@ export default function ActivityPage() {
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
         <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>Activity Feed</h1>
-        <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>
+        <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>
           See what you and people you follow have been watching
         </p>
       </div>
@@ -70,7 +70,7 @@ export default function ActivityPage() {
             { key: 'feed' as const, label: 'Following', icon: '👥' },
             { key: 'my' as const, label: 'My Activity', icon: '📋' },
           ]).map(t => (
-            <button
+            <button className="f-cinzel"
               key={t.key}
               onClick={() => setTab(t.key)}
               style={{
@@ -80,7 +80,7 @@ export default function ActivityPage() {
                   : 'rgba(255,255,255,.04)',
                 border: `1px solid ${tab === t.key ? 'rgba(139,120,255,.3)' : 'rgba(255,255,255,.06)'}`,
                 color: tab === t.key ? '#FFF5E8' : 'rgba(255,245,232,.4)',
-                fontFamily: "'Cinzel',serif", fontSize: '.72rem', fontWeight: tab === t.key ? 700 : 400,
+                 fontSize: '.72rem', fontWeight: tab === t.key ? 700 : 400,
                 cursor: 'pointer', transition: 'all .2s', letterSpacing: '.04em',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}

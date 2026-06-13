@@ -66,7 +66,7 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
     <div style={{ marginBottom: 44 }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16, paddingInline: 'clamp(1rem,5vw,3rem)' }}>
         <div>
-          {sub && <div style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, fontFamily: "'Cinzel',serif" }}>{sub}</div>}
+          {sub && <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>{sub}</div>}
           <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>{title}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -84,7 +84,7 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
         {/* Show More button at end of row */}
         {loadMoreEndpoint && hasMore && (
           <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'clamp(100px,15vw,150px)', cursor: 'pointer' }}>
-            <button
+            <button className="f-cinzel"
               onClick={handleShowMore}
               disabled={loadingMore}
               style={{
@@ -92,7 +92,7 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
                 borderRadius: 12, border: '1px solid rgba(255,179,71,.18)',
                 background: 'rgba(255,179,71,.04)',
                 color: loadingMore ? 'rgba(255,179,71,.4)' : 'rgba(255,179,71,.7)',
-                fontFamily: "'Cinzel',serif", fontSize: '.6rem',
+                 fontSize: '.6rem',
                 letterSpacing: '.06em', cursor: loadingMore ? 'wait' : 'pointer',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 gap: 6, transition: 'all .2s',

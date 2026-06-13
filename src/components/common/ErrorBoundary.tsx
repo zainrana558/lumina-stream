@@ -48,15 +48,15 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           }}>
             ⚠
           </div>
-          <h2 style={{
-            fontFamily: "'Cinzel Decorative',serif", fontWeight: 900, fontSize: '1.4rem',
+          <h2 className="f-cinzel-dec" style={{
+             fontWeight: 900, fontSize: '1.4rem',
             background: 'linear-gradient(135deg,#FFD700,#FFB347)', WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           }}>
             Something went wrong
           </h2>
-          <p style={{
-            fontFamily: "'Crimson Pro',serif", fontSize: '.95rem', color: 'rgba(255,245,232,.5)',
+          <p className="f-crimson" style={{
+             fontSize: '.95rem', color: 'rgba(255,245,232,.5)',
             maxWidth: 360, lineHeight: 1.6,
           }}>
             We hit an unexpected error. Please try again.

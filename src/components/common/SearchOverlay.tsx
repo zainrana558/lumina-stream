@@ -229,9 +229,9 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
           {(['shows', 'anime', 'people'] as const).map(tab => (
             <button
               key={tab}
-              className={`tab-btn${searchTab === tab ? ' on' : ''}`}
+              className={`tab-btn${searchTab === tab ? ' on' : ''} f-cinzel`}
               onClick={() => { setSearchTab(tab); setResults([]); setPersonResults([]); setSearched(false); }}
-              style={{ padding: '10px clamp(14px,3vw,24px)', background: 'none', border: 'none', outline: 'none', color: searchTab === tab ? 'var(--gold)' : 'rgba(255,245,232,.35)', transition: 'color .22s', fontFamily: "'Cinzel',serif", fontSize: '.82rem', letterSpacing: '.06em', cursor: 'pointer' }}
+              style={{ padding: '10px clamp(14px,3vw,24px)', background: 'none', border: 'none', outline: 'none', color: searchTab === tab ? 'var(--gold)' : 'rgba(255,245,232,.35)', transition: 'color .22s',  fontSize: '.82rem', letterSpacing: '.06em', cursor: 'pointer' }}
             >
               {tab === 'shows' ? '🎬 Shows' : tab === 'anime' ? '🎌 Anime' : '👤 People'}
             </button>
@@ -248,8 +248,8 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
           <div style={{ marginBottom: '1.2rem' }}>
             <button
               onClick={() => setShowFilters(f => !f)}
-              className="btn-g"
-              style={{ padding: '6px 16px', fontSize: '.72rem', fontFamily: "'Cinzel',serif", display: 'flex', alignItems: 'center', gap: 6, marginBottom: showFilters ? '.75rem' : 0 }}
+              className="btn-g f-cinzel"
+              style={{ padding: '6px 16px', fontSize: '.72rem',  display: 'flex', alignItems: 'center', gap: 6, marginBottom: showFilters ? '.75rem' : 0 }}
             >
               <span style={{ transition: 'transform .25s', display: 'inline-block', transform: showFilters ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
               Filters{hasActiveFilters ? ' · Active' : ''}
@@ -263,7 +263,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
         )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '2.5rem', color: 'rgba(255,245,232,.4)', fontFamily: "'Cinzel',serif", fontSize: '.82rem', letterSpacing: '.1em' }}>
+          <div className="f-cinzel" style={{ textAlign: 'center', padding: '2.5rem', color: 'rgba(255,245,232,.4)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
             <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚡</div>
             <div>Searching…</div>
           </div>
@@ -293,13 +293,13 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
                   <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg,#8B78FF55,#8B78FF22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0, boxShadow: '3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22)' }}>👤</div>
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: '.88rem', color: '#FFF5E8', marginBottom: 3 }}>{p.name}</div>
+                  <div className="f-cinzel" style={{  fontWeight: 600, fontSize: '.88rem', color: '#FFF5E8', marginBottom: 3 }}>{p.name}</div>
                   <div style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)', marginBottom: 2 }}>{p.known_for_department}</div>
-                  <div style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Crimson Pro',serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div className="f-crimson" style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.3)',  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {p.known_for?.slice(0, 3).map((kf) => kf.title || kf.name).join(', ') || 'No known works'}
                   </div>
                 </div>
-                <span style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.25)', fontFamily: "'Cinzel',serif", flexShrink: 0 }}>→</span>
+                <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.25)',  flexShrink: 0 }}>→</span>
               </div>
             ))}
           </div>
@@ -317,7 +317,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
                   <div style={{ width: 42, height: 42, borderRadius: 10, background: CS[s.cs].bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>{CS[s.cs].em}</div>
                 )}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Cinzel',serif", fontWeight: 600, fontSize: '.86rem', color: '#FFF5E8', marginBottom: 3 }}>{s.title}</div>
+                  <div className="f-cinzel" style={{  fontWeight: 600, fontSize: '.86rem', color: '#FFF5E8', marginBottom: 3 }}>{s.title}</div>
                   <div style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)' }}>{s.genre[0]} · {s.yr}</div>
                 </div>
                 <div className="badge-r">⭐ {s.r}</div>
@@ -326,14 +326,14 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
             })}
           </div>
         ) : searched && q.length > 1 ? (
-          <div style={{ textAlign: 'center', padding: '2.5rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", fontSize: '.82rem', letterSpacing: '.1em' }}>✦ No results ✦</div>
+          <div className="f-cinzel" style={{ textAlign: 'center', padding: '2.5rem', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>✦ No results ✦</div>
         ) : results.length > 0 && hasMoreResults ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem 0' }}>
             <button
               onClick={loadMoreSearch}
               disabled={loading}
-              className="btn-g"
-              style={{ padding: '10px 28px', fontSize: '.78rem', fontFamily: "'Cinzel',serif", letterSpacing: '.06em', opacity: loading ? 0.6 : 1, cursor: loading ? 'wait' : 'pointer' }}
+              className="btn-g f-cinzel"
+              style={{ padding: '10px 28px', fontSize: '.78rem',  letterSpacing: '.06em', opacity: loading ? 0.6 : 1, cursor: loading ? 'wait' : 'pointer' }}
             >
               {loading ? '✦ Loading...' : 'Show More Results'}
             </button>
@@ -341,8 +341,8 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
         ) : recentSearches.length > 0 ? (
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.6rem' }}>
-              <span style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", letterSpacing: '.1em' }}>RECENT SEARCHES</span>
-              <button onClick={() => { clearSearchHistory(); setRecentSearches([]); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.58rem', color: 'rgba(255,107,138,.6)', fontFamily: "'Cinzel',serif", letterSpacing: '.06em' }}>Clear all</button>
+              <span className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>RECENT SEARCHES</span>
+              <button className="f-cinzel" onClick={() => { clearSearchHistory(); setRecentSearches([]); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.58rem', color: 'rgba(255,107,138,.6)',  letterSpacing: '.06em' }}>Clear all</button>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.45rem' }}>
               {recentSearches.slice(0, 8).map(term => (

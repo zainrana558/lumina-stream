@@ -86,7 +86,7 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
         {/* Media type toggle */}
         <div style={{ display: 'flex', gap: 2, background: '#090716', borderRadius: 10, padding: 2, boxShadow: 'inset 2px 2px 6px rgba(0,0,0,.6),inset -1px -1px 3px rgba(35,20,75,.15)' }}>
           {(['all', 'movie', 'tv'] as const).map(t => (
-            <button
+            <button className="f-cinzel"
               key={t}
               onClick={() => handleChange('mediaType', t)}
               style={{
@@ -94,7 +94,7 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
                 borderRadius: 8,
                 border: 'none',
                 fontSize: '.68rem',
-                fontFamily: "'Cinzel',serif",
+                
                 cursor: 'pointer',
                 background: localFilters.mediaType === t ? 'var(--gold)' : 'transparent',
                 color: localFilters.mediaType === t ? '#05020A' : 'rgba(255,245,232,.4)',
@@ -195,7 +195,7 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
       {/* Active filter chips */}
       {activeFilters.length > 0 && (
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", letterSpacing: '.08em' }}>FILTERS:</span>
+          <span className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.3)',  letterSpacing: '.08em' }}>FILTERS:</span>
           {activeFilters.map(f => (
             <span
               key={f.key}
@@ -207,11 +207,11 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
               <span style={{ opacity: 0.5 }}>✕</span>
             </span>
           ))}
-          <button
+          <button className="f-cinzel"
             onClick={clearAll}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '.6rem', color: '#FF6B8A', fontFamily: "'Cinzel',serif",
+              fontSize: '.6rem', color: '#FF6B8A', 
               padding: '3px 8px',
             }}
           >

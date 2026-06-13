@@ -92,7 +92,7 @@ export default function ActivityFeed({ feedMode = false }: { feedMode?: boolean 
   if (!user || !profile) {
     return (
       <div style={{ textAlign: 'center', padding: '6rem 2rem' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>Sign in to see activity</div>
+        <div className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>Sign in to see activity</div>
         <button className="btn-p" onClick={() => router.push('/login')} style={{ marginTop: '1.2rem' }}>Sign In</button>
       </div>
     );
@@ -103,10 +103,10 @@ export default function ActivityFeed({ feedMode = false }: { feedMode?: boolean 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
         {activities.length === 0 && !loading && (
           <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: '1rem', color: 'rgba(255,245,232,.4)', marginBottom: '.5rem' }}>
+            <div className="f-cinzel" style={{  fontSize: '1rem', color: 'rgba(255,245,232,.4)', marginBottom: '.5rem' }}>
               {feedMode ? 'No activity from people you follow yet' : 'No activity recorded yet'}
             </div>
-            <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.85rem', color: 'rgba(255,245,232,.25)' }}>
+            <div className="f-crimson" style={{  fontSize: '.85rem', color: 'rgba(255,245,232,.25)' }}>
               {feedMode ? 'Follow people to see their activity here' : 'Start watching shows to see your activity here'}
             </div>
             {feedMode && (
@@ -157,7 +157,7 @@ export default function ActivityFeed({ feedMode = false }: { feedMode?: boolean 
 
               {/* Text */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '.72rem', color: '#FFF5E8', fontFamily: "'Cinzel',serif", lineHeight: 1.4 }}>
+                <div className="f-cinzel" style={{ fontSize: '.72rem', color: '#FFF5E8',  lineHeight: 1.4 }}>
                   <span style={{ fontWeight: 700, color: config.color }}>{activity.profile.name}</span>
                   {' '}
                   <span style={{ color: 'rgba(255,245,232,.55)' }}>{config.verb}</span>
@@ -165,17 +165,17 @@ export default function ActivityFeed({ feedMode = false }: { feedMode?: boolean 
                     <span style={{ fontWeight: 600, color: '#FFF5E8' }}> {activity.title}</span>
                   )}
                   {epInfo && (
-                    <span style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.35)', fontFamily: "'JetBrains Mono',monospace", marginLeft: 4 }}>
+                    <span className="f-mono" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.35)',  marginLeft: 4 }}>
                       {epInfo}
                     </span>
                   )}
                   {ratingVal && (
-                    <span style={{ fontSize: '.58rem', color: '#FFE566', fontFamily: "'JetBrains Mono',monospace", marginLeft: 4 }}>
+                    <span className="f-mono" style={{ fontSize: '.58rem', color: '#FFE566',  marginLeft: 4 }}>
                       {ratingVal}
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: '.5rem', color: 'rgba(255,245,232,.22)', fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
+                <div className="f-mono" style={{ fontSize: '.5rem', color: 'rgba(255,245,232,.22)',  marginTop: 2 }}>
                   {timeAgo(activity.created_at)}
                 </div>
               </div>
@@ -198,7 +198,7 @@ export default function ActivityFeed({ feedMode = false }: { feedMode?: boolean 
       {/* Infinite scroll loader */}
       {hasMore && <div ref={loaderRef} style={{ height: 60 }} />}
       {loading && page > 1 && (
-        <div style={{ textAlign: 'center', padding: '1rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", fontSize: '.72rem' }}>
+        <div className="f-cinzel" style={{ textAlign: 'center', padding: '1rem', color: 'rgba(255,245,232,.3)',  fontSize: '.72rem' }}>
           <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite' }}>✦</div>
         </div>
       )}

@@ -27,7 +27,7 @@ export default function ShareButton({ title, id }: { title: string; id: number }
   };
 
   return (
-    <button
+    <button className="f-cinzel"
       onClick={handleShare}
       title="Share"
       style={{
@@ -35,7 +35,7 @@ export default function ShareButton({ title, id }: { title: string; id: number }
         background: shared ? 'rgba(16,185,129,.15)' : 'rgba(255,255,255,.06)',
         border: `1px solid ${shared ? 'rgba(16,185,129,.4)' : 'rgba(255,255,255,.1)'}`,
         color: shared ? 'rgba(16,185,129,.8)' : '#FFF5E8',
-        fontFamily: "'Cinzel',serif", fontSize: '.78rem',
+         fontSize: '.78rem',
         cursor: 'pointer', transition: 'all .2s',
         display: 'flex', alignItems: 'center', gap: 6,
       }}

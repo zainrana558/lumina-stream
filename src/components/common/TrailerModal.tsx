@@ -56,8 +56,8 @@ export default function TrailerModal({ trailers, showTitle, onClose }: {
         <div style={{ padding: '1.2rem 1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div>
-              <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: '1rem', color: '#FFF5E8' }}>{showTitle}</div>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', color: 'rgba(255,245,232,.5)', marginTop: 2 }}>{trailer.name}</div>
+              <div className="f-cinzel-dec" style={{  fontSize: '1rem', color: '#FFF5E8' }}>{showTitle}</div>
+              <div className="f-cinzel" style={{  fontSize: '.72rem', color: 'rgba(255,245,232,.5)', marginTop: 2 }}>{trailer.name}</div>
             </div>
             <button onClick={onClose} className="btn-g" style={{ padding: '8px 16px', fontSize: '.72rem' }}>✕ Close</button>
           </div>

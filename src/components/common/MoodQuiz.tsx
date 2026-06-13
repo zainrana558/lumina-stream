@@ -132,9 +132,9 @@ export default function MoodQuiz() {
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <span style={{ fontFamily: "'Cinzel',serif", fontSize: 'clamp(.55rem,.72vw,.65rem)', letterSpacing: '.14em', color: 'rgba(139,120,255,.6)', textTransform: 'uppercase', fontWeight: 600 }}>Mood Quiz</span>
+          <span className="f-cinzel" style={{  fontSize: 'clamp(.55rem,.72vw,.65rem)', letterSpacing: '.14em', color: 'rgba(139,120,255,.6)', textTransform: 'uppercase', fontWeight: 600 }}>Mood Quiz</span>
           {lastMood && (
-            <span style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.68rem', color: 'rgba(255,245,232,.5)', fontStyle: 'italic' }}>
+            <span className="f-crimson" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.5)', fontStyle: 'italic' }}>
               {lastMood}
             </span>
           )}
@@ -181,8 +181,8 @@ export default function MoodQuiz() {
             {/* Quiz content */}
             {!result ? (
               <>
-                <h3 style={{
-                  fontFamily: "'Cinzel',serif", fontSize: 'clamp(.95rem,1.3vw,1.15rem)',
+                <h3 className="f-cinzel" style={{
+                   fontSize: 'clamp(.95rem,1.3vw,1.15rem)',
                   color: '#FFF5E8', textAlign: 'center', marginBottom: '1.5rem',
                   fontWeight: 700, letterSpacing: '.04em',
                   animation: 'fi .3s ease both',
@@ -218,34 +218,34 @@ export default function MoodQuiz() {
                         e.currentTarget.style.boxShadow = '4px 4px 12px rgba(0,0,0,.7), -2px -2px 6px rgba(45,25,90,.2), inset 0 1px 0 rgba(255,255,255,.04)';
                       }}
                     >
-                      <span style={{
+                      <span className="f-cinzel" style={{
                         fontSize: 'clamp(1.6rem,3vw,2.2rem)',
-                        fontFamily: "'Cinzel',serif",
+                        
                         fontWeight: 700,
                         color: '#8B78FF',
                       }}>{opt.label[0].toUpperCase()}</span>
-                      <span style={{ fontFamily: "'Cinzel',serif", fontSize: 'clamp(.62rem,.78vw,.72rem)', color: 'rgba(255,245,232,.7)', letterSpacing: '.06em' }}>{opt.label}</span>
+                      <span className="f-cinzel" style={{  fontSize: 'clamp(.62rem,.78vw,.72rem)', color: 'rgba(255,245,232,.7)', letterSpacing: '.06em' }}>{opt.label}</span>
                     </button>
                   ))}
                 </div>
               </>
             ) : info ? (
               <div style={{ textAlign: 'center', animation: 'eu .4s cubic-bezier(.34,1.56,.64,1) both' }}>
-                <div style={{
+                <div className="f-cinzel-dec" style={{
                   fontSize: '3.5rem', marginBottom: '1rem',
-                  fontFamily: "'Cinzel Decorative',serif", fontWeight: 900,
+                   fontWeight: 900,
                   filter: `drop-shadow(0 0 20px ${info.col}50)`,
                   animation: 'float 3s ease-in-out infinite',
                   color: info.col,
                 }}>{result[0]}</div>
-                <h3 style={{
-                  fontFamily: "'Cinzel Decorative',serif", fontWeight: 900,
+                <h3 className="f-cinzel-dec" style={{
+                   fontWeight: 900,
                   fontSize: 'clamp(1.5rem,3vw,2rem)', marginBottom: '.75rem',
                   background: `linear-gradient(135deg, ${info.col}, #FFB347)`,
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 }}>{result}</h3>
-                <p style={{
-                  fontFamily: "'Crimson Pro',serif", fontSize: '.95rem',
+                <p className="f-crimson" style={{
+                   fontSize: '.95rem',
                   color: 'rgba(255,245,232,.6)', lineHeight: 1.65, marginBottom: '1.5rem',
                   fontStyle: 'italic',
                 }}>{info.desc}</p>

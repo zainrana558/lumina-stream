@@ -109,7 +109,7 @@ export default function YearInReviewPage() {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ fontSize: '3rem', opacity: .3 }}>🌟</div>
-        <h2 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to see your year in review</h2>
+        <h2 className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to see your year in review</h2>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
     );
@@ -117,7 +117,7 @@ export default function YearInReviewPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", letterSpacing: '.1em' }}>
+      <div className="f-cinzel" style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>
         <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
         <div>Compiling your {year}...</div>
       </div>
@@ -132,8 +132,8 @@ export default function YearInReviewPage() {
         </div>
         <div style={{ padding: '0 ' + P + ' 5.5rem', position: 'relative', zIndex: 3, textAlign: 'center', paddingTop: '4rem' }}>
           <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>🌟</div>
-          <h3 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>Not enough data for {year} yet</h3>
-          <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start watching to build your year-in-review</p>
+          <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>Not enough data for {year} yet</h3>
+          <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start watching to build your year-in-review</p>
           <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
         </div>
       </div>
@@ -200,8 +200,8 @@ export default function YearInReviewPage() {
         textAlign: 'center', padding: '3rem ' + P + ' 2.5rem',
         position: 'relative', zIndex: 3,
       }}>
-        <div className="s1" style={{
-          fontSize: '.65rem', fontFamily: "'Cinzel',serif",
+        <div className="s1 f-cinzel" style={{
+          fontSize: '.65rem', 
           letterSpacing: '.2em', color: '#FFB347', marginBottom: '.6rem',
         }}>YEAR IN REVIEW</div>
         <h1 className="h1 s2" style={{
@@ -210,7 +210,7 @@ export default function YearInReviewPage() {
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           marginBottom: '.4rem',
         }}>Your {year} at a Glance</h1>
-        <p className="s3" style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.4)', fontSize: '1.05rem' }}>
+        <p className="s3 f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontSize: '1.05rem' }}>
           A look back at {profile.name}&apos;s streaming journey
         </p>
       </section>
@@ -224,10 +224,10 @@ export default function YearInReviewPage() {
             border: '1px solid rgba(255,179,71,.15)',
           }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>⏱</div>
-            <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: 'clamp(2rem,4vw,3.2rem)', color: '#FFB347' }}>
+            <div className="f-cinzel-dec" style={{  fontSize: 'clamp(2rem,4vw,3.2rem)', color: '#FFB347' }}>
               <AnimatedCounter target={stats.totalHours} suffix="h" />
             </div>
-            <div style={{ fontSize: '.7rem', fontFamily: "'Cinzel',serif", color: 'rgba(255,245,232,.4)', letterSpacing: '.08em', marginTop: '.3rem' }}>Hours Watched</div>
+            <div className="f-cinzel" style={{ fontSize: '.7rem',  color: 'rgba(255,245,232,.4)', letterSpacing: '.08em', marginTop: '.3rem' }}>Hours Watched</div>
           </div>
 
           <div className="neo-raised s1" style={{
@@ -236,10 +236,10 @@ export default function YearInReviewPage() {
             border: '1px solid rgba(139,120,255,.15)',
           }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🎬</div>
-            <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: 'clamp(2rem,4vw,3.2rem)', color: '#8B78FF' }}>
+            <div className="f-cinzel-dec" style={{  fontSize: 'clamp(2rem,4vw,3.2rem)', color: '#8B78FF' }}>
               <AnimatedCounter target={stats.totalTitles} />
             </div>
-            <div style={{ fontSize: '.7rem', fontFamily: "'Cinzel',serif", color: 'rgba(255,245,232,.4)', letterSpacing: '.08em', marginTop: '.3rem' }}>Titles Watched</div>
+            <div className="f-cinzel" style={{ fontSize: '.7rem',  color: 'rgba(255,245,232,.4)', letterSpacing: '.08em', marginTop: '.3rem' }}>Titles Watched</div>
           </div>
 
           <div className="neo-raised s1" style={{
@@ -248,10 +248,10 @@ export default function YearInReviewPage() {
             border: '1px solid rgba(255,107,138,.15)',
           }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🔥</div>
-            <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: 'clamp(2rem,4vw,3.2rem)', color: '#FF6B8A' }}>
+            <div className="f-cinzel-dec" style={{  fontSize: 'clamp(2rem,4vw,3.2rem)', color: '#FF6B8A' }}>
               <AnimatedCounter target={stats.streak} suffix="d" />
             </div>
-            <div style={{ fontSize: '.7rem', fontFamily: "'Cinzel',serif", color: 'rgba(255,245,232,.4)', letterSpacing: '.08em', marginTop: '.3rem' }}>Best Streak</div>
+            <div className="f-cinzel" style={{ fontSize: '.7rem',  color: 'rgba(255,245,232,.4)', letterSpacing: '.08em', marginTop: '.3rem' }}>Best Streak</div>
           </div>
         </div>
 
@@ -275,10 +275,10 @@ export default function YearInReviewPage() {
                 boxShadow: 'inset 0 2px 8px rgba(0,0,0,.4)',
               }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: '1.2rem', color: '#FFF5E8' }}>
+                  <div className="f-cinzel-dec" style={{  fontSize: '1.2rem', color: '#FFF5E8' }}>
                     {stats.totalTitles}
                   </div>
-                  <div style={{ fontSize: '.5rem', fontFamily: "'Cinzel',serif", color: 'rgba(255,245,232,.35)', letterSpacing: '.08em' }}>TITLES</div>
+                  <div className="f-cinzel" style={{ fontSize: '.5rem',  color: 'rgba(255,245,232,.35)', letterSpacing: '.08em' }}>TITLES</div>
                 </div>
               </div>
             </div>
@@ -288,8 +288,8 @@ export default function YearInReviewPage() {
               {genreSegments.map(g => (
                 <div key={g.name} style={{ display: 'flex', alignItems: 'center', gap: '.6rem' }}>
                   <div style={{ width: 10, height: 10, borderRadius: 3, background: g.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: '.72rem', fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.6)' }}>{g.name}</span>
-                  <span style={{ fontSize: '.65rem', fontFamily: "'JetBrains Mono',monospace", color: 'rgba(255,245,232,.35)', marginLeft: 'auto' }}>{g.pct}%</span>
+                  <span className="f-crimson" style={{ fontSize: '.72rem',  color: 'rgba(255,245,232,.6)' }}>{g.name}</span>
+                  <span className="f-mono" style={{ fontSize: '.65rem',  color: 'rgba(255,245,232,.35)', marginLeft: 'auto' }}>{g.pct}%</span>
                 </div>
               ))}
             </div>
@@ -310,7 +310,7 @@ export default function YearInReviewPage() {
                     width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                     background: i < 3 ? 'linear-gradient(135deg,#FFB347,#FF6B8A)' : 'linear-gradient(135deg,#211D3A,#19162E)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: "'Cinzel Decorative',serif", fontSize: '.85rem',
+                     fontSize: '.85rem',
                     color: i < 3 ? '#05020A' : '#FFF5E8',
                     boxShadow: i < 3 ? '0 0 12px rgba(255,179,71,.3)' : '3px 3px 8px rgba(0,0,0,.5)',
                   }}>
@@ -327,8 +327,8 @@ export default function YearInReviewPage() {
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.82rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{show.title}</div>
-                    <div style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.35)', fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>
+                    <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{show.title}</div>
+                    <div className="f-mono" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.35)',  marginTop: 3 }}>
                       {show.count} {show.count === 1 ? 'view' : 'views'}
                     </div>
                   </div>
@@ -350,7 +350,7 @@ export default function YearInReviewPage() {
               return (
                 <div key={m.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, animation: `el .3s ${0.8 + i * 0.04}s both` }}>
                   {m.count > 0 && (
-                    <div style={{ fontSize: '.48rem', fontFamily: "'JetBrains Mono',monospace", color: '#FFB347' }}>{m.count}</div>
+                    <div className="f-mono" style={{ fontSize: '.48rem',  color: '#FFB347' }}>{m.count}</div>
                   )}
                   <div style={{
                     width: '100%', height, borderRadius: 4,
@@ -360,7 +360,7 @@ export default function YearInReviewPage() {
                     boxShadow: m.count > 0 ? '0 0 8px rgba(139,120,255,.2)' : 'none',
                     minWidth: 8,
                   }} />
-                  <div style={{ fontSize: '.42rem', fontFamily: "'Cinzel',serif", color: 'rgba(255,245,232,.3)', letterSpacing: '.04em' }}>{m.label}</div>
+                  <div className="f-cinzel" style={{ fontSize: '.42rem',  color: 'rgba(255,245,232,.3)', letterSpacing: '.04em' }}>{m.label}</div>
                 </div>
               );
             })}
@@ -372,7 +372,7 @@ export default function YearInReviewPage() {
           <button className="btn-p" onClick={handleShare} style={{ fontSize: '.85rem', padding: '.85rem 2rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <span>📤</span> Share Your {year}
           </button>
-          <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.25)', fontSize: '.82rem', marginTop: '.8rem', fontStyle: 'italic' }}>
+          <p className="f-crimson" style={{  color: 'rgba(255,245,232,.25)', fontSize: '.82rem', marginTop: '.8rem', fontStyle: 'italic' }}>
             Share your streaming year with friends
           </p>
         </div>

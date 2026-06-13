@@ -40,9 +40,9 @@ export default function CountdownTimer({ targetDate, label = 'Next Episode airs 
     }}>
       <span style={{ fontSize: '.9rem' }}>⏰</span>
       <div>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.6rem', color: 'rgba(255,179,71,.6)', letterSpacing: '.1em' }}>{label.toUpperCase()}</div>
-        <div style={{
-          fontFamily: "'JetBrains Mono',monospace", fontSize: '.82rem',
+        <div className="f-cinzel" style={{  fontSize: '.6rem', color: 'rgba(255,179,71,.6)', letterSpacing: '.1em' }}>{label.toUpperCase()}</div>
+        <div className="f-mono" style={{
+           fontSize: '.82rem',
           color: 'rgba(255,179,71,.9)', fontWeight: 600,
         }}>{timeLeft}</div>
       </div>

@@ -17,14 +17,14 @@ export default function SkipButton({ type, onSkip }: { type: 'intro' | 'credits'
   if (!visible || dismissed) return null;
 
   return (
-    <button
+    <button className="f-cinzel"
       onClick={() => { setDismissed(true); onSkip(); }}
       style={{
         position: 'absolute', bottom: 90, right: 24, zIndex: 5,
         padding: '10px 22px', borderRadius: 8,
         background: 'rgba(0,0,0,.75)', border: '1px solid rgba(255,255,255,.2)',
         backdropFilter: 'blur(8px)',
-        color: '#FFF5E8', fontFamily: "'Cinzel',serif",
+        color: '#FFF5E8', 
         fontSize: '.82rem', fontWeight: 600, letterSpacing: '.04em',
         cursor: 'pointer', transition: 'all .25s',
         boxShadow: '2px 2px 12px rgba(0,0,0,.5)',

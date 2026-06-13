@@ -41,7 +41,7 @@ export default function SettingsPage() {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ fontSize: '3rem', opacity: .3 }}>⚙️</div>
-        <h2 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to access settings</h2>
+        <h2 className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to access settings</h2>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
     );
@@ -60,7 +60,7 @@ export default function SettingsPage() {
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
         <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>⚙️ Settings</h1>
-        <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>
+        <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>
           Manage your account, preferences, and privacy
         </p>
       </div>
@@ -70,14 +70,14 @@ export default function SettingsPage() {
         <nav style={{ display: 'none', width: 220, flexShrink: 0 }} className="settings-sidebar">
           <div style={{ position: 'sticky', top: 'clamp(70px,8vw,90px)', display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
             {SECTIONS.map((section) => (
-              <button
+              <button className="f-cinzel"
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '.65rem',
                   padding: '.65rem .9rem', borderRadius: 10,
                   border: 'none', cursor: 'pointer', textAlign: 'left',
-                  fontFamily: "'Cinzel',serif", fontSize: '.68rem',
+                   fontSize: '.68rem',
                   letterSpacing: '.04em', transition: 'all .2s',
                   background: activeSection === section.id
                     ? 'linear-gradient(135deg,rgba(255,179,71,.12),rgba(255,107,138,.08))'
@@ -101,14 +101,14 @@ export default function SettingsPage() {
         <div style={{ display: 'none', width: '100%', marginBottom: '.5rem' }} className="settings-mobile-tabs">
           <div style={{ display: 'flex', gap: '.4rem', overflowX: 'auto', paddingBottom: '.5rem', WebkitOverflowScrolling: 'touch' }}>
             {SECTIONS.map((section) => (
-              <button
+              <button className="f-cinzel"
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '.4rem',
                   padding: '.5rem .75rem', borderRadius: 20,
                   border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-                  fontFamily: "'Cinzel',serif", fontSize: '.6rem',
+                   fontSize: '.6rem',
                   letterSpacing: '.04em', transition: 'all .2s', flexShrink: 0,
                   background: activeSection === section.id
                     ? 'linear-gradient(135deg,rgba(255,179,71,.15),rgba(255,107,138,.1))'
@@ -155,12 +155,12 @@ export default function SettingsPage() {
 
       {/* Toast */}
       {toast && (
-        <div style={{
+        <div className="f-cinzel" style={{
           position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
           zIndex: 9999, padding: '10px 20px', borderRadius: 12,
           background: 'linear-gradient(135deg,rgba(255,179,71,.2),rgba(255,107,138,.15))',
           border: '1px solid rgba(255,179,71,.3)',
-          fontFamily: "'Cinzel',serif", fontSize: '.72rem',
+           fontSize: '.72rem',
           color: '#FFF5E8', letterSpacing: '.04em',
           boxShadow: '0 4px 20px rgba(0,0,0,.6)',
           animation: 'card-in .3s both',
@@ -203,12 +203,12 @@ function AccountSection({
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <div style={{
+          <div className="f-cinzel" style={{
             width: 48, height: 48, borderRadius: '50%', overflow: 'hidden',
             background: profile.avatar_url ? undefined : 'linear-gradient(135deg,#8B78FF,#FF6B8A)',
             flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '1.1rem', fontWeight: 600, color: '#FFF5E8',
-            fontFamily: "'Cinzel',serif",
+            
           }}>
             {profile.avatar_url ? (
               <Image src={profile.avatar_url} alt={profile.name} width={48} height={48} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -217,8 +217,8 @@ function AccountSection({
             )}
           </div>
           <div>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.9rem', color: '#FFF5E8' }}>{profile.name}</div>
-            <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.35)', fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
+            <div className="f-cinzel" style={{  fontSize: '.9rem', color: '#FFF5E8' }}>{profile.name}</div>
+            <div className="f-mono" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.35)',  marginTop: 2 }}>
               {user.email || 'No email'}
             </div>
           </div>
@@ -236,14 +236,14 @@ function AccountSection({
       </div>
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em', marginBottom: '.8rem' }}>
+        <div className="f-cinzel" style={{  fontSize: '.72rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em', marginBottom: '.8rem' }}>
           DANGER ZONE
         </div>
-        <button
+        <button className="f-cinzel"
           onClick={() => { if (confirm('Are you sure you want to sign out?')) { onSignOut(); } }}
           style={{
             width: '100%', padding: '.7rem', borderRadius: 10, border: 'none',
-            cursor: 'pointer', fontFamily: "'Cinzel',serif", fontSize: '.72rem',
+            cursor: 'pointer',  fontSize: '.72rem',
             letterSpacing: '.06em', transition: 'all .2s',
             background: 'rgba(255,74,74,.1)', color: '#FF4A4A',
           }}
@@ -289,23 +289,23 @@ function ProfileSection({ profile, showToast }: { profile: any; showToast: (msg:
       <SectionHeader icon="🎭" title="Profile & Avatar" subtitle="Customize your viewing identity" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
+        <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
           DISPLAY NAME
         </div>
-        <input
+        <input className="f-crimson"
           value={name}
           onChange={(e) => setName(e.target.value.slice(0, 20))}
           style={{
             width: '100%', padding: '.65rem .9rem', borderRadius: 10,
             background: '#0C091A', border: '1px solid rgba(255,255,255,.08)',
             color: '#FFF5E8', fontSize: '.85rem',
-            fontFamily: "'Crimson Pro',serif", outline: 'none',
+             outline: 'none',
             transition: 'border-color .2s',
           }}
           onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,179,71,.3)'; }}
           onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,.08)'; }}
         />
-        <div style={{ fontSize: '.55rem', color: 'rgba(255,245,232,.25)', marginTop: '.3rem', fontFamily: "'JetBrains Mono',monospace" }}>
+        <div className="f-mono" style={{ fontSize: '.55rem', color: 'rgba(255,245,232,.25)', marginTop: '.3rem', }}>
           {name.length}/20 characters
         </div>
       </div>
@@ -313,10 +313,10 @@ function ProfileSection({ profile, showToast }: { profile: any; showToast: (msg:
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
+            <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
               👶 Kids Mode
             </div>
-            <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Crimson Pro',serif", marginTop: 2 }}>
+            <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  marginTop: 2 }}>
               Filter content suitable for younger audiences
             </div>
           </div>
@@ -344,22 +344,22 @@ function ProfileSection({ profile, showToast }: { profile: any; showToast: (msg:
       </div>
 
       <button
-        className="btn-p"
+        className="btn-p f-cinzel"
         onClick={handleSave}
         disabled={saving || name === profile.name}
         style={{
           width: '100%', padding: '.75rem', borderRadius: 12,
-          fontFamily: "'Cinzel',serif", fontSize: '.72rem',
+           fontSize: '.72rem',
           letterSpacing: '.06em', opacity: saving ? .6 : 1,
         }}
       >
         {saving ? 'Saving...' : 'Save Changes'}
       </button>
 
-      <div style={{
+      <div className="f-crimson" style={{
         marginTop: '1rem', padding: '.8rem 1rem', borderRadius: 10,
         background: 'rgba(139,120,255,.06)', border: '1px solid rgba(139,120,255,.15)',
-        fontSize: '.6rem', color: 'rgba(255,245,232,.35)', fontFamily: "'Crimson Pro',serif",
+        fontSize: '.6rem', color: 'rgba(255,245,232,.35)', 
         lineHeight: 1.5,
       }}>
         💡 To change your avatar, visit the <span style={{ color: '#8B78FF', cursor: 'pointer' }} onClick={() => window.location.href = '/profiles'}>Manage Profiles</span> page and click on your profile picture.
@@ -382,10 +382,10 @@ function AppearanceSection({ showToast }: { showToast: (msg: string) => void }) 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <div>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
+            <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
               🌊 Reduced Motion
             </div>
-            <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Crimson Pro',serif", marginTop: 2 }}>
+            <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  marginTop: 2 }}>
               Minimize animations and transitions
             </div>
           </div>
@@ -418,10 +418,10 @@ function AppearanceSection({ showToast }: { showToast: (msg: string) => void }) 
       </div>
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
+        <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
           THEME COLORS
         </div>
-        <p style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Crimson Pro',serif", lineHeight: 1.5, marginBottom: '.8rem' }}>
+        <p className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  lineHeight: 1.5, marginBottom: '.8rem' }}>
           Use the theme switcher in the top-right corner to toggle between dark and light themes. Additional theme customization will be available in a future update.
         </p>
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
@@ -437,7 +437,7 @@ function AppearanceSection({ showToast }: { showToast: (msg: string) => void }) 
               background: `${color}12`, border: `1px solid ${color}30`,
             }}>
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />
-              <span style={{ fontSize: '.55rem', color: 'rgba(255,245,232,.4)', fontFamily: "'Cinzel',serif", letterSpacing: '.04em' }}>
+              <span className="f-cinzel" style={{ fontSize: '.55rem', color: 'rgba(255,245,232,.4)',  letterSpacing: '.04em' }}>
                 {label}
               </span>
             </div>
@@ -464,15 +464,15 @@ function NotificationsSection({ showToast }: { showToast: (msg: string) => void 
       <SectionHeader icon="🔔" title="Notifications" subtitle="Control how Lumina notifies you" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
+        <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
           PUSH NOTIFICATIONS
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
+            <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
               Browser Notifications
             </div>
-            <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Crimson Pro',serif", marginTop: 2 }}>
+            <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  marginTop: 2 }}>
               Get notified about new episodes and releases
             </div>
           </div>
@@ -487,7 +487,7 @@ function NotificationsSection({ showToast }: { showToast: (msg: string) => void 
         </div>
         {permission !== 'granted' && permission !== 'denied' && (
           <button
-            className="btn-p"
+            className="btn-p f-cinzel"
             onClick={async () => {
               if ('Notification' in window) {
                 const result = await Notification.requestPermission();
@@ -497,7 +497,7 @@ function NotificationsSection({ showToast }: { showToast: (msg: string) => void 
             }}
             style={{
               width: '100%', padding: '.6rem', borderRadius: 10,
-              fontFamily: "'Cinzel',serif", fontSize: '.68rem',
+               fontSize: '.68rem',
               letterSpacing: '.04em', marginTop: '.8rem',
             }}
           >
@@ -505,10 +505,10 @@ function NotificationsSection({ showToast }: { showToast: (msg: string) => void 
           </button>
         )}
         {permission === 'denied' && (
-          <div style={{
+          <div className="f-crimson" style={{
             marginTop: '.6rem', padding: '.5rem .8rem', borderRadius: 8,
             background: 'rgba(255,74,74,.06)', border: '1px solid rgba(255,74,74,.15)',
-            fontSize: '.58rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Crimson Pro',serif",
+            fontSize: '.58rem', color: 'rgba(255,245,232,.3)', 
             lineHeight: 1.5,
           }}>
             Notifications are blocked in your browser settings. To enable them, go to your browser&apos;s site settings and allow notifications for this website.
@@ -544,7 +544,7 @@ function PrivacySection({ showToast }: { showToast: (msg: string) => void }) {
       <SectionHeader icon="🔒" title="Privacy & Data" subtitle="Manage your data and privacy preferences" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.8rem' }}>
+        <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.8rem' }}>
           DATA MANAGEMENT
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
@@ -560,10 +560,10 @@ function PrivacySection({ showToast }: { showToast: (msg: string) => void }) {
       </div>
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
+        <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
           PRIVACY INFO
         </div>
-        <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Crimson Pro',serif", lineHeight: 1.6 }}>
+        <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  lineHeight: 1.6 }}>
           Your viewing data is stored securely and used only to personalize your experience. We do not share your personal information with third parties. All data is stored on Supabase&apos;s encrypted infrastructure.
         </div>
       </div>
@@ -579,16 +579,16 @@ function AboutSection() {
       <SectionHeader icon="✨" title="About Lumina" subtitle="Your personal streaming companion" />
 
       <div className="neo-card s1" style={{ padding: '1.5rem', borderRadius: 14, marginBottom: '1rem', textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: '1.8rem', color: '#FFB347', marginBottom: '.3rem', letterSpacing: '.06em' }}>
+        <div className="f-cinzel-dec" style={{  fontSize: '1.8rem', color: '#FFB347', marginBottom: '.3rem', letterSpacing: '.06em' }}>
           LUMINA
         </div>
-        <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.85rem', color: 'rgba(255,245,232,.3)', fontStyle: 'italic', marginBottom: '1rem' }}>
+        <div className="f-crimson" style={{  fontSize: '.85rem', color: 'rgba(255,245,232,.3)', fontStyle: 'italic', marginBottom: '1rem' }}>
           Dream, Discover, Stream
         </div>
-        <div style={{
+        <div className="f-mono" style={{
           display: 'inline-block', padding: '.3rem .8rem', borderRadius: 20,
           background: 'rgba(139,120,255,.1)', border: '1px solid rgba(139,120,255,.2)',
-          fontFamily: "'JetBrains Mono',monospace", fontSize: '.55rem',
+           fontSize: '.55rem',
           color: '#8B78FF', letterSpacing: '.04em',
         }}>
           v1.0.0
@@ -596,7 +596,7 @@ function AboutSection() {
       </div>
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
+        <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
           POWERED BY
         </div>
         <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
@@ -613,7 +613,7 @@ function AboutSection() {
               background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)',
             }}>
               <span style={{ fontSize: '.75rem' }}>{icon}</span>
-              <span style={{ fontSize: '.55rem', color: 'rgba(255,245,232,.4)', fontFamily: "'JetBrains Mono',monospace" }}>
+              <span className="f-mono" style={{ fontSize: '.55rem', color: 'rgba(255,245,232,.4)', }}>
                 {name}
               </span>
             </div>
@@ -633,7 +633,7 @@ function SectionHeader({ icon, title, subtitle }: { icon: string; title: string;
         <span style={{ fontSize: '1.1rem' }}>{icon}</span>
         <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.8vw,1.15rem)' }}>{title}</h2>
       </div>
-      <p style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.78rem', color: 'rgba(255,245,232,.3)', fontStyle: 'italic', paddingLeft: '1.7rem' }}>
+      <p className="f-crimson" style={{  fontSize: '.78rem', color: 'rgba(255,245,232,.3)', fontStyle: 'italic', paddingLeft: '1.7rem' }}>
         {subtitle}
       </p>
     </div>
@@ -643,12 +643,12 @@ function SectionHeader({ icon, title, subtitle }: { icon: string; title: string;
 function InfoRow({ label, value, mono, highlight }: { label: string; value: string; mono?: boolean; highlight?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '.35rem 0' }}>
-      <span style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.35)', fontFamily: "'Cinzel',serif", letterSpacing: '.04em' }}>
+      <span className="f-cinzel" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.35)',  letterSpacing: '.04em' }}>
         {label}
       </span>
-      <span style={{
+      <span className={mono ? "f-mono" : "f-crimson"} style={{
         fontSize: '.6rem',
-        fontFamily: mono ? "'JetBrains Mono',monospace" : "'Crimson Pro',serif",
+        
         color: highlight || 'rgba(255,245,232,.5)',
         letterSpacing: mono ? '.02em' : '0',
       }}>
@@ -674,16 +674,16 @@ function DataActionRow({
       <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem' }}>
         <span style={{ fontSize: '1rem' }}>{icon}</span>
         <div>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.7rem', color: '#FFF5E8', letterSpacing: '.04em' }}>{title}</div>
-          <div style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.25)', fontFamily: "'Crimson Pro',serif", marginTop: 1 }}>{description}</div>
+          <div className="f-cinzel" style={{  fontSize: '.7rem', color: '#FFF5E8', letterSpacing: '.04em' }}>{title}</div>
+          <div className="f-crimson" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.25)',  marginTop: 1 }}>{description}</div>
         </div>
       </div>
-      <button
+      <button className="f-cinzel"
         onClick={onClick}
         disabled={loading}
         style={{
           padding: '.4rem .8rem', borderRadius: 8, border: 'none',
-          cursor: loading ? 'wait' : 'pointer', fontFamily: "'Cinzel',serif",
+          cursor: loading ? 'wait' : 'pointer', 
           fontSize: '.6rem', letterSpacing: '.04em', transition: 'all .2s',
           background: danger ? 'rgba(255,74,74,.15)' : 'rgba(255,179,71,.12)',
           color: danger ? '#FF4A4A' : '#FFB347',

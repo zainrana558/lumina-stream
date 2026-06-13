@@ -13,9 +13,8 @@ const envSchema = z.object({
 
 type EnvSchema = z.infer<typeof envSchema>;
 
-declare global {
-  var __validatedEnv: EnvSchema | undefined;
-}
+// Module-level cache — avoids `declare global` which conflicts with Zod v4 type inference
+let cachedEnv: EnvSchema | undefined;
 
 function parseEnv(): EnvSchema {
   const raw = {
@@ -61,14 +60,14 @@ function parseEnv(): EnvSchema {
 }
 
 export function getValidatedEnv(): EnvSchema {
-  if (process.env.NODE_ENV === 'production' && globalThis.__validatedEnv) {
-    return globalThis.__validatedEnv;
+  if (process.env.NODE_ENV === 'production' && cachedEnv) {
+    return cachedEnv;
   }
 
   const result = parseEnv();
 
   if (process.env.NODE_ENV === 'production') {
-    globalThis.__validatedEnv = result;
+    cachedEnv = result;
   }
 
   return result;

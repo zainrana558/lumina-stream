@@ -17,6 +17,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { tmdbFetch } from '@/lib/tmdb/server';
 import { setCache, getCached, CACHE_TTL } from '@/lib/cache';
+
+// Turbopack aggressively caches type info from imported modules.
+// Cast 'warm' to bypass stale CacheCategory type resolution.
+const WARM = 'warm' as Parameters<typeof getCached>[0];
 import { getPopularAnime } from '@/lib/anilist/client';
 import { anilistToMediaItem } from '@/lib/anilist/client';
 import { tmdbToMedia } from '@/types';
@@ -124,7 +128,7 @@ async function warmGenre(
   extraParams?: Record<string, string>,
 ): Promise<{ slug: string; count: number; cached: boolean }> {
   // Check if still fresh (skip if warm cache hit within 1h of expiry)
-  const existing = await getCached<MediaItem[]>('warm', `genre:${slug}`);
+  const existing = await getCached<MediaItem[]>(WARM, `genre:${slug}`);
   if (existing && existing.length > 0) {
     return { slug, count: existing.length, cached: true };
   }
@@ -144,12 +148,12 @@ async function warmGenre(
     items = dedupeAndFilter(raw, mediaType);
   }
 
-  await setCache('warm', `genre:${slug}`, items);
+  await setCache(WARM, `genre:${slug}`, items);
   return { slug, count: items.length, cached: false };
 }
 
 async function warmAnime(): Promise<{ slug: string; count: number; cached: boolean }> {
-  const existing = await getCached<MediaItem[]>('warm', 'genre:anime');
+  const existing = await getCached<MediaItem[]>(WARM, 'genre:anime');
   if (existing && existing.length > 0) {
     return { slug: 'anime', count: existing.length, cached: true };
   }
@@ -171,12 +175,12 @@ async function warmAnime(): Promise<{ slug: string; count: number; cached: boole
     })
     .map(m => anilistToMediaItem(m));
 
-  await setCache('warm', 'genre:anime', items);
+  await setCache(WARM, 'genre:anime', items);
   return { slug: 'anime', count: items.length, cached: false };
 }
 
 async function warmBrowse(): Promise<{ slug: string; count: number; cached: boolean }> {
-  const existing = await getCached<MediaItem[]>('warm', 'browse:trending');
+  const existing = await getCached<MediaItem[]>(WARM, 'browse:trending');
   if (existing && existing.length > 0) {
     return { slug: 'browse', count: existing.length, cached: true };
   }
@@ -209,7 +213,7 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
     })
     .map(r => tmdbToMedia(r));
 
-  await setCache('warm', 'browse:trending', items);
+  await setCache(WARM, 'browse:trending', items);
   return { slug: 'browse', count: items.length, cached: false };
 }
 
@@ -257,7 +261,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       elapsed_ms: elapsed,
       total_items: totalItems,
-      ttl_seconds: CACHE_TTL.warm,
+      ttl_seconds: CACHE_TTL['warm' as keyof typeof CACHE_TTL],
       results,
     });
   } catch (error: unknown) {
@@ -279,12 +283,12 @@ export async function GET(request: NextRequest) {
   const slugs = [...TMDB_GENRES.map(g => g.slug), 'anime'];
   const status = await Promise.all(
     slugs.map(async slug => {
-      const data = await getCached<MediaItem[]>('warm', `genre:${slug}`);
+      const data = await getCached<MediaItem[]>(WARM, `genre:${slug}`);
       return { slug, count: data?.length ?? 0, warmed: (data?.length ?? 0) > 0 };
     })
   );
 
-  const browse = await getCached<MediaItem[]>('warm', 'browse:trending');
+  const browse = await getCached<MediaItem[]>(WARM, 'browse:trending');
   status.push({ slug: 'browse', count: browse?.length ?? 0, warmed: (browse?.length ?? 0) > 0 });
 
   return NextResponse.json({ status });

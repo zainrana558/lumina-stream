@@ -39,7 +39,8 @@ export const CACHE_TTL = {
   warm:         6 * 60 * 60,   // 6 hours — full genre warm lists (stable, pre-warmed catalogs)
 } as const;
 
-type CacheCategory = keyof typeof CACHE_TTL;
+// Explicit type to avoid inference issues with computed values + as const
+export type CacheCategory = 'trending' | 'popular' | 'search' | 'details' | 'season' | 'discover' | 'genre' | 'credits' | 'videos' | 'stats' | 'leaderboard' | 'reminders' | 'warm';
 
 // ---- Cache helpers ----
 

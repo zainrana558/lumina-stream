@@ -96,7 +96,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
         >=</button>
         <div onClick={() => go('home')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') go('home'); }} style={{ cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}>
           <span className="logo" style={{ fontSize: 'clamp(1.05rem,2vw,1.35rem)' }}>LUMINA</span>
-          <span style={{ fontSize: '.42rem', letterSpacing: '.35em', color: 'rgba(255,179,71,.5)', display: 'block', textAlign: 'right', fontFamily: "'Cinzel',serif", marginTop: -2 }}>STREAM</span>
+          <span className="f-cinzel" style={{ fontSize: '.42rem', letterSpacing: '.35em', color: 'rgba(255,179,71,.5)', display: 'block', textAlign: 'right',  marginTop: -2 }}>STREAM</span>
         </div>
       </div>
 
@@ -164,7 +164,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <div style={{ width: 4, height: 4, borderRadius: '50%', background: g.color, flexShrink: 0 }} />
-                  <span style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', letterSpacing: '.06em', color: '#FFF5E8' }}>{g.label}</span>
+                  <span className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.06em', color: '#FFF5E8' }}>{g.label}</span>
                 </div>
               ))}
             </div>
@@ -179,7 +179,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
         <div ref={dropRef} style={{ position: 'relative' }}>
           {user ? (
             <>
-              <button
+              <button className="f-cinzel"
                 onClick={() => setDrop(!drop)}
                 aria-expanded={drop}
                 aria-haspopup="true"
@@ -191,7 +191,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                     : 'linear-gradient(135deg,rgba(255,179,71,.38),rgba(139,120,255,.38))',
                   border: '2px solid rgba(255,179,71,.38)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', fontSize: '.9rem', fontFamily: "'Cinzel',serif", fontWeight: 700, color: '#05020A',
+                  cursor: 'pointer', fontSize: '.9rem',  fontWeight: 700, color: '#05020A',
                   boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.1)',
                 }}
               >
@@ -200,7 +200,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
               {drop && (
                 <div className="dropdown" role="menu" aria-label="User dropdown">
                   <div style={{ padding: '.85rem 1.1rem', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
-                    <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.76rem', color: '#FFF5E8', marginBottom: 2 }}>{displayName}</div>
+                    <div className="f-cinzel" style={{  fontSize: '.76rem', color: '#FFF5E8', marginBottom: 2 }}>{displayName}</div>
                     {displayEmail && <div style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)' }}>{displayEmail}</div>}
                   </div>
                   {([
@@ -238,7 +238,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
               {drop && (
                 <div className="dropdown" role="menu" aria-label="Guest dropdown">
                   <div style={{ padding: '.85rem 1.1rem', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
-                    <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.76rem', color: '#FFF5E8', marginBottom: 2 }}>Guest</div>
+                    <div className="f-cinzel" style={{  fontSize: '.76rem', color: '#FFF5E8', marginBottom: 2 }}>Guest</div>
                     <div style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)' }}>Sign in to save progress</div>
                   </div>
                   <div className="dd-item" role="menuitem" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') { setDrop(false); router.push('/login'); } }} onClick={() => { setDrop(false); router.push('/login'); }}>

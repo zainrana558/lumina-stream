@@ -47,9 +47,9 @@ export default async function ReleaseCalendarPage() {
       <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ padding: '2.2rem clamp(1rem,5vw,3rem) 0', position: 'relative', zIndex: 3 }}>
           <h1 className="sec" style={{ fontSize: 'clamp(1.3rem,3vw,2rem)', marginBottom: '.5rem' }}>📅 Release Calendar</h1>
-          <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.45)', fontSize: '1rem' }}>Upcoming movie releases</p>
+          <p className="f-crimson" style={{  color: 'rgba(255,245,232,.45)', fontSize: '1rem' }}>Upcoming movie releases</p>
         </div>
-        <div style={{ padding: '3rem clamp(1rem,5vw,3rem)', textAlign: 'center', color: 'rgba(255,245,232,.35)', fontFamily: "'Cinzel',serif", fontSize: '.9rem' }}>
+        <div className="f-cinzel" style={{ padding: '3rem clamp(1rem,5vw,3rem)', textAlign: 'center', color: 'rgba(255,245,232,.35)',  fontSize: '.9rem' }}>
           Unable to load upcoming releases. Please try again later.
         </div>
       </div>

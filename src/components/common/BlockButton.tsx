@@ -33,7 +33,7 @@ export default function BlockButton({ mediaId, mediaType, title }: {
   };
 
   return (
-    <button
+    <button className="f-cinzel"
       onClick={toggleBlock}
       title={blocked ? 'Unblock' : 'Block this title'}
       style={{
@@ -41,7 +41,7 @@ export default function BlockButton({ mediaId, mediaType, title }: {
         background: blocked ? 'rgba(239,68,68,.15)' : 'rgba(255,255,255,.06)',
         border: `1px solid ${blocked ? 'rgba(239,68,68,.4)' : 'rgba(255,255,255,.1)'}`,
         color: blocked ? 'rgba(239,68,68,.8)' : '#FFF5E8',
-        fontFamily: "'Cinzel',serif", fontSize: '.78rem',
+         fontSize: '.78rem',
         cursor: 'pointer', transition: 'all .2s',
         display: 'flex', alignItems: 'center', gap: 6,
       }}

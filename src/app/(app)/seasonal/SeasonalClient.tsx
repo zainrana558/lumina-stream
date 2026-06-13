@@ -73,18 +73,18 @@ function SeasonCard({ item, index }: { item: MediaItem; index: number }) {
         {/* Rating badge */}
         <div className="badge-r" style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>⭐ {item.r}</div>
         {/* Format badge */}
-        <div style={{
+        <div className="f-cinzel" style={{
           position: 'absolute', top: 8, left: 8, zIndex: 2,
           padding: '2px 8px', borderRadius: 6, fontSize: '.55rem',
-          fontFamily: "'Cinzel',serif", color: s.acc, letterSpacing: '.04em',
+           color: s.acc, letterSpacing: '.04em',
           background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)',
           border: `1px solid ${s.acc}40`,
         }}>{formatLabel}</div>
       </div>
       {/* Info */}
       <div style={{ padding: '10px 12px 12px' }}>
-        <div style={{
-          fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: '.8rem', color: '#FFF5E8',
+        <div className="f-cinzel" style={{
+           fontWeight: 700, fontSize: '.8rem', color: '#FFF5E8',
           marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           textShadow: '0 1px 4px rgba(0,0,0,.5)',
         }}>{item.title}</div>
@@ -93,7 +93,7 @@ function SeasonCard({ item, index }: { item: MediaItem; index: number }) {
             <span key={g} className="gtag" style={{ fontSize: '.5rem', padding: '1px 6px' }}>{g}</span>
           ))}
           {item.eps > 0 && (
-            <span style={{ fontSize: '.56rem', color: 'rgba(255,245,232,.3)', fontFamily: "'JetBrains Mono',monospace" }}>
+            <span className="f-mono" style={{ fontSize: '.56rem', color: 'rgba(255,245,232,.3)', }}>
               {item.eps} eps
             </span>
           )}
@@ -133,20 +133,20 @@ export default function SeasonalClient({ airingToday, trendingThisWeek, returnin
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
         <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>🌸 Anime Seasonal Tracker</h1>
-        <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>Powered by AniList — seasonal anime, trending, and upcoming</p>
+        <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>Powered by AniList — seasonal anime, trending, and upcoming</p>
       </div>
 
       <div style={{ padding: `0 ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>
         {/* Tab selector */}
         <div style={{ display: 'flex', gap: 0, marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,.06)', overflowX: 'auto' }}>
           {TABS.map(tab => (
-            <button
+            <button className="f-cinzel"
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               style={{
                 padding: '12px 24px', background: 'none', border: 'none', outline: 'none',
                 color: activeTab === tab.key ? 'var(--gold)' : 'rgba(255,245,232,.35)',
-                fontFamily: "'Cinzel',serif", fontSize: '.82rem', letterSpacing: '.06em',
+                 fontSize: '.82rem', letterSpacing: '.06em',
                 cursor: 'pointer', transition: 'color .22s', whiteSpace: 'nowrap',
                 borderBottom: activeTab === tab.key ? '2px solid var(--gold)' : '2px solid transparent',
                 marginBottom: '-1px',
@@ -158,7 +158,7 @@ export default function SeasonalClient({ airingToday, trendingThisWeek, returnin
         </div>
 
         {/* Results count */}
-        <div style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.25)', fontFamily: "'Cinzel',serif", letterSpacing: '.1em', marginBottom: '1.2rem' }}>
+        <div className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.25)',  letterSpacing: '.1em', marginBottom: '1.2rem' }}>
           {items.length} {items.length === 1 ? 'title' : 'titles'}
         </div>
 
@@ -166,8 +166,8 @@ export default function SeasonalClient({ airingToday, trendingThisWeek, returnin
         {items.length === 0 ? (
           <div className="neo-raised" style={{ padding: '3rem 2rem', borderRadius: 16, textAlign: 'center' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: .3 }}>🌸</div>
-            <h3 style={{ fontFamily: "'Cinzel',serif", fontSize: '1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No titles found</h3>
-            <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.3)', fontSize: '.9rem' }}>
+            <h3 className="f-cinzel" style={{  fontSize: '1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No titles found</h3>
+            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', fontSize: '.9rem' }}>
               Check back later for seasonal updates
             </p>
           </div>

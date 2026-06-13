@@ -219,8 +219,8 @@ export default function MysteryPage({ initialShows }: { initialShows: MediaItem[
           <button
             onClick={loadMore}
             disabled={loadingMore || !hasMore}
-            className="btn-g"
-            style={{ padding: '12px 32px', fontSize: '.82rem', fontFamily: "'Cinzel',serif", letterSpacing: '.06em', minWidth: 200, opacity: loadingMore ? 0.6 : 1, cursor: loadingMore ? 'wait' : 'pointer' }}
+            className="btn-g f-cinzel"
+            style={{ padding: '12px 32px', fontSize: '.82rem',  letterSpacing: '.06em', minWidth: 200, opacity: loadingMore ? 0.6 : 1, cursor: loadingMore ? 'wait' : 'pointer' }}
           >
             {loadingMore ? '✦ Loading...' : hasMore ? 'Load More' : '— End of catalog —'}
           </button>

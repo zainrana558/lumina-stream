@@ -147,11 +147,11 @@ export default function NotificationBell() {
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
         {unreadCount > 0 && (
-          <span style={{
+          <span className="f-mono" style={{
             position: 'absolute', top: -2, right: -2,
             minWidth: 16, height: 16, borderRadius: 8,
             background: 'linear-gradient(135deg,#FF4A4A,#FF6B8A)',
-            color: '#fff', fontSize: '0.52rem', fontFamily: "'JetBrains Mono',monospace",
+            color: '#fff', fontSize: '0.52rem', 
             fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '0 4px', boxShadow: '0 2px 8px rgba(255,74,74,.4)',
             animation: unreadCount > 0 ? 'eu .4s cubic-bezier(.34,1.56,.64,1) both' : 'none',
@@ -176,20 +176,20 @@ export default function NotificationBell() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <div>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.82rem', color: '#FFF5E8', fontWeight: 700, letterSpacing: '.04em' }}>Notifications</div>
+              <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8', fontWeight: 700, letterSpacing: '.04em' }}>Notifications</div>
               {unreadCount > 0 && (
-                <div style={{ fontSize: '.58rem', color: '#FF6B8A', fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
+                <div className="f-mono" style={{ fontSize: '.58rem', color: '#FF6B8A',  marginTop: 2 }}>
                   {unreadCount} unread
                 </div>
               )}
             </div>
             {unreadCount > 0 && (
-              <button
+              <button className="f-cinzel"
                 onClick={markAllRead}
                 style={{
                   padding: '4px 10px', borderRadius: 8,
                   background: 'rgba(255,179,71,.1)', border: '1px solid rgba(255,179,71,.2)',
-                  color: '#FFB347', fontSize: '.6rem', fontFamily: "'Cinzel',serif",
+                  color: '#FFB347', fontSize: '.6rem', 
                   cursor: 'pointer', letterSpacing: '.04em', transition: 'all .2s',
                 }}
               >
@@ -201,7 +201,7 @@ export default function NotificationBell() {
           {/* Notification list */}
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {loading ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", fontSize: '.75rem' }}>
+              <div className="f-cinzel" style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,245,232,.3)',  fontSize: '.75rem' }}>
                 <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.2rem', marginBottom: '.5rem' }}>✦</div>
                 <div>Loading...</div>
               </div>
@@ -213,10 +213,10 @@ export default function NotificationBell() {
                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                   </svg>
                 </div>
-                <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.85rem', color: 'rgba(255,245,232,.35)' }}>
+                <div className="f-crimson" style={{  fontSize: '.85rem', color: 'rgba(255,245,232,.35)' }}>
                   No notifications yet
                 </div>
-                <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.2)', marginTop: 4, fontFamily: "'JetBrains Mono',monospace" }}>
+                <div className="f-mono" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.2)', marginTop: 4, }}>
                   Activity from people you follow will appear here
                 </div>
               </div>
@@ -263,16 +263,16 @@ export default function NotificationBell() {
                         {!notification.is_read && (
                           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF6B8A', flexShrink: 0, boxShadow: '0 0 6px rgba(255,107,138,.4)' }} />
                         )}
-                        <span style={{ fontFamily: "'Cinzel',serif", fontSize: '.7rem', color: '#FFF5E8', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span className="f-cinzel" style={{  fontSize: '.7rem', color: '#FFF5E8', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {notification.title}
                         </span>
                       </div>
                       {notification.body && (
-                        <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.45)', lineHeight: 1.4, marginBottom: 3, fontFamily: "'Crimson Pro',serif" }}>
+                        <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.45)', lineHeight: 1.4, marginBottom: 3, }}>
                           {notification.body}
                         </div>
                       )}
-                      <div style={{ fontSize: '.5rem', color: 'rgba(255,245,232,.25)', fontFamily: "'JetBrains Mono',monospace" }}>
+                      <div className="f-mono" style={{ fontSize: '.5rem', color: 'rgba(255,245,232,.25)', }}>
                         {timeAgo(notification.created_at)}
                       </div>
                     </div>

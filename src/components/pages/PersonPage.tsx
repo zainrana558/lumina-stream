@@ -177,14 +177,14 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
                 </span>
               )}
             </div>
-            <h1 className="s2" style={{
-              fontFamily: "'Cinzel Decorative',serif", fontWeight: 900,
+            <h1 className="s2 f-cinzel-dec" style={{
+               fontWeight: 900,
               fontSize: 'clamp(1.6rem,3.5vw,3rem)',
               background: 'linear-gradient(135deg,#FFF 0%,#FFB347 65%)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
               marginBottom: '.5rem', lineHeight: 1.1,
             }}>{person.name}</h1>
-            <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', fontFamily: "'Crimson Pro',serif", fontSize: '.88rem', color: 'rgba(255,245,232,.55)' }}>
+            <div className="f-crimson" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap',  fontSize: '.88rem', color: 'rgba(255,245,232,.55)' }}>
               {person.birthday && <span>📅 {formatDate(person.birthday)}</span>}
               {age && <span>🎂 {age}</span>}
               {person.place_of_birth && <span>📍 {person.place_of_birth}</span>}
@@ -198,7 +198,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
         {/* Also Known As */}
         {person.also_known_as && person.also_known_as.length > 0 && (
           <div className="neo-raised" style={{ padding: '1.2rem 1.5rem', borderRadius: 16, marginBottom: '1.5rem' }}>
-            <h3 style={{ fontFamily: "'Cinzel',serif", fontSize: '.68rem', letterSpacing: '.14em', color: '#FFB347', marginBottom: '.65rem' }}>ALSO KNOWN AS</h3>
+            <h3 className="f-cinzel" style={{  fontSize: '.68rem', letterSpacing: '.14em', color: '#FFB347', marginBottom: '.65rem' }}>ALSO KNOWN AS</h3>
             <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
               {person.also_known_as.map(name => (
                 <span key={name} className="gtag" style={{ fontSize: '.7rem', padding: '4px 12px' }}>{name}</span>
@@ -210,16 +210,16 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
         {/* Biography */}
         {person.biography && (
           <div className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16, marginBottom: '2rem' }}>
-            <h3 style={{ fontFamily: "'Cinzel',serif", fontSize: '.68rem', letterSpacing: '.14em', color: '#FFB347', marginBottom: '.75rem' }}>BIOGRAPHY</h3>
-            <p style={{ fontFamily: "'Crimson Pro',serif", lineHeight: 1.85, color: 'rgba(255,245,232,.75)', fontSize: 'clamp(.9rem,1.1vw,1rem)' }}>
+            <h3 className="f-cinzel" style={{  fontSize: '.68rem', letterSpacing: '.14em', color: '#FFB347', marginBottom: '.75rem' }}>BIOGRAPHY</h3>
+            <p className="f-crimson" style={{  lineHeight: 1.85, color: 'rgba(255,245,232,.75)', fontSize: 'clamp(.9rem,1.1vw,1rem)' }}>
               {bioExpanded || person.biography.length <= 400
                 ? person.biography
                 : person.biography.slice(0, 400) + '...'}
             </p>
             {person.biography.length > 400 && (
-              <button onClick={() => setBioExpanded(!bioExpanded)} style={{
+              <button className="f-cinzel" onClick={() => setBioExpanded(!bioExpanded)} style={{
                 background: 'none', border: 'none', cursor: 'pointer', color: '#FFB347',
-                fontFamily: "'Cinzel',serif", fontSize: '.72rem', marginTop: '.5rem', padding: 0,
+                 fontSize: '.72rem', marginTop: '.5rem', padding: 0,
               }}>
                 {bioExpanded ? '▲ Show less' : '▼ Read more'}
               </button>
@@ -239,7 +239,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
           <div style={{ marginBottom: '2.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
               <div>
-                <div style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, fontFamily: "'Cinzel',serif" }}>Most recognized for</div>
+                <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>Most recognized for</div>
                 <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>🌟 Known For</div>
               </div>
             </div>
@@ -259,16 +259,16 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: '.75rem' }}>
               <div>
                 <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>🎬 Full Filmography</div>
-                <div style={{ fontSize: '.72rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Crimson Pro',serif", marginTop: 4 }}>
+                <div className="f-crimson" style={{ fontSize: '.72rem', color: 'rgba(255,245,232,.3)',  marginTop: 4 }}>
                   {filteredCredits.length} titles
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '.5rem' }}>
                 {/* Filter tabs */}
                 {(['all', 'cast', 'crew'] as const).map(t => (
-                  <button key={t} onClick={() => setFilter(t)} style={{
+                  <button className="f-cinzel" key={t} onClick={() => setFilter(t)} style={{
                     padding: '6px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                    fontSize: '.68rem', fontFamily: "'Cinzel',serif", fontWeight: 600,
+                    fontSize: '.68rem',  fontWeight: 600,
                     background: filter === t ? 'var(--gold)' : '#090716',
                     color: filter === t ? '#05020A' : 'rgba(255,245,232,.4)',
                     boxShadow: filter === t ? '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22)' : 'inset 2px 2px 6px rgba(0,0,0,.6),inset -1px -1px 3px rgba(35,20,75,.15)',
@@ -288,7 +288,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
                 return (
                   <div key={credit.id} style={{ animation: `card-in .42s ${Math.min(i, 8) * 0.035}s both` }}>
                     <Card show={mediaItem} sz="md" />
-                    <div style={{ marginTop: '.4rem', fontSize: '.58rem', color: 'rgba(255,245,232,.35)', fontFamily: "'JetBrains Mono',monospace", padding: '0 2px' }}>
+                    <div className="f-mono" style={{ marginTop: '.4rem', fontSize: '.58rem', color: 'rgba(255,245,232,.35)',  padding: '0 2px' }}>
                       {credit.character && <span>as {credit.character}</span>}
                       {credit.job && <span>{credit.job}</span>}
                       {credit.episode_count && <span> · {credit.episode_count} eps</span>}

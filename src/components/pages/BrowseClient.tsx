@@ -114,7 +114,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
 
       <div className="main-pad" style={{ padding: '2.2rem clamp(1rem,5vw,3rem) 0', position: 'relative', zIndex: 3 }}>
         <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>Browse Shows</h1>
-        <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.4)', marginBottom: '1.8rem', fontStyle: 'italic' }}>{allShows.length} series in the archive{genre !== 'All' ? ` · ${list.length} shown` : ''}</p>
+        <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', marginBottom: '1.8rem', fontStyle: 'italic' }}>{allShows.length} series in the archive{genre !== 'All' ? ` · ${list.length} shown` : ''}</p>
 
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.3rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: '1 1 260px' }}>
@@ -132,7 +132,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
           {GENRES_ALL.map(g => (
             <button key={g} className={`chip${genre === g ? ' on' : ''}`} onClick={() => setGenre(g)} style={{ flexShrink: 0 }}>
               {g}
-              <span style={{ marginLeft: 6, fontFamily: "'JetBrains Mono',monospace", fontSize: '.6rem', color: genre === g ? 'rgba(255,179,71,.55)' : 'rgba(255,245,232,.22)' }}>
+              <span className="f-mono" style={{ marginLeft: 6,  fontSize: '.6rem', color: genre === g ? 'rgba(255,179,71,.55)' : 'rgba(255,245,232,.22)' }}>
                 {genreCounts[g] || 0}
               </span>
             </button>
@@ -142,7 +142,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
 
       <div ref={gridRef} className="main-pad bento-grid" style={{ padding: '0 clamp(1rem,5vw,3rem) 5.5rem', position: 'relative', zIndex: 3 }}>
         {list.length === 0 ? (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.28)', fontFamily: "'Cinzel',serif", letterSpacing: '.1em' }}>
+          <div className="f-cinzel" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.28)',  letterSpacing: '.1em' }}>
             {loading ? '✦ Loading shows…' : '✦ No shows found ✦'}
           </div>
         ) : (
@@ -172,7 +172,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
                       {s.genre.slice(0, 2).map(g => (
                         <span key={g} className="gtag" style={{ fontSize: '.55rem', padding: '2px 8px' }}>{g}</span>
                       ))}
-                      <span style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.35)', fontFamily: "'JetBrains Mono',monospace" }}>
+                      <span className="f-mono" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.35)', }}>
                         {s.yr} · {s.eps} eps
                       </span>
                     </div>
@@ -190,11 +190,11 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="btn-g"
+            className="btn-g f-cinzel"
             style={{
               padding: '12px 32px',
               fontSize: '.82rem',
-              fontFamily: "'Cinzel',serif",
+              
               letterSpacing: '.06em',
               minWidth: 200,
               opacity: loadingMore ? 0.6 : 1,
@@ -207,7 +207,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       )}
 
       {!hasMore && allShows.length > 0 && (
-        <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.25)', fontFamily: "'Cinzel',serif", fontSize: '.75rem', letterSpacing: '.08em', position: 'relative', zIndex: 3 }}>
+        <div className="f-cinzel" style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.25)',  fontSize: '.75rem', letterSpacing: '.08em', position: 'relative', zIndex: 3 }}>
           — End of catalog —
         </div>
       )}

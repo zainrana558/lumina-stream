@@ -143,8 +143,8 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
             filter: 'drop-shadow(0 0 20px rgba(255,0,150,0.4)) drop-shadow(0 0 40px rgba(0,255,255,0.2))',
             marginBottom: '0.5rem',
           }}><GenreIntro text="ANIME VAULT" genre="anime" /></h1>
-          <p style={{
-            fontFamily: "'Cinzel',serif",
+          <p className="f-cinzel" style={{
+            
             fontSize: '0.85rem',
             color: 'rgba(0,255,255,0.5)',
             letterSpacing: '0.12em',
@@ -183,9 +183,9 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
           gap: '1.3rem',
         }}>
           {filteredShows.length === 0 ? (
-            <div style={{
+            <div className="f-cinzel" style={{
               gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0',
-              color: 'rgba(0,255,255,0.3)', fontFamily: "'Cinzel',serif", letterSpacing: '.1em',
+              color: 'rgba(0,255,255,0.3)',  letterSpacing: '.1em',
             }}>No results found</div>
           ) : filteredShows.map((s, i) => (
             <div key={s.id} style={{ animation: `card-in .5s ${i * 0.05}s both` }}>
@@ -197,8 +197,8 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
           <button
             onClick={loadMore}
             disabled={loadingMore || !hasMore}
-            className="btn-g"
-            style={{ padding: '12px 32px', fontSize: '.82rem', fontFamily: "'Cinzel',serif", letterSpacing: '.06em', minWidth: 200, opacity: loadingMore ? 0.6 : 1, cursor: loadingMore ? 'wait' : 'pointer' }}
+            className="btn-g f-cinzel"
+            style={{ padding: '12px 32px', fontSize: '.82rem',  letterSpacing: '.06em', minWidth: 200, opacity: loadingMore ? 0.6 : 1, cursor: loadingMore ? 'wait' : 'pointer' }}
           >
             {loadingMore ? '✦ Loading...' : hasMore ? 'Load More' : '— End of catalog —'}
           </button>

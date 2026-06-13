@@ -119,9 +119,9 @@ export default function PipPlayer({ url, title, episodeInfo, onClose, onExpand }
         gap: 6,
         borderTop: '1px solid rgba(255,255,255,.06)',
       }}>
-        <div style={{
+        <div className="f-cinzel" style={{
           flex: 1, minWidth: 0,
-          fontFamily: "'Cinzel',serif", fontSize: '.52rem',
+           fontSize: '.52rem',
           color: 'rgba(255,245,232,.6)', letterSpacing: '.04em',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>

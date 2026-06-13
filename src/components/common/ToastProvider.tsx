@@ -52,7 +52,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
   const c = COLORS[toast.type];
 
   return (
-    <div
+    <div className="f-cinzel"
       role="alert"
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
@@ -63,7 +63,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
         animation: 'toast-in .3s ease both',
         minWidth: 260, maxWidth: 400,
         position: 'relative', overflow: 'hidden',
-        fontFamily: "'Cinzel',serif",
+        
       }}
     >
       <div style={{

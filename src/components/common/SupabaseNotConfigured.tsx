@@ -19,9 +19,9 @@ export default function SupabaseNotConfigured() {
       }}
     >
       <div style={{ fontSize: '3rem', opacity: 0.4 }}>&#9888;&#65039;</div>
-      <h2
+      <h2 className="f-cinzel"
         style={{
-          fontFamily: "'Cinzel',serif",
+          
           fontSize: '1.15rem',
           color: 'rgba(255,245,232,.75)',
           letterSpacing: '.08em',
@@ -30,9 +30,9 @@ export default function SupabaseNotConfigured() {
       >
         Supabase Not Configured
       </h2>
-      <p
+      <p className="f-crimson"
         style={{
-          fontFamily: "'Crimson Pro',serif",
+          
           color: 'rgba(255,245,232,.4)',
           textAlign: 'center',
           maxWidth: 440,
@@ -55,7 +55,7 @@ export default function SupabaseNotConfigured() {
         </code>{' '}
         file in the project root, then restart the dev server.
       </p>
-      <div
+      <div className="f-mono"
         style={{
           background: '#0C091A',
           border: '1px solid rgba(255,179,71,.15)',
@@ -63,7 +63,7 @@ export default function SupabaseNotConfigured() {
           padding: '1rem 1.3rem',
           maxWidth: 460,
           width: '100%',
-          fontFamily: "'JetBrains Mono',monospace",
+          
           fontSize: '.7rem',
           color: 'rgba(255,245,232,.5)',
           lineHeight: 1.7,

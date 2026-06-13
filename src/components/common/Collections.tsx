@@ -67,20 +67,20 @@ export function CollectionCard({ collection, onClick }: { collection: Collection
       }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.8) 0%, transparent 60%)' }} />
         <div style={{ position: 'relative', padding: '12px 14px', width: '100%' }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.82rem', color: '#FFF5E8', fontWeight: 700, marginBottom: 2, textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>
+          <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8', fontWeight: 700, marginBottom: 2, textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>
             {collection.name}
           </div>
-          <div style={{ fontSize: '.55rem', color: 'rgba(255,245,232,.45)', fontFamily: "'JetBrains Mono',monospace" }}>
+          <div className="f-mono" style={{ fontSize: '.55rem', color: 'rgba(255,245,232,.45)', }}>
             {collection.item_count} {collection.item_count === 1 ? 'title' : 'titles'}
           </div>
         </div>
         {!collection.is_public && (
-          <div style={{
+          <div className="f-mono" style={{
             position: 'absolute', top: 8, right: 8,
             padding: '2px 8px', borderRadius: 6,
             background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)',
             fontSize: '.48rem', color: 'rgba(255,245,232,.5)',
-            fontFamily: "'JetBrains Mono',monospace",
+            
           }}>
             Private
           </div>
@@ -88,7 +88,7 @@ export function CollectionCard({ collection, onClick }: { collection: Collection
       </div>
       {/* Description */}
       {collection.description && (
-        <div style={{ padding: '10px 14px 12px', fontSize: '.65rem', color: 'rgba(255,245,232,.4)', fontFamily: "'Crimson Pro',serif", lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+        <div className="f-crimson" style={{ padding: '10px 14px 12px', fontSize: '.65rem', color: 'rgba(255,245,232,.4)',  lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
           {collection.description}
         </div>
       )}
@@ -131,11 +131,11 @@ export function CreateCollectionModal({ open, onClose, onCreate }: { open: boole
           padding: '1.8rem', animation: 'eu .3s cubic-bezier(.34,1.56,.64,1) both',
         }}
       >
-        <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: '1.1rem', color: '#FFF5E8', marginBottom: '1.2rem' }}>Create Collection</div>
+        <div className="f-cinzel-dec" style={{  fontSize: '1.1rem', color: '#FFF5E8', marginBottom: '1.2rem' }}>Create Collection</div>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '.62rem', color: 'rgba(255,179,71,.6)', fontFamily: "'Cinzel',serif", letterSpacing: '.08em', marginBottom: 6 }}>NAME</label>
-            <input
+            <label className="f-cinzel" style={{ display: 'block', fontSize: '.62rem', color: 'rgba(255,179,71,.6)',  letterSpacing: '.08em', marginBottom: 6 }}>NAME</label>
+            <input className="f-crimson"
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
@@ -145,7 +145,7 @@ export function CreateCollectionModal({ open, onClose, onCreate }: { open: boole
               style={{
                 width: '100%', padding: '10px 14px', borderRadius: 10,
                 background: '#08051A', border: '1px solid rgba(255,255,255,.08)',
-                color: '#FFF5E8', fontFamily: "'Crimson Pro',serif", fontSize: '.9rem',
+                color: '#FFF5E8',  fontSize: '.9rem',
                 outline: 'none', transition: 'border-color .2s',
               }}
               onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(139,120,255,.5)'; }}
@@ -153,8 +153,8 @@ export function CreateCollectionModal({ open, onClose, onCreate }: { open: boole
             />
           </div>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '.62rem', color: 'rgba(255,179,71,.6)', fontFamily: "'Cinzel',serif", letterSpacing: '.08em', marginBottom: 6 }}>DESCRIPTION (optional)</label>
-            <textarea
+            <label className="f-cinzel" style={{ display: 'block', fontSize: '.62rem', color: 'rgba(255,179,71,.6)',  letterSpacing: '.08em', marginBottom: 6 }}>DESCRIPTION (optional)</label>
+            <textarea className="f-crimson"
               value={desc}
               onChange={e => setDesc(e.target.value)}
               placeholder="Best action anime of all time..."
@@ -163,7 +163,7 @@ export function CreateCollectionModal({ open, onClose, onCreate }: { open: boole
               style={{
                 width: '100%', padding: '10px 14px', borderRadius: 10,
                 background: '#08051A', border: '1px solid rgba(255,255,255,.08)',
-                color: '#FFF5E8', fontFamily: "'Crimson Pro',serif", fontSize: '.85rem',
+                color: '#FFF5E8',  fontSize: '.85rem',
                 outline: 'none', resize: 'vertical', transition: 'border-color .2s',
               }}
               onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(139,120,255,.5)'; }}
@@ -189,7 +189,7 @@ export function CreateCollectionModal({ open, onClose, onCreate }: { open: boole
                 boxShadow: '0 2px 4px rgba(0,0,0,.3)',
               }} />
             </button>
-            <span style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.5)', fontFamily: "'Crimson Pro',serif" }}>
+            <span className="f-crimson" style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.5)', }}>
               {isPublic ? 'Anyone can see this collection' : 'Only you can see this collection'}
             </span>
           </div>
@@ -236,7 +236,7 @@ export function CollectionDetail({ collectionId }: { collectionId: string }) {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '4rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif" }}>
+      <div className="f-cinzel" style={{ textAlign: 'center', padding: '4rem', color: 'rgba(255,245,232,.3)', }}>
         <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem' }}>✦</div>
         <div style={{ marginTop: '.5rem' }}>Loading collection...</div>
       </div>
@@ -246,7 +246,7 @@ export function CollectionDetail({ collectionId }: { collectionId: string }) {
   if (!collection) {
     return (
       <div style={{ textAlign: 'center', padding: '4rem' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", color: 'rgba(255,245,232,.5)' }}>Collection not found</div>
+        <div className="f-cinzel" style={{  color: 'rgba(255,245,232,.5)' }}>Collection not found</div>
       </div>
     );
   }
@@ -255,13 +255,13 @@ export function CollectionDetail({ collectionId }: { collectionId: string }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: 'clamp(1.2rem,2.5vw,1.6rem)', color: '#FFF5E8', marginBottom: 6 }}>{collection.name}</div>
+          <div className="f-cinzel-dec" style={{  fontSize: 'clamp(1.2rem,2.5vw,1.6rem)', color: '#FFF5E8', marginBottom: 6 }}>{collection.name}</div>
           {collection.description && (
-            <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.85rem', color: 'rgba(255,245,232,.45)', lineHeight: 1.5, marginBottom: 8 }}>
+            <div className="f-crimson" style={{  fontSize: '.85rem', color: 'rgba(255,245,232,.45)', lineHeight: 1.5, marginBottom: 8 }}>
               {collection.description}
             </div>
           )}
-          <div style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.25)', fontFamily: "'JetBrains Mono',monospace" }}>
+          <div className="f-mono" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.25)', }}>
             by {collection.profile.name} · {items.length} {items.length === 1 ? 'title' : 'titles'} · {new Date(collection.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </div>
         </div>
@@ -293,7 +293,7 @@ export function CollectionDetail({ collectionId }: { collectionId: string }) {
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', opacity: .2 }}>🎬</div>
               )}
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 8px', background: 'linear-gradient(to top, rgba(0,0,0,.85), transparent)', }}>
-                <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.65rem', color: '#FFF5E8', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textShadow: '0 2px 6px rgba(0,0,0,.8)' }}>
+                <div className="f-cinzel" style={{  fontSize: '.65rem', color: '#FFF5E8', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textShadow: '0 2px 6px rgba(0,0,0,.8)' }}>
                   {item.title}
                 </div>
               </div>
@@ -305,7 +305,7 @@ export function CollectionDetail({ collectionId }: { collectionId: string }) {
       {items.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem 2rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '.5rem', opacity: .3 }}>📋</div>
-          <div style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.35)' }}>This collection is empty</div>
+          <div className="f-crimson" style={{  color: 'rgba(255,245,232,.35)' }}>This collection is empty</div>
         </div>
       )}
     </div>

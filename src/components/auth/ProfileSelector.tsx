@@ -314,8 +314,8 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
 
               {/* Kids badge */}
               {profile.is_kids && (
-                <div style={{
-                  fontSize: '.52rem', fontFamily: "'Cinzel',serif",
+                <div className="f-cinzel" style={{
+                  fontSize: '.52rem', 
                   letterSpacing: '.08em', color: '#78D621',
                   background: 'rgba(120,214,33,.12)',
                   padding: '2px 8px', borderRadius: 10,
@@ -329,13 +329,13 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
               {/* Edit button */}
               {editingId !== profile.id && (
                 <button
-                  className="ps-edit-btn"
+                  className="ps-edit-btn f-cinzel"
                   onClick={(e) => {
                     e.stopPropagation();
                     startEdit(profile);
                   }}
                   style={{
-                    fontSize: '.55rem', fontFamily: "'Cinzel',serif",
+                    fontSize: '.55rem', 
                     letterSpacing: '.06em', padding: '3px 10px',
                     borderRadius: 6, border: '1px solid rgba(255,255,255,.1)',
                     background: 'rgba(255,255,255,.04)', color: 'rgba(255,245,232,.5)',
@@ -355,14 +355,14 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                   background: 'rgba(255,255,255,.03)',
                   border: '1px solid rgba(255,255,255,.06)',
                 }}>
-                  <input
+                  <input className="f-crimson"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     maxLength={20}
                     style={{
                       background: '#0C091A', border: '1px solid rgba(255,255,255,.1)',
                       borderRadius: 8, padding: '6px 10px', color: '#FFF5E8',
-                      fontSize: '.75rem', fontFamily: "'Crimson Pro',serif",
+                      fontSize: '.75rem', 
                       outline: 'none',
                     }}
                     placeholder="Profile name"
@@ -372,8 +372,8 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                     display: 'flex', alignItems: 'center', gap: '.6rem',
                     padding: '4px 0',
                   }}>
-                    <span style={{
-                      fontSize: '.65rem', fontFamily: "'Cinzel',serif",
+                    <span className="f-cinzel" style={{
+                      fontSize: '.65rem', 
                       color: 'rgba(255,245,232,.5)', letterSpacing: '.05em',
                     }}>👶 Kids Mode</span>
                     <button
@@ -398,25 +398,25 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                     </button>
                   </div>
                   <div style={{ display: 'flex', gap: '.4rem' }}>
-                    <button
+                    <button className="f-cinzel"
                       onClick={(e) => { e.stopPropagation(); saveEdit(); }}
                       disabled={saving || !editName.trim()}
                       style={{
                         flex: 1, padding: '5px 0', borderRadius: 8,
                         background: 'rgba(255,179,71,.15)', border: '1px solid rgba(255,179,71,.3)',
-                        color: '#FFB347', fontFamily: "'Cinzel',serif",
+                        color: '#FFB347', 
                         fontSize: '.58rem', letterSpacing: '.06em',
                         cursor: saving ? 'wait' : 'pointer', transition: 'all .2s',
                       }}
                     >
                       {saving ? '...' : '✓ Save'}
                     </button>
-                    <button
+                    <button className="f-cinzel"
                       onClick={(e) => { e.stopPropagation(); setEditingId(null); }}
                       style={{
                         flex: 1, padding: '5px 0', borderRadius: 8,
                         background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)',
-                        color: 'rgba(255,245,232,.5)', fontFamily: "'Cinzel',serif",
+                        color: 'rgba(255,245,232,.5)', 
                         fontSize: '.58rem', letterSpacing: '.06em',
                         cursor: 'pointer', transition: 'all .2s',
                       }}

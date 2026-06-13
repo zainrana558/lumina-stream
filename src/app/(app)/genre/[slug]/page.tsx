@@ -99,7 +99,7 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
   if (!config) {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 'clamp(60px,7vw,80px)' }}>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '1.2rem', color: 'rgba(255,245,232,.4)' }}>Genre not found</div>
+        <div className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.4)' }}>Genre not found</div>
       </div>
     );
   }

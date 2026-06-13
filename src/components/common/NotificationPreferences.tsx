@@ -39,7 +39,7 @@ export default function NotificationPreferences() {
 
   return (
     <div className="neo-raised" style={{ padding: '1.5rem 1.6rem', borderRadius: 16 }}>
-      <h3 style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', letterSpacing: '.14em', color: '#FFB347', marginBottom: '1.2rem' }}>NOTIFICATION PREFERENCES</h3>
+      <h3 className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.14em', color: '#FFB347', marginBottom: '1.2rem' }}>NOTIFICATION PREFERENCES</h3>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {([
@@ -51,8 +51,8 @@ export default function NotificationPreferences() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span style={{ fontSize: '1.1rem', width: 32, textAlign: 'center' }}>{item.icon}</span>
               <div>
-                <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{item.label}</div>
-                <div style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.35)', fontFamily: "'Crimson Pro',serif" }}>{item.desc}</div>
+                <div className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{item.label}</div>
+                <div className="f-crimson" style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.35)', }}>{item.desc}</div>
               </div>
             </div>
             <button
@@ -82,18 +82,18 @@ export default function NotificationPreferences() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '.75rem' }}>
             <span style={{ fontSize: '1.1rem', width: 32, textAlign: 'center' }}>📧</span>
             <div>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>Email Digest</div>
-              <div style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.35)', fontFamily: "'Crimson Pro',serif" }}>Receive a summary of your activity and updates</div>
+              <div className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>Email Digest</div>
+              <div className="f-crimson" style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.35)', }}>Receive a summary of your activity and updates</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 4, background: '#090716', borderRadius: 10, padding: 3, boxShadow: 'inset 2px 2px 6px rgba(0,0,0,.6),inset -1px -1px 3px rgba(35,20,75,.15)', marginLeft: 52 }}>
             {(['off', 'daily', 'weekly'] as const).map(opt => (
-              <button
+              <button className="f-cinzel"
                 key={opt}
                 onClick={() => updatePref('emailDigest', opt)}
                 style={{
                   flex: 1, padding: '6px 12px', borderRadius: 8, border: 'none',
-                  fontFamily: "'Cinzel',serif", fontSize: '.62rem', fontWeight: 600,
+                   fontSize: '.62rem', fontWeight: 600,
                   cursor: 'pointer', textTransform: 'capitalize',
                   background: prefs.emailDigest === opt ? '#FFB347' : 'transparent',
                   color: prefs.emailDigest === opt ? '#05020A' : 'rgba(255,245,232,.4)',

@@ -191,7 +191,7 @@ export default function WatchlistPage() {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ fontSize: '3rem', opacity: .3 }}>🔒</div>
-        <h2 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to view your watchlist</h2>
+        <h2 className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to view your watchlist</h2>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
     );
@@ -206,7 +206,7 @@ export default function WatchlistPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
           <div>
             <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>📋 My Watchlist</h1>
-            <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>{items.length} {items.length === 1 ? 'title' : 'titles'} saved</p>
+            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>{items.length} {items.length === 1 ? 'title' : 'titles'} saved</p>
           </div>
           <button className="btn-g" onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '.75rem' }}>
             <span>📤</span> Share Watchlist
@@ -234,15 +234,15 @@ export default function WatchlistPage() {
         {/* Watchlist Tab */}
         {activeTab === 'watchlist' && (
           loading ? (
-            <div style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", letterSpacing: '.1em' }}>
+            <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>
               <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
               <div>Loading watchlist...</div>
             </div>
           ) : items.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '5rem 0' }}>
               <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>🌙</div>
-              <h3 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>Your watchlist is empty</h3>
-              <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start adding shows you want to watch later</p>
+              <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>Your watchlist is empty</h3>
+              <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start adding shows you want to watch later</p>
               <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
             </div>
           ) : (
@@ -268,15 +268,15 @@ export default function WatchlistPage() {
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.85rem', color: '#FFF5E8', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+                      <div className="f-cinzel" style={{  fontSize: '.85rem', color: '#FFF5E8', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
                         <span className="gtag" style={{ fontSize: '.58rem', padding: '3px 8px' }}>{item.media_type === 'movie' ? 'Movie' : 'Series'}</span>
-                        <button
+                        <button className="f-cinzel"
                           onClick={(e) => { e.stopPropagation(); handleStatusCycle(item); }}
-                          style={{ fontSize: '.58rem', padding: '3px 10px', borderRadius: 20, border: 'none', cursor: 'pointer', fontFamily: "'Cinzel',serif", fontWeight: 600, letterSpacing: '.05em', background: `${st.color}18`, color: st.color, boxShadow: `0 0 0 1px ${st.color}40`, transition: 'all .2s' }}
+                          style={{ fontSize: '.58rem', padding: '3px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',  fontWeight: 600, letterSpacing: '.05em', background: `${st.color}18`, color: st.color, boxShadow: `0 0 0 1px ${st.color}40`, transition: 'all .2s' }}
                         >{st.label}</button>
                       </div>
-                      <div style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.25)', fontFamily: "'JetBrains Mono',monospace", marginTop: 4 }}>
+                      <div className="f-mono" style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.25)',  marginTop: 4 }}>
                         Added {new Date(item.added_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </div>
                     </div>
@@ -292,15 +292,15 @@ export default function WatchlistPage() {
         {/* Reminders Tab */}
         {activeTab === 'reminders' && (
           remindersLoading ? (
-            <div style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", letterSpacing: '.1em' }}>
+            <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>
               <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
               <div>Loading reminders...</div>
             </div>
           ) : reminders.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '5rem 0' }}>
               <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>🔔</div>
-              <h3 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No reminders set</h3>
-              <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Click the bell icon on any title to get a reminder</p>
+              <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No reminders set</h3>
+              <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Click the bell icon on any title to get a reminder</p>
               <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
             </div>
           ) : (
@@ -329,30 +329,30 @@ export default function WatchlistPage() {
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.85rem', color: '#FFF5E8', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{reminder.title}</div>
+                      <div className="f-cinzel" style={{  fontSize: '.85rem', color: '#FFF5E8', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{reminder.title}</div>
                       {isAvailable ? (
-                        <span style={{
+                        <span className="f-cinzel" style={{
                           fontSize: '.58rem', padding: '3px 10px', borderRadius: 20,
                           background: 'rgba(78,214,196,.15)', color: '#4ECDC4',
                           border: '1px solid rgba(78,214,196,.3)',
-                          fontFamily: "'Cinzel',serif", fontWeight: 600, letterSpacing: '.05em',
+                           fontWeight: 600, letterSpacing: '.05em',
                         }}>✨ Available Now!</span>
                       ) : daysLeft !== null ? (
-                        <span style={{
-                          fontSize: '.62rem', fontFamily: "'JetBrains Mono',monospace",
+                        <span className="f-mono" style={{
+                          fontSize: '.62rem', 
                           color: daysLeft <= 3 ? '#FFB347' : 'rgba(255,245,232,.4)',
                         }}>
                           {daysLeft === 1 ? 'Releases tomorrow' : `${daysLeft} days until release`}
                         </span>
                       ) : (
-                        <span style={{
+                        <span className="f-cinzel" style={{
                           fontSize: '.58rem', padding: '3px 10px', borderRadius: 20,
                           background: 'rgba(139,120,255,.15)', color: '#8B78FF',
-                          fontFamily: "'Cinzel',serif", fontWeight: 600,
+                           fontWeight: 600,
                         }}>🔔 Reminded</span>
                       )}
                       {reminder.releaseDate && (
-                        <div style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.25)', fontFamily: "'JetBrains Mono',monospace", marginTop: 4 }}>
+                        <div className="f-mono" style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.25)',  marginTop: 4 }}>
                           {new Date(reminder.releaseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       )}

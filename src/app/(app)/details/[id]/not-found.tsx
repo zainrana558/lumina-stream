@@ -17,12 +17,12 @@ export default function DetailsNotFound() {
         }}>
           <span role="img" aria-hidden="true">&#x2728;</span>
         </div>
-        <h2 style={{
-          fontFamily: "'Cinzel', serif", fontSize: '1.4rem',
+        <h2 className="f-cinzel" style={{
+           fontSize: '1.4rem',
           color: 'rgba(255,245,232,.8)', letterSpacing: '.08em', marginBottom: '1rem',
         }}>Show Not Found</h2>
-        <p style={{
-          fontFamily: "'Crimson Pro', serif", color: 'rgba(255,245,232,.5)',
+        <p className="f-crimson" style={{
+           color: 'rgba(255,245,232,.5)',
           fontSize: '1rem', lineHeight: 1.7, marginBottom: '1.5rem',
         }}>
           We couldn't find a show with this ID. It may have been removed or the URL is incorrect.

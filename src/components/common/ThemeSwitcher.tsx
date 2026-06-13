@@ -113,9 +113,9 @@ export default function ThemeSwitcher() {
               {active === i ? '✓' : ''}
             </button>
           ))}
-          <div style={{
+          <div className="f-cinzel" style={{
             gridColumn: '1/-1', textAlign: 'center',
-            fontFamily: "'Cinzel',serif", fontSize: '.6rem',
+             fontSize: '.6rem',
             color: CS[active].acc, letterSpacing: '.1em', marginTop: 2,
           }}>
             {THEME_NAMES[active]}

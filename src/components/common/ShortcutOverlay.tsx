@@ -42,8 +42,8 @@ export default function ShortcutOverlay({ visible, onClose }: { visible: boolean
           boxShadow: `8px 8px 32px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.04)`,
         }}
       >
-        <h2 style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: '1.2rem', color: '#FFF5E8', marginBottom: '.3rem' }}>Keyboard Shortcuts</h2>
-        <p style={{ fontFamily: "'Cinzel',serif", fontSize: '.7rem', color: 'rgba(255,245,232,.4)', marginBottom: '1.5rem', letterSpacing: '.08em' }}>Press ? to toggle · Press Esc to close</p>
+        <h2 className="f-cinzel-dec" style={{  fontSize: '1.2rem', color: '#FFF5E8', marginBottom: '.3rem' }}>Keyboard Shortcuts</h2>
+        <p className="f-cinzel" style={{  fontSize: '.7rem', color: 'rgba(255,245,232,.4)', marginBottom: '1.5rem', letterSpacing: '.08em' }}>Press ? to toggle · Press Esc to close</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
           {SHORTCUTS.map((sc, i) => (
             <div
@@ -57,10 +57,10 @@ export default function ShortcutOverlay({ visible, onClose }: { visible: boolean
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ width: 28, height: 28, borderRadius: 8, background: `${s.acc}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem' }}>{sc.icon}</span>
-                <span style={{ fontFamily: "'Cinzel',serif", fontSize: '.78rem', color: '#FFF5E8' }}>{sc.action}</span>
+                <span className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8' }}>{sc.action}</span>
               </div>
-              <kbd style={{
-                fontFamily: "'JetBrains Mono',monospace", fontSize: '.65rem', color: s.acc,
+              <kbd className="f-mono" style={{
+                 fontSize: '.65rem', color: s.acc,
                 padding: '4px 10px', borderRadius: 6,
                 background: '#090716', border: '1px solid rgba(255,255,255,.1)',
                 boxShadow: 'inset 1px 1px 3px rgba(0,0,0,.5)',

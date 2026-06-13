@@ -33,11 +33,11 @@ export default function StillWatching({ showName, onContinue, onBreak }: StillWa
         maxWidth: 420, width: '90%',
       }}>
         <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🌙</div>
-        <h2 style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: '1.4rem', color: '#FFF5E8', marginBottom: '.5rem' }}>Still Watching?</h2>
-        <p style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.92rem', color: 'rgba(255,245,232,.6)', lineHeight: 1.6, marginBottom: '.3rem' }}>
+        <h2 className="f-cinzel-dec" style={{  fontSize: '1.4rem', color: '#FFF5E8', marginBottom: '.5rem' }}>Still Watching?</h2>
+        <p className="f-crimson" style={{  fontSize: '.92rem', color: 'rgba(255,245,232,.6)', lineHeight: 1.6, marginBottom: '.3rem' }}>
           Are you still watching <span style={{ color: 'rgba(255,179,71,.8)', fontWeight: 600 }}>{showName}</span>?
         </p>
-        <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '.65rem', color: 'rgba(255,245,232,.3)', marginBottom: '2rem' }}>
+        <p className="f-mono" style={{  fontSize: '.65rem', color: 'rgba(255,245,232,.3)', marginBottom: '2rem' }}>
           Auto-dismissing in {countdown}s
         </p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>

@@ -38,13 +38,13 @@ export default function GenreToolbar({ onSearch, onSort, genres, onGenreFilter, 
             onChange={(e) => onSearch(e.target.value)}
           />
         </div>
-        <select
+        <select className="f-cinzel"
           value={activeSort}
           onChange={(e) => onSort(e.target.value)}
           style={{
             padding: '11px 14px', background: '#090716',
             border: '1px solid rgba(255,255,255,.07)', borderRadius: 12,
-            color: '#FFF5E8', fontFamily: "'Cinzel',serif", fontSize: '.7rem',
+            color: '#FFF5E8',  fontSize: '.7rem',
             cursor: 'pointer', outline: 'none',
             boxShadow: 'inset 4px 4px 10px rgba(0,0,0,.7),inset -2px -2px 5px rgba(35,20,75,.18)',
           }}

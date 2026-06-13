@@ -106,19 +106,19 @@ export default function MoodRoulette() {
             animation: 'shimmer 0.8s linear infinite',
           }} />
         )}
-        <span style={{
+        <span className="f-cinzel" style={{
           fontSize: spinning ? '1.4rem' : '1.2rem',
           animation: spinning ? 'spin 0.4s linear infinite' : 'none',
           position: 'relative', zIndex: 1,
           filter: `drop-shadow(0 0 8px ${glowColor}60)`,
-          fontFamily: "'Cinzel',serif",
+          
           fontWeight: 700,
         }}>
           {spinning ? displayName[0] : '?'}
         </span>
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <span style={{
-            fontFamily: "'Cinzel',serif",
+          <span className="f-cinzel" style={{
+            
             fontSize: spinning ? 'clamp(.65rem,.85vw,.78rem)' : 'clamp(.55rem,.72vw,.65rem)',
             letterSpacing: spinning ? '.02em' : '.14em',
             color: spinning ? glowColor : 'rgba(255,179,71,.5)',
@@ -128,8 +128,8 @@ export default function MoodRoulette() {
           }}>
             {spinning ? 'Vibe Check' : 'Random Vibe'}
           </span>
-          <span style={{
-            fontFamily: "'Crimson Pro',serif",
+          <span className="f-crimson" style={{
+            
             fontSize: 'clamp(.72rem,.88vw,.82rem)',
             color: '#FFF5E8',
             fontWeight: 600,

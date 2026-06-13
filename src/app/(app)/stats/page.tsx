@@ -56,10 +56,10 @@ function StatCard({ icon, label, value, suffix, color, delay }: {
         position: 'absolute', top: -10, right: -10,
         fontSize: '3.5rem', opacity: .06, pointerEvents: 'none',
       }}>{icon}</div>
-      <div style={{ fontSize: '.72rem', color, fontFamily: "'Cinzel',serif", letterSpacing: '.08em', marginBottom: '.5rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div className="f-cinzel" style={{ fontSize: '.72rem', color,  letterSpacing: '.08em', marginBottom: '.5rem', display: 'flex', alignItems: 'center', gap: 6 }}>
         <span>{icon}</span> {label}
       </div>
-      <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: 'clamp(1.6rem,3vw,2.4rem)', color: '#FFF5E8', lineHeight: 1.2 }}>
+      <div className="f-cinzel-dec" style={{  fontSize: 'clamp(1.6rem,3vw,2.4rem)', color: '#FFF5E8', lineHeight: 1.2 }}>
         <AnimatedCounter target={value} suffix={suffix || ''} />
       </div>
     </div>
@@ -99,7 +99,7 @@ export default function StatsPage() {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ fontSize: '3rem', opacity: .3 }}>📊</div>
-        <h2 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to view your stats</h2>
+        <h2 className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to view your stats</h2>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
     );
@@ -108,7 +108,7 @@ export default function StatsPage() {
   // Wait for profile to load (redirect handled by useEffect above)
   if (!profile || loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", letterSpacing: '.1em' }}>
+      <div className="f-cinzel" style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>
         <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
         <div>Loading your stats...</div>
       </div>
@@ -123,8 +123,8 @@ export default function StatsPage() {
         </div>
         <div style={{ padding: '0 ' + P + ' 5.5rem', position: 'relative', zIndex: 3, textAlign: 'center', paddingTop: '4rem' }}>
           <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>📊</div>
-          <h3 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No viewing data yet</h3>
-          <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start watching to see your stats here</p>
+          <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No viewing data yet</h3>
+          <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start watching to see your stats here</p>
           <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function StatsPage() {
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
         <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>📊 Viewing Stats</h1>
-        <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>{profile.name}&apos;s streaming journey</p>
+        <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>{profile.name}&apos;s streaming journey</p>
       </div>
 
       <div style={{ padding: `0 ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>
@@ -160,10 +160,10 @@ export default function StatsPage() {
           <div className="neo-card s1" style={{ padding: '1.3rem 1.5rem', borderRadius: 16, marginBottom: '2rem', animation: 'card-in .5s .32s both', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
             <div style={{ fontSize: '2rem' }}>⭐</div>
             <div>
-              <div style={{ fontSize: '.72rem', color: '#FFB347', fontFamily: "'Cinzel',serif", letterSpacing: '.08em', marginBottom: 4 }}>Average Rating</div>
-              <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: '1.8rem', color: '#FFF5E8' }}>
+              <div className="f-cinzel" style={{ fontSize: '.72rem', color: '#FFB347',  letterSpacing: '.08em', marginBottom: 4 }}>Average Rating</div>
+              <div className="f-cinzel-dec" style={{  fontSize: '1.8rem', color: '#FFF5E8' }}>
                 <AnimatedCounter target={stats.avgRating} /> / 5
-                <span style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Crimson Pro',serif", marginLeft: 8 }}>
+                <span className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  marginLeft: 8 }}>
                   ({stats.totalRatings} {stats.totalRatings === 1 ? 'rating' : 'ratings'})
                 </span>
               </div>
@@ -181,7 +181,7 @@ export default function StatsPage() {
                 const monthLabel = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' });
                 return (
                   <div key={month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, animation: `el .4s ${0.5 + i * 0.06}s both` }}>
-                    <div style={{ fontSize: '.55rem', fontFamily: "'JetBrains Mono',monospace", color: '#FFB347' }}>{count}</div>
+                    <div className="f-mono" style={{ fontSize: '.55rem',  color: '#FFB347' }}>{count}</div>
                     <div style={{
                       width: '100%', height, borderRadius: 6,
                       background: `linear-gradient(180deg, #FFB347 0%, #FF6B8A 100%)`,
@@ -189,7 +189,7 @@ export default function StatsPage() {
                       transition: 'height .6s cubic-bezier(.34,1.56,.64,1)',
                       minWidth: 16,
                     }} />
-                    <div style={{ fontSize: '.52rem', fontFamily: "'Cinzel',serif", color: 'rgba(255,245,232,.4)', letterSpacing: '.05em' }}>{monthLabel}</div>
+                    <div className="f-cinzel" style={{ fontSize: '.52rem',  color: 'rgba(255,245,232,.4)', letterSpacing: '.05em' }}>{monthLabel}</div>
                   </div>
                 );
               })}
@@ -219,8 +219,8 @@ export default function StatsPage() {
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.8rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
-                    <div style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)', fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>
+                    <div className="f-cinzel" style={{  fontSize: '.8rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+                    <div className="f-mono" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)',  marginTop: 3 }}>
                       {new Date(item.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                   </div>

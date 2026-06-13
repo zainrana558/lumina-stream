@@ -229,15 +229,15 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
       <div key={`txt-${tick}`} style={{ position: 'relative', zIndex: 3, padding: '0 clamp(1rem,5vw,4rem)', maxWidth: 'clamp(280px,50vw,720px)' }}>
         <div className="s1" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 20, marginBottom: '1.3rem', background: '#0D0A1E', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 5px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,179,71,.28)' }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF4444', animation: 'pulse-dot 1.5s ease-in-out infinite' }} />
-          <span style={{ fontFamily: "'Cinzel',serif", fontSize: '.64rem', letterSpacing: '.15em', color: 'rgba(255,179,71,.9)' }}>FEATURED SERIES</span>
+          <span className="f-cinzel" style={{  fontSize: '.64rem', letterSpacing: '.15em', color: 'rgba(255,179,71,.9)' }}>FEATURED SERIES</span>
         </div>
         <h1 className="h1 s2" style={{ fontSize: 'clamp(2.2rem,5.5vw,5.2rem)', marginBottom: '.85rem' }}>{F.title}</h1>
-        <p className="s3" style={{ fontFamily: "'Cinzel',serif", fontSize: 'clamp(.73rem,.98vw,.88rem)', letterSpacing: '.06em', color: 'rgba(255,245,232,.52)', marginBottom: '.72rem' }}>{F.sub || F.genre[0]}</p>
-        <p className="s4" style={{ fontFamily: "'Crimson Pro',serif", fontSize: 'clamp(.9rem,1.2vw,1.05rem)', lineHeight: 1.78, color: 'rgba(255,245,232,.68)', maxWidth: 530, marginBottom: '1.4rem' }}>{F.desc.slice(0, 130)}…</p>
+        <p className="s3 f-cinzel" style={{  fontSize: 'clamp(.73rem,.98vw,.88rem)', letterSpacing: '.06em', color: 'rgba(255,245,232,.52)', marginBottom: '.72rem' }}>{F.sub || F.genre[0]}</p>
+        <p className="s4 f-crimson" style={{  fontSize: 'clamp(.9rem,1.2vw,1.05rem)', lineHeight: 1.78, color: 'rgba(255,245,232,.68)', maxWidth: 530, marginBottom: '1.4rem' }}>{F.desc.slice(0, 130)}…</p>
         <div className="s4" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1.8rem' }}>
           <div className="badge-r">⭐ {F.r}</div>
           {F.genre.slice(0, 2).map(g => <span key={g} className="gtag">{g}</span>)}
-          <span style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)', alignSelf: 'center', fontFamily: "'Cinzel',serif" }}>{F.eps} eps · {F.yr}</span>
+          <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)', alignSelf: 'center', }}>{F.eps} eps · {F.yr}</span>
         </div>
         <div className="s5" style={{ display: 'flex', gap: '.85rem', flexWrap: 'wrap' }}>
           <button className="btn-p" onClick={() => router.push(`/details/${F.id}`)}>▶ Play Now</button>
@@ -327,8 +327,8 @@ function GenrePortalCard({
           <GenreIcon name={g.key} size={72} color={g.tc} />
         </div>
         {/* Genre name */}
-        <div style={{
-          fontFamily: "'Cinzel Decorative',serif", fontWeight: 900,
+        <div className="f-cinzel-dec" style={{
+           fontWeight: 900,
           fontSize: 'clamp(1.1rem,1.8vw,1.5rem)',
           color: '#FFF5E8', letterSpacing: '.04em',
           textShadow: '0 3px 12px rgba(0,0,0,.9)',
@@ -337,8 +337,8 @@ function GenrePortalCard({
           {g.name}
         </div>
         {/* Tagline */}
-        <div style={{
-          fontFamily: "'Crimson Pro',serif", fontSize: 'clamp(.68rem,.85vw,.78rem)',
+        <div className="f-crimson" style={{
+           fontSize: 'clamp(.68rem,.85vw,.78rem)',
           color: `${g.tc}cc`, fontStyle: 'italic', marginBottom: 10,
           lineHeight: 1.4,
         }}>
@@ -346,9 +346,9 @@ function GenrePortalCard({
         </div>
         {/* Featured show title */}
         {featuredTitle && (
-          <div style={{
+          <div className="f-mono" style={{
             fontSize: '.6rem', color: 'rgba(255,245,232,.35)',
-            fontFamily: "'JetBrains Mono',monospace", letterSpacing: '.04em',
+             letterSpacing: '.04em',
             marginBottom: 10, whiteSpace: 'nowrap', overflow: 'hidden',
             textOverflow: 'ellipsis', maxWidth: '85%',
           }}>
@@ -427,8 +427,8 @@ function MoodLandscapeCard({
       <div className="mood-ring" style={{ borderColor: `${mood.col}25`, animationDelay: `${index * 0.8}s` }} />
       {/* Content at bottom */}
       <div className="mood-content">
-        <div style={{
-          fontFamily: "'Cinzel Decorative',serif", fontWeight: 900,
+        <div className="f-cinzel-dec" style={{
+           fontWeight: 900,
           fontSize: 'clamp(.95rem,1.4vw,1.15rem)',
           color: '#FFF5E8', letterSpacing: '.04em',
           textShadow: '0 3px 10px rgba(0,0,0,.8)',
@@ -436,8 +436,8 @@ function MoodLandscapeCard({
         }}>
           {mood.name}
         </div>
-        <div style={{
-          fontFamily: "'Crimson Pro',serif", fontSize: 'clamp(.62rem,.75vw,.72rem)',
+        <div className="f-crimson" style={{
+           fontSize: 'clamp(.62rem,.75vw,.72rem)',
           color: `${mood.col}aa`, fontStyle: 'italic', lineHeight: 1.4,
           marginBottom: 8,
         }}>
@@ -451,10 +451,10 @@ function MoodLandscapeCard({
           transition: 'all .3s',
         }} />
         {isHighlighted && (
-          <div style={{
+          <div className="f-mono" style={{
             marginTop: 8,
             fontSize: '.48rem', color: `${mood.col}70`,
-            letterSpacing: '.12em', fontFamily: "'JetBrains Mono',monospace",
+            letterSpacing: '.12em', 
           }}>
             PICKED FOR NOW
           </div>
@@ -662,7 +662,7 @@ export default function Home({
           <div style={{ marginBottom: 44 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16, paddingInline: 'clamp(1rem,5vw,3rem)' }}>
               <div>
-                <div style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, fontFamily: "'Cinzel',serif" }}>Pick up where you left off</div>
+                <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>Pick up where you left off</div>
                 <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>Continue Watching</div>
               </div>
             </div>
@@ -676,7 +676,7 @@ export default function Home({
           </div>
         )}
         {loadingRecs && (
-          <div style={{ padding: '0 clamp(1rem,5vw,3rem)', textAlign: 'center', color: 'rgba(255,245,232,.35)', fontFamily: "'Cinzel',serif", fontSize: '.82rem', letterSpacing: '.1em', marginBottom: 44 }}>
+          <div className="f-cinzel" style={{ padding: '0 clamp(1rem,5vw,3rem)', textAlign: 'center', color: 'rgba(255,245,232,.35)',  fontSize: '.82rem', letterSpacing: '.1em', marginBottom: 44 }}>
             <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem', marginBottom: '0.5rem' }}>✦</div>
             <div>Finding recommendations for you…</div>
           </div>
@@ -694,7 +694,7 @@ export default function Home({
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 8 }}>
           <div>
             <h2 className="sec" style={{ fontSize: 'clamp(1.1rem,2.2vw,1.5rem)', marginBottom: 4 }}>Genre Portals</h2>
-            <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.82rem', color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>{timeGreeting} — step into a world</div>
+            <div className="f-crimson" style={{  fontSize: '.82rem', color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>{timeGreeting} — step into a world</div>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(clamp(200px,20vw,300px),1fr))', gap: '1.2rem' }}>
@@ -715,7 +715,7 @@ export default function Home({
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h2 className="sec" style={{ fontSize: 'clamp(1.1rem,2.2vw,1.5rem)', marginBottom: 4 }}>Watch by Mood</h2>
-            <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.82rem', color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>Pick your vibe — each mood is alive</div>
+            <div className="f-crimson" style={{  fontSize: '.82rem', color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>Pick your vibe — each mood is alive</div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <MoodRoulette />
@@ -742,7 +742,7 @@ export default function Home({
       {/* ── Footer ── */}
       <footer style={{ position: 'relative', zIndex: 3, background: '#05030C', borderTop: '1px solid rgba(255,255,255,.055)', padding: '3rem clamp(1rem,5vw,3rem) 2.5rem', boxShadow: '0 -6px 0 rgba(0,0,0,.7),0 -10px 38px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
-          <div><span className="logo" style={{ fontSize: '1.25rem', display: 'block', marginBottom: '.6rem' }}>LUMINA</span><p style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.88rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.68 }}>The dreamlike world of anime streaming.</p></div>
+          <div><span className="logo" style={{ fontSize: '1.25rem', display: 'block', marginBottom: '.6rem' }}>LUMINA</span><p className="f-crimson" style={{  fontSize: '.88rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.68 }}>The dreamlike world of anime streaming.</p></div>
           {([
             ['Genres', GCARDS.map(g => ({ label: g.name, href: `/genre/${g.key}` }))],
             ['Account', [
@@ -759,15 +759,15 @@ export default function Home({
             ]],
           ] as const).map(([t, links]) => (
             <div key={String(t)}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.65rem', letterSpacing: '.14em', color: 'rgba(255,179,71,.6)', marginBottom: '.9rem' }}>{String(t).toUpperCase()}</div>
+              <div className="f-cinzel" style={{  fontSize: '.65rem', letterSpacing: '.14em', color: 'rgba(255,179,71,.6)', marginBottom: '.9rem' }}>{String(t).toUpperCase()}</div>
               {links.map(l => (
-                <div
+                <div className="f-crimson"
                   key={l.label}
                   onClick={() => router.push(l.href)}
                   onKeyDown={(e) => { if (e.key === 'Enter') router.push(l.href); }}
                   role="link"
                   tabIndex={0}
-                  style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.86rem', color: 'rgba(255,245,232,.38)', marginBottom: '.42rem', cursor: 'pointer', transition: 'color .25s' }}
+                  style={{  fontSize: '.86rem', color: 'rgba(255,245,232,.38)', marginBottom: '.42rem', cursor: 'pointer', transition: 'color .25s' }}
                 >
                   {l.label}
                 </div>
@@ -776,7 +776,7 @@ export default function Home({
           ))}
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,.055)', paddingTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '.62rem', letterSpacing: '.09em', color: 'rgba(255,245,232,.22)' }}>© 2025 LUMINA STREAM · ALL RIGHTS RESERVED</div>
+          <div className="f-mono" style={{  fontSize: '.62rem', letterSpacing: '.09em', color: 'rgba(255,245,232,.22)' }}>© 2025 LUMINA STREAM · ALL RIGHTS RESERVED</div>
           <div style={{ display: 'flex', gap: '1rem' }}>{['𝕏', '📘', '📸', '▶'].map(ic => <div key={ic} className="footer-icon" style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '.78rem', background: '#0C091A', boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.04)', transition: 'all .25s' }}>{ic}</div>)}</div>
         </div>
       </footer>

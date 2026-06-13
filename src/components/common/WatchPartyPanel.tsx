@@ -289,14 +289,14 @@ export default function WatchPartyPanel({
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '.5rem' }}>🎬</div>
           <h3 className="wp-heading">Watch Party</h3>
-          <p style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.88rem', color: 'rgba(255,245,232,.5)', lineHeight: 1.6, marginTop: '.5rem' }}>
+          <p className="f-crimson" style={{  fontSize: '.88rem', color: 'rgba(255,245,232,.5)', lineHeight: 1.6, marginTop: '.5rem' }}>
             Watch together in real-time. One person hosts, everyone syncs.
           </p>
         </div>
 
         {!profileId ? (
           <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-            <p style={{ fontFamily: "'Cinzel',serif", fontSize: '.82rem', color: 'rgba(255,245,232,.4)' }}>
+            <p className="f-cinzel" style={{  fontSize: '.82rem', color: 'rgba(255,245,232,.4)' }}>
               Sign in to create or join a watch party
             </p>
           </div>
@@ -322,14 +322,14 @@ export default function WatchPartyPanel({
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.06)' }} />
-              <span style={{ fontFamily: "'Cinzel',serif", fontSize: '.58rem', color: 'rgba(255,245,232,.25)', letterSpacing: '.12em' }}>OR JOIN WITH CODE</span>
+              <span className="f-cinzel" style={{  fontSize: '.58rem', color: 'rgba(255,245,232,.25)', letterSpacing: '.12em' }}>OR JOIN WITH CODE</span>
               <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.06)' }} />
             </div>
 
             {/* Join room */}
             <div style={{ display: 'flex', gap: '.5rem' }}>
               <input
-                className="inp wp-code-input"
+                className="inp wp-code-input f-mono"
                 type="text"
                 maxLength={6}
                 value={joinCode}
@@ -337,7 +337,7 @@ export default function WatchPartyPanel({
                 placeholder="ABCDEF"
                 style={{
                   flex: 1, textAlign: 'center', fontSize: '1.2rem',
-                  fontFamily: "'JetBrains Mono',monospace", letterSpacing: '.3em',
+                   letterSpacing: '.3em',
                   textTransform: 'uppercase',
                 }}
               />
@@ -354,10 +354,10 @@ export default function WatchPartyPanel({
         )}
 
         {error && (
-          <div style={{
+          <div className="f-crimson" style={{
             marginTop: '1rem', padding: '10px 14px', borderRadius: 10,
             background: 'rgba(255,74,74,.08)', border: '1px solid rgba(255,74,74,.2)',
-            color: '#FF4A4A', fontFamily: "'Crimson Pro',serif", fontSize: '.85rem',
+            color: '#FF4A4A',  fontSize: '.85rem',
             textAlign: 'center',
           }}>
             {error}
@@ -369,7 +369,7 @@ export default function WatchPartyPanel({
           marginTop: '1.5rem', padding: '1rem 1.2rem', borderRadius: 12,
           background: 'var(--s1)', border: '1px solid rgba(255,255,255,.04)',
         }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.62rem', color: 'rgba(255,245,232,.35)', letterSpacing: '.12em', marginBottom: '.75rem' }}>HOW IT WORKS</div>
+          <div className="f-cinzel" style={{  fontSize: '.62rem', color: 'rgba(255,245,232,.35)', letterSpacing: '.12em', marginBottom: '.75rem' }}>HOW IT WORKS</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
             {[
               ['1', 'Create a room to become the host'],
@@ -378,13 +378,13 @@ export default function WatchPartyPanel({
               ['4', 'Chat in real-time while watching together'],
             ].map(([num, text]) => (
               <div key={num} style={{ display: 'flex', gap: '.6rem', alignItems: 'flex-start' }}>
-                <span style={{
+                <span className="f-cinzel" style={{
                   width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                   background: `${s.acc}18`, color: s.acc,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: "'Cinzel',serif", fontSize: '.6rem', fontWeight: 700,
+                   fontSize: '.6rem', fontWeight: 700,
                 }}>{num}</span>
-                <span style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.82rem', color: 'rgba(255,245,232,.55)', lineHeight: 1.5 }}>{text}</span>
+                <span className="f-crimson" style={{  fontSize: '.82rem', color: 'rgba(255,245,232,.55)', lineHeight: 1.5 }}>{text}</span>
               </div>
             ))}
           </div>
@@ -405,13 +405,13 @@ export default function WatchPartyPanel({
         <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
           <div style={{ fontSize: '1.2rem' }}>🎬</div>
           <div>
-            <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.72rem', color: 'rgba(255,245,232,.45)', letterSpacing: '.06em' }}>
+            <div className="f-cinzel" style={{  fontSize: '.72rem', color: 'rgba(255,245,232,.45)', letterSpacing: '.06em' }}>
               WATCHING
             </div>
-            <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: '.95rem', color: '#FFF5E8', fontWeight: 600 }}>
+            <div className="f-crimson" style={{  fontSize: '.95rem', color: '#FFF5E8', fontWeight: 600 }}>
               {room?.title || showTitle}
             </div>
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '.6rem', color: 'rgba(255,245,232,.3)', marginTop: 2 }}>
+            <div className="f-mono" style={{  fontSize: '.6rem', color: 'rgba(255,245,232,.3)', marginTop: 2 }}>
               S{room?.season || season} E{room?.episode || episode}
               {isHostControl && <span style={{ color: s.acc, marginLeft: 6 }}>⬤ HOST</span>}
             </div>
@@ -421,12 +421,12 @@ export default function WatchPartyPanel({
           {/* Room code badge */}
           <button
             onClick={handleCopyCode}
-            className="wp-code-badge"
+            className="wp-code-badge f-mono"
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
               borderRadius: 8, border: `1px solid ${s.acc}40`,
               background: `${s.acc}12`, color: s.acc,
-              fontFamily: "'JetBrains Mono',monospace", fontSize: '.72rem',
+               fontSize: '.72rem',
               fontWeight: 700, letterSpacing: '.15em', cursor: 'pointer',
               transition: 'all .2s',
             }}
@@ -435,12 +435,12 @@ export default function WatchPartyPanel({
             {room?.code || '------'}
             {copied ? ' ✓' : ' ⎘'}
           </button>
-          <button
+          <button className="f-cinzel"
             onClick={handleLeave}
             style={{
               padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(255,74,74,.2)',
               background: 'rgba(255,74,74,.08)', color: '#FF4A4A',
-              fontFamily: "'Cinzel',serif", fontSize: '.62rem', fontWeight: 600,
+               fontSize: '.62rem', fontWeight: 600,
               cursor: 'pointer', letterSpacing: '.04em', transition: 'all .2s',
             }}
           >
@@ -453,7 +453,7 @@ export default function WatchPartyPanel({
       <div style={{
         display: 'flex', gap: '.4rem', marginBottom: '1rem', flexWrap: 'wrap',
       }}>
-        <span style={{ fontFamily: "'Cinzel',serif", fontSize: '.58rem', color: 'rgba(255,245,232,.3)', letterSpacing: '.08em', alignSelf: 'center' }}>
+        <span className="f-cinzel" style={{  fontSize: '.58rem', color: 'rgba(255,245,232,.3)', letterSpacing: '.08em', alignSelf: 'center' }}>
           PARTICIPANTS ({participants.length})
         </span>
         {participants.map((p) => (
@@ -471,8 +471,8 @@ export default function WatchPartyPanel({
             }}>
               {(p.name || 'A').charAt(0).toUpperCase()}
             </div>
-            <span style={{
-              fontFamily: "'Cinzel',serif", fontSize: '.58rem',
+            <span className="f-cinzel" style={{
+               fontSize: '.58rem',
               color: p.is_host ? s.acc : 'rgba(255,245,232,.6)',
               fontWeight: p.is_host ? 700 : 400, letterSpacing: '.04em',
             }}>
@@ -489,9 +489,9 @@ export default function WatchPartyPanel({
         padding: '.75rem', marginBottom: '.75rem',
       }} className="hide-scroll">
         {messages.length === 0 ? (
-          <div style={{
+          <div className="f-crimson" style={{
             height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'rgba(255,245,232,.2)', fontFamily: "'Crimson Pro',serif", fontSize: '.85rem',
+            color: 'rgba(255,245,232,.2)',  fontSize: '.85rem',
             fontStyle: 'italic',
           }}>
             No messages yet — say something!
@@ -516,28 +516,28 @@ export default function WatchPartyPanel({
                   )}
                   <div style={{ maxWidth: '75%' }}>
                     {!isOwn && (
-                      <div style={{
+                      <div className="f-cinzel" style={{
                         fontSize: '.56rem', color: 'rgba(255,245,232,.35)',
-                        fontFamily: "'Cinzel',serif", marginBottom: 2, letterSpacing: '.04em',
+                         marginBottom: 2, letterSpacing: '.04em',
                       }}>
                         {m.name}
                       </div>
                     )}
-                    <div style={{
+                    <div className="f-crimson" style={{
                       padding: '6px 12px', borderRadius: 12,
                       background: isOwn
                         ? `linear-gradient(135deg, ${s.acc}30, ${s.acc}15)`
                         : 'var(--s2)',
                       border: `1px solid ${isOwn ? s.acc + '25' : 'rgba(255,255,255,.04)'}`,
-                      fontFamily: "'Crimson Pro',serif", fontSize: '.85rem',
+                       fontSize: '.85rem',
                       color: 'rgba(255,245,232,.8)', lineHeight: 1.5,
                       wordBreak: 'break-word',
                     }}>
                       {m.content}
                     </div>
-                    <div style={{
+                    <div className="f-mono" style={{
                       fontSize: '.48rem', color: 'rgba(255,245,232,.18)',
-                      fontFamily: "'JetBrains Mono',monospace", marginTop: 2,
+                       marginTop: 2,
                       textAlign: isOwn ? 'right' : 'left',
                     }}>
                       {new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -554,14 +554,14 @@ export default function WatchPartyPanel({
       {/* Chat input */}
       <div style={{ display: 'flex', gap: '.5rem' }}>
         <input
-          className="inp"
+          className="inp f-crimson"
           type="text"
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value.slice(0, 500))}
           onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
           placeholder="Type a message..."
           maxLength={500}
-          style={{ flex: 1, padding: '10px 14px', fontSize: '.85rem', fontFamily: "'Crimson Pro',serif" }}
+          style={{ flex: 1, padding: '10px 14px', fontSize: '.85rem', }}
         />
         <button
           className="btn-p"

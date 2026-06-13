@@ -120,9 +120,9 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
           }} />
         )}
         {rank && (
-          <div style={{
+          <div className="f-cinzel-dec" style={{
             position: 'absolute', left: -6, top: '50%', transform: 'translateY(-50%)',
-            fontFamily: "'Cinzel Decorative',serif", fontWeight: 900,
+             fontWeight: 900,
             fontSize: 'clamp(3.5rem,7vw,6.5rem)', color: `${s.acc}1A`,
             lineHeight: 1, zIndex: 0, userSelect: 'none', animation: 'rank-in .5s ease both',
           }}>{rank}</div>
@@ -135,10 +135,10 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
             userSelect: 'none',
           }}>{s.em}</div>
         )}
-        <div style={{
+        <div className="f-cinzel" style={{
           position: 'absolute', top: 9, left: 9, zIndex: 5,
           padding: '3px 9px', background: hasPoster ? 'rgba(0,0,0,.65)' : CS[show.cs].base, borderRadius: 20,
-          fontSize: '.6rem', fontFamily: "'Cinzel',serif", color: s.acc, letterSpacing: '.04em',
+          fontSize: '.6rem',  color: s.acc, letterSpacing: '.04em',
           boxShadow: `3px 3px 9px rgba(0,0,0,.7),-1px -1px 3px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px ${s.acc}40`,
         }}>{show.tag}</div>
         <div className="badge-r" style={{ position: 'absolute', top: 9, right: 9, zIndex: 5 }}>⭐ {show.r}</div>
@@ -150,7 +150,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
           </div>
         )}
         <div className="cinfo" style={{ zIndex: hasPoster ? 3 : undefined }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: sz === 'sm' ? '.78' : '.92rem', color: '#FFF5E8', marginBottom: 3, textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>{show.title}</div>
+          <div className="f-cinzel" style={{  fontWeight: 700, fontSize: sz === 'sm' ? '.78' : '.92rem', color: '#FFF5E8', marginBottom: 3, textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>{show.title}</div>
           {sz !== 'sm' && <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.48)' }}>{show.genre.slice(0, 2).join(' · ')} · {show.eps} eps</div>}
         </div>
       </div>

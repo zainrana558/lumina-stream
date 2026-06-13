@@ -19,11 +19,11 @@ export default function NotFound() {
         animation: 'page-in .55s cubic-bezier(.22,1,.36,1) both',
       }}
     >
-      <div
+      <div className="f-cinzel-dec"
         style={{
           fontSize: 'clamp(6rem,14vw,10rem)',
           fontWeight: 900,
-          fontFamily: "'Cinzel Decorative',serif",
+          
           background: 'linear-gradient(135deg, rgba(255,245,232,.18) 0%, rgba(255,179,71,.32) 50%, rgba(255,245,232,.18) 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -36,9 +36,9 @@ export default function NotFound() {
         404
       </div>
 
-      <h2
+      <h2 className="f-cinzel"
         style={{
-          fontFamily: "'Cinzel',serif",
+          
           fontSize: 'clamp(1.1rem,2.5vw,1.6rem)',
           color: 'rgba(255,245,232,.7)',
           letterSpacing: '.1em',
@@ -48,9 +48,9 @@ export default function NotFound() {
         Lost in the Void
       </h2>
 
-      <p
+      <p className="f-crimson"
         style={{
-          fontFamily: "'Crimson Pro',serif",
+          
           color: 'rgba(255,245,232,.35)',
           fontSize: 'clamp(.9rem,1.2vw,1.05rem)',
           fontStyle: 'italic',

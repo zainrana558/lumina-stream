@@ -191,7 +191,7 @@ export default function AmbientSoundscape({ mood }: { mood?: string }) {
                   boxShadow: m === selectedMood ? `0 0 12px ${MOOD_COLORS[m]}20` : 'none',
                 }}
               >
-                <span style={{ fontFamily: "'Cinzel',serif", fontSize: '.6rem', color: m === selectedMood ? MOOD_COLORS[m] : 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>{m}</span>
+                <span className="f-cinzel" style={{  fontSize: '.6rem', color: m === selectedMood ? MOOD_COLORS[m] : 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>{m}</span>
               </button>
             ))}
           </div>
@@ -210,7 +210,7 @@ export default function AmbientSoundscape({ mood }: { mood?: string }) {
         </div>
       )}
       {/* Toggle button */}
-      <button
+      <button className="f-cinzel"
         onClick={() => { if (playing) toggle(); else setPanelOpen(p => !p); }}
         onContextMenu={(e) => { e.preventDefault(); setPanelOpen(p => !p); }}
         style={{
@@ -218,7 +218,7 @@ export default function AmbientSoundscape({ mood }: { mood?: string }) {
           border: `1px solid ${playing ? moodColor + '40' : 'rgba(255,255,255,.06)'}`,
           background: playing ? `${moodColor}12` : '#0D0A1E',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '.7rem', fontFamily: "'Cinzel',serif", fontWeight: 700,
+          fontSize: '.7rem',  fontWeight: 700,
           boxShadow: `4px 4px 12px rgba(0,0,0,.7), -2px -2px 6px rgba(45,25,90,.2), inset 0 1px 0 rgba(255,255,255,.04)${playing ? `, 0 0 16px ${moodColor}25` : ''}`,
           transition: 'all .3s',
           animation: playing ? `breathe 2s ease-in-out infinite` : 'none',

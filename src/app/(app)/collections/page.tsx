@@ -90,7 +90,7 @@ export default function CollectionsPage() {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ fontSize: '3rem', opacity: .3 }}>📋</div>
-        <h2 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to manage collections</h2>
+        <h2 className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to manage collections</h2>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
     );
@@ -125,14 +125,14 @@ export default function CollectionsPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
           <div>
             <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>Collections</h1>
-            <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>
+            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>
               Create curated lists of your favorite shows
             </p>
           </div>
           <button
-            className="btn-p"
+            className="btn-p f-cinzel"
             onClick={() => setShowCreate(true)}
-            style={{ padding: '10px 22px', borderRadius: 12, fontSize: '.72rem', fontFamily: "'Cinzel',serif", letterSpacing: '.04em' }}
+            style={{ padding: '10px 22px', borderRadius: 12, fontSize: '.72rem',  letterSpacing: '.04em' }}
           >
             + New Collection
           </button>
@@ -141,15 +141,15 @@ export default function CollectionsPage() {
 
       <div style={{ padding: `1.5rem ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '5rem', color: 'rgba(255,245,232,.3)', fontFamily: "'Cinzel',serif", fontSize: '.82rem', letterSpacing: '.1em' }}>
+          <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
             <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem', marginBottom: '.5rem' }}>✦</div>
             <div>Loading collections...</div>
           </div>
         ) : collections.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '5rem 2rem' }}>
             <div style={{ fontSize: '3.5rem', marginBottom: '1rem', opacity: .25 }}>📋</div>
-            <h3 style={{ fontFamily: "'Cinzel',serif", fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No collections yet</h3>
-            <p style={{ fontFamily: "'Crimson Pro',serif", color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.9rem', maxWidth: 400, margin: '0 auto 1.5rem' }}>
+            <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No collections yet</h3>
+            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.9rem', maxWidth: 400, margin: '0 auto 1.5rem' }}>
               Create your first collection to organize your favorite shows into curated lists like &quot;My Top 10 Shonen&quot; or &quot;Weekend Binge&quot;
             </p>
             <button className="btn-p" onClick={() => setShowCreate(true)} style={{ padding: '10px 28px', borderRadius: 12, fontSize: '.75rem' }}>

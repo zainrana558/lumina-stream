@@ -156,8 +156,8 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
             marginBottom: '0.5rem',
             animation: 'bounce-in 0.8s ease both',
           }}><GenreIntro text="CARTOONS! 🌈" genre="cartoon" /></h1>
-          <p style={{
-            fontFamily: "'Cinzel',serif",
+          <p className="f-cinzel" style={{
+            
             fontSize: '0.85rem',
             color: '#2D5A1B',
             letterSpacing: '0.08em',
@@ -213,8 +213,8 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
           <button
             onClick={loadMore}
             disabled={loadingMore || !hasMore}
-            className="btn-g"
-            style={{ padding: '12px 32px', fontSize: '.82rem', fontFamily: "'Cinzel',serif", letterSpacing: '.06em', minWidth: 200, opacity: loadingMore ? 0.6 : 1, cursor: loadingMore ? 'wait' : 'pointer' }}
+            className="btn-g f-cinzel"
+            style={{ padding: '12px 32px', fontSize: '.82rem',  letterSpacing: '.06em', minWidth: 200, opacity: loadingMore ? 0.6 : 1, cursor: loadingMore ? 'wait' : 'pointer' }}
           >
             {loadingMore ? '✦ Loading...' : hasMore ? 'Load More' : '— End of catalog —'}
           </button>

@@ -47,9 +47,9 @@ export default function Error({ error, reset }: ErrorBoundaryProps) {
         ⚠
       </div>
 
-      <h2
+      <h2 className="f-cinzel"
         style={{
-          fontFamily: "'Cinzel',serif",
+          
           fontSize: 'clamp(1.2rem,2.5vw,1.8rem)',
           color: 'rgba(255,245,232,.8)',
           letterSpacing: '.08em',
@@ -69,9 +69,9 @@ export default function Error({ error, reset }: ErrorBoundaryProps) {
           textAlign: 'center',
         }}
       >
-        <p
+        <p className="f-crimson"
           style={{
-            fontFamily: "'Crimson Pro',serif",
+            
             color: 'rgba(255,245,232,.55)',
             fontSize: 'clamp(.88rem,1.1vw,1rem)',
             lineHeight: 1.7,

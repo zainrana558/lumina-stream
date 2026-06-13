@@ -131,15 +131,15 @@ export default function GenreTrivia({ genre, color = 'rgba(255,245,232,.35)' }: 
         opacity: fading ? 0.3 : 1,
         transition: 'opacity 0.5s ease',
       }}>
-        <span style={{
+        <span className="f-crimson" style={{
           fontSize: '.85rem',
-          fontFamily: "'Crimson Pro',serif",
+          
           color: color,
           flexShrink: 0,
           fontWeight: 600,
         }}>💡</span>
-        <span style={{
-          fontFamily: "'Crimson Pro',serif",
+        <span className="f-crimson" style={{
+          
           fontSize: 'clamp(.72rem,.85vw,.82rem)',
           color: color,
           fontStyle: 'italic',

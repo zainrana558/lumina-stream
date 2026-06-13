@@ -53,11 +53,11 @@ const ContinueWatchingCard = memo(function ContinueWatchingCard({ show }: Contin
 
         {/* Progress percentage badge */}
         {progress > 0 && (
-          <div style={{
+          <div className="f-mono" style={{
             position: 'absolute', bottom: 8, right: 8, zIndex: 6,
             padding: '2px 8px', borderRadius: 6,
             background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)',
-            fontSize: '.58rem', fontFamily: "'JetBrains Mono',monospace",
+            fontSize: '.58rem', 
             color: '#FFB347', fontWeight: 600,
           }}>
             {Math.round(progress)}%
@@ -81,8 +81,8 @@ const ContinueWatchingCard = memo(function ContinueWatchingCard({ show }: Contin
 
         {/* Title at bottom */}
         <div style={{ position: 'absolute', bottom: 12, left: 10, right: 40, zIndex: 5 }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontWeight: 700, fontSize: '.82rem', color: '#FFF5E8', marginBottom: 2, textShadow: '0 2px 8px rgba(0,0,0,.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{show.title}</div>
-          <div style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.4)', fontFamily: "'JetBrains Mono',monospace" }}>Continue watching</div>
+          <div className="f-cinzel" style={{  fontWeight: 700, fontSize: '.82rem', color: '#FFF5E8', marginBottom: 2, textShadow: '0 2px 8px rgba(0,0,0,.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{show.title}</div>
+          <div className="f-mono" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.4)', }}>Continue watching</div>
         </div>
       </div>
     </div>

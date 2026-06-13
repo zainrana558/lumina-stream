@@ -53,9 +53,9 @@ export default function PostPlayCountdown({ showTitle, showPoster, nextEpInfo, o
           </div>
         )}
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.65rem', color: 'rgba(255,179,71,.7)', letterSpacing: '.14em', marginBottom: '.5rem' }}>UP NEXT</div>
-          <div style={{ fontFamily: "'Cinzel Decorative',serif", fontSize: '1.15rem', color: '#FFF5E8', marginBottom: '.3rem' }}>{showTitle}</div>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '.72rem', color: 'rgba(255,245,232,.5)', marginBottom: '1.2rem' }}>{nextEpInfo}</div>
+          <div className="f-cinzel" style={{  fontSize: '.65rem', color: 'rgba(255,179,71,.7)', letterSpacing: '.14em', marginBottom: '.5rem' }}>UP NEXT</div>
+          <div className="f-cinzel-dec" style={{  fontSize: '1.15rem', color: '#FFF5E8', marginBottom: '.3rem' }}>{showTitle}</div>
+          <div className="f-mono" style={{  fontSize: '.72rem', color: 'rgba(255,245,232,.5)', marginBottom: '1.2rem' }}>{nextEpInfo}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
             <div onClick={onNextEpisode} style={{
               width: 56, height: 56, borderRadius: '50%',
@@ -70,15 +70,15 @@ export default function PostPlayCountdown({ showTitle, showPoster, nextEpInfo, o
                   strokeDashoffset={`${2 * Math.PI * 25 * (1 - count / COUNTDOWN_SECONDS)}`}
                   style={{ transition: 'stroke-dashoffset 1s linear' }} />
               </svg>
-              <span style={{ fontFamily: "'Cinzel',serif", fontSize: '1.1rem', fontWeight: 700, color: '#FFF5E8', zIndex: 1 }}>{count}</span>
+              <span className="f-cinzel" style={{  fontSize: '1.1rem', fontWeight: 700, color: '#FFF5E8', zIndex: 1 }}>{count}</span>
             </div>
             <button onClick={onNextEpisode} className="btn-p" style={{ padding: '10px 24px', fontSize: '.78rem' }}>
               Play Now
             </button>
           </div>
-          <button onClick={onCancel} style={{
+          <button className="f-cinzel" onClick={onCancel} style={{
             background: 'none', border: 'none', color: 'rgba(255,245,232,.4)',
-            cursor: 'pointer', fontFamily: "'Cinzel',serif", fontSize: '.72rem',
+            cursor: 'pointer',  fontSize: '.72rem',
             letterSpacing: '.06em',
           }}>Cancel</button>
         </div>

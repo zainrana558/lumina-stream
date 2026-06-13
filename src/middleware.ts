@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+// ── IMPORTANT: Do NOT rename this file. Next.js requires middleware.ts. ─────
+
 // ── Public paths — no auth required ────────────────────────────────────────
 // ONLY truly public pages. Protected pages (/watchlist, /settings, /stats,
 // /activity, /collections) are intentionally absent — unauthenticated users
@@ -36,19 +38,20 @@ function setSecurityHeaders(response: NextResponse, pathname: string) {
     response.headers.set("Permissions-Policy",        "camera=(), microphone=(), geolocation=()");
     response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
 
-    // CSP — restrictive but permits all whitelisted embed providers
+    // CSP — restrictive but permits all whitelisted embed providers.
+    // Fonts are self-hosted via next/font/google (no external font domains needed).
     response.headers.set(
       "Content-Security-Policy",
       [
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "font-src 'self' https://fonts.gstatic.com data:",
+        "style-src 'self' 'unsafe-inline'",
+        "font-src 'self' data:",
         "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
         "media-src 'self' https: blob:",
         // frame-src whitelist — keep in sync with embed-proxy allowedHosts
         "frame-src 'self' https://vidsrc.fyi https://vidsrc.cc https://vidsrc.xyz https://vidsrc.to https://vidsrc.net https://vidsrc.pro https://vidsrc.app https://vidsrc.ic https://www.2embed.online https://autoembed.co https://vidphantom.com https://api.codespecters.com https://embed.su https://embedvip.com https://multiembed.mov https://moviesapi.club",
-        "connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.themoviedb.org https://*.upstash.io https://graphql.anilist.co https://accounts.google.com https://github.com https://fonts.googleapis.com https://fonts.gstatic.com",
+        "connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.themoviedb.org https://*.upstash.io https://graphql.anilist.co https://accounts.google.com https://github.com",
         "worker-src 'self' blob:",
       ].join("; ")
     );
@@ -118,7 +121,7 @@ function isBot(ua: string | null): boolean {
 }
 
 // ── Middleware ──────────────────────────────────────────────────────────────
-export default async function proxy(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   try {
     const { createServerClient } = await import("@supabase/ssr");
     let supabaseResponse = NextResponse.next({ request });

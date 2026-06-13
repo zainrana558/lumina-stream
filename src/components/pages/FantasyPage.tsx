@@ -173,8 +173,8 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
             <span style={{ color: '#FFD700', fontSize: '0.9rem', animation: 'sparkle-p 2.2s 0.9s ease-in-out infinite' }}>✧</span>
             <span style={{ color: '#87CEEB', fontSize: '1.1rem', animation: 'sparkle-p 2.8s 1.2s ease-in-out infinite' }}>✦</span>
           </div>
-          <h1 style={{
-            fontFamily: "'Playfair Display',serif",
+          <h1 className="f-playfair" style={{
+            
             fontStyle: 'italic',
             fontWeight: 900,
             fontSize: 'clamp(3rem,8vw,5.5rem)',
@@ -187,8 +187,8 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
             marginBottom: '0.5rem',
             lineHeight: 1.1,
           }}><GenreIntro text="Fantasy" genre="fantasy" /></h1>
-          <p style={{
-            fontFamily: "'Cinzel',serif",
+          <p className="f-cinzel" style={{
+            
             fontSize: '0.85rem',
             color: 'rgba(195,155,211,0.45)',
             letterSpacing: '0.12em',
@@ -227,9 +227,9 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
           gap: '1.3rem',
         }}>
           {filteredShows.length === 0 ? (
-            <div style={{
+            <div className="f-playfair" style={{
               gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0',
-              color: 'rgba(195,155,211,0.3)', fontFamily: "'Playfair Display',serif", fontStyle: 'italic', letterSpacing: '.1em',
+              color: 'rgba(195,155,211,0.3)',  fontStyle: 'italic', letterSpacing: '.1em',
             }}>No results found</div>
           ) : filteredShows.map((s, i) => (
             <div key={s.id} style={{ animation: `card-in .5s ${i * 0.05}s both` }}>
@@ -241,8 +241,8 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
           <button
             onClick={loadMore}
             disabled={loadingMore || !hasMore}
-            className="btn-g"
-            style={{ padding: '12px 32px', fontSize: '.82rem', fontFamily: "'Cinzel',serif", letterSpacing: '.06em', minWidth: 200, opacity: loadingMore ? 0.6 : 1, cursor: loadingMore ? 'wait' : 'pointer' }}
+            className="btn-g f-cinzel"
+            style={{ padding: '12px 32px', fontSize: '.82rem',  letterSpacing: '.06em', minWidth: 200, opacity: loadingMore ? 0.6 : 1, cursor: loadingMore ? 'wait' : 'pointer' }}
           >
             {loadingMore ? '✦ Loading...' : hasMore ? 'Load More' : '— End of catalog —'}
           </button>

@@ -125,7 +125,7 @@ export default function PinEntryModal({ profileName, profileColor, onSubmit, onC
         }}
       >
         {/* Profile avatar */}
-        <div
+        <div className="f-cinzel"
           style={{
             width: 56,
             height: 56,
@@ -137,14 +137,14 @@ export default function PinEntryModal({ profileName, profileColor, onSubmit, onC
             fontSize: '1.2rem',
             fontWeight: 700,
             color: '#05020A',
-            fontFamily: "'Cinzel',serif",
+            
             margin: '0 auto 1rem',
             boxShadow: '4px 4px 12px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.15)',
           }}
         >
           {profileName.charAt(0).toUpperCase()}
         </div>
-        <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.9rem', color: '#FFF5E8', marginBottom: '.25rem' }}>{profileName}</div>
+        <div className="f-cinzel" style={{  fontSize: '.9rem', color: '#FFF5E8', marginBottom: '.25rem' }}>{profileName}</div>
         <div style={{ fontSize: '.72rem', color: 'rgba(255,245,232,.4)', marginBottom: '1.2rem' }}>Enter your PIN</div>
 
         {/* PIN dots */}
@@ -197,7 +197,7 @@ export default function PinEntryModal({ profileName, profileColor, onSubmit, onC
             ) : (
               <button
                 key={n}
-                className="btn-icon"
+                className="btn-icon f-cinzel"
                 onClick={() => handleNumber(n)}
                 disabled={locked}
                 aria-label={n}
@@ -206,7 +206,7 @@ export default function PinEntryModal({ profileName, profileColor, onSubmit, onC
                   background: locked ? 'rgba(255,245,232,.04)' : 'rgba(255,245,232,.1)',
                   border: '1px solid rgba(255,245,232,.12)',
                   color: '#FFF5E8', fontSize: '1.1rem',
-                  fontFamily: "'Cinzel',serif", fontWeight: 600,
+                   fontWeight: 600,
                   cursor: locked ? 'not-allowed' : 'pointer',
                   opacity: locked ? 0.3 : 1,
                   transition: 'all .15s',

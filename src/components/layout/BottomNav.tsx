@@ -64,7 +64,7 @@ export default function BottomNav({ page, go, openSearch }: BottomNavProps) {
           }}
           style={{ position: 'relative' }}
         >
-          <span className="em" style={{ fontSize: '1.05rem', fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>?</span>
+          <span className="em f-mono" style={{ fontSize: '1.05rem',  fontWeight: 700 }}>?</span>
           <span className="lb">Keys</span>
         </div>
       </nav>

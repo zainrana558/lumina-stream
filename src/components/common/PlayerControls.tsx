@@ -41,12 +41,12 @@ export default function PlayerControls({
       {/* Info bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: '.85rem', color: '#FFF5E8', fontWeight: 600 }}>{showTitle}</div>
-          {showEpInfo && <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '.65rem', color: 'rgba(255,245,232,.45)', marginTop: 2 }}>{showEpInfo}</div>}
+          <div className="f-cinzel" style={{  fontSize: '.85rem', color: '#FFF5E8', fontWeight: 600 }}>{showTitle}</div>
+          {showEpInfo && <div className="f-mono" style={{  fontSize: '.65rem', color: 'rgba(255,245,232,.45)', marginTop: 2 }}>{showEpInfo}</div>}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '.6rem', color: 'rgba(255,245,232,.5)', padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,.05)' }}>{speed}x</span>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '.6rem', color: subtitlesOn ? 'rgba(255,179,71,.8)' : 'rgba(255,245,232,.3)', padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,.05)' }}>CC {subtitlesOn ? 'ON' : 'OFF'}</span>
+          <span className="f-mono" style={{  fontSize: '.6rem', color: 'rgba(255,245,232,.5)', padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,.05)' }}>{speed}x</span>
+          <span className="f-mono" style={{  fontSize: '.6rem', color: subtitlesOn ? 'rgba(255,179,71,.8)' : 'rgba(255,245,232,.3)', padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,.05)' }}>CC {subtitlesOn ? 'ON' : 'OFF'}</span>
         </div>
       </div>
 
@@ -80,7 +80,7 @@ export default function PlayerControls({
             fontSize: '1rem', color: '#FFF5E8', transition: 'all .2s',
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <span style={{ transform: 'scaleX(-1)' }}>▶</span><span style={{ fontSize: '.55rem', fontFamily: "'JetBrains Mono',monospace", marginLeft: 1 }}>30</span>
+              <span style={{ transform: 'scaleX(-1)' }}>▶</span><span className="f-mono" style={{ fontSize: '.55rem',  marginLeft: 1 }}>30</span>
             </span>
           </button>
           {/* Play/Pause */}
@@ -99,7 +99,7 @@ export default function PlayerControls({
             fontSize: '1rem', color: '#FFF5E8', transition: 'all .2s',
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <span style={{ fontSize: '.55rem', fontFamily: "'JetBrains Mono',monospace", marginRight: 1 }}>30</span><span>▶</span>
+              <span className="f-mono" style={{ fontSize: '.55rem',  marginRight: 1 }}>30</span><span>▶</span>
             </span>
           </button>
           {/* Next Episode */}
@@ -114,11 +114,11 @@ export default function PlayerControls({
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {/* Speed dropdown */}
           <div style={{ position: 'relative' }}>
-            <button
+            <button className="f-mono"
               onClick={() => setSpeedOpen(!speedOpen)}
               style={{
                 padding: '6px 12px', borderRadius: 8, fontSize: '.65rem',
-                fontFamily: "'JetBrains Mono',monospace",
+                
                 background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.1)',
                 color: '#FFF5E8', cursor: 'pointer',
               }}
@@ -131,14 +131,14 @@ export default function PlayerControls({
                 boxShadow: '4px 4px 16px rgba(0,0,0,.8)',
               }}>
                 {SPEEDS.map(sp => (
-                  <button
+                  <button className="f-mono"
                     key={sp}
                     onClick={() => { onSetSpeed(sp); setSpeedOpen(false); }}
                     style={{
                       display: 'block', width: '100%', padding: '6px 12px',
                       background: speed === sp ? 'rgba(255,179,71,.2)' : 'transparent',
                       border: 'none', borderRadius: 6, cursor: 'pointer',
-                      fontFamily: "'JetBrains Mono',monospace", fontSize: '.7rem',
+                       fontSize: '.7rem',
                       color: speed === sp ? 'rgba(255,179,71,.9)' : '#FFF5E8',
                       transition: 'all .15s',
                     }}
@@ -148,12 +148,12 @@ export default function PlayerControls({
             )}
           </div>
           {/* Subtitles */}
-          <button onClick={onToggleSubtitles} title="Toggle Subtitles" style={{
+          <button className="f-cinzel" onClick={onToggleSubtitles} title="Toggle Subtitles" style={{
             padding: '6px 10px', borderRadius: 8, fontSize: '.65rem',
             background: subtitlesOn ? 'rgba(255,179,71,.15)' : 'rgba(255,255,255,.08)',
             border: `1px solid ${subtitlesOn ? 'rgba(255,179,71,.4)' : 'rgba(255,255,255,.1)'}`,
             color: subtitlesOn ? 'rgba(255,179,71,.9)' : '#FFF5E8', cursor: 'pointer',
-            fontFamily: "'Cinzel',serif",
+            
           }}>CC</button>
           {/* PiP */}
           <button onClick={onPip} title="Picture in Picture" className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem' }}>⟶ PiP</button>

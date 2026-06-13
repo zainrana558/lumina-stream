@@ -57,7 +57,7 @@ export default function GenreProgress({ genre }: GenreProgressProps) {
   if (!badge || count === 0) return null;
 
   return (
-    <div
+    <div className="f-mono"
       style={{
         position: 'absolute', top: 6, right: 6,
         display: 'flex', alignItems: 'center', gap: 3,
@@ -68,7 +68,7 @@ export default function GenreProgress({ genre }: GenreProgressProps) {
         border: `1px solid ${badge.color}30`,
         zIndex: 10,
         fontSize: '.55rem',
-        fontFamily: "'JetBrains Mono',monospace",
+        
         color: badge.color,
         letterSpacing: '.04em',
         opacity: 0.85,
