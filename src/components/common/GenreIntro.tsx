@@ -74,7 +74,7 @@ export default function GenreIntro({ text, genre }: GenreIntroProps) {
                  text fill is transparent and only the parent's filter: drop-shadow
                  (which rasterizes to a bitmap) is visible — causing permanent blur. */
               WebkitTextFillColor: color,
-              filter: isRevealed ? 'none' : `blur(${s.blurPx}px)`,
+              filter: isRevealed ? 'blur(0px)' : `blur(${s.blurPx}px)`,
               opacity: isRevealed ? 1 : 0,
               transform: isRevealed
                 ? (isCartoon ? `scale(1) rotate(0deg)` : 'translateX(0)')
