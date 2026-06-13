@@ -11,7 +11,7 @@
  *   - Strip Vercel-internal headers (age, x-vercel-cache, x-vercel-id)
  *   - Forward real client IP via x-forwarded-for (needed for rate limiting)
  *   - Retry on Vercel 5xx errors (cold starts and transient errors)
- *   - Cache public static assets and ISR pages at the edge
+ *   - Cache public static assets and ISR pages at the edge (via Cache API)
  *   - Bypass edge cache for API/auth/admin routes
  *   - Rewrite Vercel origin URLs in Location headers (auth redirects)
  *
@@ -43,6 +43,15 @@ const RESPONSE_HEADERS_TO_DROP = new Set([
   'server',            // Security: hide server identity
 ]);
 
+// Next.js internal Vary values that Cloudflare can't normalize for cache keys.
+// Their presence forces cf-cache-status: DYNAMIC on every page response.
+const NEXTJS_INTERNAL_VARY = new Set([
+  'rsc',
+  'next-router-state-tree',
+  'next-router-prefetch',
+  'next-router-segment-prefetch',
+]);
+
 // ─── API & auth routes — never cache at edge ─────────────────────────────
 function isNeverCache(pathname) {
   return (
@@ -69,14 +78,21 @@ function isStaticAsset(pathname) {
 const EDGE_TTL_STATIC = 86400 * 30;   // 30 days for static assets
 const EDGE_TTL_PAGE   = 300;           // 5 minutes for ISR pages
 
+// ─── Determine cache TTL for a given pathname ───────────────────────────
+function getCacheTTL(pathname, status) {
+  if (isNeverCache(pathname)) return 0;
+  if (isStaticAsset(pathname)) return EDGE_TTL_STATIC;
+  if (status >= 200 && status < 300) return EDGE_TTL_PAGE;
+  return 0;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const VERCEL_ORIGIN = env.VERCEL_ORIGIN || DEFAULT_VERCEL_ORIGIN;
     const VERCEL_HOST   = new URL(VERCEL_ORIGIN).hostname;
     try {
-      return await proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST);
+      return await proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx);
     } catch (err) {
-      // If Vercel is unreachable, return a clean error WITHOUT leaking internals
       return new Response(
         JSON.stringify({ error: 'Origin unreachable' }),
         {
@@ -91,7 +107,7 @@ export default {
   },
 };
 
-async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST) {
+async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
   const incomingUrl = new URL(request.url);
   const targetUrl   = new URL(request.url);
 
@@ -112,8 +128,6 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST) {
   forwardHeaders.set('host', VERCEL_HOST);
 
   // Forward real client IP so Next.js rate limiting sees the actual IP
-  // (not the worker's egress IP which would rate-limit all users together)
-  // Append to existing x-forwarded-for chain instead of overwriting
   const clientIp =
     request.headers.get('cf-connecting-ip') ||
     request.headers.get('x-real-ip') ||
@@ -122,12 +136,32 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST) {
   forwardHeaders.set('x-forwarded-for', existingChain ? `${existingChain}, ${clientIp}` : clientIp);
   forwardHeaders.set('x-real-ip', clientIp);
 
-  // ── First attempt ────────────────────────────────────────────────────
+  // ── Check edge cache first (Cache API works on all CF plans) ────────
+  const pathname = incomingUrl.pathname;
+  const cacheTTL = getCacheTTL(pathname, 0); // preliminary check
+
+  // Only check cache for GET/HEAD requests on cacheable routes
+  if (cacheTTL > 0 && request.method === 'GET') {
+    try {
+      const cache = caches.default;
+      const cacheKey = new Request(incomingUrl.toString(), { method: 'GET' });
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        return new Response(cached.body, {
+          status: cached.status,
+          headers: cached.headers,
+        });
+      }
+    } catch {
+      // Cache miss or error — fall through to origin fetch
+    }
+  }
+
+  // ── Fetch from Vercel origin ────────────────────────────────────────
   const forwardRequest = buildRequest(targetUrl.toString(), request, forwardHeaders);
   let response = await fetch(forwardRequest);
 
   // ── Retry on 5xx (Vercel cold start / transient errors) ─────────────
-  // Vercel cold starts can return 500, 502, 503, or 504
   if (response.status >= 500 && response.status <= 504) {
     const retryUrl = new URL(targetUrl.toString());
     retryUrl.searchParams.set('_nocache', String(Date.now()));
@@ -135,7 +169,7 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST) {
     response = await fetch(retryRequest);
   }
 
-  // ── Build clean response ─────────────────────────────────────────────
+  // ── Build clean response headers ────────────────────────────────────
   const responseHeaders = new Headers();
 
   for (const [key, value] of response.headers.entries()) {
@@ -144,28 +178,39 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST) {
     }
   }
 
-  // ── Edge caching strategy ────────────────────────────────────────────
-  const pathname = incomingUrl.pathname;
+  // ── Strip Next.js internal Vary values ──────────────────────────────
+  if (responseHeaders.has('Vary')) {
+    const varyValues = responseHeaders
+      .get('Vary')
+      .split(',')
+      .map(v => v.trim().toLowerCase());
+    const clean = varyValues.filter(v => !NEXTJS_INTERNAL_VARY.has(v));
+    if (clean.length > 0) {
+      responseHeaders.set('Vary', clean.join(', '));
+    } else {
+      responseHeaders.set('Vary', 'Accept-Encoding');
+    }
+  } else {
+    responseHeaders.set('Vary', 'Accept-Encoding');
+  }
 
-  if (isNeverCache(pathname)) {
-    // API/auth/admin: never cache at edge
+  // ── Determine final cache TTL based on actual response status ───────
+  const ttl = getCacheTTL(pathname, response.status);
+
+  if (ttl === 0) {
+    // Never-cache routes
     responseHeaders.set('Cache-Control', 'no-store, no-cache');
   } else if (isStaticAsset(pathname)) {
-    // Static assets: long edge TTL
-    responseHeaders.set('Cache-Control', `public, max-age=${EDGE_TTL_STATIC}`);
-    responseHeaders.set('CDN-Cache-Control', `public, max-age=${EDGE_TTL_STATIC}`);
-  } else if (response.status >= 200 && response.status < 300) {
-    // Successful page responses: short edge TTL (ISR already handles revalidation)
-    responseHeaders.set('Cache-Control', `public, s-maxage=${EDGE_TTL_PAGE}, stale-while-revalidate=600`);
-    responseHeaders.set('CDN-Cache-Control', `public, max-age=${EDGE_TTL_PAGE}`);
+    // Static assets: rely on CDN-Cache-Control (already have Content-Length from Vercel)
+    responseHeaders.set('Cache-Control', `public, max-age=${ttl}`);
+    responseHeaders.set('CDN-Cache-Control', `public, max-age=${ttl}`);
   } else {
-    // Error responses: never cache anywhere
-    responseHeaders.set('Cache-Control', 'no-store');
+    // HTML pages: set browser + edge cache headers
+    responseHeaders.set('Cache-Control', `public, s-maxage=${ttl}, stale-while-revalidate=600`);
+    responseHeaders.set('CDN-Cache-Control', `public, max-age=${ttl}`);
   }
 
   // ── Rewrite Location headers on redirects ────────────────────────────
-  // Next.js auth redirects use the Vercel URL — rewrite to worker domain
-  // so the browser stays on the user's domain (no visible Vercel URLs)
   if (response.status >= 300 && response.status < 400) {
     const location = response.headers.get('location') || '';
     if (location.startsWith(VERCEL_ORIGIN)) {
@@ -176,6 +221,34 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST) {
       status: response.status,
       headers: responseHeaders,
     });
+  }
+
+  // ── Cache API: buffer + store for page responses ────────────────────
+  // HTML pages come from Vercel chunked (no Content-Length). We buffer
+  // them, set Content-Length, store in Cache API, and return.
+  // Static assets already have Content-Length and are cached by
+  // CDN-Cache-Control — no need to double-store them.
+  if (ttl > 0 && !isStaticAsset(pathname) && response.status >= 200 && response.status < 300) {
+    const body = await response.arrayBuffer();
+    responseHeaders.set('Content-Length', body.byteLength.toString());
+    responseHeaders.delete('Transfer-Encoding');
+
+    const finalResponse = new Response(body, {
+      status: response.status,
+      headers: responseHeaders,
+    });
+
+    // Store in edge cache (non-blocking via waitUntil)
+    try {
+      const cache = caches.default;
+      const cacheKey = new Request(incomingUrl.toString(), { method: 'GET' });
+      // Clone before storing because Response body can only be read once
+      ctx.waitUntil(cache.put(cacheKey, finalResponse.clone()));
+    } catch {
+      // Cache put failure is non-critical
+    }
+
+    return finalResponse;
   }
 
   return new Response(response.body, {
