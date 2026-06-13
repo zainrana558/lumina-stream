@@ -34,7 +34,7 @@ async function safeFetch(endpoint: string, params?: Record<string, string>): Pro
 
 // Genre-specific TMDB discover params for fetching featured backdrop
 const GENRE_DISCOVER: Record<string, { endpoint: string; params: Record<string, string> }> = {
-  anime:   { endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', with_original_language: 'ja' } },
+  anime:   { endpoint: '/discover/tv', params: { with_genres: '16,10759', sort_by: 'popularity.desc', with_original_language: 'ja', vote_count_gte: '100' } },
   cartoon: { endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', without_genres: '10759', with_original_language: 'en' } },
   horror:  { endpoint: '/discover/movie', params: { with_genres: '27', sort_by: 'popularity.desc' } },
   romance: { endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' } },
@@ -127,7 +127,11 @@ async function getTMDBData() {
         const data = await tmdbFetch<{ results?: TMDBShow[]; total_results?: number }>(config.endpoint, config.params);
         const results = data.results || [];
         const withBackdrop = results.filter(r => r.backdrop_path);
-        const pick = withBackdrop.length > 1 ? withBackdrop[Math.floor(Math.random() * withBackdrop.length)] : (withBackdrop[0] || results[0]);
+        // Anime: only pick family-friendly action shows (no horror/ero/gore)
+        const pool = key === 'anime'
+          ? withBackdrop.filter(r => (r.adult === false || r.adult === undefined) && (r.vote_average >= 7 || r.popularity >= 50))
+          : withBackdrop;
+        const pick = pool.length > 1 ? pool[Math.floor(Math.random() * pool.length)] : (pool[0] || withBackdrop[0] || results[0]);
         return { key, name: key.charAt(0).toUpperCase() + key.slice(1), backdrop: pick?.backdrop_path || null, title: pick?.title || pick?.name || '', count: data.total_results || results.length, tagline: GENRE_TAGLINES[key] || '' };
       } catch {
         return { key, name: key.charAt(0).toUpperCase() + key.slice(1), backdrop: null, title: '', count: 0, tagline: GENRE_TAGLINES[key] || '' };
