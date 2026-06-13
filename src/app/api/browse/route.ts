@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
     const totalResults = results.length;
 
-    const data = { results, total_results: totalResults, total_pages: 20, page: Number(page) };
+    const data = { results, total_results: totalResults, total_pages: 500, page: Number(page) };
 
     return NextResponse.json(data, {
       headers: {

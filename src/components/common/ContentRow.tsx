@@ -41,7 +41,6 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
     setLoadingMore(true);
     try {
       const nextPage = pageRef.current + 1;
-      if (nextPage > 10) { setHasMore(false); setLoadingMore(false); return; }
       const params = new URLSearchParams(loadMoreParams || {});
       params.set('page', String(nextPage));
       const qs = params.toString() ? `&${params.toString()}` : '';

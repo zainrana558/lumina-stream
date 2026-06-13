@@ -38,7 +38,6 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
     setLoadingMore(true);
     try {
       const nextPage = pageRef.current + 1;
-      if (nextPage > 10) { setHasMore(false); return; }
       const res = await fetch(`/api/tmdb?endpoint=/discover/tv&with_genres=16&with_original_language=ja&sort_by=popularity.desc&page=${nextPage}`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
