@@ -31,7 +31,9 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
 
   useEffect(() => {
-    queueMicrotask(() => setLocalFilters(filters));
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional: sync local state with prop changes */
+    setLocalFilters(filters);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [filters]);
 
   const handleChange = (key: keyof FilterState, value: string) => {

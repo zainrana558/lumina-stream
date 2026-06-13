@@ -24,6 +24,10 @@ export default function GenreIntro({ text, genre }: GenreIntroProps) {
   const chars = text.split('');
 
   useEffect(() => {
+    // Reset revealed array when text/genre changes (e.g. navigating between genre pages)
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional: reset animation on text/genre change */
+    setRevealed(new Array(chars.length).fill(false));
+    /* eslint-enable react-hooks/set-state-in-effect */
     const timers: ReturnType<typeof setTimeout>[] = [];
     chars.forEach((_, i) => {
       timers.push(setTimeout(() => {

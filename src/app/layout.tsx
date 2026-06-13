@@ -1,5 +1,43 @@
 import type { Metadata } from "next";
+import { Cinzel_Decorative, Cinzel, Crimson_Pro, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "@/styles/global.css";
+
+const cinzelDec = Cinzel_Decorative({
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  variable: "--font-cinzel-dec",
+  display: "swap",
+});
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-cinzel",
+  display: "swap",
+});
+
+const crimson = Crimson_Pro({
+  subsets: ["latin"],
+  weight: ["300", "400", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-crimson",
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
+  display: "swap",
+});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
 
@@ -55,19 +93,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${cinzelDec.variable} ${cinzel.variable} ${crimson.variable} ${jetbrains.variable} ${playfair.variable}`}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Lumina" />
         <meta name="theme-color" content="#FFB347" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400;1,600&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:ital,wght@0,700;0,900;1,600;1,900&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body style={{ margin: 0, padding: 0 }}>
         {children}

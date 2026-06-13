@@ -103,7 +103,11 @@ export function CreateCollectionModal({ open, onClose, onCreate }: { open: boole
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (open) { queueMicrotask(() => { setName(''); setDesc(''); setIsPublic(true); setCreating(false); }); }
+    if (open) {
+      /* eslint-disable react-hooks/set-state-in-effect -- intentional: reset form when modal opens */
+      setName(''); setDesc(''); setIsPublic(true); setCreating(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
   }, [open]);
 
   if (!open) return null;

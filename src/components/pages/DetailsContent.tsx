@@ -136,19 +136,24 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   // If show came from SSR, seed fullDetails with initial credits/similar
   useEffect(() => {
     if (initialShow && !fullDetails) {
-      queueMicrotask(() => {
-        setFullDetails({
-          id: initialShow.id,
-          credits: initialCredits.length > 0 ? { cast: initialCredits } : undefined,
-          similar: initialSimilar.length > 0 ? { results: initialSimilar as unknown as TMDBShow[] } : undefined,
-        });
+      /* eslint-disable react-hooks/set-state-in-effect -- seed SSR data into state */
+      setFullDetails({
+        id: initialShow.id,
+        credits: initialCredits.length > 0 ? { cast: initialCredits } : undefined,
+        similar: initialSimilar.length > 0 ? { results: initialSimilar as unknown as TMDBShow[] } : undefined,
       });
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [initialShow?.id]);
 
   // Check watchlist + rating state
   useEffect(() => {
-    if (!show || !user || !profile) { queueMicrotask(() => { setInWatchlist(false); setUserRating(null); }); return; }
+    if (!show || !user || !profile) {
+      /* eslint-disable react-hooks/set-state-in-effect -- clear state when user/show unavailable */
+      setInWatchlist(false); setUserRating(null);
+      /* eslint-enable react-hooks/set-state-in-effect */
+      return;
+    }
     let cancelled = false;
     const mediaType = show.media_type || 'tv';
     (async () => {
@@ -244,10 +249,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
   // --- All hooks must be before any early return (React rules of hooks) ---
 
-  // Derived values needed by hooks below (computed fully after early return)
-  const similarRef = useRef<MediaItem[]>([]);
-  const activeProviderUrlRef = useRef('');
-
   // Load more similar shows (guarded: no-op if !show)
   const loadMoreSimilar = useCallback(async () => {
     if (!show || loadingSimilar || !hasMoreSimilar) return;
@@ -257,7 +258,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${show.id}/recommendations`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
-        const existingIds = new Set(similarRef.current.map(i => i.id));
+        const existingIds = new Set((fullDetails?.similar?.results || []).map((r: TMDBShow) => r.id));
         const fresh = (data.results as TMDBShow[])
           .filter((r: TMDBShow) => r.poster_path && !existingIds.has(r.id))
           .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: mediaType as 'movie' | 'tv' }));
@@ -280,7 +281,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       }
     } catch { /* silent */ }
     setLoadingSimilar(false);
-  }, [show?.id, show?.media_type, loadingSimilar, hasMoreSimilar]);
+  }, [show?.id, show?.media_type, loadingSimilar, hasMoreSimilar, fullDetails?.similar?.results]);
 
   // Auto-failover: if provider fails, try the next one automatically
   const handleProviderFail = useCallback(() => {
@@ -315,18 +316,15 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
   // Timeout failover: if iframe doesn't fire onLoad within 15s, auto-switch
   useEffect(() => {
-    if (!playing || !activeProviderUrlRef.current) return;
+    const url = providers[selectedProvider]?.url || '';
+    if (!playing || !url) return;
     if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
     const timer = setTimeout(() => {
       handleProviderFail();
     }, 15000);
     iframeLoadTimer.current = timer;
     return () => { clearTimeout(timer); };
-  }, [playing, handleProviderFail]);
-
-  // Sync refs for hooks that run before this point (no state deps — safe to run unconditionally)
-  useEffect(() => { similarRef.current = similarRef.current; }, []);
-  useEffect(() => { activeProviderUrlRef.current = activeProviderUrlRef.current; }, []);
+  }, [playing, providers, selectedProvider, handleProviderFail]);
 
   if (!show) {
     return (
