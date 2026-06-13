@@ -86,7 +86,7 @@ async function getTMDBData() {
       safeFetch('/discover/movie', { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' }),
       safeFetch('/discover/movie', { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' }),
       safeFetch('/discover/movie', { with_genres: '10752,36', sort_by: 'popularity.desc' }),
-    });
+    ]);
 
     const featured = trending.slice(0, 10).map(r => tmdbToMedia(r));
     const rows: RowData[] = [];
