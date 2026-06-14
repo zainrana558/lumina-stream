@@ -246,7 +246,7 @@ export default function MoodQuiz() {
                   fontStyle: 'italic',
                 }}>{info.desc}</p>
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <button className="btn-p" onClick={() => { close(); router.push('/browse'); }}>
+                  <button className="btn-p" onClick={() => { close(); router.push(`/browse?mood=${result.toLowerCase()}`); }}>
                     Browse {result}
                   </button>
                   <button className="btn-g" onClick={reset}>

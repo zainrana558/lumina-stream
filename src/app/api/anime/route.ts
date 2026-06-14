@@ -9,6 +9,7 @@ import {
   getAiringAnime,
   getTopRatedAnime,
   browseAllAnime,
+  browseAnimeByGenre,
   anilistToMediaItem,
 } from '@/lib/anilist/client';
 
@@ -68,6 +69,14 @@ export async function GET(request: NextRequest) {
       case 'all':
         results = await browseAllAnime(page, perPage);
         break;
+      case 'genre': {
+        const genres = searchParams.get('genres')?.split(',').filter(Boolean) || [];
+        if (genres.length === 0) {
+          return NextResponse.json({ results: [], pageInfo: null }, { headers: rateLimitHeaders(rl) });
+        }
+        results = await browseAnimeByGenre(genres, page, perPage);
+        break;
+      }
       case 'search':
       default:
         if (!q || q.length < 2) {

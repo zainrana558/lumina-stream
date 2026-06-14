@@ -534,6 +534,30 @@ export async function browseAllAnime(
 }
 
 /**
+ * Browse anime by genre(s). Uses AniList genre_in filter.
+ */
+export async function browseAnimeByGenre(
+  genres: string[],
+  page = 1,
+  perPage = 25,
+): Promise<AniListPage<AniListMedia>> {
+  const query = `
+    query ($genres: [String], $page: Int, $perPage: Int) {
+      Page(page: $page, perPage: $perPage) {
+        pageInfo { total currentPage lastPage hasNextPage perPage }
+        media(type: ANIME, genre_in: $genres, sort: POPULARITY_DESC, isAdult: false) {
+          ${MEDIA_LIST_FRAGMENT}
+        }
+      }
+    }
+  `;
+
+  return fetchWithCache('popular', `anilist:genre:${genres.join(',')}:${page}`, () =>
+    anilistPageQuery<AniListMedia>(query, { genres, page, perPage })
+  );
+}
+
+/**
  * Get top-rated anime (by score)
  */
 export async function getTopRatedAnime(page = 1, perPage = 20): Promise<AniListPage<AniListMedia>> {

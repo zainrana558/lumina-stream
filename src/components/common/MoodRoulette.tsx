@@ -62,7 +62,7 @@ export default function MoodRoulette() {
           if (final.type === 'genre' && final.slug) {
             router.push(`/genre/${final.slug}`);
           } else {
-            router.push('/browse');
+            router.push(`/browse?mood=${final.name.toLowerCase()}`);
           }
         }, 900);
       }

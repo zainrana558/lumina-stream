@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { tmdbFetch } from '@/lib/tmdb/server';
 import BrowseClient from '@/components/pages/BrowseClient';
 import type { TMDBShow } from '@/types';
@@ -51,5 +52,9 @@ async function getBrowseData() {
 
 export default async function BrowsePage() {
   const shows = await getBrowseData();
-  return <BrowseClient initialShows={shows} />;
+  return (
+    <Suspense>
+      <BrowseClient initialShows={shows} />
+    </Suspense>
+  );
 }
