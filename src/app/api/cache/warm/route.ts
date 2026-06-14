@@ -2,7 +2,7 @@
  * POST /api/cache/warm
  *
  * Pre-warms Redis with full genre catalogs (up to 2000 items per genre).
- * Called by Vercel Cron every 6 hours, or manually via POST.
+ * Called by Vercel Cron once daily (noon UTC), or manually via POST.
  *
  * Requires header: Authorization: Bearer $CACHE_WARM_SECRET
  * (CACHE_WARM_SECRET env var — set in Vercel dashboard)
