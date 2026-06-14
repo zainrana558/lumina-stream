@@ -21,7 +21,7 @@ import { setCache, getCached, CACHE_TTL, type CacheCategory } from '@/lib/cache'
 // Turbopack aggressively caches type info from imported modules.
 // Cast 'warm' to bypass stale CacheCategory type resolution.
 const WARM = 'warm' as Parameters<typeof getCached>[0];
-import { getPopularAnime, anilistToMediaItem } from '@/lib/anilist/client';
+import { anilistToMediaItem } from '@/lib/anilist/client';
 import type { AniListMedia } from '@/lib/anilist/client';
 import { tmdbToMedia } from '@/types';
 import type { TMDBShow } from '@/types';
@@ -186,14 +186,56 @@ async function warmGenre(
   return { slug, count: items.length, cached: false };
 }
 
+// Direct AniList fetcher that skips Redis — used during warm to avoid
+// cache-layer contention with the heavy TMDB writes happening in parallel.
+async function warmFetchAnimePage(page: number, perPage = 20): Promise<{ media: AniListMedia[] }> {
+  return limitedFetch(() =>
+    fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        query: `
+          query ($page: Int, $perPage: Int) {
+            Page(page: $page, perPage: $perPage) {
+              pageInfo { total currentPage lastPage hasNextPage perPage }
+              media(type: ANIME, sort: POPULARITY_DESC, isAdult: false) {
+                id idMal
+                title { romaji english native }
+                format status
+                coverImage { extraLarge large medium color }
+                bannerImage
+                genres episodes duration meanScore popularity
+                trending favourites season
+                startDate { year month day }
+                endDate { year month day }
+                studios { nodes { name isAnimationStudio } }
+                siteUrl
+              }
+            }
+          }
+        `,
+        variables: { page, perPage },
+      }),
+    })
+      .then(r => {
+        if (!r.ok) throw new Error(`AniList ${r.status}`);
+        return r.json();
+      })
+      .then(json => {
+        if (json.errors) throw new Error(json.errors.map((e: { message: string }) => e.message).join(', '));
+        return json.data.Page;
+      })
+      .catch(() => ({ media: [] as AniListMedia[] }))
+  );
+}
+
 async function warmAnime(): Promise<{ slug: string; count: number; cached: boolean }> {
   const existing = await getCached<MediaItem[]>(WARM, 'genre:anime');
   if (existing && existing.length > 0) {
     return { slug: 'anime', count: existing.length, cached: true };
   }
 
-  // Fetch 15 pages × 20 = 300 anime items from AniList
-  // Stagger into batches of 3 to avoid combined concurrency spike with TMDB
+  // Fetch 15 pages × 20 = 300 anime items from AniList (direct, no Redis)
   const ANIME_BATCH = 3;
   const ANIME_PAGES = 15;
   const allPages: Array<{ media: AniListMedia[] }> = [];
@@ -202,15 +244,14 @@ async function warmAnime(): Promise<{ slug: string; count: number; cached: boole
     const end = Math.min(start + ANIME_BATCH, ANIME_PAGES);
     const batch = await Promise.all(
       Array.from({ length: end - start }, (_, i) =>
-        limitedFetch(() => getPopularAnime(start + i + 1, 20).catch(() => ({ media: [] })))
+        warmFetchAnimePage(start + i + 1, 20)
       )
     );
     allPages.push(...batch);
   }
-  const pages = allPages;
 
   const seen = new Set<number>();
-  const items: MediaItem[] = pages
+  const items: MediaItem[] = allPages
     .flatMap(p => p.media)
     .filter(m => {
       if (!m.coverImage?.large || seen.has(m.id)) return false;
