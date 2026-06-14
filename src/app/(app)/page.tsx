@@ -67,9 +67,9 @@ async function getTMDBData() {
     const batchEntries = HOME_FETCHES.map(f => ({
       category: f.category,
       key: makeKey(f.endpoint, f.params),
-      fetcher: () => tmdbFetchRaw<{ results?: TMDBShow[] }>(f.endpoint, f.params)
-        .then(data => data.results || [])
-        .catch(() => [] as TMDBShow[]),
+      fetcher: () => tmdbFetchRaw<{ results?: TMDBShow[]; total_results?: number }>(f.endpoint, f.params)
+        .then(data => ({ results: data.results || [], total_results: data.total_results || 0 }))
+        .catch(() => ({ results: [] as TMDBShow[], total_results: 0 })),
     }));
 
     // Single Redis MGET + parallel fetch for misses
@@ -78,7 +78,18 @@ async function getTMDBData() {
     // Extract results by ID
     const get = (id: string): TMDBShow[] => {
       const idx = HOME_FETCHES.findIndex(f => f.id === id);
-      return idx >= 0 ? batchResults[idx].data as TMDBShow[] : [];
+      const entry = batchResults[idx]?.data as { results?: TMDBShow[]; total_results?: number } | TMDBShow[] | undefined;
+      if (!entry) return [];
+      if (Array.isArray(entry)) return entry;
+      return entry.results || [];
+    };
+    // Extract total_results by ID (for genre counts)
+    const getTotal = (id: string): number => {
+      const idx = HOME_FETCHES.findIndex(f => f.id === id);
+      const entry = batchResults[idx]?.data as { results?: TMDBShow[]; total_results?: number } | TMDBShow[] | undefined;
+      if (!entry) return 0;
+      if (Array.isArray(entry)) return 0;
+      return entry.total_results || 0;
     };
 
     // Filter poster-only items (was done in safeFetch before)
@@ -105,7 +116,9 @@ async function getTMDBData() {
     const acclaimed   = filterPosters(get('acclaimed'));
     const warHistory  = filterPosters(get('warHistory'));
 
-    const featured = trending.slice(0, 10).map(r => tmdbToMedia(r));
+    // Filter trending to only items with backdrop_path for hero carousel
+    const trendingWithBackdrop = trending.filter(r => r.backdrop_path);
+    const featured = trendingWithBackdrop.slice(0, 10).map(r => tmdbToMedia(r));
     const rows: RowData[] = [];
 
     // ── Trending & Popular ──
@@ -167,7 +180,7 @@ async function getTMDBData() {
         name,
         backdrop: pick?.backdrop_path || null,
         title: pick?.title || pick?.name || '',
-        count: results.length,
+        count: getTotal(`feat-${key}`) || results.length,
         tagline: GENRE_TAGLINES[key] || '',
       };
     });

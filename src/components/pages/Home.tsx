@@ -351,7 +351,7 @@ function GenrePortalCard({
             marginBottom: 10, whiteSpace: 'nowrap', overflow: 'hidden',
             textOverflow: 'ellipsis', maxWidth: '85%',
           }}>
-            TRENDING: {featuredTitle.toUpperCase()}
+            FEATURED: {featuredTitle.toUpperCase()}
           </div>
         )}
         {/* Enter Portal CTA (visible on hover) */}
