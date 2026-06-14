@@ -70,7 +70,7 @@ export interface AniListMedia {
   popularity: number;
   trending: number;
   favourites: number;
-  nextEpisode: {
+  nextAiringEpisode: {
     airingAt: number | null;
     episode: number | null;
     timeUntilAiring: number | null;
@@ -120,7 +120,7 @@ const MEDIA_LIST_FRAGMENT = `
   season
   startDate { year month day }
   endDate { year month day }
-  nextEpisode { airingAt episode timeUntilAiring }
+  nextAiringEpisode { airingAt episode timeUntilAiring }
   studios { nodes { name isAnimationStudio } }
   siteUrl
 `;
@@ -146,7 +146,7 @@ const MEDIA_DETAIL_FRAGMENT = `
   season
   startDate { year month day }
   endDate { year month day }
-  nextEpisode { airingAt episode timeUntilAiring }
+  nextAiringEpisode { airingAt episode timeUntilAiring }
   studios { nodes { name isAnimationStudio } }
   siteUrl
   externalLinks { site url icon }
@@ -438,7 +438,6 @@ export async function getAiringAnime(page = 1, perPage = 20): Promise<AniListPag
         pageInfo { total currentPage lastPage hasNextPage perPage }
         media(type: ANIME, sort: POPULARITY_DESC, status: RELEASING, isAdult: false) {
           ${MEDIA_LIST_FRAGMENT}
-          nextEpisode { airingAt episode timeUntilAiring }
         }
       }
     }
