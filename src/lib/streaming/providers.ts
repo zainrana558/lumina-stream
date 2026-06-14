@@ -6,7 +6,7 @@
  * When a provider is detected as dead, it gets swapped with a replacement
  * from the pool. When a dead provider recovers, it goes back into the pool.
  *
- * Total: 22 active + 17 replacements = 39 providers available
+ * Total: 21 active + 16 replacements = 37 providers available
  * Categories: 'all' = movies + TV, 'anime' = anime-focused embeds
  *
  * All providers verified alive as of 2026-06-14.
@@ -55,7 +55,6 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'VidPhantom', category: 'all', getMovieUrl: (id) => `https://vidphantom.com/movie/${id}`, getTvUrl: (id, s, e) => `https://vidphantom.com/tv/${id}/${s}/${e}` },
   { name: 'CodeSpecters', category: 'all', getMovieUrl: (id) => `https://api.codespecters.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://api.codespecters.com/embed/tv/${id}/${s}/${e}` },
   { name: 'MultiEmbed', category: 'all', getMovieUrl: (id) => `https://multiembed.mov/movie/${id}`, getTvUrl: (id, s, e) => `https://multiembed.mov/tv/${id}/${s}/${e}` },
-  { name: '2Embed', category: 'all', getMovieUrl: (id) => `https://2embed.cc/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://2embed.cc/embed/tv/${id}/${s}/${e}` },
   { name: 'SuperEmbed', category: 'all', getMovieUrl: (id) => `https://superembed.stream/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://superembed.stream/embed/tv/${id}/${s}/${e}` },
   { name: 'Playembed', category: 'all', getMovieUrl: (id) => `https://playembed.top/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://playembed.top/embed/tv/${id}/${s}/${e}` },
   { name: 'VidPlay', category: 'all', getMovieUrl: (id) => `https://vidplay.site/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidplay.site/embed/tv/${id}/${s}/${e}` },
@@ -107,9 +106,9 @@ const activeProviders: StreamProvider[] = [
     getMovieUrl: (id) => `https://vidsrc.cc/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.cc/embed/tv/${id}/${s}/${e}`,
   },
-    // ════════════════════════════════════════════
+  // ════════════════════════════════════════════
   // TIER 2 — Backup
-  // ════════════════════════════════════════════,
+  // ════════════════════════════════════════════
   {
     name: "VidSrc To",
     tier: 2, category: "all",
