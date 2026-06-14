@@ -5,6 +5,7 @@ import type { MediaItem, SortKey, TMDBShow } from '@/types';
 import { GENRES_ALL } from '@/styles/themes';
 import { tmdbToMedia } from '@/types';
 import Card from '@/components/common/Card';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 interface BrowseClientProps {
   initialShows: MediaItem[];
@@ -27,7 +28,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const [sort, setSort] = useState<SortKey>('r');
   const [isMobile, setIsMobile] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [browseSource, setBrowseSource] = useState<BrowseSource>('all');
   const currentPageRef = useRef(1);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -222,14 +223,18 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     }
   }, [loadingMore, hasMore, isSearching, searchPage, searchTotalPages, activeQuery, browseSource, animePage, animeShows.length, searchResults.length]);
 
-  // Enable load more only for search mode
+  // Determine hasMore based on mode
   useEffect(() => {
     if (isSearching) {
       setHasMore(searchPage < searchTotalPages);
+    } else if (browseSource === 'anime') {
+      setHasMore(animeHasMore);
+    } else if (browseSource === 'all') {
+      setHasMore(true);
     } else {
-      setHasMore(false);
+      setHasMore(true);
     }
-  }, [isSearching, searchPage, searchTotalPages]);
+  }, [isSearching, searchPage, searchTotalPages, browseSource, animeHasMore]);
 
   // Get the combined source list for browse mode
   const browseList = useMemo(() => {
@@ -273,6 +278,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const totalCount = isSearching
     ? searchTotalResults || searchResults.length
     : browseList.length;
+
+  const { sentinelRef } = useInfiniteScroll(loadMore, hasMore, loadingMore);
 
   const isFeatured = useCallback((index: number) => {
     if (isMobile) return false;
@@ -435,6 +442,13 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         </div>
       )}
 
+      {/* Infinite scroll sentinel */}
+      <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
+      {loadingMore && (
+        <div className="f-cinzel" style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em', position: 'relative', zIndex: 3 }}>
+          ✦ Loading…
+        </div>
+      )}
       {!hasMore && list.length > 0 && (
         <div className="f-cinzel" style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.25)',  fontSize: '.75rem', letterSpacing: '.08em', position: 'relative', zIndex: 3 }}>
           — End of catalog —
