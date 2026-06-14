@@ -11,17 +11,14 @@ export interface ShortcutFeedback {
 export interface KeyboardShortcutHandlers {
   onTogglePlayPause?: () => void;
   onToggleFullscreen?: () => void;
-  onToggleMute?: () => void;
-  onSeekBack10?: () => void;
-  onSeekForward10?: () => void;
-  onVolumeUp?: () => void;
-  onVolumeDown?: () => void;
-  onSeekBack30?: () => void;
-  onSeekForward30?: () => void;
   onExit?: () => void;
   onPreviousEpisode?: () => void;
   onNextEpisode?: () => void;
   onToggleSubtitles?: () => void;
+  onSwitchProvider?: () => void;
+  onPopOutPip?: () => void;
+  onNextSeason?: () => void;
+  onPreviousSeason?: () => void;
   onShowShortcuts?: () => void;
 }
 
@@ -47,11 +44,9 @@ export function useKeyboardShortcuts(
     if (!enabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-      // Don't intercept if shortcuts overlay is visible and Escape is pressed (close overlay)
       if (shortcutsVisible && e.key === '?') {
         e.preventDefault();
         toggleShortcuts();
@@ -73,44 +68,6 @@ export function useKeyboardShortcuts(
           handlers.onToggleFullscreen?.();
           showFeedback('⛶', 'Fullscreen');
           break;
-        case 'm':
-        case 'M':
-          e.preventDefault();
-          handlers.onToggleMute?.();
-          showFeedback('🔇', 'Mute');
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          handlers.onSeekBack10?.();
-          showFeedback('⏪', '-10s');
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          handlers.onSeekForward10?.();
-          showFeedback('⏩', '+10s');
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          handlers.onVolumeUp?.();
-          showFeedback('🔊', 'Vol Up');
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          handlers.onVolumeDown?.();
-          showFeedback('🔉', 'Vol Down');
-          break;
-        case 'j':
-        case 'J':
-          e.preventDefault();
-          handlers.onSeekBack30?.();
-          showFeedback('⏪', '-30s');
-          break;
-        case 'l':
-        case 'L':
-          e.preventDefault();
-          handlers.onSeekForward30?.();
-          showFeedback('⏩', '+30s');
-          break;
         case 'Escape':
           e.preventDefault();
           if (shortcutsVisible) {
@@ -130,6 +87,41 @@ export function useKeyboardShortcuts(
           e.preventDefault();
           handlers.onNextEpisode?.();
           showFeedback('⏭', 'Next Episode');
+          break;
+        case 'n':
+        case 'N':
+          e.preventDefault();
+          handlers.onNextEpisode?.();
+          showFeedback('⏭', 'Next Episode');
+          break;
+        case 'p':
+        case 'P':
+          if (e.shiftKey) {
+            e.preventDefault();
+            handlers.onPreviousEpisode?.();
+            showFeedback('⏮', 'Prev Episode');
+          } else {
+            e.preventDefault();
+            handlers.onPopOutPip?.();
+            showFeedback('📺', 'PiP Mode');
+          }
+          break;
+        case 'Tab':
+          e.preventDefault();
+          handlers.onSwitchProvider?.();
+          showFeedback('🔄', 'Next Server');
+          break;
+        case 's':
+        case 'S':
+          if (e.shiftKey) {
+            e.preventDefault();
+            handlers.onPreviousSeason?.();
+            showFeedback('⏮', 'Prev Season');
+          } else {
+            e.preventDefault();
+            handlers.onNextSeason?.();
+            showFeedback('⏭', 'Next Season');
+          }
           break;
         case 'c':
         case 'C':

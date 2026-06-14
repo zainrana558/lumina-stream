@@ -328,6 +328,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     onPreviousEpisode: () => { if (epIdx > 1) setEpIdx(epIdx - 1); },
     onNextEpisode: () => setEpIdx(epIdx + 1),
     onToggleSubtitles: () => {}, // placeholder for future real subtitles
+    onSwitchProvider: () => { if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
+    onPopOutPip: () => { if (activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); } },
+    onNextSeason: () => { if (season < seasons) { setSeason(season + 1); setEpIdx(1); } },
+    onPreviousSeason: () => { if (season > 1) { setSeason(season - 1); setEpIdx(1); } },
   });
 
   const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];

@@ -5,10 +5,14 @@ import { CS } from '@/styles/themes';
 const SHORTCUTS = [
   { key: 'Space / K', action: 'Play / Pause', icon: '⏯' },
   { key: 'F', action: 'Toggle Fullscreen', icon: '⛶' },
+  { key: 'Tab', action: 'Switch Server', icon: '🔄' },
+  { key: 'P', action: 'Pop-out to PiP', icon: '📺' },
   { key: '< / >', action: 'Previous / Next Episode', icon: '⏮' },
+  { key: 'S / Shift+S', action: 'Next / Previous Season', icon: '📑' },
+  { key: 'N', action: 'Next Episode', icon: '⏭' },
   { key: 'C', action: 'Toggle Subtitles', icon: '💬' },
   { key: 'Escape', action: 'Exit Player', icon: '✕' },
-  { key: '?', action: 'Show / Hide Shortcuts', icon: '⌨' },
+  { key: '?', action: 'Show / Hide This', icon: '⌨' },
 ];
 
 export default function ShortcutOverlay({ visible, onClose }: { visible: boolean; onClose: () => void }) {
