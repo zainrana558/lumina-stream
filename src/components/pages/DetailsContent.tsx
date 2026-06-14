@@ -7,6 +7,8 @@ import type { MediaItem, TMDBCastMember, TMDBShow } from '@/types';
 import { tmdbToMedia } from '@/types';
 import { CS } from '@/styles/themes';
 import Card from '@/components/common/Card';
+import ShareButton from '@/components/common/ShareButton';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useApp } from '@/contexts/AppContext';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { vibrateMedium, vibrateLong } from '@/lib/haptics';
@@ -41,6 +43,7 @@ interface FullDetails {
   videos?: { results: Array<{ id: string; key: string; name: string; type: string; site: string }> };
   number_of_seasons?: number;
   production_companies?: Array<{ name: string }>;
+  content_ratings?: { results: Array<{ iso_3166_1: string; rating: string }> };
 }
 
 interface DetailsContentProps {
@@ -48,13 +51,6 @@ interface DetailsContentProps {
   initialShow: MediaItem & { _malId?: number; _anilistCover?: string; _anilistBanner?: string; _anilistUrl?: string } | null;
   initialCredits?: TMDBCastMember[];
   initialSimilar?: MediaItem[];
-}
-
-interface SubtitleSettings {
-  fontSize: 'small' | 'medium' | 'large';
-  fontColor: 'white' | 'yellow' | 'cyan';
-  bg: 'none' | 'black' | 'darkgray';
-  position: 'bottom' | 'top';
 }
 
 export default function DetailsContent({ showId, initialShow, initialCredits = [], initialSimilar = [] }: DetailsContentProps) {
@@ -66,49 +62,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [epIdx, setEpIdx] = useState(1);
   const [season, setSeason] = useState(1);
   const [playing, setPlaying] = useState(false);
-  const [scrub, setScrub] = useState(28);
-  const [ccOpen, setCcOpen] = useState(false);
-  const ccRef = useRef<HTMLDivElement>(null);
-
-  const [subSettings, setSubSettings] = useState<SubtitleSettings>(() => {
-    if (typeof window === 'undefined') return { fontSize: 'medium', fontColor: 'white', bg: 'black', position: 'bottom' };
-    try {
-      const saved = localStorage.getItem('lumina_subtitle_settings');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return { fontSize: 'medium', fontColor: 'white', bg: 'black', position: 'bottom' };
-  });
-
-  // Save subtitle settings to localStorage
-  const updateSubSetting = useCallback(<K extends keyof SubtitleSettings>(key: K, value: SubtitleSettings[K]) => {
-    setSubSettings(prev => {
-      const next = { ...prev, [key]: value };
-      try { localStorage.setItem('lumina_subtitle_settings', JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
-  }, []);
-
-  // Close CC popover on click outside
-  useEffect(() => {
-    if (!ccOpen) return;
-    const fn = (e: MouseEvent) => {
-      if (ccRef.current && !ccRef.current.contains(e.target as Node)) setCcOpen(false);
-    };
-    document.addEventListener('mousedown', fn);
-    return () => document.removeEventListener('mousedown', fn);
-  }, [ccOpen]);
-
-  // CSS custom properties for subtitle styling
-  const subtitleStyleVars: React.CSSProperties = {
-    '--sub-font-size': subSettings.fontSize === 'small' ? '14px' : subSettings.fontSize === 'large' ? '24px' : '18px',
-    '--sub-font-color': subSettings.fontColor === 'yellow' ? '#FFE566' : subSettings.fontColor === 'cyan' ? '#4EEAE4' : '#FFFFFF',
-    '--sub-bg': subSettings.bg === 'black' ? 'rgba(0,0,0,.85)' : subSettings.bg === 'darkgray' ? 'rgba(30,30,30,.8)' : 'transparent',
-    '--sub-position': subSettings.position === 'top' ? 'top: 12%; left: 50%; transform: translateX(-50%)' : 'bottom: 8%; left: 50%; transform: translateX(-50%)',
-  } as React.CSSProperties;
-
-  const fontColorMap: Record<string, string> = { white: '#FFFFFF', yellow: '#FFE566', cyan: '#4EEAE4' };
-  const bgMap: Record<string, string> = { none: 'transparent', black: 'rgba(0,0,0,.85)', darkgray: 'rgba(30,30,30,.8)' };
-
   const [inWatchlist, setInWatchlist] = useState(false);
   const [userRating, setUserRating] = useState<number | null>(null);
 
@@ -181,7 +134,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     const load = async () => {
       setSeason(1); setEpIdx(1); setLoadingDetails(true);
       try {
-        const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${id}&append_to_response=credits,similar,videos`, { signal: controller.signal });
+        const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${id}&append_to_response=credits,similar,videos,content_ratings`, { signal: controller.signal });
         const data = await res.json();
         if (!cancelled) { setFullDetails(data); setLoadingDetails(false); }
       } catch { if (!cancelled) setLoadingDetails(false); }
@@ -361,6 +314,22 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     ? initialCredits
     : show.cast.map(name => ({ name, character: '', profile_path: null, id: 0 }));
 
+  // Real maturity rating from TMDB
+  const contentRating = fullDetails?.content_ratings?.results?.find(r => r.iso_3166_1 === 'US')?.rating
+    || fullDetails?.content_ratings?.results?.[0]?.rating
+    || null;
+
+  // Keyboard shortcuts (only active when player is open)
+  const playerRef = useRef<HTMLDivElement>(null);
+  useKeyboardShortcuts(playing, {
+    onTogglePlayPause: () => setPlaying(p => !p),
+    onToggleFullscreen: () => { playerRef.current?.requestFullscreen?.(); },
+    onExit: () => setPlaying(false),
+    onPreviousEpisode: () => { if (epIdx > 1) setEpIdx(epIdx - 1); },
+    onNextEpisode: () => setEpIdx(epIdx + 1),
+    onToggleSubtitles: () => {}, // placeholder for future real subtitles
+  });
+
   const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
 
   const handlePostComment = async () => {
@@ -450,21 +419,16 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         <div style={{ position: 'absolute', bottom: '6%', left: 'clamp(1rem,5vw,2.5rem)', right: 'clamp(1rem,5vw,2.5rem)', zIndex: 3, maxWidth: 'clamp(300px,60vw,1040px)' }}>
           <div className="s1" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '.65rem', alignItems: 'center' }}>
             <div className="badge-r">⭐ {show.r}</div>
-            {/* Match % - deterministic based on show id + genre seed */}
-            <div className="f-cinzel" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20,
-              background: 'rgba(78,205,196,.12)', color: '#4ECDC4',
-               fontSize: '.68rem', fontWeight: 600,
-              boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(78,205,196,.25)',
-            }}>💚 {(() => { const seed = (show.id * 7 + show.genre.reduce((a, g) => a + g.charCodeAt(0), 0)) % 38; return 60 + seed; })()}% Match</div>
-            {/* Maturity rating heuristic */}
-            <div className="f-cinzel" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20,
-              background: show.genre.some(g => ['Horror', 'Thriller'].includes(g)) ? 'rgba(255,74,74,.12)' : show.genre.includes('Animation') ? 'rgba(78,205,196,.12)' : 'rgba(255,179,71,.12)',
-              color: show.genre.some(g => ['Horror', 'Thriller'].includes(g)) ? '#FF4A4A' : show.genre.includes('Animation') ? '#4ECDC4' : '#FFB347',
-               fontSize: '.68rem', fontWeight: 600,
-              boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.08)',
-            }}>{show.genre.some(g => ['Horror', 'Thriller'].includes(g)) ? 'TV-MA' : show.genre.includes('Animation') ? 'TV-Y7' : 'TV-14'}</div>
+            {/* Maturity rating from TMDB */}
+            {contentRating && (
+              <div className="f-cinzel" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20,
+                background: ['TV-MA','R','NC-17'].includes(contentRating) ? 'rgba(255,74,74,.12)' : ['TV-Y','TV-Y7','G','PG'].includes(contentRating) ? 'rgba(78,205,196,.12)' : 'rgba(255,179,71,.12)',
+                color: ['TV-MA','R','NC-17'].includes(contentRating) ? '#FF4A4A' : ['TV-Y','TV-Y7','G','PG'].includes(contentRating) ? '#4ECDC4' : '#FFB347',
+                 fontSize: '.68rem', fontWeight: 600,
+                boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.08)',
+              }}>{contentRating}</div>
+            )}
             {show.genre.slice(0, 3).map(g => <span key={g} className="gtag">{g}</span>)}
             <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)', alignSelf: 'center', }}>{show.yr} · {show.media_type === 'tv' ? `${show.eps} eps` : `${show.eps} min`} · {show.st}</span>
           </div>
@@ -480,6 +444,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           <button className="btn-g" onClick={toggleWatchlist} style={{ opacity: inWatchlist ? 1 : 0.85 }}>
             {inWatchlist ? '✓ In My List' : '+ My List'}
           </button>
+          <ShareButton title={show.title} id={show.id} />
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
             {[1,2,3,4,5,6,7,8,9,10].map(n => (
               <button className="f-cinzel" key={n} onClick={() => handleRate(n)} aria-label={'Rate ' + n + ' out of 10'} style={{
@@ -536,7 +501,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                         <div className="f-mono" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.35)', }}>{e.dur}{e.done ? ' · ✓' : ''}</div>
                       </div>
                       {e.done && <span style={{ fontSize: '.68rem', color: s.acc }}>✓</span>}
-                      <span className="f-mono" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.22)', }}>4K</span>
                     </button>
                   );
                 })}
@@ -555,9 +519,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               ['Genres', show.genre.join(', ')],
               ['Seasons', show.media_type === 'tv' ? (fullDetails?.number_of_seasons || Math.ceil(show.eps / 12)) : 'N/A'],
               ['Runtime', show.media_type === 'movie' ? `${show.eps} min` : `${epData[0]?.dur || '23m'} / ep`],
-              ['Audio', 'DTS-HD · Dolby Atmos'],
-              ['Subtitles', 'EN · JA · FR · DE'],
-              ['Label', 'Lumina Original'],
             ] as const).map(([k, v], i) => (
               <div key={k} className="neo-card" style={{ padding: '14px 16px', borderRadius: 12, animation: `card-in .4s ${i * 0.045}s both` }}>
                 <div className="f-cinzel" style={{  fontSize: '.62rem', color: 'rgba(255,245,232,.32)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 7 }}>{k}</div>
@@ -721,98 +682,8 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
       {/* Player overlay */}
       {playing && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fi .28s ease both', ...subtitleStyleVars } as React.CSSProperties}>
+        <div ref={playerRef} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fi .28s ease both' }}>
           <div style={{ position: 'absolute', inset: 0, background: s.bg, opacity: .12 }} />
-
-          {/* Subtitle preview overlay */}
-          <div className="f-crimson" style={{
-            position: 'absolute', zIndex: 8, pointerEvents: 'none',
-            fontSize: 'var(--sub-font-size)', color: 'var(--sub-font-color)',
-            background: 'var(--sub-bg)', padding: '4px 12px', borderRadius: 4,
-             maxWidth: '80%', textAlign: 'center', lineHeight: 1.4,
-            textShadow: '0 1px 4px rgba(0,0,0,.9)',
-            ...subSettings.position === 'top' ? { top: '12%', left: '50%', transform: 'translateX(-50%)' } : { bottom: '10%', left: '50%', transform: 'translateX(-50%)' },
-          }}>Subtitle preview</div>
-
-          {/* CC Popover (shared) */}
-          <div ref={ccRef} style={{ position: 'absolute', bottom: activeProviderUrl ? 80 : 130, right: 24, zIndex: 20 }}>
-            {ccOpen && (
-              <div className="neo-raised" style={{
-                padding: '1rem 1.2rem', borderRadius: 14, width: 220,
-                animation: 'fi .2s ease both',
-                background: '#110E24',
-                boxShadow: '6px 6px 18px rgba(0,0,0,.8),-2px -2px 6px rgba(45,25,90,.25),inset 0 1px 0 rgba(255,255,255,.06)',
-              }}>
-                <div className="f-cinzel" style={{  fontSize: '.62rem', letterSpacing: '.14em', color: '#FFB347', marginBottom: '.75rem' }}>SUBTITLE SETTINGS</div>
-
-                {/* Font size */}
-                <div style={{ marginBottom: '.65rem' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.4)', marginBottom: '.35rem', }}>Font Size</div>
-                  <div style={{ display: 'flex', gap: '.35rem' }}>
-                    {(['small', 'medium', 'large'] as const).map(sz => (
-                      <button className="f-cinzel" key={sz} onClick={() => updateSubSetting('fontSize', sz)} style={{
-                        flex: 1, padding: '5px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
-                         fontSize: '.6rem', fontWeight: 600, textTransform: 'capitalize',
-                        background: subSettings.fontSize === sz ? '#FFB347' : '#090716',
-                        color: subSettings.fontSize === sz ? '#05020A' : 'rgba(255,245,232,.45)',
-                        boxShadow: subSettings.fontSize === sz ? '3px 3px 8px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.3)' : 'inset 2px 2px 5px rgba(0,0,0,.6),inset -1px -1px 3px rgba(35,20,75,.15)',
-                        transition: 'all .2s',
-                      }}>{sz}</button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Font color */}
-                <div style={{ marginBottom: '.65rem' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.4)', marginBottom: '.35rem', }}>Font Color</div>
-                  <div style={{ display: 'flex', gap: '.5rem' }}>
-                    {(['white', 'yellow', 'cyan'] as const).map(c => (
-                      <button key={c} onClick={() => updateSubSetting('fontColor', c)} title={c} style={{
-                        width: 28, height: 28, borderRadius: '50%', border: subSettings.fontColor === c ? '2px solid #FFB347' : '2px solid rgba(255,255,255,.12)',
-                        background: fontColorMap[c], cursor: 'pointer', padding: 0,
-                        boxShadow: subSettings.fontColor === c ? `0 0 8px ${fontColorMap[c]}60` : 'none',
-                        transition: 'all .2s',
-                      }} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Background */}
-                <div style={{ marginBottom: '.65rem' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.4)', marginBottom: '.35rem', }}>Background</div>
-                  <div style={{ display: 'flex', gap: '.35rem' }}>
-                    {(['none', 'black', 'darkgray'] as const).map(b => (
-                      <button className="f-cinzel" key={b} onClick={() => updateSubSetting('bg', b)} style={{
-                        flex: 1, padding: '5px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
-                         fontSize: '.55rem', fontWeight: 600, textTransform: 'capitalize',
-                        background: subSettings.bg === b ? '#FFB347' : '#090716',
-                        color: subSettings.bg === b ? '#05020A' : 'rgba(255,245,232,.45)',
-                        boxShadow: subSettings.bg === b ? '3px 3px 8px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.3)' : 'inset 2px 2px 5px rgba(0,0,0,.6),inset -1px -1px 3px rgba(35,20,75,.15)',
-                        transition: 'all .2s',
-                      }}>{b === 'darkgray' ? 'Gray' : b}</button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Position */}
-                <div>
-                  <div className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.4)', marginBottom: '.35rem', }}>Position</div>
-                  <div style={{ display: 'flex', gap: '.35rem' }}>
-                    {(['bottom', 'top'] as const).map(p => (
-                      <button className="f-cinzel" key={p} onClick={() => updateSubSetting('position', p)} style={{
-                        flex: 1, padding: '5px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
-                         fontSize: '.6rem', fontWeight: 600, textTransform: 'capitalize',
-                        background: subSettings.position === p ? '#FFB347' : '#090716',
-                        color: subSettings.position === p ? '#05020A' : 'rgba(255,245,232,.45)',
-                        boxShadow: subSettings.position === p ? '3px 3px 8px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.3)' : 'inset 2px 2px 5px rgba(0,0,0,.6),inset -1px -1px 3px rgba(35,20,75,.15)',
-                        transition: 'all .2s',
-                      }}>{p}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
 
           {activeProviderUrl ? (
             <>
@@ -836,7 +707,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} {show.media_type === 'tv' ? `· S${season} E${epIdx}` : ''}</div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button className="f-cinzel" onClick={() => setCcOpen(!ccOpen)} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(255,179,71,.35)', background: ccOpen ? 'rgba(255,179,71,.2)' : 'rgba(0,0,0,.6)', color: '#FFF5E8',  fontSize: '.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '.05em', transition: 'all .2s', boxShadow: ccOpen ? '0 0 8px rgba(255,179,71,.2)' : 'none' }}>CC</button>
                     <button className="btn-g" onClick={() => { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); }} style={{ padding: '8px 18px', fontSize: '.78rem' }} title="Pop-out to mini player">⟶ PiP</button>
                     <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
                   </div>
@@ -847,19 +717,14 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
             <>
               <div style={{ width: 90, height: 90, borderRadius: '50%', background: 'radial-gradient(circle,rgba(255,160,180,.92) 0%,rgba(255,107,138,.85) 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, color: '#05020A', zIndex: 2, boxShadow: '0 0 70px rgba(255,133,161,.65),8px 8px 20px rgba(0,0,0,.7),inset 0 3px 6px rgba(255,255,255,.35)', animation: 'breathe 2.4s ease-in-out infinite', cursor: 'pointer' }} onClick={() => setPlaying(false)}>▶</div>
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '24px 36px 32px', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ marginBottom: 12 }}>
-                  <input type="range" min={0} max={100} value={scrub} className="scrubber" style={{ '--v': `${scrub}%` } as React.CSSProperties} onChange={(e) => setScrub(Number(e.target.value))} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                    <span className="f-mono" style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)', }}>{String(Math.floor(scrub * 23 / 100)).padStart(2, '0')}:{String(Math.floor((scrub * 23 % 100) * 0.6)).padStart(2, '0')}</span>
-                    <span className="f-mono" style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)', }}>23:00</span>
-                  </div>
-                </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Playing'}</div>
-                  <div style={{ display: 'flex', gap: 8 }}>{['⏮', '⏪', '▶', '⏩', '⏭'].map(ic => <button key={ic} className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }}>{ic}</button>)}</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => { if (epIdx > 1) setEpIdx(epIdx - 1); }}>⏮</button>
+                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => setPlaying(false)}>▶</button>
+                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => setEpIdx(epIdx + 1)}>⏭</button>
+                  </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button className="f-cinzel" onClick={() => setCcOpen(!ccOpen)} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(255,179,71,.35)', background: ccOpen ? 'rgba(255,179,71,.2)' : 'rgba(0,0,0,.6)', color: '#FFF5E8',  fontSize: '.68rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '.05em', transition: 'all .2s', boxShadow: ccOpen ? '0 0 8px rgba(255,179,71,.2)' : 'none' }}>CC</button>
-                    <button className="btn-g" onClick={() => { setPlaying(false); openPip(activeProviderUrl || '', show.title, show.media_type === 'tv' ? `Ep ${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); }} style={{ padding: '8px 14px', fontSize: '.78rem' }} title="Pop-out to mini player">⟶</button>
                     <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
                   </div>
                 </div>

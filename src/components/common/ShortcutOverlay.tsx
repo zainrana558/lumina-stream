@@ -5,14 +5,9 @@ import { CS } from '@/styles/themes';
 const SHORTCUTS = [
   { key: 'Space / K', action: 'Play / Pause', icon: '⏯' },
   { key: 'F', action: 'Toggle Fullscreen', icon: '⛶' },
-  { key: 'M', action: 'Toggle Mute', icon: '🔇' },
-  { key: '← / →', action: 'Seek ±10 seconds', icon: '⏩' },
-  { key: 'J / L', action: 'Seek ±30 seconds', icon: '⏩' },
-  { key: '↑ / ↓', action: 'Volume Up / Down', icon: '🔊' },
   { key: '< / >', action: 'Previous / Next Episode', icon: '⏮' },
   { key: 'C', action: 'Toggle Subtitles', icon: '💬' },
   { key: 'Escape', action: 'Exit Player', icon: '✕' },
-  { key: 'P', action: 'Toggle Picture-in-Picture', icon: '📺' },
   { key: '?', action: 'Show / Hide Shortcuts', icon: '⌨' },
 ];
 
