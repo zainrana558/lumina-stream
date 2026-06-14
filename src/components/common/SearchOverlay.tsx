@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { MediaItem, TMDBSearchResult } from '@/types';
-import { tmdbToMedia } from '@/types';
+import type { MediaItem } from '@/types';
 import { GCARDS } from '@/styles/themes';
 import { CS } from '@/styles/themes';
 import Image from 'next/image';
@@ -16,7 +15,7 @@ interface TMDBPersonResult {
   name: string;
   profile_path: string | null;
   known_for_department: string;
-  known_for: TMDBSearchResult[];
+  known_for: Array<{ id: number; title?: string; name?: string; media_type?: string }>;
   popularity: number;
 }
 
@@ -87,6 +86,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       return;
     }
 
+    // Anime-only tab uses AniList directly
     if (searchTab === 'anime') {
       try {
         const res = await fetch(`/api/anime?type=search&q=${encodeURIComponent(query)}`);
@@ -103,47 +103,32 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       return;
     }
 
+    // Shows tab: searches BOTH TMDB + AniList via /api/search
     try {
-      if (hasActiveFilters) {
-        const searchRes = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-        const searchData = await searchRes.json();
-        if (searchData.results) {
-          let items = searchData.results
-            .filter((r: TMDBSearchResult) => r.media_type === 'movie' || r.media_type === 'tv');
-          if (filters.mediaType !== 'all') {
-            items = items.filter((r: TMDBSearchResult) => r.media_type === filters.mediaType);
-          }
+      const source = hasActiveFilters && filters.mediaType !== 'all' ? 'tmdb' : 'all';
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&page=1&source=${source}`);
+      const data = await res.json();
+      if (data.results) {
+        // API returns MediaItem[] directly
+        let items: MediaItem[] = data.results;
+
+        // Apply client-side filters when active
+        if (hasActiveFilters) {
           if (filters.yearFrom) {
-            items = items.filter((r: TMDBSearchResult) => {
-              const yr = parseInt((r.release_date || r.first_air_date || '').split('-')[0]);
-              return yr >= parseInt(filters.yearFrom);
-            });
+            items = items.filter(s => s.yr >= parseInt(filters.yearFrom));
           }
           if (filters.yearTo) {
-            items = items.filter((r: TMDBSearchResult) => {
-              const yr = parseInt((r.release_date || r.first_air_date || '').split('-')[0]);
-              return yr <= parseInt(filters.yearTo);
-            });
+            items = items.filter(s => s.yr <= parseInt(filters.yearTo));
           }
           if (filters.minRating) {
-            items = items.filter((r: TMDBSearchResult) => r.vote_average >= parseFloat(filters.minRating));
+            items = items.filter(s => s.r >= parseFloat(filters.minRating));
           }
-          setResults(items.slice(0, 8).map((r: TMDBSearchResult) => tmdbToMedia(r)));
         }
-      } else {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        if (data.results) {
-          const items = data.results
-            .filter((r: TMDBSearchResult) => r.media_type === 'movie' || r.media_type === 'tv')
-            .slice(0, 8)
-            .map((r: TMDBSearchResult) => tmdbToMedia(r));
-          setResults(items);
-          setSearchPage(1);
-          setHasMoreResults(true);
-        }
+
+        setResults(items.slice(0, 10));
+        setSearchPage(1);
+        setHasMoreResults(data.has_more ?? false);
       }
-      // Save to search history
       addSearch(query);
       setRecentSearches(getRecentSearches());
     } catch {
@@ -159,37 +144,33 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
   }, [doSearch]);
 
   const loadMoreSearch = useCallback(async () => {
-    if (loading || !hasMoreResults || searchQueryRef.current.length < 2) return;
+    if (loading || !hasMoreResults || q.length < 2) return;
     setLoading(true);
     try {
       const nextPage = searchPage + 1;
-      const params = new URLSearchParams();
-      if (hasActiveFilters) {
-        if (filters.mediaType !== 'all') params.set('mediaType', filters.mediaType);
-        if (filters.yearFrom) params.set('yearFrom', filters.yearFrom);
-        if (filters.yearTo) params.set('yearTo', filters.yearTo);
-        if (filters.minRating) params.set('minRating', filters.minRating);
-        if (filters.genre) params.set('genre', filters.genre);
+      const source = searchTab === 'anime' ? undefined : (hasActiveFilters && filters.mediaType !== 'all' ? 'tmdb' : 'all');
+      let url: string;
+      if (searchTab === 'anime') {
+        url = `/api/anime?type=search&q=${encodeURIComponent(q)}&page=${nextPage}`;
+      } else {
+        url = `/api/search?q=${encodeURIComponent(q)}&page=${nextPage}&source=${source}`;
       }
-      params.set('page', String(nextPage));
-      const qs = params.toString() ? `&${params.toString()}` : '';
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQueryRef.current)}&page=${nextPage}${qs}`);
+      const res = await fetch(url);
       const data = await res.json();
       if (data.results) {
-        const newItems = data.results
-          .filter((r: TMDBSearchResult) => r.media_type === 'movie' || r.media_type === 'tv')
-          .map((r: TMDBSearchResult) => tmdbToMedia(r));
+        const newItems: MediaItem[] = data.results;
         const existingIds = new Set(results.map(i => i.id));
         const fresh = newItems.filter((i: MediaItem) => !existingIds.has(i.id));
         if (fresh.length === 0) setHasMoreResults(false);
         setResults(prev => [...prev, ...fresh]);
         setSearchPage(nextPage);
+        if (!data.has_more) setHasMoreResults(false);
       } else {
         setHasMoreResults(false);
       }
     } catch { /* silent */ }
     setLoading(false);
-  }, [loading, hasMoreResults, searchPage, hasActiveFilters, filters, results.length]);
+  }, [loading, hasMoreResults, searchPage, searchTab, hasActiveFilters, filters, q, results.length]);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };

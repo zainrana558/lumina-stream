@@ -12,6 +12,14 @@ interface BrowseClientProps {
 
 const ITEMS_PER_GROUP = 5;
 
+type BrowseSource = 'all' | 'tmdb' | 'anime';
+
+const SOURCE_OPTIONS: { value: BrowseSource; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'tmdb', label: 'Movies & TV' },
+  { value: 'anime', label: 'Anime' },
+];
+
 export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const [allShows, setAllShows] = useState<MediaItem[]>(initialShows);
   const [genre, setGenre] = useState('All');
@@ -20,6 +28,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [browseSource, setBrowseSource] = useState<BrowseSource>('all');
   const currentPageRef = useRef(1);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +42,11 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
 
+  // AniList browse state
+  const [animePage, setAnimePage] = useState(1);
+  const [animeHasMore, setAnimeHasMore] = useState(true);
+  const [animeShows, setAnimeShows] = useState<MediaItem[]>([]);
+
   const isSearching = activeQuery.length > 0;
 
   // Track viewport width for mobile detection
@@ -43,16 +57,28 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Debounced search
+  // Fetch initial AniList batch when source includes anime
   useEffect(() => {
-    // Clear any pending debounce
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (browseSource === 'anime' || browseSource === 'all') {
+      fetch(`/api/anime?type=all&page=1&perPage=25`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.results) {
+            setAnimeShows(data.results);
+            setAnimePage(1);
+            setAnimeHasMore(data.pageInfo?.hasNextPage ?? false);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [browseSource]);
 
-    // Abort previous in-flight search
+  // Debounced search — hits both TMDB + AniList via /api/search
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     if (searchAbortRef.current) searchAbortRef.current.abort();
 
     if (!q.trim()) {
-      // Cleared search — go back to browse mode
       setActiveQuery('');
       setSearchResults([]);
       setSearchPage(1);
@@ -69,16 +95,15 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
 
       try {
         const res = await fetch(
-          `/api/search?q=${encodeURIComponent(q.trim())}&page=1`,
+          `/api/search?q=${encodeURIComponent(q.trim())}&page=1&source=${browseSource}`,
           { signal: controller.signal }
         );
         if (!res.ok) return;
         const data = await res.json();
         if (controller.signal.aborted) return;
 
-        const items = (data.results || [])
-          .filter((r: TMDBShow) => r.poster_path)
-          .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: r.media_type || 'movie' }));
+        // API now returns MediaItem[] directly
+        const items: MediaItem[] = data.results || [];
 
         setSearchResults(items);
         setSearchPage(1);
@@ -87,7 +112,6 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         setActiveQuery(q.trim());
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
-        // Silently fail
       } finally {
         if (!controller.signal.aborted) {
           setSearchLoading(false);
@@ -98,46 +122,95 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [q]);
+  }, [q, browseSource]);
 
-  // Load more: browse mode or search mode
+  // Load more: search mode or browse mode
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
       if (isSearching) {
-        // Load next page of search results
         const nextPage = searchPage + 1;
         if (nextPage > searchTotalPages) {
           setHasMore(false);
           setLoadingMore(false);
           return;
         }
-        const res = await fetch(`/api/search?q=${encodeURIComponent(activeQuery)}&page=${nextPage}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(activeQuery)}&page=${nextPage}&source=${browseSource}`);
         const data = await res.json();
-        const newItems = (data.results || [])
-          .filter((r: TMDBShow) => r.poster_path)
-          .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: r.media_type || 'movie' }));
-        setSearchResults(prev => [...prev, ...newItems]);
+        const newItems: MediaItem[] = data.results || [];
+        const existingIds = new Set(searchResults.map(i => i.id));
+        const fresh = newItems.filter(i => !existingIds.has(i.id));
+        setSearchResults(prev => [...prev, ...fresh]);
         setSearchPage(nextPage);
-        if (nextPage >= searchTotalPages) setHasMore(false);
+        if (nextPage >= searchTotalPages || fresh.length === 0) setHasMore(false);
       } else {
-        // Load more trending/browse content
-        const nextPage = currentPageRef.current + 1;
-        const res = await fetch(`/api/tmdb?endpoint=/trending/all/week&page=${nextPage}`);
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          const newItems = data.results
-            .filter((r: TMDBShow) => r.poster_path)
-            .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: r.media_type || 'movie' }));
-          setAllShows(prev => {
-            const existingIds = new Set(prev.map((i: MediaItem) => i.id));
-            const fresh = newItems.filter((i: MediaItem) => !existingIds.has(i.id));
-            return [...prev, ...fresh];
-          });
-          currentPageRef.current = nextPage;
+        // Browse mode — load more based on source
+        if (browseSource === 'anime') {
+          const nextPage = animePage + 1;
+          const res = await fetch(`/api/anime?type=all&page=${nextPage}&perPage=25`);
+          const data = await res.json();
+          if (data.results && data.results.length > 0) {
+            const existingIds = new Set(animeShows.map(i => i.id));
+            const fresh = data.results.filter((i: MediaItem) => !existingIds.has(i.id));
+            setAnimeShows(prev => [...prev, ...fresh]);
+            setAnimePage(nextPage);
+            setAnimeHasMore(data.pageInfo?.hasNextPage ?? false);
+          } else {
+            setAnimeHasMore(false);
+          }
+        } else if (browseSource === 'all') {
+          // Load from both TMDB and AniList
+          const tmdbNext = currentPageRef.current + 1;
+          const animeNext = animePage + 1;
+
+          const [tmdbData, animeData] = await Promise.all([
+            fetch(`/api/tmdb?endpoint=/trending/all/week&page=${tmdbNext}`).then(r => r.json()).catch(() => ({ results: [] })),
+            fetch(`/api/anime?type=all&page=${animeNext}&perPage=25`).then(r => r.json()).catch(() => ({ results: [] })),
+          ]);
+
+          // TMDB items
+          if (tmdbData.results?.length > 0) {
+            const newItems = tmdbData.results
+              .filter((r: TMDBShow) => r.poster_path)
+              .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: r.media_type || 'movie' }));
+            setAllShows(prev => {
+              const existingIds = new Set(prev.map((i: MediaItem) => i.id));
+              return [...prev, ...newItems.filter((i: MediaItem) => !existingIds.has(i.id))];
+            });
+            currentPageRef.current = tmdbNext;
+          }
+
+          // AniList items
+          if (animeData.results?.length > 0) {
+            const existingIds = new Set(animeShows.map(i => i.id));
+            const fresh = animeData.results.filter((i: MediaItem) => !existingIds.has(i.id));
+            setAnimeShows(prev => [...prev, ...fresh]);
+            setAnimePage(animeNext);
+            setAnimeHasMore(animeData.pageInfo?.hasNextPage ?? false);
+          }
+
+          // Stop when both are exhausted
+          if (tmdbData.results?.length === 0 && animeData.results?.length === 0) {
+            setHasMore(false);
+          }
         } else {
-          setHasMore(false);
+          // TMDB only
+          const nextPage = currentPageRef.current + 1;
+          const res = await fetch(`/api/tmdb?endpoint=/trending/all/week&page=${nextPage}`);
+          const data = await res.json();
+          if (data.results && data.results.length > 0) {
+            const newItems = data.results
+              .filter((r: TMDBShow) => r.poster_path)
+              .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: r.media_type || 'movie' }));
+            setAllShows(prev => {
+              const existingIds = new Set(prev.map((i: MediaItem) => i.id));
+              return [...prev, ...newItems.filter((i: MediaItem) => !existingIds.has(i.id))];
+            });
+            currentPageRef.current = nextPage;
+          } else {
+            setHasMore(false);
+          }
         }
       }
     } catch {
@@ -145,16 +218,30 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, isSearching, searchPage, searchTotalPages, activeQuery]);
+  }, [loadingMore, hasMore, isSearching, searchPage, searchTotalPages, activeQuery, browseSource, animePage, animeShows.length, searchResults.length]);
 
-  // Reset hasMore when switching between search/browse
+  // Reset hasMore when switching modes
   useEffect(() => {
     if (isSearching) {
       setHasMore(searchPage < searchTotalPages);
+    } else if (browseSource === 'anime') {
+      setHasMore(animeHasMore);
+    } else if (browseSource === 'all') {
+      setHasMore(true); // Both sources may have more
     } else {
       setHasMore(true);
     }
-  }, [isSearching, searchPage, searchTotalPages]);
+  }, [isSearching, searchPage, searchTotalPages, browseSource, animeHasMore]);
+
+  // Get the combined source list for browse mode
+  const browseList = useMemo(() => {
+    if (browseSource === 'tmdb') return allShows;
+    if (browseSource === 'anime') return animeShows;
+    // 'all' — combine both, deduplicate by id
+    const animeIds = new Set(animeShows.map(a => a.id));
+    const tmdbUnique = allShows.filter(s => !animeIds.has(s.id));
+    return [...tmdbUnique, ...animeShows];
+  }, [browseSource, allShows, animeShows]);
 
   // The list to display
   const list = useMemo(() => {
@@ -167,15 +254,15 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       }
     };
 
-    const source = isSearching ? searchResults : allShows;
+    const source = isSearching ? searchResults : browseList;
 
     return source
       .filter(s => genre === 'All' || s.genre.some(g => g.toLowerCase() === genre.toLowerCase()))
       .sort(sortFn);
-  }, [isSearching, searchResults, allShows, genre, sort]);
+  }, [isSearching, searchResults, browseList, genre, sort]);
 
   const genreCounts = useMemo(() => {
-    const source = isSearching ? searchResults : allShows;
+    const source = isSearching ? searchResults : browseList;
     const counts: Record<string, number> = { All: source.length };
     source.forEach(s => {
       s.genre.forEach(g => {
@@ -183,9 +270,11 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       });
     });
     return counts;
-  }, [isSearching, searchResults, allShows]);
+  }, [isSearching, searchResults, browseList]);
 
-  const displayCount = isSearching ? searchTotalResults || searchResults.length : allShows.length;
+  const totalCount = isSearching
+    ? searchTotalResults || searchResults.length
+    : browseList.length;
 
   const isFeatured = useCallback((index: number) => {
     if (isMobile) return false;
@@ -222,20 +311,31 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
             ? (searchLoading && searchResults.length === 0
               ? `Searching for "${activeQuery}"…`
               : `${searchTotalResults || searchResults.length} results for "${activeQuery}"`)
-            : `${allShows.length} series in the archive`}
+            : `${totalCount} in catalog`}
           {genre !== 'All' ? ` · ${list.length} shown` : ''}
         </p>
 
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.3rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: '1 1 260px' }}>
             <span style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,245,232,.28)', fontSize: '1rem' }}>🔍</span>
-            <input className="inp" style={{ paddingLeft: 42 }} placeholder="Search shows…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <input className="inp" style={{ paddingLeft: 42 }} placeholder="Search TMDB + AniList…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
           <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="neo-select">
             <option value="r" style={{ background: '#0C091A' }}>Top Rated</option>
             <option value="yr" style={{ background: '#0C091A' }}>Newest</option>
             <option value="eps" style={{ background: '#0C091A' }}>Most Episodes</option>
           </select>
+          {!isSearching && (
+            <select
+              value={browseSource}
+              onChange={(e) => { setBrowseSource(e.target.value as BrowseSource); }}
+              className="neo-select"
+            >
+              {SOURCE_OPTIONS.map(o => (
+                <option key={o.value} value={o.value} style={{ background: '#0C091A' }}>{o.label}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="hide-scroll" style={{ display: 'flex', gap: '.55rem', overflowX: 'auto', paddingBottom: '.75rem', marginBottom: '2rem' }}>
@@ -253,7 +353,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       <div ref={gridRef} className="main-pad bento-grid" style={{ padding: '0 clamp(1rem,5vw,3rem) 5.5rem', position: 'relative', zIndex: 3 }}>
         {list.length === 0 ? (
           <div className="f-cinzel" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.28)',  letterSpacing: '.1em' }}>
-            {(searchLoading && !isSearching) ? '✦ Loading shows…' : '✦ No shows found ✦'}
+            {searchLoading ? '✦ Searching…' : '✦ No shows found ✦'}
           </div>
         ) : (
           <>
@@ -261,7 +361,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
               const featured = isFeatured(i);
               return (
                 <div
-                  key={s.id}
+                  key={`${s.id}-${s.title}`}
                   className={featured ? 'bento-item-featured' : ''}
                   style={{
                     animation: `card-in .44s ${Math.min(i, 5) * 0.04}s both`,
@@ -297,7 +397,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       {/* Loading indicator for initial search */}
       {searchLoading && searchResults.length === 0 && (
         <div className="f-cinzel" style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em', position: 'relative', zIndex: 3 }}>
-          ✦ Searching…
+          ✦ Searching TMDB + AniList…
         </div>
       )}
 
