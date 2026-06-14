@@ -48,7 +48,7 @@ interface FullDetails {
 
 interface DetailsContentProps {
   showId: number;
-  initialShow: MediaItem & { _malId?: number; _anilistCover?: string; _anilistBanner?: string; _anilistUrl?: string } | null;
+  initialShow: MediaItem & { _malId?: number; _anilistCover?: string; _anilistBanner?: string; _anilistUrl?: string; _anilistId?: number } | null;
   initialCredits?: TMDBCastMember[];
   initialSimilar?: MediaItem[];
 }
@@ -123,9 +123,14 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     return () => { cancelled = true; };
   }, [show?.id, user, profile]);
 
+  // Whether this is an AniList item (negative ID)
+  const isAnilist = showId < 0;
+  const anilistId = isAnilist ? Math.abs(showId) : 0;
+
   // Fetch full details (only if not already seeded from SSR)
+  // Skip for AniList items — all data comes from SSR via getAnimeDetail()
   useEffect(() => {
-    if (!show) return;
+    if (!show || isAnilist) return;
     const mediaType = show.media_type || 'tv';
     const id = show.id;
     if (fullDetails?.id === id) return;
@@ -141,11 +146,11 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     };
     load();
     return () => { cancelled = true; controller.abort(); };
-  }, [show?.id]);
+  }, [show?.id, isAnilist]);
 
-  // Fetch season episodes
+  // Fetch season episodes — skip for AniList items (no TMDB episode data)
   useEffect(() => {
-    if (!show || show.media_type !== 'tv') return;
+    if (!show || show.media_type !== 'tv' || isAnilist) return;
     const id = show.id;
     let cancelled = false;
     const controller = new AbortController();
@@ -159,16 +164,16 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     };
     load();
     return () => { cancelled = true; controller.abort(); };
-  }, [show?.id, season]);
+  }, [show?.id, season, isAnilist]);
 
   // Fetch embed providers
   useEffect(() => {
     if (!playing || !show) return;
     const mediaType = show.media_type || 'tv';
     const malId = (show as { _malId?: number })._malId;
-    const isAnime = !!malId || show.genre.some(g => g.toLowerCase() === 'anime');
+    const isAnime = isAnilist || !!malId || show.genre.some(g => g.toLowerCase() === 'anime');
     const params = new URLSearchParams({
-      tmdb: String(showId),
+      tmdb: String(isAnilist ? anilistId : showId),
       type: mediaType,
       season: String(season),
       episode: String(epIdx),
@@ -179,7 +184,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       .then(r => r.json())
       .then(data => { setProviders(data.providers || []); setSelectedProvider(0); })
       .catch(() => setProviders([]));
-  }, [playing, showId, season, epIdx, show]);
+  }, [playing, showId, season, epIdx, show, isAnilist, anilistId]);
 
   // Fetch comments
   useEffect(() => {
@@ -203,8 +208,9 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   // --- All hooks must be before any early return (React rules of hooks) ---
 
   // Load more similar shows (guarded: no-op if !show)
+  // Skip for AniList items — no TMDB recommendations endpoint
   const loadMoreSimilar = useCallback(async () => {
-    if (!show || loadingSimilar || !hasMoreSimilar) return;
+    if (!show || loadingSimilar || !hasMoreSimilar || isAnilist) return;
     setLoadingSimilar(true);
     try {
       const mediaType = show.media_type || 'tv';
@@ -234,7 +240,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       }
     } catch { /* silent */ }
     setLoadingSimilar(false);
-  }, [show?.id, show?.media_type, loadingSimilar, hasMoreSimilar, fullDetails?.similar?.results]);
+  }, [show?.id, show?.media_type, loadingSimilar, hasMoreSimilar, fullDetails?.similar?.results, isAnilist]);
 
   // Auto-failover: if provider fails, try the next one automatically
   const handleProviderFail = useCallback(() => {
@@ -414,10 +420,13 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     <div className="page" style={{ minHeight: '100vh' }}>
       {/* Hero backdrop */}
       <div style={{ position: 'relative', height: 'clamp(35vh,42vh,50vh)', overflow: 'hidden' }}>
-        <div key={show.id} style={{ position: 'absolute', inset: 0, background: show.backdrop_path
-          ? `url(${getBackdropUrl(show.backdrop_path, 'w1280')}) center/cover no-repeat`
-          : `linear-gradient(135deg,${s.base} 0%,#18063A 40%,#2D1B5E 100%)`, animation: 'hero-swap .6s ease both' }}>
-          {show.backdrop_path && (
+        <div key={show.id} style={{ position: 'absolute', inset: 0, background: (() => {
+          const anilistBanner = (show as { _anilistBanner?: string })._anilistBanner;
+          if (show.backdrop_path) return `url(${getBackdropUrl(show.backdrop_path, 'w1280')}) center/cover no-repeat`;
+          if (anilistBanner) return `url(${anilistBanner}) center/cover no-repeat`;
+          return `linear-gradient(135deg,${s.base} 0%,#18063A 40%,#2D1B5E 100%)`;
+        })(), animation: 'hero-swap .6s ease both' }}>
+          {(show.backdrop_path || (show as { _anilistBanner?: string })._anilistBanner) && (
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)' }} />
           )}
           <div style={{ position: 'absolute', top: '10%', left: '45%', width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle,${s.acc}30 0%,transparent 68%)`, filter: 'blur(62px)', animation: 'aurora 12s ease-in-out infinite' }} />

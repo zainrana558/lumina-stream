@@ -1,4 +1,5 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
+import { getAnimeDetail, anilistToMediaItem } from '@/lib/anilist/client';
 import DetailsContent from '@/components/pages/DetailsContent';
 import type { Metadata } from 'next';
 import { tmdbToMedia } from '@/types';
@@ -33,11 +34,38 @@ interface TMDBDetails {
 
 export const revalidate = 600; // 10 min
 
+/**
+ * Negative IDs are AniList items (namespaced to avoid collisions with TMDB).
+ * The real AniList ID is Math.abs(showId).
+ */
+function isAnilistId(id: number): boolean {
+  return id < 0;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const showId = Number(id);
 
   try {
+    if (isAnilistId(showId)) {
+      // AniList item
+      const media = await getAnimeDetail(Math.abs(showId));
+      if (media) {
+        const item = anilistToMediaItem(media);
+        return {
+          title: `${item.title} | Lumina Stream`,
+          description: (item.desc || 'Watch anime on Lumina Stream').slice(0, 160),
+          openGraph: {
+            title: `${item.title} | Lumina Stream`,
+            description: (item.desc || 'Watch anime on Lumina Stream').slice(0, 160),
+            images: item._anilistCover ? [item._anilistCover] : [],
+          },
+        };
+      }
+      return { title: 'Anime | Lumina Stream' };
+    }
+
+    // TMDB item
     const [tvRes, movieRes] = await Promise.all([
       tmdbFetch<{ id?: number }>(`/tv/${showId}`).catch(() => ({ id: undefined })),
       tmdbFetch<{ id?: number }>(`/movie/${showId}`).catch(() => ({ id: undefined })),
@@ -65,13 +93,39 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const showId = Number(id);
 
-  // Detect media type and fetch data outside of try/catch to avoid JSX in try/catch
+  // ─── AniList route (negative IDs) ─────────────────────────────────────────
+  if (isAnilistId(showId)) {
+    const anilistId = Math.abs(showId);
+    let mediaItem: ReturnType<typeof anilistToMediaItem> | null = null;
+
+    try {
+      const media = await getAnimeDetail(anilistId);
+      if (media) {
+        mediaItem = anilistToMediaItem(media);
+      }
+    } catch {
+      // fall through with null
+    }
+
+    if (!mediaItem) {
+      return <DetailsContent showId={showId} initialShow={null} />;
+    }
+
+    return (
+      <DetailsContent
+        showId={showId}
+        initialShow={mediaItem}
+      />
+    );
+  }
+
+  // ─── TMDB route (positive IDs) ────────────────────────────────────────────
   let mediaType: 'tv' | 'movie' | null = null;
   let rawData: TMDBShowData | null = null;
   let fullData: TMDBShowData & TMDBDetails | null = null;
 
   try {
-    // Step 1: Detect media type (try TV first, then Movie) — 2 parallel calls, not 4
+    // Step 1: Detect media type (try TV first, then Movie) — 2 parallel calls
     const [tvRes, movieRes] = await Promise.all([
       tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => ({ id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 })),
       tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => ({ id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 })),
@@ -83,7 +137,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
     if (!rawData?.id) {
       // No data found — return the component with null
     } else {
-      // Step 2: Fetch full details only for the matched type — 1 call instead of 2
+      // Step 2: Fetch full details only for the matched type
       fullData = await tmdbFetch<TMDBShowData & TMDBDetails>(
         `/${mediaType}/${showId}`,
         { append_to_response: 'credits,similar' }
@@ -107,16 +161,4 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
       initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
     />
   );
-}
-
-function getJsonLd(data: TMDBShowData & TMDBDetails, mediaType: 'movie' | 'tv') {
-  const title = data.title || data.name || 'Show';
-  return {
-    '@context': 'https://schema.org',
-    '@type': mediaType === 'movie' ? 'Movie' : 'TVSeries',
-    name: title,
-    description: data.overview?.slice(0, 300) || '',
-    image: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : undefined,
-    datePublished: data.release_date || data.first_air_date || undefined,
-  };
 }

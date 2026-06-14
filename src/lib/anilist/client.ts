@@ -286,8 +286,12 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem & { _anilistC
     'HIATUS': 'Hiatus',
   };
 
+  // Use negative IDs to prevent collisions with TMDB IDs (always positive).
+  // AniList original ID stored in _anilistId for API lookups.
+  const namespacedId = -media.id;
+
   return {
-    id: media.id,
+    id: namespacedId,
     title,
     sub: media.title.native || media.title.romaji || '',
     genre: genres.length > 0 ? genres : ['Action'],
@@ -296,7 +300,7 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem & { _anilistC
     eps: media.episodes || 12,
     st: statusMap[media.status || ''] || 'Returning Series',
     tag: media.format || 'TV',
-    cs: Math.abs(media.id) % 8,
+    cs: Math.abs(namespacedId) % 8,
     featured: score >= 7.5,
     progress: 0,
     desc: media.description?.replace(/<[^>]*>/g, '') || '',
@@ -308,6 +312,7 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem & { _anilistC
     _anilistCover: getAniListCover(media) || undefined,
     _anilistBanner: media.bannerImage || undefined,
     _malId: media.idMal || undefined,
+    _anilistId: media.id,
     _anilistUrl: media.siteUrl,
   };
 }
