@@ -31,16 +31,26 @@ async function tmdbProxyFetch(endpoint: string, params: URLSearchParams) {
   const env = getValidatedEnv();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
-  if (env.TMDB_BEARER_TOKEN) {
-    headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+  const API_CACHE_URL = process.env.API_CACHE_URL;
+  let fetchUrl: string;
+  if (API_CACHE_URL) {
+    // Route through Cloudflare API cache worker
+    fetchUrl = `${API_CACHE_URL}/tmdb${endpoint}?${params}`;
+    if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
+    else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
   } else {
-    params.set('api_key', env.TMDB_API_KEY!);
+    // Direct TMDB
+    if (env.TMDB_BEARER_TOKEN) {
+      headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+    } else {
+      params.set('api_key', env.TMDB_API_KEY!);
+    }
+    fetchUrl = `${BASE_URL}${endpoint}?${params}`;
   }
 
-  const res = await fetch(`${BASE_URL}${endpoint}?${params}`, {
+  const res = await fetch(fetchUrl, {
     headers,
-    // ISR cache for static pages (server-side rendering)
-    next: { revalidate: 3600 },
+    cache: 'no-store',
   });
 
   if (!res.ok) {

@@ -79,6 +79,7 @@ function isMutatingApi(pathname) {
 const CACHEABLE_EXTENSIONS = new Set([
   '.js', '.css', '.woff', '.woff2', '.ttf', '.otf',
   '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico',
+  '.json', '.xml', '.webmanifest',
 ]);
 
 function isStaticAsset(pathname) {

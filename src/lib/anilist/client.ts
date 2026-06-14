@@ -202,10 +202,10 @@ async function rateLimitedFetch(body: string): Promise<Response> {
   }
   state.requestCount++;
 
-  // Route through Cloudflare API cache if configured
-  const targetUrl = API_CACHE_URL ? `${API_CACHE_URL}/anilist` : ANILIST_ENDPOINT;
-
-  return fetch(targetUrl, {
+  // AniList blocks requests from Cloudflare Workers (403).
+  // Always call AniList directly from Vercel — Redis L1 cache provides
+  // the caching layer. The API cache worker is NOT used for AniList.
+  return fetch(ANILIST_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

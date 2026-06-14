@@ -86,6 +86,7 @@ export async function GET(request: NextRequest) {
       headers: {
         ...rateLimitHeaders(rl),
         'X-Cache-Category': cacheCategory,
+        'Cache-Control': `public, s-maxage=900, stale-while-revalidate=1800`,
       },
     });
   } catch (error: unknown) {

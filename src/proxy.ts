@@ -71,7 +71,11 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
     response.headers.set("Access-Control-Max-Age",        "86400");
-    response.headers.set("Cache-Control",                 "no-store");
+    // Do NOT set Cache-Control here — let API routes set their own caching
+    // headers (s-maxage, X-Cache-Category). The CF cache-proxy reads these
+    // to determine edge TTL. Overwriting with no-store breaks all edge caching.
+    // Per-user routes (stats, reminders, progress) already set "private" in
+    // their own handlers.
   }
 }
 

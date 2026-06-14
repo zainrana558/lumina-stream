@@ -172,16 +172,22 @@ async function fetchTmdbSearch(query: string, page: number) {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const params = new URLSearchParams({ query, page: String(page) });
 
-    if (env.TMDB_BEARER_TOKEN) {
-      headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+    const API_CACHE_URL = process.env.API_CACHE_URL;
+    let fetchUrl: string;
+    if (API_CACHE_URL) {
+      fetchUrl = `${API_CACHE_URL}/tmdb/search/multi?${params}`;
+      if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
+      else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
     } else {
-      params.set('api_key', env.TMDB_API_KEY!);
+      if (env.TMDB_BEARER_TOKEN) {
+        headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+      } else {
+        params.set('api_key', env.TMDB_API_KEY!);
+      }
+      fetchUrl = `https://api.themoviedb.org/3/search/multi?${params}`;
     }
 
-    const res = await fetch(
-      `https://api.themoviedb.org/3/search/multi?${params}`,
-      { headers, next: { revalidate: 60 } }
-    );
+    const res = await fetch(fetchUrl, { headers });
 
     if (!res.ok) return { items: [], totalPages: 0, totalResults: 0 };
 
@@ -269,16 +275,22 @@ async function fetchTmdbSuggestions(originalQuery: string, normalizedQ: string):
     const headers: Record<string, string> = {};
     const params = new URLSearchParams({ query: originalQuery });
 
-    if (env.TMDB_BEARER_TOKEN) {
-      headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+    const API_CACHE_URL = process.env.API_CACHE_URL;
+    let fetchUrl: string;
+    if (API_CACHE_URL) {
+      fetchUrl = `${API_CACHE_URL}/tmdb/search/multi?${params}`;
+      if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
+      else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
     } else {
-      params.set('api_key', env.TMDB_API_KEY!);
+      if (env.TMDB_BEARER_TOKEN) {
+        headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+      } else {
+        params.set('api_key', env.TMDB_API_KEY!);
+      }
+      fetchUrl = `https://api.themoviedb.org/3/search/multi?${params}`;
     }
 
-    const res = await fetch(
-      `https://api.themoviedb.org/3/search/multi?${params}`,
-      { headers }
-    );
+    const res = await fetch(fetchUrl, { headers });
 
     if (!res.ok) return [];
 
