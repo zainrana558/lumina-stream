@@ -2,8 +2,6 @@
 
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import type { MediaItem } from '@/types';
-import { tmdbToMedia } from '@/types';
-import type { TMDBShow } from '@/types';
 import { CS } from '@/styles/themes';
 import Card from '@/components/common/Card';
 import GenreToolbar from '@/components/common/GenreToolbar';
@@ -30,7 +28,7 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
   const [shows, setShows] = useState(initialShows);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const pageRef = useRef(1);
+  const pageRef = useRef(3);
 
   useEffect(() => { trackGenreVisit('anime'); }, []);
 
@@ -44,18 +42,17 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
     setLoadingMore(true);
     try {
       const nextPage = pageRef.current + 1;
-      const res = await fetch(`/api/tmdb?endpoint=/discover/tv&with_genres=16&with_original_language=ja&sort_by=popularity.desc&page=${nextPage}`);
+      const res = await fetch(`/api/anime?type=all&page=${nextPage}&perPage=25`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
-        const newItems = data.results
-          .filter((r: TMDBShow) => r.poster_path)
-          .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: r.media_type || 'tv' }));
+        const newItems = data.results as MediaItem[];
         setShows(prev => {
           const existingIds = new Set(prev.map(i => i.id));
           const fresh = newItems.filter((i: MediaItem) => !existingIds.has(i.id));
           return [...prev, ...fresh];
         });
         pageRef.current = nextPage;
+        if (!data.pageInfo?.hasNextPage) setHasMore(false);
       } else { setHasMore(false); }
     } catch { /* silent — user can retry */ } finally { loadingRef.current = false; setLoadingMore(false); }
   }, []);

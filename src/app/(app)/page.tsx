@@ -127,9 +127,9 @@ async function getTMDBData() {
         const data = await tmdbFetch<{ results?: TMDBShow[]; total_results?: number }>(config.endpoint, config.params);
         const results = data.results || [];
         const withBackdrop = results.filter(r => r.backdrop_path);
-        // Anime: only pick family-friendly action shows (no horror/ero/gore)
+        // Anime: only pick popular, well-rated shows for the portal
         const pool = key === 'anime'
-          ? withBackdrop.filter(r => (r.adult === false || r.adult === undefined) && (r.vote_average >= 7 || r.popularity >= 50))
+          ? withBackdrop.filter(r => r.vote_average >= 7 || r.popularity >= 50)
           : withBackdrop;
         const pick = pool.length > 1 ? pool[Math.floor(Math.random() * pool.length)] : (pool[0] || withBackdrop[0] || results[0]);
         return { key, name: key.charAt(0).toUpperCase() + key.slice(1), backdrop: pick?.backdrop_path || null, title: pick?.title || pick?.name || '', count: data.total_results || results.length, tagline: GENRE_TAGLINES[key] || '' };

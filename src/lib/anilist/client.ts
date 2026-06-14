@@ -494,6 +494,31 @@ export async function getAnimeDetail(id: number): Promise<AniListMedia | null> {
 }
 
 /**
+ * Browse the entire AniList anime catalog (sorted by popularity).
+ * ~15K anime entries, paginated. Used for infinite scroll on anime page.
+ */
+export async function browseAllAnime(
+  page = 1,
+  perPage = 25,
+  sort: string = 'POPULARITY_DESC',
+): Promise<AniListPage<AniListMedia>> {
+  const query = `
+    query ($page: Int, $perPage: Int, $sort: [MediaSort]) {
+      Page(page: $page, perPage: $perPage) {
+        pageInfo { total currentPage lastPage hasNextPage perPage }
+        media(type: ANIME, sort: $sort, isAdult: false) {
+          ${MEDIA_LIST_FRAGMENT}
+        }
+      }
+    }
+  `;
+
+  return fetchWithCache('popular', `anilist:all:${sort}:${page}`, () =>
+    anilistQuery<AniListPage<AniListMedia>>(query, { page, perPage, sort })
+  );
+}
+
+/**
  * Get top-rated anime (by score)
  */
 export async function getTopRatedAnime(page = 1, perPage = 20): Promise<AniListPage<AniListMedia>> {

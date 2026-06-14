@@ -115,6 +115,7 @@ const API_CATEGORY_TTL = {
   'anilist-airing':    900,  // 15 min — currently airing changes often
   'anilist-upcoming':  3600, // 1 hour — upcoming season is stable
   'anilist-search':    600,  // 10 min — search results, shorter to stay fresh
+  'anilist-all':       1800, // 30 min — full catalog browse pages
 };
 
 // ─── Determine edge cache TTL for a request ─────────────────────────────

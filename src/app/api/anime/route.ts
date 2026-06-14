@@ -8,6 +8,7 @@ import {
   getUpcomingAnime,
   getAiringAnime,
   getTopRatedAnime,
+  browseAllAnime,
   anilistToMediaItem,
 } from '@/lib/anilist/client';
 
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
       top: 'anilist-popular',
       airing: 'anilist-airing',
       upcoming: 'anilist-upcoming',
+      all: 'anilist-all',
       search: 'anilist-search',
     };
     const cacheCategory = typeToCategory[type] || 'anilist-search';
@@ -62,6 +64,9 @@ export async function GET(request: NextRequest) {
         break;
       case 'top':
         results = await getTopRatedAnime(page, perPage);
+        break;
+      case 'all':
+        results = await browseAllAnime(page, perPage);
         break;
       case 'search':
       default:
