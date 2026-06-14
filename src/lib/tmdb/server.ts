@@ -104,6 +104,34 @@ export async function tmdbFetch<T>(endpoint: string, params: Record<string, stri
   );
 }
 
+/**
+ * Raw TMDB fetch without caching — used by batch cache reads
+ * where the caller manages caching via fetchBatchWithCache().
+ */
+export async function tmdbFetchRaw<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
+  const env = getValidatedEnv();
+  const headers: Record<string, string> = {};
+  const searchParams = new URLSearchParams();
+
+  if (env.TMDB_BEARER_TOKEN) {
+    headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+  } else {
+    searchParams.set('api_key', env.TMDB_API_KEY!);
+  }
+
+  if (!params.language) searchParams.set('language', 'en-US');
+  if (!params.include_adult) searchParams.set('include_adult', 'false');
+
+  if (['/movie/now_playing', '/movie/upcoming', '/movie/popular'].some(e => endpoint.includes(e)) && !params.region) {
+    searchParams.set('region', 'US');
+  }
+
+  Object.entries(params).forEach(([key, value]) => searchParams.set(key, value));
+
+  const res = await fetchWithRetry(`${BASE_URL}${endpoint}?${searchParams}`, headers);
+  return res.json() as Promise<T>;
+}
+
 // Re-export all types and helper functions from the original server.ts
 export interface TMDBListResponse<T> {
   page: number;

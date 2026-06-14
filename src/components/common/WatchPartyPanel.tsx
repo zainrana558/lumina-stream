@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { CS } from '@/styles/themes';
+import { useWatchPartyRealtime } from '@/hooks/useWatchPartyRealtime';
 
 interface Participant {
   profile_id: string;
@@ -74,8 +75,6 @@ export default function WatchPartyPanel({
   const [lastMessageAt, setLastMessageAt] = useState<string | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const syncRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const s = CS[Math.abs(showId) % 8];
 
@@ -84,69 +83,36 @@ export default function WatchPartyPanel({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (syncRef.current) clearInterval(syncRef.current);
-    };
+  // Supabase Realtime for messages + sync (replaces polling)
+  const handleNewMessage = useCallback((msg: ChatMessage) => {
+    setMessages(prev => {
+      const existingIds = new Set(prev.map(m => m.id));
+      if (existingIds.has(msg.id)) return prev; // dedup
+      return [...prev, msg];
+    });
+    setLastMessageAt(prev => {
+      if (!prev || msg.created_at > prev) return msg.created_at;
+      return prev;
+    });
   }, []);
 
-  // Poll for new messages when in room
-  useEffect(() => {
-    if (view !== 'room' || !room) return;
+  const handleSyncUpdate = useCallback((state: { is_playing: boolean; playback_time: number; season: number; episode: number }) => {
+    if (onPlaybackSync && !isHostControl) {
+      onPlaybackSync({
+        isPlaying: state.is_playing,
+        currentTime: state.playback_time,
+        season: state.season,
+        episode: state.episode,
+      });
+    }
+  }, [onPlaybackSync, isHostControl]);
 
-    const pollMessages = async () => {
-      try {
-        const params = new URLSearchParams({ roomId: room.id });
-        if (lastMessageAt) params.set('after', lastMessageAt);
-        const res = await fetch(`/api/watch-party/messages?${params}`);
-        const data = await res.json();
-        if (data.messages && data.messages.length > 0) {
-          setMessages(prev => {
-            const existingIds = new Set(prev.map(m => m.id));
-            const newMsgs = data.messages.filter((m: ChatMessage) => !existingIds.has(m.id));
-            return [...prev, ...newMsgs];
-          });
-          setLastMessageAt(data.messages[data.messages.length - 1].created_at);
-        }
-      } catch { /* silent */ }
-    };
-
-    pollMessages(); // Initial fetch
-    pollRef.current = setInterval(pollMessages, 3000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [view, room?.id, lastMessageAt]);
-
-  // Poll for playback sync state (for non-host participants)
-  useEffect(() => {
-    if (view !== 'room' || !room || isHostControl) return;
-
-    const pollSync = async () => {
-      try {
-        const res = await fetch(`/api/watch-party/sync?roomId=${room.id}`);
-        const data = await res.json();
-        if (onPlaybackSync && !data.error) {
-          onPlaybackSync({
-            isPlaying: data.is_playing,
-            currentTime: data.playback_time,
-            season: data.season,
-            episode: data.episode,
-          });
-        }
-        // Update participant count
-        if (data.participant_count !== undefined) {
-          setParticipants(prev => {
-            // Just update count display - full list fetched on join
-            return prev;
-          });
-        }
-      } catch { /* silent */ }
-    };
-
-    syncRef.current = setInterval(pollSync, 5000);
-    return () => { if (syncRef.current) clearInterval(syncRef.current); };
-  }, [view, room?.id, isHostControl, onPlaybackSync]);
+  const { connected: realtimeConnected, sendMessage: rtSendMessage, sendSync: rtSendSync } = useWatchPartyRealtime({
+    roomId: view === 'room' ? room?.id ?? null : null,
+    profileId,
+    onNewMessage: handleNewMessage,
+    onSyncUpdate: handleSyncUpdate,
+  });
 
   const handleCreate = async () => {
     if (!profileId) return;
@@ -224,26 +190,22 @@ export default function WatchPartyPanel({
   const handleSendMessage = async () => {
     if (!profileId || !room || !chatInput.trim() || sending) return;
     setSending(true);
-    try {
-      const res = await fetch('/api/watch-party/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile_id: profileId, room_id: room.id, content: chatInput.trim() }),
-      });
-      if (res.ok) {
-        // Optimistically add message
-        const newMsg: ChatMessage = {
-          id: 'local-' + Date.now(),
-          profile_id: profileId,
-          name: profileName || 'You',
-          avatar_url: null,
-          content: chatInput.trim(),
-          created_at: new Date().toISOString(),
-        };
-        setMessages(prev => [...prev, newMsg]);
-        setChatInput('');
-      }
-    } catch { /* silent */ }
+    // Optimistically add message
+    const newMsg: ChatMessage = {
+      id: 'local-' + Date.now(),
+      profile_id: profileId,
+      name: profileName || 'You',
+      avatar_url: null,
+      content: chatInput.trim(),
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, newMsg]);
+    setChatInput('');
+    const ok = await rtSendMessage(chatInput.trim());
+    if (!ok) {
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+    }
     setSending(false);
   };
 
@@ -257,18 +219,13 @@ export default function WatchPartyPanel({
 
   const handleSyncPlayback = useCallback(async (state: { isPlaying: boolean; currentTime: number }) => {
     if (!profileId || !room || !isHostControl) return;
-    try {
-      await fetch('/api/watch-party/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profile_id: profileId,
-          room_id: room.id,
-          ...state,
-        }),
-      });
-    } catch { /* silent */ }
-  }, [profileId, room?.id, isHostControl]);
+    await rtSendSync({
+      is_playing: state.isPlaying,
+      playback_time: state.currentTime,
+      season,
+      episode,
+    });
+  }, [profileId, room?.id, isHostControl, rtSendSync, season, episode]);
 
   // Expose sync function via ref-like callback
   useEffect(() => {

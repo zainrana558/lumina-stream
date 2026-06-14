@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { tmdbFetch } from '@/lib/tmdb/server';
+import { fetchBatchWithCache } from '@/lib/cache';
+import { tmdbFetchRaw } from '@/lib/tmdb/server';
 import Home from '@/components/pages/Home';
 import type { MediaItem, TMDBShow } from '@/types';
 import { tmdbToMedia } from '@/types';
@@ -22,71 +23,87 @@ export interface GenreFeatured {
   tagline: string;
 }
 
-// Helper to safely fetch and convert TMDB results
-async function safeFetch(endpoint: string, params?: Record<string, string>): Promise<TMDBShow[]> {
-  try {
-    const data = await tmdbFetch<{ results?: TMDBShow[] }>(endpoint, params);
-    return (data.results || []).filter(r => r.poster_path);
-  } catch {
-    return [];
-  }
+// Helper to create a cache-key-safe identifier from endpoint + params
+function makeKey(endpoint: string, params?: Record<string, string>): string {
+  if (!params) return endpoint;
+  const sorted = Object.entries(params).sort(([a], [b]) => a.localeCompare(b));
+  return endpoint + '?' + sorted.map(([k, v]) => `${k}=${v}`).join('&');
 }
 
-// Genre-specific TMDB discover params for fetching featured backdrop
-const GENRE_DISCOVER: Record<string, { endpoint: string; params: Record<string, string> }> = {
-  anime:   { endpoint: '/discover/tv', params: { with_genres: '16,10759', sort_by: 'popularity.desc', with_original_language: 'ja', vote_count_gte: '100' } },
-  cartoon: { endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', without_genres: '10759', with_original_language: 'en' } },
-  horror:  { endpoint: '/discover/movie', params: { with_genres: '27', sort_by: 'popularity.desc' } },
-  romance: { endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' } },
-  mystery: { endpoint: '/discover/movie', params: { with_genres: '9648', sort_by: 'popularity.desc' } },
-  fantasy: { endpoint: '/discover/movie', params: { with_genres: '14', sort_by: 'popularity.desc' } },
-};
-
-const GENRE_TAGLINES: Record<string, string> = {
-  anime: 'Dive into extraordinary worlds',
-  cartoon: 'Laugh, adventure, repeat',
-  horror: 'Face your darkest fears',
-  romance: 'Feel every heartbeat',
-  mystery: 'Unravel the unknown',
-  fantasy: 'Beyond imagination awaits',
-};
+// All 21 home page data fetches, defined declaratively
+const HOME_FETCHES = [
+  { id: 'trending',     endpoint: '/trending/all/week',                                          category: 'trending' as const },
+  { id: 'popular',      endpoint: '/movie/popular',                                               category: 'popular' as const },
+  { id: 'tvPopular',    endpoint: '/tv/popular',                                                   category: 'popular' as const },
+  { id: 'topRated',     endpoint: '/movie/top_rated',                                              category: 'popular' as const },
+  { id: 'upcoming',     endpoint: '/movie/upcoming',                                               category: 'popular' as const },
+  { id: 'action',       endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' },               category: 'discover' as const },
+  { id: 'comedy',       endpoint: '/discover/movie', params: { with_genres: '35', sort_by: 'popularity.desc' },               category: 'discover' as const },
+  { id: 'scifi',        endpoint: '/discover/movie', params: { with_genres: '878', sort_by: 'popularity.desc' },              category: 'discover' as const },
+  { id: 'animation',    endpoint: '/discover/movie', params: { with_genres: '16', sort_by: 'popularity.desc' },               category: 'discover' as const },
+  { id: 'nowPlaying',   endpoint: '/movie/now_playing',                                            category: 'popular' as const },
+  { id: 'airingToday',  endpoint: '/tv/airing_today',                                              category: 'popular' as const },
+  { id: 'onTheAir',     endpoint: '/tv/on_the_air',                                                category: 'popular' as const },
+  { id: 'drama',        endpoint: '/discover/movie', params: { with_genres: '18', sort_by: 'popularity.desc' },               category: 'discover' as const },
+  { id: 'thriller',     endpoint: '/discover/movie', params: { with_genres: '53', sort_by: 'popularity.desc' },               category: 'discover' as const },
+  { id: 'crime',        endpoint: '/discover/movie', params: { with_genres: '80', sort_by: 'popularity.desc' },               category: 'discover' as const },
+  { id: 'romance',      endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' },            category: 'discover' as const },
+  { id: 'family',       endpoint: '/discover/movie', params: { with_genres: '10751', sort_by: 'popularity.desc' },            category: 'discover' as const },
+  { id: 'hiddenGems',   endpoint: '/discover/movie', params: { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' },  category: 'discover' as const },
+  { id: 'acclaimed',    endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' }, category: 'discover' as const },
+  { id: 'warHistory',   endpoint: '/discover/movie', params: { with_genres: '10752,36', sort_by: 'popularity.desc' },          category: 'discover' as const },
+  // 6 genre featured backdrop fetches
+  { id: 'feat-anime',   endpoint: '/discover/tv', params: { with_genres: '16,10759', sort_by: 'popularity.desc', with_original_language: 'ja', vote_count_gte: '100' }, category: 'discover' as const },
+  { id: 'feat-cartoon', endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', without_genres: '10759', with_original_language: 'en' },     category: 'discover' as const },
+  { id: 'feat-horror',  endpoint: '/discover/movie', params: { with_genres: '27', sort_by: 'popularity.desc' },               category: 'discover' as const },
+  { id: 'feat-romance', endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' },            category: 'discover' as const },
+  { id: 'feat-mystery', endpoint: '/discover/movie', params: { with_genres: '9648', sort_by: 'popularity.desc' },              category: 'discover' as const },
+  { id: 'feat-fantasy', endpoint: '/discover/movie', params: { with_genres: '14', sort_by: 'popularity.desc' },               category: 'discover' as const },
+];
 
 async function getTMDBData() {
   try {
-    // Fire ALL 21 TMDB calls + 6 genre featured calls in parallel (none depend on each other)
-    const [
-      trending, popular, tvPopular, topRated, upcoming,
-      action, comedy, scifi, animation,
-      nowPlaying, airingToday, onTheAir, drama,
-      thriller, crime, romance, family,
-      hiddenGems, acclaimed, warHistory,
-    ] = await Promise.all([
-      // Core trending + popular
-      safeFetch('/trending/all/week'),
-      safeFetch('/movie/popular'),
-      safeFetch('/tv/popular'),
-      safeFetch('/movie/top_rated'),
-      tmdbFetch<{ results?: TMDBShow[] }>('/movie/upcoming').catch(() => ({ results: [] })),
-      // Genre rows
-      safeFetch('/discover/movie', { with_genres: '28', sort_by: 'popularity.desc' }),
-      safeFetch('/discover/movie', { with_genres: '35', sort_by: 'popularity.desc' }),
-      safeFetch('/discover/movie', { with_genres: '878', sort_by: 'popularity.desc' }),
-      safeFetch('/discover/movie', { with_genres: '16', sort_by: 'popularity.desc' }),
-      // Now Playing + TV airing
-      safeFetch('/movie/now_playing'),
-      safeFetch('/tv/airing_today'),
-      safeFetch('/tv/on_the_air'),
-      safeFetch('/discover/movie', { with_genres: '18', sort_by: 'popularity.desc' }),
-      // Thriller, Crime, Romance, Family
-      safeFetch('/discover/movie', { with_genres: '53', sort_by: 'popularity.desc' }),
-      safeFetch('/discover/movie', { with_genres: '80', sort_by: 'popularity.desc' }),
-      safeFetch('/discover/movie', { with_genres: '10749', sort_by: 'popularity.desc' }),
-      safeFetch('/discover/movie', { with_genres: '10751', sort_by: 'popularity.desc' }),
-      // Curated collections
-      safeFetch('/discover/movie', { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' }),
-      safeFetch('/discover/movie', { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' }),
-      safeFetch('/discover/movie', { with_genres: '10752,36', sort_by: 'popularity.desc' }),
-    ]);
+    // Build batch entries — one MGET for all 26 fetches
+    const batchEntries = HOME_FETCHES.map(f => ({
+      category: f.category,
+      key: makeKey(f.endpoint, f.params),
+      fetcher: () => tmdbFetchRaw<{ results?: TMDBShow[] }>(f.endpoint, f.params)
+        .then(data => data.results || [])
+        .catch(() => [] as TMDBShow[]),
+    }));
+
+    // Single Redis MGET + parallel fetch for misses
+    const batchResults = await fetchBatchWithCache(batchEntries);
+
+    // Extract results by ID
+    const get = (id: string): TMDBShow[] => {
+      const idx = HOME_FETCHES.findIndex(f => f.id === id);
+      return idx >= 0 ? batchResults[idx].data as TMDBShow[] : [];
+    };
+
+    // Filter poster-only items (was done in safeFetch before)
+    const filterPosters = (items: TMDBShow[]) => items.filter(r => r.poster_path);
+
+    const trending    = filterPosters(get('trending'));
+    const popular     = filterPosters(get('popular'));
+    const tvPopular   = filterPosters(get('tvPopular'));
+    const topRated    = filterPosters(get('topRated'));
+    const upcoming    = get('upcoming'); // no poster filter for upcoming (featured might need non-poster items)
+    const action      = filterPosters(get('action'));
+    const comedy      = filterPosters(get('comedy'));
+    const scifi       = filterPosters(get('scifi'));
+    const animation   = filterPosters(get('animation'));
+    const nowPlaying  = filterPosters(get('nowPlaying'));
+    const airingToday = filterPosters(get('airingToday'));
+    const onTheAir    = filterPosters(get('onTheAir'));
+    const drama       = filterPosters(get('drama'));
+    const thriller    = filterPosters(get('thriller'));
+    const crime       = filterPosters(get('crime'));
+    const romance     = filterPosters(get('romance'));
+    const family      = filterPosters(get('family'));
+    const hiddenGems  = filterPosters(get('hiddenGems'));
+    const acclaimed   = filterPosters(get('acclaimed'));
+    const warHistory  = filterPosters(get('warHistory'));
 
     const featured = trending.slice(0, 10).map(r => tmdbToMedia(r));
     const rows: RowData[] = [];
@@ -96,7 +113,7 @@ async function getTMDBData() {
     if (popular.length) rows.push({ title: 'Top 10 This Week', sub: '#1 trending right now', items: popular.slice(0, 10).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week', ranked: true });
     if (tvPopular.length) rows.push({ title: 'Popular TV', sub: 'Most popular TV shows', items: tvPopular.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/popular' });
     if (topRated.length) rows.push({ title: 'Top Rated', sub: 'Highest rated of all time', items: topRated.slice(0, 20).map(r => tmdbToMedia(r)), endpoint: '/movie/top_rated' });
-    if (upcoming.results?.length) rows.push({ title: 'Coming Soon', sub: 'Upcoming releases', items: upcoming.results.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/upcoming' });
+    if (upcoming.length) rows.push({ title: 'Coming Soon', sub: 'Upcoming releases', items: upcoming.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/upcoming' });
 
     // ── Genre rows ──
     if (action.length) rows.push({ title: 'Action', sub: 'Adrenaline-pumping hits', items: action.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' } });
@@ -121,23 +138,39 @@ async function getTMDBData() {
     if (acclaimed.length) rows.push({ title: 'Critically Acclaimed', sub: 'Certified hits with top ratings', items: acclaimed.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' } });
     if (warHistory.length) rows.push({ title: 'War & History', sub: 'Epic battles & lessons from the past', items: warHistory.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '10752,36', sort_by: 'popularity.desc' } });
 
-    // Genre featured backdrops for portal cards (run in parallel with everything above)
-    const genreFeaturedPromises = Object.entries(GENRE_DISCOVER).map(async ([key, config]) => {
-      try {
-        const data = await tmdbFetch<{ results?: TMDBShow[]; total_results?: number }>(config.endpoint, config.params);
-        const results = data.results || [];
-        const withBackdrop = results.filter(r => r.backdrop_path);
-        // Anime: only pick popular, well-rated shows for the portal
-        const pool = key === 'anime'
-          ? withBackdrop.filter(r => r.vote_average >= 7 || r.popularity >= 50)
-          : withBackdrop;
-        const pick = pool.length > 1 ? pool[Math.floor(Math.random() * pool.length)] : (pool[0] || withBackdrop[0] || results[0]);
-        return { key, name: key.charAt(0).toUpperCase() + key.slice(1), backdrop: pick?.backdrop_path || null, title: pick?.title || pick?.name || '', count: data.total_results || results.length, tagline: GENRE_TAGLINES[key] || '' };
-      } catch {
-        return { key, name: key.charAt(0).toUpperCase() + key.slice(1), backdrop: null, title: '', count: 0, tagline: GENRE_TAGLINES[key] || '' };
-      }
+    // Genre featured backdrops for portal cards (already fetched in batch)
+    const GENRE_TAGLINES: Record<string, string> = {
+      anime: 'Dive into extraordinary worlds',
+      cartoon: 'Laugh, adventure, repeat',
+      horror: 'Face your darkest fears',
+      romance: 'Feel every heartbeat',
+      mystery: 'Unravel the unknown',
+      fantasy: 'Beyond imagination awaits',
+    };
+
+    const genreFeatured = [
+      { key: 'anime',   name: 'Anime' },
+      { key: 'cartoon', name: 'Cartoon' },
+      { key: 'horror',  name: 'Horror' },
+      { key: 'romance', name: 'Romance' },
+      { key: 'mystery', name: 'Mystery' },
+      { key: 'fantasy', name: 'Fantasy' },
+    ].map(({ key, name }) => {
+      const results = get(`feat-${key}`);
+      const withBackdrop = results.filter(r => r.backdrop_path);
+      const pool = key === 'anime'
+        ? withBackdrop.filter(r => r.vote_average >= 7 || r.popularity >= 50)
+        : withBackdrop;
+      const pick = pool.length > 1 ? pool[Math.floor(Math.random() * pool.length)] : (pool[0] || withBackdrop[0] || results[0]);
+      return {
+        key,
+        name,
+        backdrop: pick?.backdrop_path || null,
+        title: pick?.title || pick?.name || '',
+        count: results.length,
+        tagline: GENRE_TAGLINES[key] || '',
+      };
     });
-    const genreFeatured = await Promise.all(genreFeaturedPromises);
 
     return { featured, rows, genreFeatured };
   } catch {

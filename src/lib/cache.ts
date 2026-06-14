@@ -135,3 +135,81 @@ export async function fetchWithCache<T>(
   return data;
 }
 
+// ── Batch reads: MGET for multiple cache keys in one Redis round-trip ──
+
+interface BatchEntry<T> {
+  category: CacheCategory;
+  key: string;
+  fetcher: () => Promise<T>;
+}
+
+interface BatchResult<T> {
+  data: T;
+  hit: boolean;
+}
+
+/**
+ * Batch fetch multiple cache entries in a single Redis pipeline.
+ * On cache miss for individual entries, calls the corresponding fetcher.
+ * Returns results in the same order as the input entries.
+ *
+ * Redis commands: 1 MGET (vs N individual GETs) on full hit.
+ */
+export async function fetchBatchWithCache<T>(
+  entries: BatchEntry<T>[]
+): Promise<BatchResult<T>[]> {
+  if (entries.length === 0) return [];
+
+  const client = getRedis();
+  const keys = entries.map(e => cacheKey(e.category, e.key));
+
+  // Try batch read from Redis
+  let cachedValues: (string | null)[] | null = null;
+  if (client) {
+    try {
+      cachedValues = await client.mget<string[]>(...keys);
+    } catch {
+      // Pipeline failed — fall through to individual fetches
+    }
+  }
+
+  const results: BatchResult<T>[] = [];
+
+  if (cachedValues) {
+    // Process results: parse hits, queue misses for fetching
+    const misses: number[] = [];
+    const missFetchers: Array<() => Promise<T>> = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const raw = cachedValues[i];
+      if (raw) {
+        try {
+          results[i] = { data: JSON.parse(raw) as T, hit: true };
+          continue;
+        } catch {
+          // Parse error — treat as miss
+        }
+      }
+      misses.push(i);
+      missFetchers.push(entries[i].fetcher);
+    }
+
+    // Fetch all misses in parallel
+    if (misses.length > 0) {
+      const fetched = await Promise.all(missFetchers.map(f => f()));
+      // Cache miss results (fire-and-forget) + fill results
+      for (let j = 0; j < misses.length; j++) {
+        const idx = misses[j];
+        results[idx] = { data: fetched[j], hit: false };
+        // Fire-and-forget cache write
+        setCache(entries[idx].category, entries[idx].key, fetched[j]).catch(() => {});
+      }
+    }
+
+    return results;
+  }
+
+  // No Redis — fetch all individually (fallback)
+  const allData = await Promise.all(entries.map(e => e.fetcher()));
+  return allData.map(data => ({ data, hit: false }));
+}

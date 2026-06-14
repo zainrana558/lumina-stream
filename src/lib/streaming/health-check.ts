@@ -1,51 +1,46 @@
 /**
  * Embed provider health checker with replacement pool integration
  *
- * Pings each provider periodically and caches alive/dead status in Redis.
+ * Pings each provider periodically and caches alive/dead status IN-MEMORY.
  * When a provider is detected as dead:
  *   1. It gets swapped with a replacement from the stash
  *   2. The replacement takes its place in the active lineup
  *   3. When the original recovers, it swaps back in
  *
- * - Health TTL: 5 minutes
+ * - Health TTL: 5 minutes (in-memory, per-serverless-instance)
  * - Ping timeout: 6 seconds
  * - Economy: checks 1 provider per request (round-robin)
- * - Graceful: if Redis is down, skip filtering
+ * - Zero Redis commands — all state is in-memory
  */
 
-import { getRedis } from '@/lib/redis';
 import { getAllProviders, getReplacementPool, swapInReplacement, restoreOriginal, getPoolStatus } from '@/lib/streaming/providers';
 
-const HEALTH_PREFIX = 'lumina:provider:health:';
-const HEALTH_TTL = 5 * 60; // 5 minutes
+const HEALTH_TTL = 5 * 60 * 1000; // 5 minutes in ms
 const CHECK_TIMEOUT = 6000; // 6 seconds
 const CHECK_INTERVAL = 5 * 60 * 1000; // Check one provider every 5 min
 
-// Track providers that were previously dead (for swap-in logic)
-const PREV_HEALTH_PREFIX = 'lumina:provider:prev_health:';
-// Track how many consecutive times a provider has been dead
-const FAIL_COUNT_PREFIX = 'lumina:provider:fail_count:';
+// ── In-memory state (no Redis) ──
+interface HealthEntry {
+  alive: boolean;
+  checkedAt: number;
+}
 
-// In-memory cache (fallback if Redis is unavailable)
-const memoryHealth = new Map<string, { alive: boolean; checkedAt: number }>();
-const memoryPrev = new Map<string, boolean>();
-const memoryFailCount = new Map<string, number>();
+const healthStore = new Map<string, HealthEntry>();
+const prevHealthStore = new Map<string, boolean>();
+const failCountStore = new Map<string, number>();
 let lastCheckTime = 0;
 let checkIndex = 0;
 
-// Cleanup stale entries in all in-memory stores every 60s to prevent memory leak
+// Cleanup stale entries every 60s to prevent memory leak
 if (typeof globalThis !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
-    for (const [key, val] of memoryHealth.entries()) {
-      if (now - val.checkedAt > HEALTH_TTL * 1000) memoryHealth.delete(key);
-    }
-    for (const [key, val] of memoryFailCount.entries()) {
-      if (now - val > HEALTH_TTL * 1000) memoryFailCount.delete(key);
-    }
-    for (const [key] of memoryPrev) {
-      // Clean up stale prev_health entries that have no corresponding health entry
-      if (!memoryHealth.has(key)) memoryPrev.delete(key);
+    for (const [key, val] of healthStore) {
+      if (now - val.checkedAt > HEALTH_TTL) {
+        healthStore.delete(key);
+        prevHealthStore.delete(key);
+        failCountStore.delete(key);
+      }
     }
   }, 60_000);
 }
@@ -69,87 +64,36 @@ async function pingProvider(url: string): Promise<boolean> {
   }
 }
 
-/**
- * Write health status to Redis (or memory fallback)
- */
-async function setHealth(name: string, alive: boolean): Promise<void> {
-  const client = getRedis();
-  if (client) {
-    try {
-      await client.set(`${HEALTH_PREFIX}${name}`, alive ? '1' : '0', { ex: HEALTH_TTL });
-    } catch {
-      // Redis failure — fall through to memory
-    }
-  }
-  memoryHealth.set(name, { alive, checkedAt: Date.now() });
+function setHealth(name: string, alive: boolean): void {
+  healthStore.set(name, { alive, checkedAt: Date.now() });
 }
 
-/**
- * Read health status from Redis (or memory fallback)
- */
-async function getHealth(name: string): Promise<boolean | null> {
-  const client = getRedis();
-  if (client) {
-    try {
-      const val = await client.get<string>(`${HEALTH_PREFIX}${name}`);
-      if (val !== null) return val === '1';
-    } catch {
-      // Redis failure — try memory
-    }
-  }
-
-  const mem = memoryHealth.get(name);
-  if (mem && Date.now() - mem.checkedAt < HEALTH_TTL * 1000) {
-    return mem.alive;
+function getHealth(name: string): boolean | null {
+  const entry = healthStore.get(name);
+  if (entry && Date.now() - entry.checkedAt < HEALTH_TTL) {
+    return entry.alive;
   }
   return null;
 }
 
-async function getPrevHealth(name: string): Promise<boolean | null> {
-  const client = getRedis();
-  if (client) {
-    try {
-      const val = await client.get<string>(`${PREV_HEALTH_PREFIX}${name}`);
-      if (val !== null) return val === '1';
-    } catch { /* fall through */ }
-  }
-  return memoryPrev.get(name) ?? null;
+function getPrevHealth(name: string): boolean | null {
+  return prevHealthStore.get(name) ?? null;
 }
 
-async function setPrevHealth(name: string, alive: boolean): Promise<void> {
-  const client = getRedis();
-  if (client) {
-    try { await client.set(`${PREV_HEALTH_PREFIX}${name}`, alive ? '1' : '0', { ex: HEALTH_TTL }); } catch { /* ok */ }
-  }
-  memoryPrev.set(name, alive);
+function setPrevHealth(name: string, alive: boolean): void {
+  prevHealthStore.set(name, alive);
 }
 
-async function getFailCount(name: string): Promise<number> {
-  const client = getRedis();
-  if (client) {
-    try {
-      const val = await client.get<string>(`${FAIL_COUNT_PREFIX}${name}`);
-      if (val !== null) return parseInt(val, 10);
-    } catch { /* fall through */ }
-  }
-  return memoryFailCount.get(name) || 0;
+function getFailCount(name: string): number {
+  return failCountStore.get(name) || 0;
 }
 
-async function incrementFailCount(name: string): Promise<void> {
-  const count = (await getFailCount(name)) + 1;
-  const client = getRedis();
-  if (client) {
-    try { await client.set(`${FAIL_COUNT_PREFIX}${name}`, String(count), { ex: HEALTH_TTL }); } catch { /* ok */ }
-  }
-  memoryFailCount.set(name, count);
+function incrementFailCount(name: string): void {
+  failCountStore.set(name, getFailCount(name) + 1);
 }
 
-async function resetFailCount(name: string): Promise<void> {
-  const client = getRedis();
-  if (client) {
-    try { await client.del(`${FAIL_COUNT_PREFIX}${name}`); } catch { /* ok */ }
-  }
-  memoryFailCount.delete(name);
+function resetFailCount(name: string): void {
+  failCountStore.delete(name);
 }
 
 /**
@@ -170,17 +114,17 @@ export async function maybeCheckOneProvider(): Promise<void> {
   lastCheckTime = now;
 
   const sampleUrl = provider.getMovieUrl(550); // Fight Club always exists
-  const prevAlive = await getPrevHealth(provider.name);
+  const prevAlive = getPrevHealth(provider.name);
   const alive = await pingProvider(sampleUrl);
 
   // Save current health
-  await setHealth(provider.name, alive);
-  await setPrevHealth(provider.name, alive);
+  setHealth(provider.name, alive);
+  setPrevHealth(provider.name, alive);
 
   // Provider just died? (was alive, now dead)
   if (prevAlive !== null && prevAlive && !alive) {
-    await incrementFailCount(provider.name);
-    const failCount = await getFailCount(provider.name);
+    incrementFailCount(provider.name);
+    const failCount = getFailCount(provider.name);
 
     // After 2 consecutive failures, swap in a replacement
     if (failCount >= 2) {
@@ -188,14 +132,14 @@ export async function maybeCheckOneProvider(): Promise<void> {
       if (replacement) {
         // Also pre-health-check the replacement
         const repAlive = await pingProvider(replacement.getMovieUrl(550));
-        await setHealth(replacement.name, repAlive);
+        setHealth(replacement.name, repAlive);
       }
     }
   }
 
   // Provider just recovered? (was dead, now alive)
   if (prevAlive !== null && !prevAlive && alive) {
-    await resetFailCount(provider.name);
+    resetFailCount(provider.name);
     restoreOriginal(provider.name);
   }
 }
@@ -210,7 +154,7 @@ export async function getDeadProviders(): Promise<Set<string>> {
   const dead = new Set<string>();
 
   for (const p of allProviders) {
-    const alive = await getHealth(p.name);
+    const alive = getHealth(p.name);
     if (alive === false) {
       dead.add(p.name);
     }
@@ -235,7 +179,7 @@ export async function checkAllProviders(): Promise<Record<string, boolean>> {
       if (!url) return;
       const alive = await pingProvider(url);
       results[p.name] = alive;
-      await setHealth(p.name, alive);
+      setHealth(p.name, alive);
     })
   );
 
@@ -251,7 +195,7 @@ export async function getFullStatus() {
   const healthResults: Record<string, boolean | null> = {};
 
   for (const p of getAllProviders()) {
-    healthResults[p.name] = await getHealth(p.name);
+    healthResults[p.name] = getHealth(p.name);
   }
 
   return { dead: Array.from(dead), pool, health: healthResults };

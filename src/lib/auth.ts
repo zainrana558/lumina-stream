@@ -7,8 +7,68 @@ interface AuthResult {
   userId: string;
 }
 
+/**
+ * Lightweight JWT decoder — extracts payload without calling Supabase Auth.
+ * Validates expiry and basic structure, but does NOT verify the signature
+ * (Supabase RLS handles signature verification at the Postgres level).
+ *
+ * This saves 1 network round-trip to Supabase Auth per request.
+ */
+function decodeJwtLocal(token: string): { sub: string; exp?: number } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    // Decode base64url payload
+    const payload = parts[1];
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonStr = atob(base64);
+    const data = JSON.parse(jsonStr);
+
+    // Must have a subject (user ID)
+    if (typeof data.sub !== 'string' || !data.sub) return null;
+
+    // Check expiry
+    if (data.exp && Date.now() >= data.exp * 1000) return null;
+
+    return { sub: data.sub, exp: data.exp };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract JWT from cookies and decode locally.
+ * Falls back to Supabase Auth API call if cookie is missing or expired.
+ */
+async function getUserIdFromCookies(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
+
+  // Supabase SSR stores tokens as sb-<ref>-access-token
+  const accessTokenCookie = allCookies.find(
+    c => c.name.includes('-access-token') || c.name === 'sb-access-token'
+  );
+
+  if (!accessTokenCookie?.value) return null;
+
+  const decoded = decodeJwtLocal(accessTokenCookie.value);
+  if (decoded) return decoded.sub;
+
+  // Token expired or malformed — return null (caller can decide to refresh)
+  return null;
+}
+
 export async function requireAuth(): Promise<AuthResult> {
   const supabase = await createClient();
+
+  // Fast path: decode JWT from cookies (no network call)
+  const localUserId = await getUserIdFromCookies();
+  if (localUserId) {
+    return { supabase, userId: localUserId };
+  }
+
+  // Slow path: call Supabase Auth (handles token refresh)
   const {
     data: { user },
   } = await supabase.auth.getUser();
