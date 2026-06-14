@@ -16,18 +16,13 @@ const PING_TIMEOUT_MS = 3000; // 3 seconds (was 6s)
 
 // Provider sample URLs for health pinging
 const PROVIDER_PING_URLS: { name: string; url: string }[] = [
-  { name: '2Embed',     url: 'https://www.2embed.online/embed/movie/550' },
   { name: 'AutoEmbed',  url: 'https://autoembed.co/movie/tmdb/550' },
   { name: 'VidPhantom', url: 'https://vidphantom.com/movie/550' },
   { name: 'VidSrc',     url: 'https://vidsrc.fyi/embed/movie/550' },
   { name: 'NexStream',   url: 'https://api.codespecters.com/embed/movie/550' },
-  { name: 'VidSrc CC',  url: 'https://vidsrc.cc/embed/movie/550' },
-  { name: 'VidSrc XYZ', url: 'https://vidsrc.xyz/embed/movie/550' },
-  { name: 'Embed.su',   url: 'https://embed.su/embed/movie/550' },
-  { name: 'VidSrc To',  url: 'https://vidsrc.to/embed/movie/550' },
-  { name: 'AnimeKaizoku', url: 'https://animekaizoku.com/watch/1/1' },
-  { name: 'AniMixPlay', url: 'https://animixplay.to/v1/1' },
-  { name: 'YugenAnime', url: 'https://yugenanime.tv/watch/1/1' },
+  { name: 'VidSrc PM',  url: 'https://vidsrc.pm/embed/movie/550' },
+  { name: 'VidSrc IN',  url: 'https://vidsrc.in/embed/movie/550' },
+  { name: 'VidSrc IO',  url: 'https://vidsrc.io/embed/movie/550' },
 ];
 
 async function pingProvider(url: string): Promise<boolean> {

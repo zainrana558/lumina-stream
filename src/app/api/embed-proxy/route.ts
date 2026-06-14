@@ -34,10 +34,8 @@ export async function GET(request: NextRequest) {
     // Validate the target URL is a known embed provider (prevent open redirect)
     const allowedHosts = [
       'api.codespecters.com',
-      'vidsrc.fyi', 'vidsrc.cc', 'vidsrc.xyz', 'vidsrc.to',
-      'vidsrc.net', 'vidsrc.pro', 'vidsrc.app', 'vidsrc.ic',
-      'www.2embed.online', 'autoembed.co', 'vidphantom.com',
-      'embed.su', 'embedvip.com', 'multiembed.mov', 'moviesapi.club',
+      'vidsrc.fyi', 'vidsrc.pm', 'vidsrc.in', 'vidsrc.io',
+      'autoembed.co', 'vidphantom.com',
     ];
 
     const parsedUrl = new URL(targetUrl);

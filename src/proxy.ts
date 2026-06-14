@@ -50,7 +50,7 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
         "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
         "media-src 'self' https: blob:",
         // frame-src whitelist — keep in sync with embed-proxy allowedHosts
-        "frame-src 'self' https://vidsrc.fyi https://vidsrc.cc https://vidsrc.xyz https://vidsrc.to https://vidsrc.net https://vidsrc.pro https://vidsrc.app https://vidsrc.ic https://www.2embed.online https://autoembed.co https://vidphantom.com https://api.codespecters.com https://embed.su https://embedvip.com https://multiembed.mov https://moviesapi.club",
+        "frame-src 'self' https://vidsrc.fyi https://vidsrc.pm https://vidsrc.in https://vidsrc.io https://autoembed.co https://vidphantom.com https://api.codespecters.com",
         "connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.themoviedb.org https://*.upstash.io https://graphql.anilist.co https://accounts.google.com https://github.com",
         "worker-src 'self' blob:",
       ].join("; ")
