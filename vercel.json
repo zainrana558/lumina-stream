@@ -6,6 +6,10 @@
     {
       "path": "/api/cache/warm",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/embed-health-cron",
+      "schedule": "*/30 * * * *"
     }
   ]
 }
