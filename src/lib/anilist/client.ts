@@ -98,6 +98,9 @@ export interface AniListPage<T> {
 
 const ANILIST_ENDPOINT = 'https://graphql.anilist.co';
 
+// Cloudflare API cache worker (set in Vercel env as API_CACHE_URL)
+const API_CACHE_URL = process.env.API_CACHE_URL;
+
 // Minimal fields for list views (keeps payload small)
 const MEDIA_LIST_FRAGMENT = `
   id
@@ -184,26 +187,25 @@ async function rateLimitedFetch(body: string): Promise<Response> {
     state.resetTime = now + WINDOW_MS;
   }
   if (state.requestCount >= RATE_LIMIT) {
-    // Instead of throwing (which wastes the entire serverless function),
-    // sleep until the window resets. Cap at 10s to avoid burning function time.
     const waitMs = Math.min(state.resetTime - now, 10_000);
     if (waitMs > 0) {
       await new Promise<void>(resolve => setTimeout(resolve, waitMs));
     }
-    // Re-check after waiting
     const afterWait = Date.now();
     if (afterWait > state.resetTime) {
       state.requestCount = 0;
       state.resetTime = afterWait + WINDOW_MS;
     }
-    // If still over limit after capped wait, throw
     if (state.requestCount >= RATE_LIMIT) {
       throw new Error(`AniList rate limit reached. Retry after ${Math.ceil((state.resetTime - Date.now()) / 1000)}s`);
     }
   }
   state.requestCount++;
 
-  return fetch(ANILIST_ENDPOINT, {
+  // Route through Cloudflare API cache if configured
+  const targetUrl = API_CACHE_URL ? `${API_CACHE_URL}/anilist` : ANILIST_ENDPOINT;
+
+  return fetch(targetUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

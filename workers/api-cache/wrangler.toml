@@ -1,0 +1,14 @@
+name = "api-cache"
+main = "worker.js"
+compatibility_date = "2024-12-01"
+
+[observability]
+enabled = true
+
+# TMDB credentials — set via: wrangler secret put TMDB_BEARER_TOKEN
+# or TMDB_API_KEY. The worker uses these if Vercel doesn't send
+# X-TMDB-Auth / X-TMDB-Key headers.
+#
+# Recommended: set TMDB_BEARER_TOKEN here AND in Vercel.
+# Then Vercel sends it via header, worker forwards to TMDB.
+# If header is missing, worker falls back to its own secret.

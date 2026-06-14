@@ -1,12 +1,20 @@
 /**
- * Enhanced TMDB server-side fetch with Redis caching.
+ * Enhanced TMDB server-side fetch with Redis + Cloudflare edge caching.
  *
- * Wraps the base tmdbFetch with Redis caching to reduce
- * redundant TMDB API calls across users and serverless instances.
+ * Cache hierarchy (fastest → slowest):
+ *   1. Redis (Upstash) — in-memory, ~10ms hit
+ *   2. Cloudflare API Cache Worker — edge, ~50ms hit, unlimited storage
+ *   3. TMDB API directly — ~300-800ms, rate-limited
+ *
+ * When API_CACHE_URL is set, requests go through the Cloudflare worker
+ * which caches at the edge. Redis still serves as L1 cache for speed.
  */
 
 import { getValidatedEnv } from '@/lib/env';
 import { fetchWithCache, CACHE_TTL } from '@/lib/cache';
+
+// Cloudflare API cache worker (set in Vercel env)
+const API_CACHE_URL = process.env.API_CACHE_URL; // e.g. https://api-cache.zainrana553.workers.dev
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -19,15 +27,13 @@ function endpointToCacheCategory(endpoint: string): keyof typeof CACHE_TTL {
   if (endpoint.includes('/season/')) return 'season';
   if (endpoint.includes('/recommendations')) return 'popular';
   if (endpoint.includes('/videos')) return 'videos';
-  // Details (single item by ID)
   if (endpoint.match(/\/(movie|tv)\/\d+$/)) return 'details';
-  // Popular / top_rated / now_playing etc.
   return 'popular';
 }
 
-const FETCH_TIMEOUT = 8000; // 8 seconds
+const FETCH_TIMEOUT = 8000;
 const MAX_RETRIES = 1;
-const RETRY_DELAY = 500; // ms
+const RETRY_DELAY = 500;
 
 async function fetchWithRetry(url: string, headers: Record<string, string>): Promise<Response> {
   let lastError: Error | null = null;
@@ -43,9 +49,7 @@ async function fetchWithRetry(url: string, headers: Record<string, string>): Pro
       if (!res.ok) {
         const body = await res.text().catch(() => '');
         lastError = new Error(`TMDB API error: ${res.status} ${body.slice(0, 200)}`);
-        // Don't retry on 4xx (client errors) — these won't resolve with retries
         if (res.status >= 400 && res.status < 500) throw lastError;
-        // Retry for 5xx errors
         if (attempt < MAX_RETRIES) {
           await new Promise(r => setTimeout(r, RETRY_DELAY * (attempt + 1)));
         }
@@ -55,11 +59,8 @@ async function fetchWithRetry(url: string, headers: Record<string, string>): Pro
     } catch (error: unknown) {
       clearTimeout(timeoutId);
       lastError = error instanceof Error ? error : new Error(String(error));
-
-      // Don't retry on aborts or 4xx (already thrown above, but safety net)
       if (lastError.name === 'AbortError') throw lastError;
       if (lastError.message.startsWith('TMDB API error: 4')) throw lastError;
-
       if (attempt < MAX_RETRIES) {
         await new Promise(r => setTimeout(r, RETRY_DELAY * (attempt + 1)));
       }
@@ -69,7 +70,11 @@ async function fetchWithRetry(url: string, headers: Record<string, string>): Pro
   throw lastError;
 }
 
-export async function tmdbFetch<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
+/**
+ * Build the fetch URL and auth headers for a TMDB request.
+ * If API_CACHE_URL is set, routes through Cloudflare edge cache.
+ */
+function buildTmdbRequest(endpoint: string, params: Record<string, string>) {
   const env = getValidatedEnv();
   const headers: Record<string, string> = {};
   const searchParams = new URLSearchParams();
@@ -80,59 +85,55 @@ export async function tmdbFetch<T>(endpoint: string, params: Record<string, stri
     searchParams.set('api_key', env.TMDB_API_KEY!);
   }
 
-  // Defaults: English language, no adult content
+  // Defaults
   if (!params.language) searchParams.set('language', 'en-US');
   if (!params.include_adult) searchParams.set('include_adult', 'false');
 
-  // Region for region-specific endpoints (now_playing, upcoming)
   if (['/movie/now_playing', '/movie/upcoming', '/movie/popular'].some(e => endpoint.includes(e)) && !params.region) {
     searchParams.set('region', 'US');
   }
 
   Object.entries(params).forEach(([key, value]) => searchParams.set(key, value));
 
+  // Route through Cloudflare API cache if configured
+  if (API_CACHE_URL) {
+    const cacheUrl = `${API_CACHE_URL}/tmdb${endpoint}?${searchParams.toString()}`;
+    // Auth goes via header (worker strips it before caching)
+    return { url: cacheUrl, headers };
+  }
+
+  return {
+    url: `${BASE_URL}${endpoint}?${searchParams.toString()}`,
+    headers,
+  };
+}
+
+export async function tmdbFetch<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
   const path = endpoint.split('?')[0];
   const category = endpointToCacheCategory(path);
 
   return fetchWithCache(
     category,
-    `${path}?${searchParams.toString()}`,
+    `${path}?${new URLSearchParams(params).toString()}`,
     async () => {
-      const res = await fetchWithRetry(`${BASE_URL}${endpoint}?${searchParams}`, headers);
+      const { url, headers } = buildTmdbRequest(endpoint, params);
+      const res = await fetchWithRetry(url, headers);
       return res.json() as Promise<T>;
     }
   );
 }
 
 /**
- * Raw TMDB fetch without caching — used by batch cache reads
+ * Raw TMDB fetch without Redis caching — used by batch cache reads
  * where the caller manages caching via fetchBatchWithCache().
  */
 export async function tmdbFetchRaw<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
-  const env = getValidatedEnv();
-  const headers: Record<string, string> = {};
-  const searchParams = new URLSearchParams();
-
-  if (env.TMDB_BEARER_TOKEN) {
-    headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
-  } else {
-    searchParams.set('api_key', env.TMDB_API_KEY!);
-  }
-
-  if (!params.language) searchParams.set('language', 'en-US');
-  if (!params.include_adult) searchParams.set('include_adult', 'false');
-
-  if (['/movie/now_playing', '/movie/upcoming', '/movie/popular'].some(e => endpoint.includes(e)) && !params.region) {
-    searchParams.set('region', 'US');
-  }
-
-  Object.entries(params).forEach(([key, value]) => searchParams.set(key, value));
-
-  const res = await fetchWithRetry(`${BASE_URL}${endpoint}?${searchParams}`, headers);
+  const { url, headers } = buildTmdbRequest(endpoint, params);
+  const res = await fetchWithRetry(url, headers);
   return res.json() as Promise<T>;
 }
 
-// Re-export all types and helper functions from the original server.ts
+// Re-export all types and helper functions
 export interface TMDBListResponse<T> {
   page: number;
   results: T[];
