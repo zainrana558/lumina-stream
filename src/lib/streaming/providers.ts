@@ -6,7 +6,7 @@
  * When a provider is detected as dead, it gets swapped with a replacement
  * from the pool. When a dead provider recovers, it goes back into the pool.
  *
- * Total: 23 active + 18 replacements = 41 providers available
+ * Total: 22 active + 17 replacements = 39 providers available
  * Categories: 'all' = movies + TV, 'anime' = anime-focused embeds
  *
  * All providers verified alive as of 2026-06-14.
@@ -56,12 +56,11 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'CodeSpecters', category: 'all', getMovieUrl: (id) => `https://api.codespecters.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://api.codespecters.com/embed/tv/${id}/${s}/${e}` },
   { name: 'MultiEmbed', category: 'all', getMovieUrl: (id) => `https://multiembed.mov/movie/${id}`, getTvUrl: (id, s, e) => `https://multiembed.mov/tv/${id}/${s}/${e}` },
   { name: '2Embed', category: 'all', getMovieUrl: (id) => `https://2embed.cc/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://2embed.cc/embed/tv/${id}/${s}/${e}` },
-  { name: 'WatchCartoon', category: 'all', getMovieUrl: (id) => `https://watchcartoononline.bz//${id}`, getTvUrl: (id, s, e) => `https://watchcartoononline.bz//${id}/${s}/${e}` },
   { name: 'SuperEmbed', category: 'all', getMovieUrl: (id) => `https://superembed.stream/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://superembed.stream/embed/tv/${id}/${s}/${e}` },
-  { name: 'Playembed', category: 'all', getMovieUrl: (id) => `https://playembed.top/play/${id}`, getTvUrl: (id, s, e) => `https://playembed.top/play/${id}/${s}/${e}` },
+  { name: 'Playembed', category: 'all', getMovieUrl: (id) => `https://playembed.top/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://playembed.top/embed/tv/${id}/${s}/${e}` },
   { name: 'VidPlay', category: 'all', getMovieUrl: (id) => `https://vidplay.site/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidplay.site/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidLink', category: 'all', getMovieUrl: (id) => `https://vidlink.xyz/watch/movie/${id}`, getTvUrl: (id, s, e) => `https://vidlink.xyz/watch/tv/${id}/${s}/${e}` },
-  { name: 'MovieFave', category: 'all', getMovieUrl: (id) => `https://moviehax.watch/watch/movie/${id}`, getTvUrl: (id, s, e) => `https://moviehax.watch/watch/tv/${id}/${s}/${e}` },
+  { name: 'VidLink', category: 'all', getMovieUrl: (id) => `https://vidlink.xyz/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidlink.xyz/embed/tv/${id}/${s}/${e}` },
+  { name: 'MovieFave', category: 'all', getMovieUrl: (id) => `https://moviehax.watch/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://moviehax.watch/embed/tv/${id}/${s}/${e}` },
   { name: 'StreamRuby', category: 'all', getMovieUrl: (id) => `https://streamruby.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamruby.com/embed/tv/${id}/${s}/${e}` },
   { name: 'CineStream', category: 'all', getMovieUrl: (id) => `https://cinestream.xyz/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://cinestream.xyz/embed/tv/${id}/${s}/${e}` },
   { name: 'AnyEmbed', category: 'all', getMovieUrl: (id) => `https://anyembed.xyz/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://anyembed.xyz/embed/tv/${id}/${s}/${e}` },
