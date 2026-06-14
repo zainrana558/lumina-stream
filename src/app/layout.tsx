@@ -39,7 +39,8 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const _rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const siteUrl = _rawSiteUrl.startsWith('http') ? _rawSiteUrl : `https://${_rawSiteUrl}`;
 
 export const metadata: Metadata = {
   title: {
