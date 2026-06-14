@@ -319,6 +319,8 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     || fullDetails?.content_ratings?.results?.[0]?.rating
     || null;
 
+  const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
+
   // Keyboard shortcuts (only active when player is open)
   const playerRef = useRef<HTMLDivElement>(null);
   useKeyboardShortcuts(playing, {
@@ -327,14 +329,18 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     onExit: () => setPlaying(false),
     onPreviousEpisode: () => { if (epIdx > 1) setEpIdx(epIdx - 1); },
     onNextEpisode: () => setEpIdx(epIdx + 1),
+    onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); } },
     onToggleSubtitles: () => {}, // placeholder for future real subtitles
     onSwitchProvider: () => { if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
     onPopOutPip: () => { if (activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); } },
     onNextSeason: () => { if (season < seasons) { setSeason(season + 1); setEpIdx(1); } },
     onPreviousSeason: () => { if (season > 1) { setSeason(season - 1); setEpIdx(1); } },
+    onToggleWatchlist: () => toggleWatchlist(),
+    onGoBack: () => router.back(),
+    onNextTab: () => { const tabs = TABS.map(t => t[0]); const ci = tabs.indexOf(tab); if (ci < tabs.length - 1) setTab(tabs[ci + 1]); },
+    onPrevTab: () => { const tabs = TABS.map(t => t[0]); const ci = tabs.indexOf(tab); if (ci > 0) setTab(tabs[ci - 1]); },
+    onScrollToTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });
-
-  const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
 
   const handlePostComment = async () => {
     if (!user || !profile || !commentText.trim() || !show) return;

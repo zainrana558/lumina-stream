@@ -14,11 +14,17 @@ export interface KeyboardShortcutHandlers {
   onExit?: () => void;
   onPreviousEpisode?: () => void;
   onNextEpisode?: () => void;
+  onJumpToEpisode?: (n: number) => void;
   onToggleSubtitles?: () => void;
   onSwitchProvider?: () => void;
   onPopOutPip?: () => void;
   onNextSeason?: () => void;
   onPreviousSeason?: () => void;
+  onToggleWatchlist?: () => void;
+  onGoBack?: () => void;
+  onNextTab?: () => void;
+  onPrevTab?: () => void;
+  onScrollToTop?: () => void;
   onShowShortcuts?: () => void;
 }
 
@@ -121,6 +127,44 @@ export function useKeyboardShortcuts(
             e.preventDefault();
             handlers.onNextSeason?.();
             showFeedback('⏭', 'Next Season');
+          }
+          break;
+        case 'w':
+        case 'W':
+          e.preventDefault();
+          handlers.onToggleWatchlist?.();
+          showFeedback('📋', 'My List');
+          break;
+        case 'l':
+        case 'L':
+          e.preventDefault();
+          handlers.onGoBack?.();
+          showFeedback('←', 'Back');
+          break;
+        case 't':
+          if (e.shiftKey) {
+            e.preventDefault();
+            handlers.onPrevTab?.();
+            showFeedback('◂', 'Prev Tab');
+          } else {
+            e.preventDefault();
+            handlers.onNextTab?.();
+            showFeedback('▸', 'Next Tab');
+          }
+          break;
+        case 'g':
+        case 'G':
+          e.preventDefault();
+          handlers.onScrollToTop?.();
+          showFeedback('⬆', 'Top');
+          break;
+        case '1': case '2': case '3': case '4': case '5':
+        case '6': case '7': case '8': case '9':
+          if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            const epNum = parseInt(e.key, 10);
+            handlers.onJumpToEpisode?.(epNum);
+            showFeedback(`E${epNum}`, `Episode ${epNum}`);
           }
           break;
         case 'c':
