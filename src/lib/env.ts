@@ -1,7 +1,16 @@
 import { z } from 'zod';
 
+// Coerce NEXT_PUBLIC_SITE_URL: accept any string, but if it's not a valid URL
+// (e.g. user set "example.com" without https://), treat as undefined.
+function coerceUrl(val: string | undefined): string | undefined {
+  if (!val || val.trim() === '') return undefined;
+  // Auto-fix missing protocol
+  if (!val.startsWith('http://') && !val.startsWith('https://')) val = `https://${val}`;
+  try { new URL(val); return val; } catch { return undefined; }
+}
+
 const envSchema = z.object({
-  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SITE_URL: z.string().optional(),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().min(1).optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
   TMDB_BEARER_TOKEN: z.string().min(1).optional(),
@@ -18,7 +27,7 @@ let cachedEnv: EnvSchema | undefined;
 
 function parseEnv(): EnvSchema {
   const raw = {
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || undefined,
+    NEXT_PUBLIC_SITE_URL: coerceUrl(process.env.NEXT_PUBLIC_SITE_URL),
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || undefined,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || undefined,
     TMDB_BEARER_TOKEN: process.env.TMDB_BEARER_TOKEN,
