@@ -1,9 +1,9 @@
 /**
- * Upstash Redis-based rate limiter
+ * Upstash Redis-based rate limiter with batched Redis checks
  *
  * Uses Upstash free tier (10K commands/day):
+ * - In-memory batching: only hits Redis every 10th request per limiter+IP
  * - Sliding window counter for API routes
- * - Token-based limiting for authenticated write operations
  * - Graceful fallback to in-memory if Upstash is unavailable
  */
 
@@ -35,6 +35,18 @@ const LIMITS: Record<LimiterType, { tokens: number; window: DurationStr }> = {
   leaderboard: { tokens: 30, window: '60 s' },
 };
 
+// Window durations in ms for in-memory fallback + batch sync
+const WINDOW_MS: Record<LimiterType, number> = {
+  global:      10_000,
+  tmdb:        10_000,
+  search:      10_000,
+  auth:        60_000,
+  write:       10_000,
+  embed:       10_000,
+  stats:       60_000,
+  leaderboard: 60_000,
+};
+
 type RatelimitInstance = Ratelimit;
 const limiterCache = new Map<string, RatelimitInstance>();
 
@@ -57,7 +69,111 @@ function getLimiter(type: LimiterType): RatelimitInstance | null {
   return limiter;
 }
 
-// ---- In-memory fallback (single-instance, resets on deploy) ----
+// ---- In-memory batch tracking ----
+// Every (BATCH_SIZE - 1) requests are counted in memory for free.
+// On the BATCH_SIZE-th request, we sync to Redis to stay accurate.
+const BATCH_SIZE = 10;
+
+interface BatchEntry {
+  count: number;       // requests counted since last Redis sync
+  totalUsed: number;   // total tokens used in current window (from Redis)
+  windowStart: number; // ms — when the current window started
+  syncRemaining: number; // remaining tokens reported by last Redis check
+  lastBlocked: boolean;  // was the last Redis check blocked?
+}
+
+const batchStore = new Map<string, BatchEntry>();
+
+function getBatchKey(type: LimiterType, identifier: string): string {
+  return `${type}:${identifier}`;
+}
+
+/**
+ * In-memory rate check with batched Redis sync.
+ * Returns true if allowed, false if rate limited.
+ */
+function batchMemoryCheck(
+  type: LimiterType,
+  identifier: string,
+  redisLimiter: RatelimitInstance | null,
+): { success: boolean; remaining: number; reset?: number } {
+  const now = Date.now();
+  const windowMs = WINDOW_MS[type];
+  const tokens = LIMITS[type].tokens;
+  const key = getBatchKey(type, identifier);
+  const entry = batchStore.get(key);
+
+  // No entry or window expired — fresh start
+  if (!entry || now > entry.windowStart + windowMs) {
+    const fresh: BatchEntry = {
+      count: 1,
+      totalUsed: 1,
+      windowStart: now,
+      syncRemaining: tokens - 1,
+      lastBlocked: false,
+    };
+    batchStore.set(key, fresh);
+
+    // First request in window — sync to Redis immediately
+    if (redisLimiter) {
+      // Fire and forget — don't block the response on Redis
+      redisLimiter.limit(identifier).catch(() => {});
+    }
+
+    return { success: true, remaining: tokens - 1 };
+  }
+
+  // Window is still active
+  entry.count++;
+
+  // Check in-memory limit using last known remaining from Redis
+  if (entry.lastBlocked || entry.syncRemaining <= 0) {
+    // Already blocked by Redis — stay blocked
+    return { success: false, remaining: 0, reset: entry.windowStart + windowMs };
+  }
+
+  // Estimate remaining based on in-memory count since last sync
+  const estimatedUsed = entry.totalUsed + (entry.count - 1);
+  const estimatedRemaining = Math.max(0, tokens - estimatedUsed);
+
+  if (estimatedRemaining <= 0) {
+    return { success: false, remaining: 0, reset: entry.windowStart + windowMs };
+  }
+
+  // Every BATCH_SIZE-th request, sync to Redis for accuracy
+  if (entry.count >= BATCH_SIZE && redisLimiter) {
+    // Synchronous-ish: we need the result to update our tracking
+    // But we still return the in-memory estimate immediately
+    // The Redis result updates the batch entry for future requests
+    redisLimiter.limit(identifier)
+      .then(result => {
+        entry.totalUsed = tokens - result.remaining;
+        entry.syncRemaining = result.remaining;
+        entry.lastBlocked = !result.success;
+      })
+      .catch(() => {
+        // Redis failed — keep using in-memory estimate
+      });
+
+    // Reset batch counter after sync
+    entry.totalUsed = estimatedUsed;
+    entry.count = 0;
+  }
+
+  return { success: true, remaining: estimatedRemaining, reset: entry.windowStart + windowMs };
+}
+
+// Cleanup stale batch entries every 60s to prevent memory leak
+if (typeof globalThis !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, val] of batchStore.entries()) {
+      if (now > val.windowStart + 120_000) batchStore.delete(key); // 2x max window
+    }
+  }, 60_000);
+}
+
+// ---- Legacy in-memory fallback (used when Redis is completely unavailable) ----
 const memoryStore = new Map<string, { count: number; resetAt: number }>();
 
 function memoryCheck(key: string, limit: number, windowMs: number): { success: boolean; remaining: number } {
@@ -102,31 +218,13 @@ export async function rateLimit(
   const limiter = getLimiter(type);
 
   if (limiter) {
-    try {
-      const result = await limiter.limit(identifier);
-      return {
-        success: result.success,
-        remaining: result.remaining,
-        reset: result.reset,
-      };
-    } catch {
-      // Upstash error — fall through to memory
-    }
+    // Redis available — use batched in-memory with periodic Redis sync
+    return batchMemoryCheck(type, identifier, limiter);
   }
 
-  // Memory fallback
-  const windowMap: Record<string, number> = {
-    global: 10_000,
-    tmdb: 10_000,
-    search: 10_000,
-    auth: 60_000,
-    write: 10_000,
-    embed: 10_000,
-    stats: 60_000,
-    leaderboard: 60_000,
-  };
+  // No Redis at all — pure in-memory fallback
+  const windowMs = WINDOW_MS[type];
   const tokens = LIMITS[type].tokens;
-  const windowMs = windowMap[type] || 10_000;
   return memoryCheck(`rl:${type}:${identifier}`, tokens, windowMs);
 }
 
