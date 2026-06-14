@@ -235,6 +235,20 @@ async function anilistQuery<T>(query: string, variables: Record<string, unknown>
   return json.data as T;
 }
 
+/**
+ * Page-query helper: unwraps the `Page` wrapper that AniList GraphQL
+ * always returns for paginated queries.
+ * json.data = { Page: { media: [...], pageInfo: {...} } }
+ * We want:     { media: [...], pageInfo: {...} }
+ */
+async function anilistPageQuery<T>(
+  query: string,
+  variables: Record<string, unknown> = {}
+): Promise<AniListPage<T>> {
+  const data = await anilistQuery<{ Page: AniListPage<T> }>(query, variables);
+  return data.Page;
+}
+
 // ---- Helpers ----
 
 export function getAniListTitle(media: { title: { romaji: string | null; english: string | null; native: string | null } }): string {
@@ -343,7 +357,7 @@ export async function getSeasonalAnime(
   `;
 
   return fetchWithCache('trending', `anilist:seasonal:${season || autoSeason}:${autoYear}:${page}:${sort}`, () =>
-    anilistQuery<AniListPage<AniListMedia>>(query, {
+    anilistPageQuery<AniListMedia>(query, {
       season: season || autoSeason,
       year: autoYear,
       page,
@@ -369,7 +383,7 @@ export async function getTrendingAnime(page = 1, perPage = 20): Promise<AniListP
   `;
 
   return fetchWithCache('trending', `anilist:trending:${page}`, () =>
-    anilistQuery<AniListPage<AniListMedia>>(query, { page, perPage })
+    anilistPageQuery<AniListMedia>(query, { page, perPage })
   );
 }
 
@@ -389,7 +403,7 @@ export async function getPopularAnime(page = 1, perPage = 20): Promise<AniListPa
   `;
 
   return fetchWithCache('popular', `anilist:popular:${page}`, () =>
-    anilistQuery<AniListPage<AniListMedia>>(query, { page, perPage })
+    anilistPageQuery<AniListMedia>(query, { page, perPage })
   );
 }
 
@@ -424,7 +438,7 @@ export async function getUpcomingAnime(
   `;
 
   return fetchWithCache('trending', `anilist:upcoming:${nextSeason}:${nextYear}:${page}`, () =>
-    anilistQuery<AniListPage<AniListMedia>>(query, { season: nextSeason, year: nextYear, page, perPage })
+    anilistPageQuery<AniListMedia>(query, { season: nextSeason, year: nextYear, page, perPage })
   );
 }
 
@@ -444,7 +458,7 @@ export async function getAiringAnime(page = 1, perPage = 20): Promise<AniListPag
   `;
 
   return fetchWithCache('trending', `anilist:airing:${page}`, () =>
-    anilistQuery<AniListPage<AniListMedia>>(query, { page, perPage })
+    anilistPageQuery<AniListMedia>(query, { page, perPage })
   );
 }
 
@@ -468,7 +482,7 @@ export async function searchAnime(
   `;
 
   // Don't cache search results — they should be fresh
-  return anilistQuery<AniListPage<AniListMedia>>(gql, { search: query, page, perPage });
+  return anilistPageQuery<AniListMedia>(gql, { search: query, page, perPage });
 }
 
 /**
@@ -515,7 +529,7 @@ export async function browseAllAnime(
   `;
 
   return fetchWithCache('popular', `anilist:all:${sort}:${page}`, () =>
-    anilistQuery<AniListPage<AniListMedia>>(query, { page, perPage, sort })
+    anilistPageQuery<AniListMedia>(query, { page, perPage, sort })
   );
 }
 
@@ -535,6 +549,6 @@ export async function getTopRatedAnime(page = 1, perPage = 20): Promise<AniListP
   `;
 
   return fetchWithCache('popular', `anilist:top:${page}`, () =>
-    anilistQuery<AniListPage<AniListMedia>>(query, { page, perPage })
+    anilistPageQuery<AniListMedia>(query, { page, perPage })
   );
 }
