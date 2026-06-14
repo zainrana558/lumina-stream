@@ -18,7 +18,7 @@
 import { getRedis } from '@/lib/redis';
 
 // Bump this to invalidate all cached data on deploy
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 
 // ---- TTL presets (in seconds) ----
 // Kept short so content stays fresh and up-to-date.

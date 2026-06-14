@@ -79,12 +79,6 @@ function buildTmdbRequest(endpoint: string, params: Record<string, string>) {
   const headers: Record<string, string> = {};
   const searchParams = new URLSearchParams();
 
-  if (env.TMDB_BEARER_TOKEN) {
-    headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
-  } else {
-    searchParams.set('api_key', env.TMDB_API_KEY!);
-  }
-
   // Defaults
   if (!params.language) searchParams.set('language', 'en-US');
   if (!params.include_adult) searchParams.set('include_adult', 'false');
@@ -98,8 +92,20 @@ function buildTmdbRequest(endpoint: string, params: Record<string, string>) {
   // Route through Cloudflare API cache if configured
   if (API_CACHE_URL) {
     const cacheUrl = `${API_CACHE_URL}/tmdb${endpoint}?${searchParams.toString()}`;
-    // Auth goes via header (worker strips it before caching)
+    // API cache worker expects auth via X-TMDB-Auth / X-TMDB-Key headers
+    if (env.TMDB_BEARER_TOKEN) {
+      headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
+    } else if (env.TMDB_API_KEY) {
+      headers['X-TMDB-Key'] = env.TMDB_API_KEY;
+    }
     return { url: cacheUrl, headers };
+  }
+
+  // Direct TMDB: use standard Authorization header
+  if (env.TMDB_BEARER_TOKEN) {
+    headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+  } else {
+    searchParams.set('api_key', env.TMDB_API_KEY!);
   }
 
   return {
