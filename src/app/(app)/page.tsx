@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { fetchBatchWithCache } from '@/lib/cache';
 import { tmdbFetchRaw } from '@/lib/tmdb/server';
+import { getTrendingAnime, anilistToMediaItem } from '@/lib/anilist/client';
 import Home from '@/components/pages/Home';
 import type { MediaItem, TMDBShow } from '@/types';
 import { tmdbToMedia } from '@/types';
@@ -40,7 +41,7 @@ const HOME_FETCHES = [
   { id: 'action',       endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' },               category: 'discover' as const },
   { id: 'comedy',       endpoint: '/discover/movie', params: { with_genres: '35', sort_by: 'popularity.desc' },               category: 'discover' as const },
   { id: 'scifi',        endpoint: '/discover/movie', params: { with_genres: '878', sort_by: 'popularity.desc' },              category: 'discover' as const },
-  { id: 'animation',    endpoint: '/discover/movie', params: { with_genres: '16', sort_by: 'popularity.desc' },               category: 'discover' as const },
+  // Animation row removed — replaced with AniList anime (see below)
   { id: 'nowPlaying',   endpoint: '/movie/now_playing',                                            category: 'popular' as const },
   { id: 'airingToday',  endpoint: '/tv/airing_today',                                              category: 'popular' as const },
   { id: 'onTheAir',     endpoint: '/tv/on_the_air',                                                category: 'popular' as const },
@@ -103,7 +104,7 @@ async function getTMDBData() {
     const action      = filterPosters(get('action'));
     const comedy      = filterPosters(get('comedy'));
     const scifi       = filterPosters(get('scifi'));
-    const animation   = filterPosters(get('animation'));
+    // Anime row: sourced from AniList (not TMDB) to avoid cartoon contamination
     const nowPlaying  = filterPosters(get('nowPlaying'));
     const airingToday = filterPosters(get('airingToday'));
     const onTheAir    = filterPosters(get('onTheAir'));
@@ -140,7 +141,14 @@ async function getTMDBData() {
     if (action.length) rows.push({ title: 'Action', sub: fmtCount('action', 'Adrenaline-pumping hits'), items: action.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' } });
     if (comedy.length) rows.push({ title: 'Comedy', sub: fmtCount('comedy', 'Laugh-out-loud favorites'), items: comedy.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '35', sort_by: 'popularity.desc' } });
     if (scifi.length) rows.push({ title: 'Sci-Fi', sub: fmtCount('scifi', 'Explore the unknown'), items: scifi.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '878', sort_by: 'popularity.desc' } });
-    if (animation.length) rows.push({ title: 'Animation', sub: fmtCount('animation', 'Animated adventures for all ages'), items: animation.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '16', sort_by: 'popularity.desc' } });
+    // Anime row from AniList (pure anime, no western cartoons)
+    try {
+      const animeResults = await getTrendingAnime(1, 20);
+      const animeItems = animeResults.media
+        .filter(m => m.coverImage?.large)
+        .map(m => anilistToMediaItem(m));
+      if (animeItems.length) rows.push({ title: 'Anime', sub: '5,000+ series in the archive · Powered by AniList', items: animeItems.slice(0, 20), endpoint: '/genre/anime' });
+    } catch { /* non-critical — skip anime row if AniList is down */ }
 
     // ── Now Playing + TV airing ──
     if (nowPlaying.length) rows.push({ title: 'Now Playing in Theaters', sub: fmtCount('nowPlaying', 'Currently showing in cinemas'), items: nowPlaying.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/now_playing' });
