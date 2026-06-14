@@ -136,7 +136,12 @@ export async function GET(request: NextRequest) {
     // Build "did you mean" suggestions when page 1 has few/no results
     let suggestions: string[] = [];
     if (page === 1 && merged.length < 3) {
-      suggestions = buildSuggestions(normalized, tmdbResults.items, anilistResults.items);
+      // First try from whatever results we do have
+      suggestions = buildSuggestionsFromResults(normalized, tmdbResults.items, anilistResults.items);
+      // If still empty (0 results total), ask TMDB directly — it has great fuzzy matching
+      if (suggestions.length === 0) {
+        suggestions = await fetchTmdbSuggestions(trimmed, normalized);
+      }
     }
 
     return NextResponse.json({
@@ -234,28 +239,67 @@ function normalizeTitle(title: string): string {
 }
 
 /**
- * Build up to 3 "did you mean" suggestions from TMDB + AniList results
- * that are closest in spelling to the user's query.
+ * Build suggestions from existing result titles (when we have some results but < 3).
  */
-function buildSuggestions(normalizedQ: string, tmdbItems: MediaItem[], anilistItems: MediaItem[]): string[] {
+function buildSuggestionsFromResults(normalizedQ: string, tmdbItems: MediaItem[], anilistItems: MediaItem[]): string[] {
   const allTitles = [
     ...tmdbItems.map(i => i.title),
     ...anilistItems.map(i => i.title),
   ];
 
-  // If we have any results at all, suggest the top match
-  if (allTitles.length > 0) {
-    // Score by Levenshtein distance, pick closest 3
-    const scored = allTitles
+  if (allTitles.length === 0) return [];
+
+  const scored = allTitles
+    .map(title => ({ title, dist: levenshtein(normalizedQ, normalizeTitle(title)) }))
+    .sort((a, b) => a.dist - b.dist);
+
+  return scored
+    .slice(0, 3)
+    .filter(s => s.dist > 0 && s.dist <= Math.max(normalizedQ.length * 0.6, 3))
+    .map(s => s.title);
+}
+
+/**
+ * When we have 0 results, ask TMDB directly for fuzzy matches.
+ * TMDB's search API handles typos natively — this gives us real "did you mean" titles.
+ */
+async function fetchTmdbSuggestions(originalQuery: string, normalizedQ: string): Promise<string[]> {
+  try {
+    const env = getValidatedEnv();
+    const headers: Record<string, string> = {};
+    const params = new URLSearchParams({ query: originalQuery });
+
+    if (env.TMDB_BEARER_TOKEN) {
+      headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+    } else {
+      params.set('api_key', env.TMDB_API_KEY!);
+    }
+
+    const res = await fetch(
+      `https://api.themoviedb.org/3/search/multi?${params}`,
+      { headers }
+    );
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    const titles: string[] = (data.results || [])
+      .slice(0, 10)
+      .map((r: TMDBShow) => r.title || r.name || '')
+      .filter(Boolean);
+
+    if (titles.length === 0) return [];
+
+    // Rank by Levenshtein distance to user's query
+    const scored = titles
       .map(title => ({ title, dist: levenshtein(normalizedQ, normalizeTitle(title)) }))
       .sort((a, b) => a.dist - b.dist);
 
     return scored
       .slice(0, 3)
-      .filter(s => s.dist > 0 && s.dist <= Math.max(normalizedQ.length * 0.6, 3))
+      .filter(s => s.dist <= Math.max(normalizedQ.length * 0.7, 2))
       .map(s => s.title);
+  } catch {
+    return [];
   }
-
-  // No results at all — return empty (suggestions would need a separate API call)
-  return [];
 }
