@@ -39,6 +39,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const [searchTotalPages, setSearchTotalPages] = useState(0);
   const [searchTotalResults, setSearchTotalResults] = useState(0);
   const [activeQuery, setActiveQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
 
@@ -84,6 +85,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       setSearchPage(1);
       setSearchTotalPages(0);
       setSearchTotalResults(0);
+      setSuggestions([]);
       return;
     }
 
@@ -102,13 +104,13 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         const data = await res.json();
         if (controller.signal.aborted) return;
 
-        // API now returns MediaItem[] directly
         const items: MediaItem[] = data.results || [];
 
         setSearchResults(items);
         setSearchPage(1);
         setSearchTotalPages(data.total_pages || 0);
         setSearchTotalResults(data.total_results || 0);
+        setSuggestions(data.suggestions || []);
         setActiveQuery(q.trim());
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -351,9 +353,45 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       </div>
 
       <div ref={gridRef} className="main-pad bento-grid" style={{ padding: '0 clamp(1rem,5vw,3rem) 5.5rem', position: 'relative', zIndex: 3 }}>
-        {list.length === 0 ? (
+        {list.length === 0 && !searchLoading ? (
+          <div className="f-cinzel" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255,245,232,.28)',  letterSpacing: '.1em' }}>
+            {isSearching && activeQuery ? (
+              <>
+                <div style={{ fontSize: '1rem', marginBottom: '.8rem' }}>✦ No results for &ldquo;{activeQuery}&rdquo;</div>
+                <div style={{ fontSize: '.72rem', color: 'rgba(255,245,232,.22)', marginBottom: '1.2rem' }}>
+                  Try checking the spelling, or use fewer words
+                </div>
+                {suggestions.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.5rem' }}>
+                    <span style={{ fontSize: '.68rem', color: 'rgba(255,179,71,.5)' }}>Did you mean:</span>
+                    {suggestions.map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setQ(s)}
+                        style={{
+                          background: 'rgba(255,179,71,.08)',
+                          border: '1px solid rgba(255,179,71,.2)',
+                          borderRadius: 8,
+                          padding: '6px 18px',
+                          color: '#FFB347',
+                          fontSize: '.78rem',
+                          cursor: 'pointer',
+                          transition: 'background .2s, border-color .2s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,179,71,.15)'; e.currentTarget.style.borderColor = 'rgba(255,179,71,.4)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,179,71,.08)'; e.currentTarget.style.borderColor = 'rgba(255,179,71,.2)'; }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : '✦ No shows found ✦'}
+          </div>
+        ) : list.length === 0 ? (
           <div className="f-cinzel" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.28)',  letterSpacing: '.1em' }}>
-            {searchLoading ? '✦ Searching…' : '✦ No shows found ✦'}
+            ✦ Searching…
           </div>
         ) : (
           <>

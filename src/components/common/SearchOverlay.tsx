@@ -50,6 +50,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => getRecentSearches());
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Load genre list + recent searches on mount
@@ -89,14 +90,15 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
     // Anime-only tab uses AniList directly
     if (searchTab === 'anime') {
       try {
-        const res = await fetch(`/api/anime?type=search&q=${encodeURIComponent(query)}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&page=1&source=anilist`);
         const data = await res.json();
         if (data.results) {
           setResults(data.results.slice(0, 10));
+          setSuggestions(data.suggestions || []);
         }
       } catch {
         setResults([]);
-      }
+ }
       addSearch(query);
       setRecentSearches(getRecentSearches());
       setLoading(false);
@@ -128,6 +130,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
         setResults(items.slice(0, 10));
         setSearchPage(1);
         setHasMoreResults(data.has_more ?? false);
+        setSuggestions(data.suggestions || []);
       }
       addSearch(query);
       setRecentSearches(getRecentSearches());
@@ -307,7 +310,37 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
             })}
           </div>
         ) : searched && q.length > 1 ? (
-          <div className="f-cinzel" style={{ textAlign: 'center', padding: '2.5rem', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>✦ No results ✦</div>
+          <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+            <div className="f-cinzel" style={{ color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em', marginBottom: '.7rem' }}>✦ No results ✦</div>
+            <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.2)', marginBottom: suggestions.length > 0 ? '1rem' : 0 }}>
+              Try fewer words or check spelling
+            </div>
+            {suggestions.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.4rem' }}>
+                <span style={{ fontSize: '.64rem', color: 'rgba(255,179,71,.45)' }}>Did you mean:</span>
+                {suggestions.map(s => (
+                  <button
+                    key={s}
+                    onClick={() => handleInputChange(s)}
+                    style={{
+                      background: 'rgba(255,179,71,.08)',
+                      border: '1px solid rgba(255,179,71,.18)',
+                      borderRadius: 8,
+                      padding: '5px 16px',
+                      color: '#FFB347',
+                      fontSize: '.72rem',
+                      cursor: 'pointer',
+                      transition: 'background .2s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,179,71,.15)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,179,71,.08)'}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ) : results.length > 0 && hasMoreResults ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem 0' }}>
             <button
