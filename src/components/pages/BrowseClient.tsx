@@ -27,7 +27,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const [sort, setSort] = useState<SortKey>('r');
   const [isMobile, setIsMobile] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [browseSource, setBrowseSource] = useState<BrowseSource>('all');
   const currentPageRef = useRef(1);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -222,18 +222,14 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     }
   }, [loadingMore, hasMore, isSearching, searchPage, searchTotalPages, activeQuery, browseSource, animePage, animeShows.length, searchResults.length]);
 
-  // Reset hasMore when switching modes
+  // Enable load more only for search mode
   useEffect(() => {
     if (isSearching) {
       setHasMore(searchPage < searchTotalPages);
-    } else if (browseSource === 'anime') {
-      setHasMore(animeHasMore);
-    } else if (browseSource === 'all') {
-      setHasMore(true); // Both sources may have more
     } else {
-      setHasMore(true);
+      setHasMore(false);
     }
-  }, [isSearching, searchPage, searchTotalPages, browseSource, animeHasMore]);
+  }, [isSearching, searchPage, searchTotalPages]);
 
   // Get the combined source list for browse mode
   const browseList = useMemo(() => {
@@ -436,27 +432,6 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       {searchLoading && searchResults.length === 0 && (
         <div className="f-cinzel" style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em', position: 'relative', zIndex: 3 }}>
           ✦ Searching TMDB + AniList…
-        </div>
-      )}
-
-      {/* Load More Button */}
-      {!searchLoading && hasMore && list.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '0 clamp(1rem,5vw,3rem) 4rem', position: 'relative', zIndex: 3 }}>
-          <button
-            onClick={loadMore}
-            disabled={loadingMore}
-            className="btn-g f-cinzel"
-            style={{
-              padding: '12px 32px',
-              fontSize: '.82rem',
-              letterSpacing: '.06em',
-              minWidth: 200,
-              opacity: loadingMore ? 0.6 : 1,
-              cursor: loadingMore ? 'wait' : 'pointer',
-            }}
-          >
-            {loadingMore ? '✦ Loading…' : 'Load More Shows'}
-          </button>
         </div>
       )}
 
