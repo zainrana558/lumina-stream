@@ -1,0 +1,35 @@
+name: Refresh Embed Providers
+
+on:
+  schedule:
+    # Runs daily at 8:00 AM Pacific (15:00 UTC)
+    - cron: '0 15 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub Actions tab
+
+jobs:
+  refresh-providers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run provider refresh
+        run: node scripts/provider-refresh.mjs
+
+      - name: Push changes (if any)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/lib/streaming/providers.ts
+          git diff --cached --quiet || git commit -m "chore: auto-refresh providers ($(date +%Y-%m-%d))"
+          git push
