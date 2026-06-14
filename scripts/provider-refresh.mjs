@@ -548,8 +548,12 @@ async function main() {
     return;
   }
 
-  // 5. Commit and push
-  gitCommitAndPush(alive.length, dead.length);
+  // 5. Commit and push (skip in GitHub Actions — workflow handles it)
+  if (!process.env.GITHUB_ACTIONS) {
+    gitCommitAndPush(alive.length, dead.length);
+  } else {
+    log('Running in GitHub Actions — skipping git push (workflow handles it)');
+  }
 
   log('========== Provider Refresh End ==========');
 }

@@ -5,7 +5,9 @@ on:
     # Runs daily at 8:00 AM Pacific (15:00 UTC)
     - cron: '0 15 * * *'
   workflow_dispatch:
-    # Allow manual trigger from GitHub Actions tab
+
+permissions:
+  contents: write
 
 jobs:
   refresh-providers:
@@ -21,15 +23,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Run provider refresh
+        env:
+          GITHUB_ACTIONS: "true"
         run: node scripts/provider-refresh.mjs
 
       - name: Push changes (if any)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/lib/streaming/providers.ts
+          git add src/lib/streaming/providers.ts scripts/provider-refresh.log
           git diff --cached --quiet || git commit -m "chore: auto-refresh providers ($(date +%Y-%m-%d))"
           git push
