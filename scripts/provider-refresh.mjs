@@ -109,9 +109,9 @@ async function pingProvider(url) {
   try {
     const res = await fetch(url, {
       method: 'HEAD',
-      mode: 'no-cors',
+      redirect: 'follow',
       signal: controller.signal,
-    });
+    }).catch(() => null);
     clearTimeout(timeout);
     return true;
   } catch {
