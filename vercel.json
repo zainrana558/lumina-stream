@@ -9,7 +9,7 @@
     },
     {
       "path": "/api/embed-health-cron",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 6 * * *"
     }
   ]
 }

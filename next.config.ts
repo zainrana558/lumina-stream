@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  // Note: 'standalone' output is for self-hosting (Docker/VM) only.
+  // Vercel uses its own build pipeline — no standalone needed.
   allowedDevOrigins: ["https://*.space-z.ai"],
   typescript: {
     // Turbopack's TS plugin caches type info aggressively and doesn't pick up

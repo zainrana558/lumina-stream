@@ -261,33 +261,14 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
   return { slug: 'browse', count: items.length, cached: false };
 }
 
-// ─── Route handler ───────────────────────────────────────────────────────────
+// ─── Warming logic (shared between cron GET and manual POST) ──────────────────
 
-export async function POST(request: NextRequest) {
-  // Auth is ALWAYS required — this endpoint triggers 100+ API calls.
-  // In dev, use a default secret or set CACHE_WARM_SECRET in .env.local.
-  const secret = process.env.CACHE_WARM_SECRET;
-  if (!secret) {
-    console.warn(
-      '[warm] CACHE_WARM_SECRET is not set. ' +
-      'Set it in .env.local to enable the cache warm endpoint.'
-    );
-    return NextResponse.json(
-      { error: 'CACHE_WARM_SECRET not configured' },
-      { status: 503 }
-    );
-  }
-
-  const auth = request.headers.get('authorization') ?? '';
-  if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+async function runWarm(requestUrl: string): Promise<NextResponse> {
   const startTime = Date.now();
 
   try {
     // Parse optional ?slug= to warm a single genre only
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(requestUrl);
     const targetSlug = searchParams.get('slug');
 
     const genresToWarm = targetSlug
@@ -313,6 +294,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      triggeredBy: 'cron',
       elapsed_ms: elapsed,
       total_items: totalItems,
       ttl_seconds: CACHE_TTL['warm' as keyof typeof CACHE_TTL],
@@ -324,19 +306,25 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET: quick status check — returns current warm cache sizes
+// ─── Route handlers ──────────────────────────────────────────────────────────
+
+// GET: Vercel Cron hits this. If called with auth header → run warm.
+//       Without auth → return current cache status (dev convenience).
 export async function GET(request: NextRequest) {
   const secret = process.env.CACHE_WARM_SECRET;
+
+  // If called by Vercel Cron (has auth) → run the warm
+  const auth = request.headers.get('authorization') ?? '';
+  if (secret && auth === `Bearer ${secret}`) {
+    return runWarm(request.url);
+  }
+
+  // No auth or no secret → status-only endpoint
   if (!secret) {
     return NextResponse.json(
       { error: 'CACHE_WARM_SECRET not configured' },
       { status: 503 }
     );
-  }
-
-  const auth = request.headers.get('authorization') ?? '';
-  if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const slugs = [...TMDB_GENRES.map(g => g.slug), 'anime'];
@@ -351,4 +339,26 @@ export async function GET(request: NextRequest) {
   status.push({ slug: 'browse', count: browse?.length ?? 0, warmed: (browse?.length ?? 0) > 0 });
 
   return NextResponse.json({ status });
+}
+
+// POST: Manual trigger (e.g. from dashboard or scripts)
+export async function POST(request: NextRequest) {
+  const secret = process.env.CACHE_WARM_SECRET;
+  if (!secret) {
+    console.warn(
+      '[warm] CACHE_WARM_SECRET is not set. ' +
+      'Set it in .env.local to enable the cache warm endpoint.'
+    );
+    return NextResponse.json(
+      { error: 'CACHE_WARM_SECRET not configured' },
+      { status: 503 }
+    );
+  }
+
+  const auth = request.headers.get('authorization') ?? '';
+  if (auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  return runWarm(request.url);
 }
