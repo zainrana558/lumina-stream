@@ -16,7 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { tmdbFetch } from '@/lib/tmdb/server';
-import { setCache, getCached, CACHE_TTL } from '@/lib/cache';
+import { setCache, getCached, CACHE_TTL, type CacheCategory } from '@/lib/cache';
 
 // Turbopack aggressively caches type info from imported modules.
 // Cast 'warm' to bypass stale CacheCategory type resolution.
@@ -261,6 +261,77 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
   return { slug: 'browse', count: items.length, cached: false };
 }
 
+// ─── Home page genre portal feature cards ───────────────────────────────────
+// These 6 discover fetches power the home page genre portal backdrops & counts.
+// They use the same cache keys as the home page (discover category + full endpoint+params key).
+
+const HOME_FEAT_FETCHES = [
+  { id: 'feat-anime',   endpoint: '/discover/tv',    params: { with_genres: '16,10759', sort_by: 'popularity.desc', with_original_language: 'ja', vote_count_gte: '100' } },
+  { id: 'feat-cartoon', endpoint: '/discover/tv',    params: { with_genres: '16', sort_by: 'popularity.desc', without_genres: '10759', with_original_language: 'en' } },
+  { id: 'feat-horror',  endpoint: '/discover/movie', params: { with_genres: '27', sort_by: 'popularity.desc' } },
+  { id: 'feat-romance', endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' } },
+  { id: 'feat-mystery', endpoint: '/discover/movie', params: { with_genres: '9648', sort_by: 'popularity.desc' } },
+  { id: 'feat-fantasy', endpoint: '/discover/movie', params: { with_genres: '14', sort_by: 'popularity.desc' } },
+];
+
+function makeKey(endpoint: string, params?: Record<string, string>): string {
+  if (!params) return endpoint;
+  const sorted = Object.entries(params).sort(([a], [b]) => a.localeCompare(b));
+  return endpoint + '?' + sorted.map(([k, v]) => `${k}=${v}`).join('&');
+}
+
+async function warmHomeFeatCards(): Promise<{ slug: string; count: number; cached: boolean }[]> {
+  // Build the exact same cache keys the home page uses
+  const entries = HOME_FEAT_FETCHES.map(f => {
+    const key = makeKey(f.endpoint, f.params);
+    return { id: f.id, key, endpoint: f.endpoint, params: f.params };
+  });
+
+  // Check existing cache — skip if any feat key is already warm
+  const existingCounts: Record<string, { count: number; exists: boolean }> = {};
+  for (const e of entries) {
+    try {
+      const cached = await getCached<{ results?: TMDBShow[]; total_results?: number }>('discover' as CacheCategory, e.key);
+      if (cached && cached.total_results && cached.total_results > 0) {
+        existingCounts[e.id] = { count: cached.total_results, exists: true };
+      }
+    } catch { /* miss */ }
+  }
+
+  // If all 6 are already cached, skip entirely
+  if (Object.keys(existingCounts).length === entries.length) {
+    return entries.map(e => ({
+      slug: e.id,
+      count: existingCounts[e.id]?.count ?? 0,
+      cached: true,
+    }));
+  }
+
+  // Fetch only the missing ones (page 1 is enough — home page only needs 1 page for backdrops + total_results)
+  const toFetch = entries.filter(e => !existingCounts[e.id]);
+  const results = await Promise.all(
+    toFetch.map(e =>
+      limitedFetch(() =>
+        tmdbFetch<{ results?: TMDBShow[]; total_results?: number }>(e.endpoint, e.params)
+          .then(data => {
+            const payload = { results: data.results || [], total_results: data.total_results || 0 };
+            // Cache under the exact same key the home page reads
+            setCache('discover' as CacheCategory, e.key, payload).catch(() => {});
+            return { slug: e.id, count: payload.total_results, cached: false };
+          })
+          .catch(() => ({ slug: e.id, count: 0, cached: false }))
+      )
+    )
+  );
+
+  // Merge with already-cached entries
+  const cachedResults = entries
+    .filter(e => existingCounts[e.id])
+    .map(e => ({ slug: e.id, count: existingCounts[e.id]!.count, cached: true }));
+
+  return [...cachedResults, ...results];
+}
+
 // ─── Warming logic (shared between cron GET and manual POST) ──────────────────
 
 async function runWarm(requestUrl: string): Promise<NextResponse> {
@@ -283,10 +354,14 @@ async function runWarm(requestUrl: string): Promise<NextResponse> {
     const animeResult  = !targetSlug || targetSlug === 'anime'  ? await warmAnime()  : null;
     const browseResult = !targetSlug || targetSlug === 'browse' ? await warmBrowse() : null;
 
+    // Warm the 6 home page genre portal feat-* discover keys
+    const featResults = !targetSlug ? await warmHomeFeatCards() : [];
+
     const results = [
       ...tmdbResults,
       ...(animeResult  ? [animeResult]  : []),
       ...(browseResult ? [browseResult] : []),
+      ...featResults,
     ];
 
     const totalItems = results.reduce((sum, r) => sum + r.count, 0);

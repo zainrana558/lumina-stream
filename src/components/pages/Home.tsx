@@ -313,7 +313,11 @@ function GenrePortalCard({
       />
       {/* Show count badge */}
       <div className="portal-badge">
-        {count > 0 ? `${(count / 1000).toFixed(1)}k titles` : g.name}
+        {count >= 1000
+          ? `${(count / 1000).toFixed(1).replace(/\.0$/, '')}k titles`
+          : count > 0
+            ? `${count}+ titles`
+            : g.name}
       </div>
       {/* Content */}
       <div className="portal-content">

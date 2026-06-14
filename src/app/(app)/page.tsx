@@ -116,40 +116,48 @@ async function getTMDBData() {
     const acclaimed   = filterPosters(get('acclaimed'));
     const warHistory  = filterPosters(get('warHistory'));
 
+    // Helper: format a raw TMDB total_results count into a human-friendly label
+    const fmtCount = (id: string, fallbackLabel: string): string => {
+      const total = getTotal(id);
+      if (total >= 1000) return `${(total / 1000).toFixed(1).replace(/\.0$/, '')}k titles available`;
+      if (total > 0) return `${total}+ titles available`;
+      return fallbackLabel;
+    };
+
     // Filter trending to only items with backdrop_path for hero carousel
     const trendingWithBackdrop = trending.filter(r => r.backdrop_path);
     const featured = trendingWithBackdrop.slice(0, 10).map(r => tmdbToMedia(r));
     const rows: RowData[] = [];
 
     // ── Trending & Popular ──
-    if (popular.length) rows.push({ title: 'Trending Now', sub: 'Most watched this week', items: popular.slice(0, 20).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week' });
-    if (popular.length) rows.push({ title: 'Top 10 This Week', sub: '#1 trending right now', items: popular.slice(0, 10).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week', ranked: true });
-    if (tvPopular.length) rows.push({ title: 'Popular TV', sub: 'Most popular TV shows', items: tvPopular.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/popular' });
-    if (topRated.length) rows.push({ title: 'Top Rated', sub: 'Highest rated of all time', items: topRated.slice(0, 20).map(r => tmdbToMedia(r)), endpoint: '/movie/top_rated' });
-    if (upcoming.length) rows.push({ title: 'Coming Soon', sub: 'Upcoming releases', items: upcoming.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/upcoming' });
+    if (popular.length) rows.push({ title: 'Trending Now', sub: fmtCount('trending', 'Most watched this week'), items: popular.slice(0, 20).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week' });
+    if (popular.length) rows.push({ title: 'Top 10 This Week', sub: fmtCount('popular', 'Hot right now'), items: popular.slice(0, 10).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week', ranked: true });
+    if (tvPopular.length) rows.push({ title: 'Popular TV', sub: fmtCount('tvPopular', 'Most popular TV shows'), items: tvPopular.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/popular' });
+    if (topRated.length) rows.push({ title: 'Top Rated', sub: fmtCount('topRated', 'Highest rated of all time'), items: topRated.slice(0, 20).map(r => tmdbToMedia(r)), endpoint: '/movie/top_rated' });
+    if (upcoming.length) rows.push({ title: 'Coming Soon', sub: fmtCount('upcoming', 'Upcoming releases'), items: upcoming.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/upcoming' });
 
     // ── Genre rows ──
-    if (action.length) rows.push({ title: 'Action', sub: 'Adrenaline-pumping hits', items: action.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' } });
-    if (comedy.length) rows.push({ title: 'Comedy', sub: 'Laugh-out-loud favorites', items: comedy.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '35', sort_by: 'popularity.desc' } });
-    if (scifi.length) rows.push({ title: 'Sci-Fi', sub: 'Explore the unknown', items: scifi.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '878', sort_by: 'popularity.desc' } });
-    if (animation.length) rows.push({ title: 'Animation', sub: 'Animated adventures for all ages', items: animation.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '16', sort_by: 'popularity.desc' } });
+    if (action.length) rows.push({ title: 'Action', sub: fmtCount('action', 'Adrenaline-pumping hits'), items: action.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' } });
+    if (comedy.length) rows.push({ title: 'Comedy', sub: fmtCount('comedy', 'Laugh-out-loud favorites'), items: comedy.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '35', sort_by: 'popularity.desc' } });
+    if (scifi.length) rows.push({ title: 'Sci-Fi', sub: fmtCount('scifi', 'Explore the unknown'), items: scifi.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '878', sort_by: 'popularity.desc' } });
+    if (animation.length) rows.push({ title: 'Animation', sub: fmtCount('animation', 'Animated adventures for all ages'), items: animation.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '16', sort_by: 'popularity.desc' } });
 
     // ── Now Playing + TV airing ──
-    if (nowPlaying.length) rows.push({ title: 'Now Playing in Theaters', sub: 'Currently showing in cinemas', items: nowPlaying.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/now_playing' });
-    if (airingToday.length) rows.push({ title: 'Airing Today on TV', sub: 'Episodes airing today', items: airingToday.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/airing_today' });
-    if (onTheAir.length) rows.push({ title: 'On The Air', sub: 'TV shows currently broadcasting', items: onTheAir.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/on_the_air' });
-    if (drama.length) rows.push({ title: 'Drama', sub: 'Emotional stories that move you', items: drama.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '18', sort_by: 'popularity.desc' } });
+    if (nowPlaying.length) rows.push({ title: 'Now Playing in Theaters', sub: fmtCount('nowPlaying', 'Currently showing in cinemas'), items: nowPlaying.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/now_playing' });
+    if (airingToday.length) rows.push({ title: 'Airing Today on TV', sub: fmtCount('airingToday', 'Episodes airing today'), items: airingToday.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/airing_today' });
+    if (onTheAir.length) rows.push({ title: 'On The Air', sub: fmtCount('onTheAir', 'TV shows currently broadcasting'), items: onTheAir.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/on_the_air' });
+    if (drama.length) rows.push({ title: 'Drama', sub: fmtCount('drama', 'Emotional stories that move you'), items: drama.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '18', sort_by: 'popularity.desc' } });
 
     // ── Thriller, Crime, Romance, Family ──
-    if (thriller.length) rows.push({ title: 'Thriller', sub: 'Edge-of-your-seat suspense', items: thriller.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '53', sort_by: 'popularity.desc' } });
-    if (crime.length) rows.push({ title: 'Crime', sub: 'Dark investigations & heists', items: crime.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '80', sort_by: 'popularity.desc' } });
-    if (romance.length) rows.push({ title: 'Romance', sub: 'Love stories & heartwarming tales', items: romance.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' } });
-    if (family.length) rows.push({ title: 'Family Friendly', sub: 'Fun for the whole family', items: family.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '10751', sort_by: 'popularity.desc' } });
+    if (thriller.length) rows.push({ title: 'Thriller', sub: fmtCount('thriller', 'Edge-of-your-seat suspense'), items: thriller.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '53', sort_by: 'popularity.desc' } });
+    if (crime.length) rows.push({ title: 'Crime', sub: fmtCount('crime', 'Dark investigations & heists'), items: crime.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '80', sort_by: 'popularity.desc' } });
+    if (romance.length) rows.push({ title: 'Romance', sub: fmtCount('romance', 'Love stories & heartwarming tales'), items: romance.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' } });
+    if (family.length) rows.push({ title: 'Family Friendly', sub: fmtCount('family', 'Fun for the whole family'), items: family.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '10751', sort_by: 'popularity.desc' } });
 
     // ── Curated collections ──
-    if (hiddenGems.length) rows.push({ title: 'Hidden Gems', sub: 'Underrated treasures waiting to be found', items: hiddenGems.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' } });
-    if (acclaimed.length) rows.push({ title: 'Critically Acclaimed', sub: 'Certified hits with top ratings', items: acclaimed.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' } });
-    if (warHistory.length) rows.push({ title: 'War & History', sub: 'Epic battles & lessons from the past', items: warHistory.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '10752,36', sort_by: 'popularity.desc' } });
+    if (hiddenGems.length) rows.push({ title: 'Hidden Gems', sub: fmtCount('hiddenGems', 'Underrated treasures waiting to be found'), items: hiddenGems.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' } });
+    if (acclaimed.length) rows.push({ title: 'Critically Acclaimed', sub: fmtCount('acclaimed', 'Certified hits with top ratings'), items: acclaimed.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' } });
+    if (warHistory.length) rows.push({ title: 'War & History', sub: fmtCount('warHistory', 'Epic battles & lessons from the past'), items: warHistory.slice(0, 20).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '10752,36', sort_by: 'popularity.desc' } });
 
     // Genre featured backdrops for portal cards (already fetched in batch)
     const GENRE_TAGLINES: Record<string, string> = {
@@ -180,7 +188,7 @@ async function getTMDBData() {
         name,
         backdrop: pick?.backdrop_path || null,
         title: pick?.title || pick?.name || '',
-        count: getTotal(`feat-${key}`) || results.length,
+        count: getTotal(`feat-${key}`) || Math.max(results.length, 100),
         tagline: GENRE_TAGLINES[key] || '',
       };
     });
