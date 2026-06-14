@@ -77,30 +77,30 @@ const activeProviders: StreamProvider[] = [
   // ════════════════════════════════════════════
   // TIER 1 — Primary
   // ════════════════════════════════════════════
-    {
+  {
     name: "VidSrc FYI",
     tier: 1, category: "all",
     getMovieUrl: (id) => `https://vidsrc.fyi/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.fyi/embed/tv/${id}/${s}/${e}`,
-  },
+  },,
   {
     name: "VidSrc PM",
     tier: 1, category: "all",
     getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
-  },
+  },,
   {
     name: "VidSrc IN",
     tier: 1, category: "all",
     getMovieUrl: (id) => `https://vidsrc.in/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.in/embed/tv/${id}/${s}/${e}`,
-  },
+  },,
   {
     name: "VidSrc IO",
     tier: 1, category: "all",
     getMovieUrl: (id) => `https://vidsrc.io/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.io/embed/tv/${id}/${s}/${e}`,
-  },
+  },,
   {
     name: "VidSrc CC",
     tier: 1, category: "all",
@@ -110,12 +110,12 @@ const activeProviders: StreamProvider[] = [
   // ════════════════════════════════════════════
   // TIER 2 — Backup
   // ════════════════════════════════════════════
-    {
+  {
     name: "VidSrc To",
     tier: 2, category: "all",
     getMovieUrl: (id) => `https://vidsrc.to/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
-  },
+  },,
   {
     name: "VidSrc ME",
     tier: 2, category: "all",
