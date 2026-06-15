@@ -3,12 +3,11 @@
    Pinkish anime aesthetic with realistic falling petals
    ═══════════════════════════════════════════ */
 
-/* ── Cherry blossom petal fall ──
-   Natural, slow, surreal falling with multi-axis rotation,
-   gentle swaying drift, and 3D perspective depth.
-   Petals tumble realistically using separate X/Y/Z rotations.
-   IMPORTANT: element must have top:0 (not negative) since the
-   animation starts at translateY(-5vh) to spawn above viewport. */
+/* ── Cherry blossom petal fall (main layer) ──
+   10-step keyframes for ultra-smooth, natural motion.
+   Mimics real sakura: gentle start, accelerating mid-fall,
+   wind gusts at 35% and 70%, graceful slow descent at end.
+   Petals spin via rotateZ and sway horizontally via --sway-x. */
 @keyframes sakura-fall {
   0% {
     transform:
@@ -18,166 +17,167 @@
       scale(var(--petal-scale, 1));
     opacity: 0;
   }
-  3% {
+  2% {
     opacity: var(--petal-op, 0.7);
-  }
-  15% {
     transform:
-      translateY(12vh)
-      translateX(calc(var(--sway-x, 25px) * 0.4))
-      rotateZ(55deg)
+      translateY(-2vh)
+      translateX(calc(var(--sway-x, 25px) * 0.05))
+      rotateZ(8deg)
+      scale(var(--petal-scale, 1));
+  }
+  10% {
+    transform:
+      translateY(6vh)
+      translateX(calc(var(--sway-x, 25px) * 0.25))
+      rotateZ(25deg)
+      scale(var(--petal-scale, 1));
+  }
+  20% {
+    transform:
+      translateY(16vh)
+      translateX(calc(var(--sway-x, 25px) * -0.15))
+      rotateZ(-15deg)
       scale(var(--petal-scale, 1));
   }
   30% {
     transform:
-      translateY(28vh)
-      translateX(calc(var(--sway-x, 25px) * -0.3))
-      rotateZ(-40deg)
+      translateY(26vh)
+      translateX(calc(var(--sway-x, 25px) * 0.5))
+      rotateZ(50deg)
       scale(var(--petal-scale, 1));
   }
-  45% {
+  40% {
+    /* Wind gust — sudden sideways push */
     transform:
-      translateY(44vh)
-      translateX(calc(var(--sway-x, 25px) * 0.7))
-      rotateZ(70deg)
+      translateY(36vh)
+      translateX(calc(var(--sway-x, 25px) * 1.2))
+      rotateZ(85deg)
+      scale(calc(var(--petal-scale, 1) * 1.05));
+  }
+  50% {
+    transform:
+      translateY(46vh)
+      translateX(calc(var(--sway-x, 25px) * 0.6))
+      rotateZ(60deg)
       scale(var(--petal-scale, 1));
   }
   60% {
     transform:
-      translateY(60vh)
-      translateX(calc(var(--sway-x, 25px) * -0.2))
-      rotateZ(-50deg)
+      translateY(56vh)
+      translateX(calc(var(--sway-x, 25px) * -0.3))
+      rotateZ(-30deg)
       scale(var(--petal-scale, 1));
   }
-  75% {
+  70% {
+    /* Second wind gust — opposite direction */
+    transform:
+      translateY(66vh)
+      translateX(calc(var(--sway-x, 25px) * -0.9))
+    rotateZ(-55deg)
+      scale(calc(var(--petal-scale, 1) * 0.97));
+    opacity: calc(var(--petal-op, 0.7) * 0.85);
+  }
+  80% {
     transform:
       translateY(76vh)
-      translateX(calc(var(--sway-x, 25px) * 0.5))
-      rotateZ(30deg)
+      translateX(calc(var(--sway-x, 25px) * -0.3))
+      rotateZ(-20deg)
       scale(var(--petal-scale, 1));
-    opacity: var(--petal-op, 0.7);
+    opacity: calc(var(--petal-op, 0.7) * 0.65);
   }
-  92% {
+  90% {
+    transform:
+      translateY(90vh)
+      translateX(calc(var(--sway-x, 25px) * 0.2))
+      rotateZ(10deg)
+      scale(calc(var(--petal-scale, 1) * 0.92));
     opacity: calc(var(--petal-op, 0.7) * 0.3);
   }
   100% {
     transform:
-      translateY(105vh)
-      translateX(calc(var(--sway-x, 25px) * -0.4))
-      rotateZ(-15deg)
+      translateY(108vh)
+      translateX(calc(var(--sway-x, 25px) * 0))
+      rotateZ(-5deg)
       scale(calc(var(--petal-scale, 1) * 0.8));
     opacity: 0;
   }
 }
 
-/* ── Secondary petal drift (slower, wider sway for depth) ── */
+/* ── Secondary petal drift (slower, wider sway, more floating feel) ── */
 @keyframes sakura-drift {
   0% {
-    transform:
-      translateY(-3vh)
-      translateX(0)
-      rotateZ(0deg)
-      scale(var(--petal-scale, 0.7));
+    transform: translateY(-3vh) translateX(0) rotateZ(0deg) scale(var(--petal-scale, 0.7));
     opacity: 0;
   }
-  5% {
+  4% {
     opacity: calc(var(--petal-op, 0.5) * 0.8);
   }
+  12% {
+    transform: translateY(8vh) translateX(calc(var(--sway-x, 40px) * 0.5)) rotateZ(30deg) scale(var(--petal-scale, 0.7));
+  }
   25% {
-    transform:
-      translateY(20vh)
-      translateX(calc(var(--sway-x, 40px) * 0.8))
-      rotateZ(45deg)
-      scale(var(--petal-scale, 0.7));
+    transform: translateY(20vh) translateX(calc(var(--sway-x, 40px) * 0.9)) rotateZ(55deg) scale(var(--petal-scale, 0.7));
+  }
+  37% {
+    transform: translateY(32vh) translateX(calc(var(--sway-x, 40px) * -0.2)) rotateZ(-10deg) scale(var(--petal-scale, 0.7));
   }
   50% {
-    transform:
-      translateY(45vh)
-      translateX(calc(var(--sway-x, 40px) * -0.6))
-      rotateZ(-30deg)
-      scale(var(--petal-scale, 0.7));
+    transform: translateY(45vh) translateX(calc(var(--sway-x, 40px) * -0.7)) rotateZ(-35deg) scale(var(--petal-scale, 0.7));
     opacity: calc(var(--petal-op, 0.5) * 0.6);
   }
-  75% {
-    transform:
-      translateY(70vh)
-      translateX(calc(var(--sway-x, 40px) * 0.5))
-      rotateZ(20deg)
-      scale(var(--petal-scale, 0.7));
+  62% {
+    transform: translateY(56vh) translateX(calc(var(--sway-x, 40px) * -0.4)) rotateZ(-15deg) scale(var(--petal-scale, 0.7));
   }
-  95% {
-    opacity: calc(var(--petal-op, 0.5) * 0.15);
+  75% {
+    transform: translateY(70vh) translateX(calc(var(--sway-x, 40px) * 0.5)) rotateZ(20deg) scale(var(--petal-scale, 0.7));
+  }
+  87% {
+    transform: translateY(85vh) translateX(calc(var(--sway-x, 40px) * 0.2)) rotateZ(8deg) scale(calc(var(--petal-scale, 0.7) * 0.9));
+    opacity: calc(var(--petal-op, 0.5) * 0.25);
   }
   100% {
-    transform:
-      translateY(108vh)
-      translateX(calc(var(--sway-x, 40px) * -0.3))
-      rotateZ(-10deg)
-      scale(calc(var(--petal-scale, 0.7) * 0.5));
+    transform: translateY(110vh) translateX(calc(var(--sway-x, 40px) * -0.15)) rotateZ(-5deg) scale(calc(var(--petal-scale, 0.7) * 0.6));
     opacity: 0;
   }
 }
 
-/* ── Close-up petal (larger, slower, foreground bokeh effect) ── */
+/* ── Close-up bokeh petal (large, blurred, cinematic foreground) ── */
 @keyframes sakura-bokeh {
   0% {
-    transform:
-      translateY(-2vh)
-      translateX(-20px)
-      rotateZ(-10deg)
-      scale(var(--petal-scale, 1.8));
+    transform: translateY(-2vh) translateX(-20px) rotateZ(-10deg) scale(var(--petal-scale, 1.8));
     opacity: 0;
-    filter: blur(2px);
-  }
-  8% {
-    opacity: calc(var(--petal-op, 0.25) * 0.9);
-    filter: blur(1px);
-  }
-  30% {
-    transform:
-      translateY(25vh)
-      translateX(calc(var(--sway-x, 60px) * 0.6))
-      rotateZ(50deg)
-      scale(var(--petal-scale, 1.8));
     filter: blur(3px);
   }
-  55% {
-    transform:
-      translateY(52vh)
-      translateX(calc(var(--sway-x, 60px) * -0.4))
-      rotateZ(-25deg)
-      scale(var(--petal-scale, 1.8));
-    opacity: calc(var(--petal-op, 0.25) * 0.5);
+  6% {
+    opacity: calc(var(--petal-op, 0.25) * 0.9);
     filter: blur(2px);
   }
-  80% {
-    transform:
-      translateY(78vh)
-      translateX(calc(var(--sway-x, 60px) * 0.3))
-      rotateZ(15deg)
-      scale(var(--petal-scale, 1.8));
-    filter: blur(4px);
+  20% {
+    transform: translateY(18vh) translateX(calc(var(--sway-x, 60px) * 0.5)) rotateZ(35deg) scale(var(--petal-scale, 1.8));
+    filter: blur(1px);
   }
-  100% {
-    transform:
-      translateY(110vh)
-      translateX(calc(var(--sway-x, 60px) * -0.2))
-      rotateZ(-5deg)
-      scale(calc(var(--petal-scale, 1.8) * 0.7));
-    opacity: 0;
-    filter: blur(5px);
-  }
-}
-
-/* ── Gentle shimmer for sakura glow elements ── */
-@keyframes sakura-shimmer {
-  0%, 100% {
-    filter: drop-shadow(0 0 6px rgba(255, 183, 197, 0.3));
-    opacity: 0.6;
+  35% {
+    transform: translateY(32vh) translateX(calc(var(--sway-x, 60px) * 0.9)) rotateZ(60deg) scale(var(--petal-scale, 1.8));
+    filter: blur(3px);
   }
   50% {
-    filter: drop-shadow(0 0 14px rgba(255, 150, 170, 0.5));
-    opacity: 1;
+    transform: translateY(50vh) translateX(calc(var(--sway-x, 60px) * -0.3)) rotateZ(-20deg) scale(var(--petal-scale, 1.8));
+    opacity: calc(var(--petal-op, 0.25) * 0.5);
+    filter: blur(4px);
+  }
+  65% {
+    transform: translateY(65vh) translateX(calc(var(--sway-x, 60px) * -0.7)) rotateZ(-40deg) scale(var(--petal-scale, 1.8));
+    filter: blur(3px);
+  }
+  80% {
+    transform: translateY(80vh) translateX(calc(var(--sway-x, 60px) * 0.2)) rotateZ(10deg) scale(var(--petal-scale, 1.8));
+    filter: blur(5px);
+    opacity: calc(var(--petal-op, 0.25) * 0.2);
+  }
+  100% {
+    transform: translateY(112vh) translateX(calc(var(--sway-x, 60px) * -0.1)) rotateZ(-5deg) scale(calc(var(--petal-scale, 1.8) * 0.7));
+    opacity: 0;
+    filter: blur(6px);
   }
 }
 
@@ -195,14 +195,14 @@
   }
 }
 
-/* ── Subtle title gradient flow (sakura pink palette) ── */
+/* ── Subtle title gradient flow ── */
 @keyframes sakura-title-flow {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
-/* ── Delicate line sweep (replaces aggressive speed-sweep) ── */
+/* ── Delicate line sweep ── */
 @keyframes sakura-sweep {
   0% { transform: translateX(-110%); opacity: 0; }
   20% { opacity: 0.04; }
@@ -211,14 +211,18 @@
   100% { transform: translateX(210%); opacity: 0; }
 }
 
-/* ── Floating sparkle for subtle magic dust ── */
+/* ── Floating sparkle dust ── */
 @keyframes sakura-sparkle {
   0%, 100% {
-    transform: scale(0.5);
+    transform: scale(0.3);
     opacity: 0;
   }
-  50% {
+  30% {
     transform: scale(1);
     opacity: 0.6;
+  }
+  70% {
+    transform: scale(0.8);
+    opacity: 0.3;
   }
 }

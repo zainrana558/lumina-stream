@@ -77,6 +77,27 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
         overflow: 'hidden',
       }}>
 
+        {/* ── Background: Cherry blossom tree ── */}
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        }}>
+          {/* Tree image — fixed position so it stays behind on scroll */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '100vh',
+            backgroundImage: 'url(/anime-sakura-bg.webp)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center top',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.35,
+            maskImage: 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
+          }} />
+        </div>
+
         {/* ── Background: Soft pink atmospheric glows ── */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
@@ -97,6 +118,7 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
             { left: '75%', top: '10%', size: 280, color: 'rgba(255,130,180,0.10)', delay: '4s', dur: '18s' },
             { left: '50%', top: '60%', size: 350, color: 'rgba(219,112,147,0.08)', delay: '7s', dur: '16s' },
             { left: '25%', top: '45%', size: 200, color: 'rgba(255,183,197,0.09)', delay: '2s', dur: '20s' },
+            { left: '60%', top: '25%', size: 260, color: 'rgba(255,160,185,0.07)', delay: '9s', dur: '22s' },
           ].map((orb, i) => (
             <div key={i} style={{
               position: 'absolute',
@@ -112,16 +134,15 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
           ))}
         </div>
 
-        {/* ── Delicate horizontal sweep lines (very subtle) ── */}
+        {/* ── Delicate horizontal sweep lines ── */}
         {useMemo(() => Array.from({ length: 4 }, (_, i) => ({
           id: i,
           top: `${12 + i * 22}%`,
           delay: `${i * 3.5}s`,
           dur: `${12 + i * 2}s`,
-          h: 1,
         })), []).map(s => (
           <div key={s.id} style={{
-            position: 'absolute', left: 0, right: 0, top: s.top, height: s.h, zIndex: 1,
+            position: 'absolute', left: 0, right: 0, top: s.top, height: 1, zIndex: 1,
             background: 'linear-gradient(90deg, transparent, rgba(255,183,197,0.08), rgba(255,150,170,0.06), transparent)',
             animation: `sakura-sweep ${s.dur} ${s.delay} linear infinite`,
             pointerEvents: 'none',

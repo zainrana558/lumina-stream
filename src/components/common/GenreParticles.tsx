@@ -51,10 +51,11 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
 
     if (genre === 'anime') {
       /* ── Cherry Blossom Petals (Sakura) ──
-         Three layers of depth for a surreal, life-like effect:
-         1. Main petals (14): Realistic CSS sakura shape with 3-axis rotation
-         2. Drift petals (8): Smaller, slower, wider sway — mid-depth
-         3. Bokeh petals (4): Large, blurred foreground petals — depth-of-field */
+         Four layers of depth for a surreal, life-like effect:
+         1. Main petals (28): Detailed CSS sakura shape with natural sway
+         2. Drift petals (16): Smaller, slower, wider sway — mid-depth
+         3. Bokeh petals (8): Large, blurred foreground — depth-of-field
+         4. Sparkle dust (12): Tiny glowing particles for magic */
       const petalColors = [
         { bg: 'radial-gradient(ellipse at 65% 35%, #ffe0e8 0%, #ffb7c5 40%, #f4a0b4 70%, #e8899e 100%)', shadow: 'rgba(255,150,170,0.25)' },
         { bg: 'radial-gradient(ellipse at 55% 40%, #fff0f3 0%, #ffc8d6 35%, #f9a8ba 65%, #e8899e 100%)', shadow: 'rgba(255,183,197,0.2)' },
@@ -63,100 +64,114 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
         { bg: 'radial-gradient(ellipse at 50% 45%, #fff5f7 0%, #ffb3c6 50%, #e88da5 80%, #d07090 100%)', shadow: 'rgba(255,140,170,0.18)' },
       ];
 
-      // Layer 1: Main falling petals (detailed, mid-speed)
-      const mainCount = 14;
+      // Vary petal shapes for realism
+      const petalShapes = [
+        '50% 0% 50% 0%',    // Classic teardrop
+        '50% 0% 50% 0%',    // Classic teardrop
+        '40% 10% 50% 5%',   // Slightly asymmetric
+        '60% 0% 45% 5%',    // Wider top
+        '50% 5% 40% 10%',   // Wider bottom
+      ];
+
+      // Layer 1: Main falling petals (28 petals — dense canopy feel)
+      const mainCount = 28;
       for (let i = 0; i < mainCount; i++) {
         const pc = petalColors[Math.floor(r() * petalColors.length)];
-        const size = 10 + r() * 12;
-        const swayX = 20 + r() * 50;
+        const shape = petalShapes[Math.floor(r() * petalShapes.length)];
+        const size = 8 + r() * 14;
+        const swayX = 15 + r() * 65;
+        const direction = r() > 0.5 ? 1 : -1;
         result.push({
           id: i,
           left: `${r() * 100}%`,
           top: '0',
           w: size,
-          h: size * 0.72,
+          h: size * (0.6 + r() * 0.2),
           background: pc.bg,
-          borderRadius: '50% 0% 50% 0%',
-          boxShadow: `0 0 ${4 + r() * 4}px ${pc.shadow}`,
-          animation: `sakura-fall ${12 + r() * 10}s ${r() * 15}s linear infinite`,
+          borderRadius: shape,
+          boxShadow: `0 0 ${3 + r() * 5}px ${pc.shadow}`,
+          animation: `sakura-fall ${10 + r() * 14}s ${r() * 18}s linear infinite`,
           dur: '',
           delay: '',
           opacity: 0,
           extraStyle: {
-            '--sway-x': `${swayX * (r() > 0.5 ? 1 : -1)}px`,
-            '--petal-scale': `${0.7 + r() * 0.5}`,
-            '--petal-op': `${0.5 + r() * 0.35}`,
+            '--sway-x': `${swayX * direction}px`,
+            '--petal-scale': `${0.6 + r() * 0.6}`,
+            '--petal-op': `${0.45 + r() * 0.4}`,
           } as React.CSSProperties,
         });
       }
 
-      // Layer 2: Drift petals (smaller, slower, wider sway — depth layer)
-      const driftCount = 8;
+      // Layer 2: Drift petals (16 — background depth, slower, dreamier)
+      const driftCount = 16;
       for (let i = 0; i < driftCount; i++) {
         const pc = petalColors[Math.floor(r() * petalColors.length)];
-        const size = 6 + r() * 8;
-        const swayX = 30 + r() * 60;
+        const shape = petalShapes[Math.floor(r() * petalShapes.length)];
+        const size = 5 + r() * 9;
+        const swayX = 25 + r() * 75;
+        const direction = r() > 0.5 ? 1 : -1;
         result.push({
           id: 100 + i,
           left: `${r() * 100}%`,
           top: '0',
           w: size,
-          h: size * 0.7,
+          h: size * (0.6 + r() * 0.15),
           background: pc.bg,
-          borderRadius: '50% 0% 50% 0%',
+          borderRadius: shape,
           boxShadow: `0 0 ${2 + r() * 3}px ${pc.shadow}`,
-          animation: `sakura-drift ${18 + r() * 12}s ${r() * 20}s linear infinite`,
+          animation: `sakura-drift ${16 + r() * 16}s ${r() * 24}s linear infinite`,
           dur: '',
           delay: '',
           opacity: 0,
           extraStyle: {
-            '--sway-x': `${swayX * (r() > 0.5 ? 1 : -1)}px`,
-            '--petal-scale': `${0.5 + r() * 0.4}`,
-            '--petal-op': `${0.35 + r() * 0.3}`,
+            '--sway-x': `${swayX * direction}px`,
+            '--petal-scale': `${0.4 + r() * 0.4}`,
+            '--petal-op': `${0.3 + r() * 0.35}`,
           } as React.CSSProperties,
         });
       }
 
-      // Layer 3: Bokeh petals (large, blurred foreground — cinematic depth-of-field)
-      const bokehCount = 4;
+      // Layer 3: Bokeh petals (8 — large blurred foreground for cinematic depth)
+      const bokehCount = 8;
       for (let i = 0; i < bokehCount; i++) {
         const pc = petalColors[Math.floor(r() * petalColors.length)];
-        const size = 20 + r() * 16;
-        const swayX = 40 + r() * 70;
+        const size = 18 + r() * 20;
+        const swayX = 30 + r() * 80;
+        const direction = r() > 0.5 ? 1 : -1;
         result.push({
           id: 200 + i,
           left: `${r() * 100}%`,
           top: '0',
           w: size,
-          h: size * 0.68,
+          h: size * (0.6 + r() * 0.15),
           background: pc.bg,
           borderRadius: '50% 0% 50% 0%',
-          animation: `sakura-bokeh ${22 + r() * 10}s ${r() * 18}s linear infinite`,
+          animation: `sakura-bokeh ${20 + r() * 14}s ${r() * 22}s linear infinite`,
           dur: '',
           delay: '',
           opacity: 0,
           extraStyle: {
-            '--sway-x': `${swayX * (r() > 0.5 ? 1 : -1)}px`,
-            '--petal-scale': `${1.4 + r() * 0.8}`,
-            '--petal-op': `${0.15 + r() * 0.15}`,
+            '--sway-x': `${swayX * direction}px`,
+            '--petal-scale': `${1.3 + r() * 1.0}`,
+            '--petal-op': `${0.12 + r() * 0.18}`,
           } as React.CSSProperties,
         });
       }
 
-      // Layer 4: Tiny sparkle dust (subtle magic particles)
-      for (let i = 0; i < 6; i++) {
+      // Layer 4: Sparkle dust (12 — tiny floating pink dots)
+      for (let i = 0; i < 12; i++) {
         result.push({
           id: 300 + i,
-          left: `${5 + r() * 90}%`,
-          top: `${10 + r() * 80}%`,
-          size: 2 + r() * 2,
-          color: '#FFB7C5',
+          left: `${3 + r() * 94}%`,
+          top: `${5 + r() * 85}%`,
+          size: 1.5 + r() * 2.5,
+          color: r() > 0.6 ? '#FFD6E0' : '#FFB7C5',
           borderRadius: '50%',
-          animation: `sakura-sparkle ${3 + r() * 4}s ${r() * 6}s ease-in-out infinite`,
+          animation: `sakura-sparkle ${2.5 + r() * 5}s ${r() * 8}s ease-in-out infinite`,
           dur: '',
           delay: '',
           opacity: 0,
-          boxShadow: `0 0 ${4 + r() * 4}px rgba(255,183,197,0.4)`,
+          boxShadow: `0 0 ${3 + r() * 5}px rgba(255,183,197,0.45)`,
         });
       }
     } else if (genre === 'cartoon') {
