@@ -239,7 +239,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
   }, [genre]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 10, pointerEvents: 'none', overflow: 'hidden' }}>
       {particles.map((p) => (
         <div
           key={p.id}
