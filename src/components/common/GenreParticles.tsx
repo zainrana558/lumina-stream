@@ -57,11 +57,11 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
          3. Bokeh petals (8): Large, blurred foreground — depth-of-field
          4. Sparkle dust (12): Tiny glowing particles for magic */
       const petalColors = [
-        { bg: 'radial-gradient(ellipse at 65% 35%, #ffe0e8 0%, #ffb7c5 40%, #f4a0b4 70%, #e8899e 100%)', shadow: 'rgba(255,150,170,0.25)' },
-        { bg: 'radial-gradient(ellipse at 55% 40%, #fff0f3 0%, #ffc8d6 35%, #f9a8ba 65%, #e8899e 100%)', shadow: 'rgba(255,183,197,0.2)' },
-        { bg: 'radial-gradient(ellipse at 70% 30%, #ffd6de 0%, #ff8fa8 45%, #e87a95 75%, #d4687e 100%)', shadow: 'rgba(255,130,160,0.3)' },
-        { bg: 'radial-gradient(ellipse at 60% 35%, #ffeef2 0%, #ffc0d0 40%, #f095ad 70%, #e0809a 100%)', shadow: 'rgba(255,170,190,0.22)' },
-        { bg: 'radial-gradient(ellipse at 50% 45%, #fff5f7 0%, #ffb3c6 50%, #e88da5 80%, #d07090 100%)', shadow: 'rgba(255,140,170,0.18)' },
+        { bg: 'radial-gradient(ellipse at 65% 35%, #fff0f4 0%, #ff9bb5 30%, #ff7ea0 60%, #e85d82 100%)', shadow: 'rgba(255,120,160,0.5)' },
+        { bg: 'radial-gradient(ellipse at 55% 40%, #fff5f8 0%, #ffb8cc 30%, #ff8dab 60%, #e06088 100%)', shadow: 'rgba(255,140,175,0.45)' },
+        { bg: 'radial-gradient(ellipse at 70% 30%, #ffe8ee 0%, #ff85a5 35%, #e86088 65%, #cc4070 100%)', shadow: 'rgba(255,100,140,0.55)' },
+        { bg: 'radial-gradient(ellipse at 60% 35%, #fff2f6 0%, #ffa0b8 30%, #f07898 60%, #d85078 100%)', shadow: 'rgba(255,130,165,0.5)' },
+        { bg: 'radial-gradient(ellipse at 50% 45%, #ffffff 0%, #ffc0d5 35%, #ff85a8 65%, #d85580 100%)', shadow: 'rgba(255,150,180,0.45)' },
       ];
 
       // Vary petal shapes for realism
@@ -89,7 +89,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
           h: size * (0.6 + r() * 0.2),
           background: pc.bg,
           borderRadius: shape,
-          boxShadow: `0 0 ${3 + r() * 5}px ${pc.shadow}`,
+          boxShadow: `0 0 ${4 + r() * 6}px ${pc.shadow}`,
           animation: `sakura-fall ${10 + r() * 14}s ${r() * 18}s linear infinite`,
           dur: '',
           delay: '',
@@ -97,7 +97,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
           extraStyle: {
             '--sway-x': `${swayX * direction}px`,
             '--petal-scale': `${0.6 + r() * 0.6}`,
-            '--petal-op': `${0.45 + r() * 0.4}`,
+            '--petal-op': `${0.7 + r() * 0.3}`,
           } as React.CSSProperties,
         });
       }
@@ -126,7 +126,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
           extraStyle: {
             '--sway-x': `${swayX * direction}px`,
             '--petal-scale': `${0.4 + r() * 0.4}`,
-            '--petal-op': `${0.3 + r() * 0.35}`,
+            '--petal-op': `${0.55 + r() * 0.3}`,
           } as React.CSSProperties,
         });
       }
@@ -153,7 +153,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
           extraStyle: {
             '--sway-x': `${swayX * direction}px`,
             '--petal-scale': `${1.3 + r() * 1.0}`,
-            '--petal-op': `${0.12 + r() * 0.18}`,
+            '--petal-op': `${0.25 + r() * 0.2}`,
           } as React.CSSProperties,
         });
       }
