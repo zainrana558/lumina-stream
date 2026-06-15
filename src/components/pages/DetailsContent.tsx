@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { MediaItem, TMDBCastMember, TMDBShow } from '@/types';
-import { tmdbToMedia } from '@/types';
+import { tmdbToMedia, isAnilistId, toAnilistId } from '@/types';
 import { CS } from '@/styles/themes';
 import Card from '@/components/common/Card';
 import ShareButton from '@/components/common/ShareButton';
@@ -48,8 +48,7 @@ interface FullDetails {
 
 interface DetailsContentProps {
   showId: number;
-  initialShow: MediaItem & { _malId?: number; _anilistCover?: string; _anilistBanner?: string; _anilistUrl?: string; _anilistId?: number } | null;
-  initialCredits?: TMDBCastMember[];
+  initialShow: MediaItem | null;  initialCredits?: TMDBCastMember[];
   initialSimilar?: MediaItem[];
 }
 
@@ -123,15 +122,11 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     return () => { cancelled = true; };
   }, [show?.id, user, profile]);
 
-  // Whether this is an AniList item (negative ID)
-  const isAnilist = showId < 0;
-  const anilistId = isAnilist ? Math.abs(showId) : 0;
-
-  // Fetch full details (only if not already seeded from SSR)
-  // Skip for AniList items — all data comes from SSR via getAnimeDetail()
+  // Fetch full details (only if not already seeded from SSR, and not AniList)
   useEffect(() => {
-    if (!show || isAnilist) return;
-    const mediaType = show.media_type || 'tv';
+    if (!show) return;
+    // AniList items already have all data from SSR — skip TMDB fetch
+    if (show._isAnilist) return;    const mediaType = show.media_type || 'tv';
     const id = show.id;
     if (fullDetails?.id === id) return;
     let cancelled = false;
@@ -146,12 +141,11 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     };
     load();
     return () => { cancelled = true; controller.abort(); };
-  }, [show?.id, isAnilist]);
+  }, [show?.id, show?._isAnilist]);
 
-  // Fetch season episodes — skip for AniList items (no TMDB episode data)
+  // Fetch season episodes (TMDB only — AniList items don't have TMDB season data)
   useEffect(() => {
-    if (!show || show.media_type !== 'tv' || isAnilist) return;
-    const id = show.id;
+    if (!show || show.media_type !== 'tv' || show._isAnilist) return;    const id = show.id;
     let cancelled = false;
     const controller = new AbortController();
     const load = async () => {
@@ -164,17 +158,17 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     };
     load();
     return () => { cancelled = true; controller.abort(); };
-  }, [show?.id, season, isAnilist]);
-
+  }, [show?.id, season, show?._isAnilist]);
   // Fetch embed providers
   useEffect(() => {
     if (!playing || !show) return;
     const mediaType = show.media_type || 'tv';
-    const malId = (show as { _malId?: number })._malId;
-    const isAnime = isAnilist || !!malId || show.genre.some(g => g.toLowerCase() === 'anime');
+    const malId = show._malId;
+    const isAnime = !!show._isAnilist || !!malId || show.genre.some(g => g.toLowerCase() === 'anime');
+    // For TMDB lookup, use original ID (not namespaced AniList ID)
+    const tmdbLookupId = show._isAnilist ? 0 : showId;
     const params = new URLSearchParams({
-      tmdb: String(isAnilist ? anilistId : showId),
-      type: mediaType,
+      tmdb: String(tmdbLookupId),      type: mediaType,
       season: String(season),
       episode: String(epIdx),
     });
@@ -207,11 +201,9 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
   // --- All hooks must be before any early return (React rules of hooks) ---
 
-  // Load more similar shows (guarded: no-op if !show)
-  // Skip for AniList items — no TMDB recommendations endpoint
+  // Load more similar shows (TMDB only — AniList items don't have TMDB recommendations)
   const loadMoreSimilar = useCallback(async () => {
-    if (!show || loadingSimilar || !hasMoreSimilar || isAnilist) return;
-    setLoadingSimilar(true);
+    if (!show || show._isAnilist || loadingSimilar || !hasMoreSimilar) return;    setLoadingSimilar(true);
     try {
       const mediaType = show.media_type || 'tv';
       const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${show.id}/recommendations`);
@@ -420,14 +412,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     <div className="page" style={{ minHeight: '100vh' }}>
       {/* Hero backdrop */}
       <div style={{ position: 'relative', height: 'clamp(35vh,42vh,50vh)', overflow: 'hidden' }}>
-        <div key={show.id} style={{ position: 'absolute', inset: 0, background: (() => {
-          const anilistBanner = (show as { _anilistBanner?: string })._anilistBanner;
-          if (show.backdrop_path) return `url(${getBackdropUrl(show.backdrop_path, 'w1280')}) center/cover no-repeat`;
-          if (anilistBanner) return `url(${anilistBanner}) center/cover no-repeat`;
-          return `linear-gradient(135deg,${s.base} 0%,#18063A 40%,#2D1B5E 100%)`;
-        })(), animation: 'hero-swap .6s ease both' }}>
-          {(show.backdrop_path || (show as { _anilistBanner?: string })._anilistBanner) && (
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)' }} />
+        <div key={show.id} style={{ position: 'absolute', inset: 0, background: show._isAnilist && show._anilistBanner
+          ? `url(${show._anilistBanner}) center/cover no-repeat`
+          : show.backdrop_path
+          ? `url(${getBackdropUrl(show.backdrop_path, 'w1280')}) center/cover no-repeat`
+          : `linear-gradient(135deg,${s.base} 0%,#18063A 40%,#2D1B5E 100%)`, animation: 'hero-swap .6s ease both' }}>
+          {(show.backdrop_path || (show._isAnilist && show._anilistBanner)) && (            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)' }} />
           )}
           <div style={{ position: 'absolute', top: '10%', left: '45%', width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle,${s.acc}30 0%,transparent 68%)`, filter: 'blur(62px)', animation: 'aurora 12s ease-in-out infinite' }} />
           <div style={{ position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', fontSize: 'clamp(9rem,15vw,17rem)', opacity: .04, filter: 'blur(5px)', animation: 'float 8s ease-in-out infinite', userSelect: 'none' }}>{s.em}</div>

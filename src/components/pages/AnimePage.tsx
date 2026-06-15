@@ -12,13 +12,6 @@ import { trackGenreVisit } from '@/components/common/GenreProgress';
 import '@/styles/genre-anime.css';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
-interface ExtendedMediaItem extends MediaItem {
-  _anilistCover?: string;
-  _anilistBanner?: string;
-  _malId?: number;
-  _anilistUrl?: string;
-}
-
 const ANIME_GENRES = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Sci-Fi', 'Thriller', 'Romance', 'Supernatural', 'Slice of Life', 'Sports'];
 
 export default function AnimePage({ initialShows }: { initialShows: MediaItem[] }) {

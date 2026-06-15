@@ -14,6 +14,7 @@
 
 import { fetchWithCache, getCached, setCache } from '@/lib/cache';
 import type { MediaItem } from '@/types';
+import { ANILIST_ID_OFFSET } from '@/types';
 
 // ---- Types ----
 
@@ -263,7 +264,7 @@ export function getAniListCover(media: AniListMedia): string | null {
  * Convert AniList media to app MediaItem format.
  * AniList covers use full URLs (not TMDB paths), stored in _anilistCover.
  */
-export function anilistToMediaItem(media: AniListMedia): MediaItem & { _anilistCover?: string; _anilistBanner?: string; _malId?: number; _anilistUrl?: string } {
+export function anilistToMediaItem(media: AniListMedia): MediaItem {
   const title = getAniListTitle(media);
   const year = media.startDate?.year || new Date().getFullYear();
   // AniList scores are 0-100, our app uses 0-10
@@ -286,9 +287,8 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem & { _anilistC
     'HIATUS': 'Hiatus',
   };
 
-  // Use negative IDs to prevent collisions with TMDB IDs (always positive).
-  // AniList original ID stored in _anilistId for API lookups.
-  const namespacedId = -media.id;
+// Namespace the AniList ID to prevent collisions with TMDB IDs
+  const namespacedId = media.id + ANILIST_ID_OFFSET;
 
   return {
     id: namespacedId,
@@ -309,6 +309,8 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem & { _anilistC
     poster_path: null, // Not a TMDB path — use _anilistCover instead
     backdrop_path: null,
     media_type: 'tv',
+    _isAnilist: true,
+    _anilistId: media.id,
     _anilistCover: getAniListCover(media) || undefined,
     _anilistBanner: media.bannerImage || undefined,
     _malId: media.idMal || undefined,

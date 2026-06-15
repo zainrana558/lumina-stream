@@ -8,13 +8,6 @@ import { CS } from '@/styles/themes';
 
 import { getPosterUrl, getBlurPlaceholder } from '@/lib/images';
 
-interface ExtendedMediaItem extends MediaItem {
-  _anilistCover?: string;
-  _anilistBanner?: string;
-  _malId?: number;
-  _anilistUrl?: string;
-}
-
 interface SeasonalClientProps {
   airingToday: MediaItem[];
   trendingThisWeek: MediaItem[];
@@ -34,9 +27,8 @@ function getPosterSrc(item: MediaItem): string | null {
 function SeasonCard({ item, index }: { item: MediaItem; index: number }) {
   const router = useRouter();
   const s = CS[item.cs];
-  const ext = item as ExtendedMediaItem;
   const posterSrc = getPosterSrc(item);
-  const formatLabel = ext._anilistUrl ? 'ANIME' : 'TV';
+  const formatLabel = item._isAnilist ? 'ANIME' : 'TV';
 
   return (
     <div

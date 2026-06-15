@@ -25,11 +25,10 @@ export function getTmdbImageUrl(
 
 // ── Poster URL from a MediaItem (handles both TMDB and AniList) ─
 export function getPosterUrl(
-  item: { poster_path?: string | null } & { _anilistCover?: string },
+  item: { poster_path?: string | null; _anilistCover?: string },
   size: string = 'w500',
 ): string | null {
-  const anilistCover = (item as Record<string, unknown>)._anilistCover as string | undefined;
-  if (anilistCover) return anilistCover;
+  if (item._anilistCover) return item._anilistCover;
   if (item.poster_path) return getTmdbImageUrl(item.poster_path, size);
   return null;
 }

@@ -148,6 +148,35 @@ export interface MediaItem {
   poster_path?: string | null;
   backdrop_path?: string | null;
   media_type?: MediaType;
+  /** True when this item originated from AniList (namespaced ID) */
+  _isAnilist?: boolean;
+  /** Original AniList media ID (before namespacing) */
+  _anilistId?: number;
+  /** Full AniList cover image URL */
+  _anilistCover?: string;
+  /** Full AniList banner image URL */
+  _anilistBanner?: string;
+  /** MyAnimeList ID for embed lookup */
+  _malId?: number;
+  /** AniList page URL */
+  _anilistUrl?: string;
+}
+
+/**
+ * Namespace offset to prevent ID collisions between TMDB and AniList.
+ * TMDB IDs are typically < 1,000,000. Adding this offset ensures
+ * AniList IDs never overlap with TMDB IDs.
+ */
+export const ANILIST_ID_OFFSET = 100_000_000;
+
+/** Check if a MediaItem ID is a namespaced AniList ID */
+export function isAnilistId(id: number): boolean {
+  return id >= ANILIST_ID_OFFSET;
+}
+
+/** Extract the original AniList ID from a namespaced ID */
+export function toAnilistId(id: number): number {
+  return id - ANILIST_ID_OFFSET;
 }
 
 // TMDB genre ID → name mapping (used when discover/trending endpoints return genre_ids instead of genres[])
