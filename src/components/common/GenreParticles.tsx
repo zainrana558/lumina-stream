@@ -131,34 +131,8 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
         });
       }
 
-      // Layer 3: Bokeh petals (8 — large blurred foreground for cinematic depth)
-      const bokehCount = 8;
-      for (let i = 0; i < bokehCount; i++) {
-        const pc = petalColors[Math.floor(r() * petalColors.length)];
-        const size = 18 + r() * 20;
-        const swayX = 30 + r() * 80;
-        const direction = r() > 0.5 ? 1 : -1;
-        result.push({
-          id: 200 + i,
-          left: `${r() * 100}%`,
-          top: '0',
-          w: size,
-          h: size * (0.6 + r() * 0.15),
-          background: pc.bg,
-          borderRadius: '50% 0% 50% 0%',
-          animation: `sakura-bokeh ${20 + r() * 14}s ${r() * 22}s linear infinite`,
-          dur: '',
-          delay: '',
-          opacity: 0,
-          extraStyle: {
-            '--sway-x': `${swayX * direction}px`,
-            '--petal-scale': `${1.3 + r() * 1.0}`,
-            '--petal-op': `${0.25 + r() * 0.2}`,
-          } as React.CSSProperties,
-        });
-      }
-
-      // Layer 4: Sparkle dust (12 — tiny floating pink dots)
+      
+      // Layer 3: Sparkle dust (12 — tiny floating pink dots)
       for (let i = 0; i < 12; i++) {
         result.push({
           id: 300 + i,
