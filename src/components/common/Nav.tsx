@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import type { UserProfile } from '@/contexts/AppContext';
 import NotificationBell from '@/components/common/NotificationBell';
+import { GENRE_NAV_LINKS } from '@/styles/themes';
 
 interface NavProps {
   page: string;
@@ -15,15 +16,6 @@ interface NavProps {
   onSignOut: () => void;
   onShowShortcuts?: () => void;
 }
-
-const GENRE_LINKS = [
-  { key: 'anime', label: 'Anime', color: '#FF0096' },
-  { key: 'cartoon', label: 'Cartoon', color: '#74B9FF' },
-  { key: 'horror', label: 'Horror', color: '#DC143C' },
-  { key: 'romance', label: 'Romance', color: '#FF6B8A' },
-  { key: 'mystery', label: 'Mystery', color: '#FFB347' },
-  { key: 'fantasy', label: 'Fantasy', color: '#C39BD3' },
-];
 
 export default function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }: NavProps) {
   const router = useRouter();
@@ -144,7 +136,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                 animation: 'fi .15s ease both',
               }}
             >
-              {GENRE_LINKS.map((g) => (
+              {GENRE_NAV_LINKS.map((g) => (
                 <div
                   key={g.key}
                   role="menuitem"

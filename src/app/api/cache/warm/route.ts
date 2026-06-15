@@ -26,46 +26,27 @@ import type { AniListMedia } from '@/lib/anilist/client';
 import { tmdbToMedia } from '@/types';
 import type { TMDBShow } from '@/types';
 import type { MediaItem } from '@/types';
+import { PORTAL_GENRES } from '@/config/genres';
 
-// ─── Genre configs ──────────────────────────────────────────────────────────
+// ─── Genre configs derived from single source of truth ──────────────────────
 
-const TMDB_GENRES = [
-  {
-    slug: 'horror',
-    mediaType: 'movie' as const,
-    params: { with_genres: '27', sort_by: 'popularity.desc', vote_count_gte: '50' },
-  },
-  {
-    slug: 'fantasy',
-    mediaType: 'movie' as const,
-    params: { with_genres: '14', sort_by: 'popularity.desc', vote_count_gte: '50' },
-  },
-  {
-    slug: 'romance',
-    mediaType: 'movie' as const,
-    params: { with_genres: '10749', sort_by: 'popularity.desc', vote_count_gte: '50' },
-  },
-  {
-    slug: 'mystery',
-    mediaType: 'movie' as const,
-    params: { with_genres: '9648', sort_by: 'popularity.desc', vote_count_gte: '50' },
-  },
-  {
-    slug: 'cartoon',
-    mediaType: 'tv' as const,
-    params: { with_genres: '16', sort_by: 'popularity.desc', vote_count_gte: '50', with_original_language: 'en' },
-    extraParams: { with_keywords: '210755', sort_by: 'popularity.desc', vote_count_gte: '30' },
-  },
-];
+const TMDB_GENRES = PORTAL_GENRES
+  .filter(g => g.source === 'tmdb')
+  .map(g => ({
+    slug: g.key,
+    mediaType: g.mediaType,
+    params: { with_genres: String(g.genreId), ...g.extraParams },
+    keywordParams: g.keywordParams,
+  }));
 
 // TMDB caps meaningful results at ~500 pages.
 // 100 pages × 20 results = up to 2000 quality items per genre.
 const WARM_PAGES = 100;
-const BATCH_SIZE = 5; // concurrent TMDB requests per batch (reduced from 10 to stay within rate limits)
+const BATCH_SIZE = 5;
 
 // ─── Concurrency limiter ──────────────────────────────────────────────────
-// Prevents more than MAX_CONCURRENT in-flight TMDB/AniList requests at once.
-const MAX_CONCURRENT = 10; // Reduced from 15 — combined TMDB+AniList was exceeding safe limits
+
+const MAX_CONCURRENT = 10;
 let inFlight = 0;
 const waitQueue: Array<() => void> = [];
 
@@ -97,13 +78,10 @@ async function limitedFetch<T>(fn: () => Promise<T>): Promise<T> {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-const ANIME_PATTERNS = [
-  /\b(?:dragon\s*ball|naruto|one\s*piece|bleach|demon\s*slayer|attack\s*on\s*titan|jujutsu|my\s*hero|spy\s*x|chainsaw\s*man|sword\s*art|death\s*note|fullmetal|hunter\s*x|tokyo\s*revenger|tokyo\s*ghoul|mob\s*psycho|one\s*punch|cowboy\s*bebop|evangelion|pokemon|yugioh|digimon|sailor\s*moon|code\s*geass|gundam|jojo|fairy\s*tail|black\s*clover)\b/i,
-  /\s(?:sub|dub|uncut)\b/i,
-  /\(\d{4}\s*(?:TV|ONA|OVA|Movie)\)/,
-];
-function isLikelyAnime(title: string): boolean {
-  return ANIME_PATTERNS.some(p => p.test(title));
+/** Filter out Japanese-origin content using TMDB origin_country field */
+function isJapaneseOrigin(item: TMDBShow): boolean {
+  const oc = (item as unknown as Record<string, unknown>).origin_country;
+  return Array.isArray(oc) && (oc as string[]).includes('JP');
 }
 
 function dedupeAndFilter(items: TMDBShow[], mediaType: 'movie' | 'tv'): MediaItem[] {
@@ -144,7 +122,6 @@ async function fetchPages(
     for (const page of batch) {
       const results = page.results ?? [];
       all.push(...results);
-      // TMDB returns empty results[] on pages beyond total_pages
       if (results.length === 0) { hitEnd = true; break; }
     }
     if (hitEnd) break;
@@ -159,9 +136,8 @@ async function warmGenre(
   slug: string,
   mediaType: 'movie' | 'tv',
   params: Record<string, string>,
-  extraParams?: Record<string, string>,
+  keywordParams?: Record<string, string>,
 ): Promise<{ slug: string; count: number; cached: boolean }> {
-  // Check if still fresh (skip if warm cache hit within 1h of expiry)
   const existing = await getCached<MediaItem[]>(WARM, `genre:${slug}`);
   if (existing && existing.length > 0) {
     return { slug, count: existing.length, cached: true };
@@ -170,13 +146,11 @@ async function warmGenre(
   const raw = await fetchPages(mediaType, params, WARM_PAGES);
 
   let items: MediaItem[];
-  if (slug === 'cartoon' && extraParams) {
-    const keywordRaw = await fetchPages(mediaType, extraParams, 30);
+  if (slug === 'cartoon' && keywordParams) {
+    const keywordRaw = await fetchPages(mediaType, keywordParams, 30);
     const merged = [...raw, ...keywordRaw];
-    const filtered = merged.filter(r => {
-      const t = (r as TMDBShow).name || (r as TMDBShow).title || '';
-      return !isLikelyAnime(t);
-    });
+    // Filter out Japanese-origin content (anime) using origin_country
+    const filtered = merged.filter(r => !isJapaneseOrigin(r));
     items = dedupeAndFilter(filtered as TMDBShow[], mediaType);
   } else {
     items = dedupeAndFilter(raw, mediaType);
@@ -186,8 +160,8 @@ async function warmGenre(
   return { slug, count: items.length, cached: false };
 }
 
-// Direct AniList fetcher that skips Redis — used during warm to avoid
-// cache-layer contention with the heavy TMDB writes happening in parallel.
+// ─── AniList direct fetcher (skips Redis during warm) ────────────────────────
+
 async function warmFetchAnimePage(page: number, perPage = 20): Promise<{ media: AniListMedia[] }> {
   return limitedFetch(() =>
     fetch('https://graphql.anilist.co', {
@@ -235,7 +209,6 @@ async function warmAnime(): Promise<{ slug: string; count: number; cached: boole
     return { slug: 'anime', count: existing.length, cached: true };
   }
 
-  // Fetch 15 pages × 20 = 300 anime items from AniList (direct, no Redis)
   const ANIME_BATCH = 3;
   const ANIME_PAGES = 15;
   const allPages: Array<{ media: AniListMedia[] }> = [];
@@ -270,7 +243,6 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
     return { slug: 'browse', count: existing.length, cached: true };
   }
 
-  // Fetch 30 pages of trending + 20 pages popular movies + 20 pages popular TV
   const [trendingPages, moviePages, tvPages] = await Promise.all([
     Promise.all(
       Array.from({ length: 30 }, (_, i) =>
@@ -303,8 +275,6 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
 }
 
 // ─── Home page genre portal feature cards ───────────────────────────────────
-// These 6 discover fetches power the home page genre portal backdrops & counts.
-// They use the same cache keys as the home page (discover category + full endpoint+params key).
 
 const HOME_FEAT_FETCHES = [
   { id: 'feat-anime',   endpoint: '/discover/tv',    params: { with_genres: '16,10759', sort_by: 'popularity.desc', with_original_language: 'ja', vote_count_gte: '100' } },
@@ -322,13 +292,11 @@ function makeKey(endpoint: string, params?: Record<string, string>): string {
 }
 
 async function warmHomeFeatCards(): Promise<{ slug: string; count: number; cached: boolean }[]> {
-  // Build the exact same cache keys the home page uses
   const entries = HOME_FEAT_FETCHES.map(f => {
     const key = makeKey(f.endpoint, f.params);
     return { id: f.id, key, endpoint: f.endpoint, params: f.params };
   });
 
-  // Check existing cache — skip if any feat key is already warm
   const existingCounts: Record<string, { count: number; exists: boolean }> = {};
   for (const e of entries) {
     try {
@@ -339,7 +307,6 @@ async function warmHomeFeatCards(): Promise<{ slug: string; count: number; cache
     } catch { /* miss */ }
   }
 
-  // If all 6 are already cached, skip entirely
   if (Object.keys(existingCounts).length === entries.length) {
     return entries.map(e => ({
       slug: e.id,
@@ -348,7 +315,6 @@ async function warmHomeFeatCards(): Promise<{ slug: string; count: number; cache
     }));
   }
 
-  // Fetch only the missing ones (page 1 is enough — home page only needs 1 page for backdrops + total_results)
   const toFetch = entries.filter(e => !existingCounts[e.id]);
   const results = await Promise.all(
     toFetch.map(e =>
@@ -356,7 +322,6 @@ async function warmHomeFeatCards(): Promise<{ slug: string; count: number; cache
         tmdbFetch<{ results?: TMDBShow[]; total_results?: number }>(e.endpoint, e.params)
           .then(data => {
             const payload = { results: data.results || [], total_results: data.total_results || 0 };
-            // Cache under the exact same key the home page reads
             setCache('discover' as CacheCategory, e.key, payload).catch(() => {});
             return { slug: e.id, count: payload.total_results, cached: false };
           })
@@ -365,7 +330,6 @@ async function warmHomeFeatCards(): Promise<{ slug: string; count: number; cache
     )
   );
 
-  // Merge with already-cached entries
   const cachedResults = entries
     .filter(e => existingCounts[e.id])
     .map(e => ({ slug: e.id, count: existingCounts[e.id]!.count, cached: true }));
@@ -373,13 +337,12 @@ async function warmHomeFeatCards(): Promise<{ slug: string; count: number; cache
   return [...cachedResults, ...results];
 }
 
-// ─── Warming logic (shared between cron GET and manual POST) ──────────────────
+// ─── Warming logic ──────────────────────────────────────────────────────────
 
 async function runWarm(requestUrl: string): Promise<NextResponse> {
   const startTime = Date.now();
 
   try {
-    // Parse optional ?slug= to warm a single genre only
     const { searchParams } = new URL(requestUrl);
     const targetSlug = searchParams.get('slug');
 
@@ -387,15 +350,13 @@ async function runWarm(requestUrl: string): Promise<NextResponse> {
       ? TMDB_GENRES.filter(g => g.slug === targetSlug)
       : TMDB_GENRES;
 
-    // Run all genre warms in parallel
     const tmdbResults = await Promise.all(
-      genresToWarm.map(g => warmGenre(g.slug, g.mediaType, g.params, g.extraParams))
+      genresToWarm.map(g => warmGenre(g.slug, g.mediaType, g.params, g.keywordParams))
     );
 
     const animeResult  = !targetSlug || targetSlug === 'anime'  ? await warmAnime()  : null;
     const browseResult = !targetSlug || targetSlug === 'browse' ? await warmBrowse() : null;
 
-    // Warm the 6 home page genre portal feat-* discover keys
     const featResults = !targetSlug ? await warmHomeFeatCards() : [];
 
     const results = [
@@ -424,18 +385,14 @@ async function runWarm(requestUrl: string): Promise<NextResponse> {
 
 // ─── Route handlers ──────────────────────────────────────────────────────────
 
-// GET: Vercel Cron hits this. If called with auth header → run warm.
-//       Without auth → return current cache status (dev convenience).
 export async function GET(request: NextRequest) {
   const secret = process.env.CACHE_WARM_SECRET;
 
-  // If called by Vercel Cron (has auth) → run the warm
   const auth = request.headers.get('authorization') ?? '';
   if (secret && auth === `Bearer ${secret}`) {
     return runWarm(request.url);
   }
 
-  // No auth or no secret → status-only endpoint
   if (!secret) {
     return NextResponse.json(
       { error: 'CACHE_WARM_SECRET not configured' },
@@ -457,7 +414,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ status });
 }
 
-// POST: Manual trigger (e.g. from dashboard or scripts)
 export async function POST(request: NextRequest) {
   const secret = process.env.CACHE_WARM_SECRET;
   if (!secret) {

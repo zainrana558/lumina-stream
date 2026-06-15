@@ -1,6 +1,5 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
-import { getPopularAnime } from '@/lib/anilist/client';
-import { anilistToMediaItem } from '@/lib/anilist/client';
+import { getPopularAnime, anilistToMediaItem } from '@/lib/anilist/client';
 import type { Metadata } from 'next';
 import AnimeThemedPage from '@/components/pages/AnimePage';
 import CartoonThemedPage from '@/components/pages/CartoonPage';
@@ -10,60 +9,44 @@ import MysteryThemedPage from '@/components/pages/MysteryPage';
 import FantasyThemedPage from '@/components/pages/FantasyPage';
 import type { MediaItem, TMDBShow } from '@/types';
 import { tmdbToMedia } from '@/types';
+import { PORTAL_GENRE_MAP, PORTAL_SLUGS, type PortalGenreConfig } from '@/config/genres';
 
-interface GenreConfig {
-  component: React.ComponentType<{ initialShows: MediaItem[] }>;
-  genreId: number;
-  mediaType: 'tv' | 'movie';
-  extraParams?: Record<string, string>;
-  source?: 'tmdb' | 'anilist';
-}
+// ─── Component registry ─────────────────────────────────────────────────────
 
-const GENRE_MAP: Record<string, GenreConfig> = {
-  anime:   { component: AnimeThemedPage,   genreId: 16,    mediaType: 'tv',   extraParams: { sort_by: 'popularity.desc' }, source: 'anilist' },
-  cartoon: { component: CartoonThemedPage,  genreId: 16,    mediaType: 'tv',   extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50', with_original_language: 'en' }, source: 'tmdb' },
-  horror:  { component: HorrorThemedPage,   genreId: 27,    mediaType: 'movie', extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50' }, source: 'tmdb' },
-  romance: { component: RomanceThemedPage,  genreId: 10749, mediaType: 'movie', extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50' }, source: 'tmdb' },
-  mystery: { component: MysteryThemedPage,  genreId: 9648,  mediaType: 'movie', extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50' }, source: 'tmdb' },
-  fantasy: { component: FantasyThemedPage,  genreId: 14,    mediaType: 'movie', extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50' }, source: 'tmdb' },
+const COMPONENT_MAP: Record<string, React.ComponentType<{ initialShows: MediaItem[] }>> = {
+  anime:   AnimeThemedPage,
+  cartoon: CartoonThemedPage,
+  horror:  HorrorThemedPage,
+  romance: RomanceThemedPage,
+  mystery: MysteryThemedPage,
+  fantasy: FantasyThemedPage,
 };
 
-/* ── Anime title patterns to filter out of cartoon results ── */
-const ANIME_TITLE_PATTERNS = [
-  /\b(?:dragon\s*ball|naruto|one\s*piece|bleach|demon\s*slayer|attack\s*on\s*titan|jujutsu|my\s*hero\s*academia|spy\s*x\s*family|chainsaw\s*man|sword\s*art\s*online|death\s*note|fullmetal|hunter\s*x|hunter\s*x?|tokyo\s*revenger|tokyo\s*ghoul|mob\s*psycho|one\s*punch|cowboy\s*bebop|evangelion|pokemon|yugioh|digimon|sailor\s*moon|code\s*geass|gundam|jojo|naruto|bleach|fairy\s*tail|black\s*clover|mha|aot|ds)\b/i,
-  /(?:刀語|鬼滅|進撃|呪術|僕のヒーロー|ワンパン|ドラゴンボール|ナルト|ワンピース|ブリーチ|ポケモン|ソードアート|ハンター)/,
-  /\s(?:sub|dub|uncut)\b/i,
-  /\(\d{4}\s*(?:TV|ONA|OVA|Movie)\)/,
-];
-
-function isLikelyAnime(title: string): boolean {
-  return ANIME_TITLE_PATTERNS.some(p => p.test(title));
-}
-
-const GENRE_META: Record<string, { title: string; description: string }> = {
-  anime:   { title: 'Anime', description: 'Discover popular and trending anime series. From action-packed shonen to heartwarming slice-of-life, explore the best anime curated for you.' },
-  cartoon: { title: 'Cartoons', description: 'Explore classic and modern cartoon series. Laugh, adventure, and enjoy animated shows for all ages.' },
-  horror:  { title: 'Horror', description: 'Face your darkest fears with the best horror movies. From psychological thrillers to supernatural terror, find your next scare.' },
-  romance: { title: 'Romance', description: 'Feel every heartbeat with romantic movies. From passionate love stories to tender moments, discover the best romance films.' },
-  mystery: { title: 'Mystery', description: 'Unravel the unknown with mystery and thriller movies. From detective stories to mind-bending puzzles, keep guessing.' },
-  fantasy: { title: 'Fantasy', description: 'Beyond imagination awaits. Explore epic fantasy movies with magical worlds, mythical creatures, and legendary adventures.' },
-};
+// ─── SEO metadata ───────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const meta = GENRE_META[slug];
-  if (!meta) return { title: 'Genre Not Found' };
+  const genre = PORTAL_GENRE_MAP[slug];
+  if (!genre) return { title: 'Genre Not Found' };
   return {
-    title: meta.title,
-    description: meta.description,
+    title: genre.title,
+    description: genre.description,
     openGraph: {
-      title: `${meta.title} | Lumina Stream`,
-      description: meta.description,
+      title: `${genre.title} | Lumina Stream`,
+      description: genre.description,
     },
   };
 }
 
-export const revalidate = 600; // 10 min — genre lists are stable
+export const revalidate = 600; // 10 min
+
+// ─── Static params for build-time generation ────────────────────────────────
+
+export function generateStaticParams() {
+  return PORTAL_SLUGS.map(slug => ({ slug }));
+}
+
+// ─── TMDB multi-page fetcher with dedup ─────────────────────────────────────
 
 async function fetchTmdbPages(
   mediaType: string,
@@ -79,37 +62,45 @@ async function fetchTmdbPages(
     )
   );
 
-  // Deduplicate by ID
   const seen = new Set<number>();
   return allResults
     .flatMap(d => d.results || [])
     .filter(r => {
       if (!r.poster_path || seen.has(r.id)) return false;
-      // Skip very low-quality entries (fewer than ~50 votes = obscure)
       if (r.vote_count !== undefined && r.vote_count < 50 && r.popularity < 5) return false;
       seen.add(r.id);
       return true;
     });
 }
 
+// ─── Cartoon: filter out Japanese-origin content ────────────────────────────
+// Replaces fragile regex title-matching with TMDB origin_country field.
+
+function isJapaneseOrigin(item: TMDBShow): boolean {
+  const oc = (item as unknown as Record<string, unknown>).origin_country;
+  return Array.isArray(oc) && (oc as string[]).includes('JP');
+}
+
+// ─── Page component ─────────────────────────────────────────────────────────
+
 export default async function GenrePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const config = GENRE_MAP[slug];
+  const config = PORTAL_GENRE_MAP[slug];
 
   if (!config) {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 'clamp(60px,7vw,80px)' }}>
-        <div className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.4)' }}>Genre not found</div>
+        <div className="f-cinzel" style={{ fontSize: '1.2rem', color: 'rgba(255,245,232,.4)' }}>Genre not found</div>
       </div>
     );
   }
 
+  const Component = COMPONENT_MAP[slug];
   let shows: MediaItem[] = [];
 
-  // Anime uses AniList for complete anime coverage
   if (config.source === 'anilist') {
+    // ── Anime: AniList primary, TMDB fallback ──
     try {
-      // Fetch 3 pages (60 items) from AniList for rich content
       const [page1, page2, page3] = await Promise.all([
         getPopularAnime(1, 20).catch(() => ({ media: [], pageInfo: { hasNextPage: false } })),
         getPopularAnime(2, 20).catch(() => ({ media: [], pageInfo: { hasNextPage: false } })),
@@ -121,7 +112,6 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
         .filter(m => m.coverImage?.large && !seen.has(m.id))
         .map(m => { seen.add(m.id); return anilistToMediaItem(m); });
     } catch {
-      // Fallback to TMDB if AniList fails
       try {
         const paramsMap: Record<string, string> = {
           with_genres: config.genreId.toString(),
@@ -134,29 +124,26 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
       }
     }
   } else if (slug === 'cartoon') {
-    // Cartoon: dual fetch — English animation + cartoon keyword — then filter anime
+    // ── Cartoon: dual fetch (genre + keyword), filter by origin_country ──
     try {
       const [englishResults, keywordResults] = await Promise.all([
         fetchTmdbPages(config.mediaType, {
           with_genres: config.genreId.toString(),
           ...config.extraParams,
         }, 5),
-        // Fetch by "cartoon" keyword for titles tagged as cartoon specifically
         fetchTmdbPages(config.mediaType, {
-          with_keywords: '210755', // TMDB keyword: "cartoon"
+          with_keywords: '210755',
           sort_by: 'popularity.desc',
           vote_count_gte: '30',
         }, 3).catch(() => []),
       ]);
 
-      // Merge and deduplicate
       const seen = new Set<number>();
       const merged: TMDBShow[] = [];
       for (const item of [...englishResults, ...keywordResults]) {
         if (seen.has(item.id)) continue;
-        // Filter out titles that look like anime
-        if (item.name && isLikelyAnime(item.name)) continue;
-        if (item.title && isLikelyAnime(item.title)) continue;
+        // Filter out Japanese-origin content (anime) using origin_country
+        if (isJapaneseOrigin(item)) continue;
         seen.add(item.id);
         merged.push(item);
       }
@@ -165,7 +152,7 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
       shows = [];
     }
   } else {
-    // All other genres use TMDB — fetch 5 pages (up to 100 items)
+    // ── All other genres: standard TMDB discover ──
     try {
       const paramsMap: Record<string, string> = {
         with_genres: config.genreId.toString(),
@@ -178,6 +165,5 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
     }
   }
 
-  const Component = config.component;
   return <Component initialShows={shows} />;
 }

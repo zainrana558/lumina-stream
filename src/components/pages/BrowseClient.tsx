@@ -3,7 +3,7 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { MediaItem, SortKey, TMDBShow } from '@/types';
-import { GENRES_ALL } from '@/styles/themes';
+import { GENRES_ALL, PORTAL_NAME_SET } from '@/styles/themes';
 import { tmdbToMedia } from '@/types';
 import Card from '@/components/common/Card';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -80,9 +80,16 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const router = useRouter();
   const moodParam = searchParams.get('mood')?.toLowerCase() || '';
   const moodConfig = moodParam ? MOOD_CONFIG[moodParam] : null;
+  const genreParam = searchParams.get('genre') || '';
 
   const [allShows, setAllShows] = useState<MediaItem[]>(initialShows);
-  const [genre, setGenre] = useState('All');
+  const [genre, setGenre] = useState(() => {
+    // Initialize from URL param if valid genre name
+    if (genreParam && GENRES_ALL.includes(genreParam as typeof GENRES_ALL[number])) {
+      return genreParam;
+    }
+    return 'All';
+  });
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<SortKey>('r');
   const [isMobile, setIsMobile] = useState(false);

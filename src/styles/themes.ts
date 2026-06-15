@@ -1,4 +1,4 @@
-import type { ColorScheme, GenreCard, Mood } from '@/types';
+import type { ColorScheme, Mood } from '@/types';
 
 export const CS: ColorScheme[] = [
   { bg: 'linear-gradient(148deg,#14052E 0%,#4B2C8B 55%,#9E3EA8 100%)', acc: '#D070FF', base: '#14052E', em: '🌙' },
@@ -11,25 +11,14 @@ export const CS: ColorScheme[] = [
   { bg: 'linear-gradient(148deg,#080818 0%,#181880 60%,#2E30C0 100%)', acc: '#6A90FF', base: '#080818', em: '🌌' },
 ];
 
-export const GCARDS: GenreCard[] = [
-  { key: 'anime',   name: 'Anime',   em: '⚡', col: 'linear-gradient(135deg,#0A0012,#2A0055)', tc: '#FF0096' },
-  { key: 'cartoon', name: 'Cartoon', em: '🌸', col: 'linear-gradient(135deg,#87CEEB,#B0E2FF)', tc: '#2D5A1B' },
-  { key: 'horror',  name: 'Horror',  em: '👁', col: 'linear-gradient(135deg,#000,#3D0000)',       tc: '#DC143C' },
-  { key: 'romance', name: 'Romance', em: '💕', col: 'linear-gradient(135deg,#1A0005,#5A001A)',      tc: '#FF6B8A' },
-  { key: 'mystery', name: 'Mystery', em: '🔍', col: 'linear-gradient(135deg,#050A15,#0A1A35)',      tc: '#FFB347' },
-  { key: 'fantasy', name: 'Fantasy', em: '✨', col: 'linear-gradient(135deg,#0D0520,#1A0840)',      tc: '#C39BD3' },
-];
-
 export const MOODS: Mood[] = [
   { em: '🌙', name: 'Melancholy', col: '#8B78FF' },
   { em: '⚡', name: 'Pumped',     col: '#FFB347' },
   { em: '💕', name: 'Romantic',   col: '#FF6B8A' },
-  { em: '😱', name: 'Thrilling',  col: '#FF4A4A' },
+  { em: '😱', name: 'Thrilling', col: '#FF4A4A' },
   { em: '🌿', name: 'Chill',      col: '#78D621' },
   { em: '🔥', name: 'Epic',       col: '#FF8C00' },
 ];
 
-export const GENRES_ALL = [
-  'All', 'Action', 'Adventure', 'Animation', 'Comedy', 'Drama',
-  'Fantasy', 'Horror', 'Romance', 'Sci-Fi', 'Thriller', 'Mystery',
-];
+// ─── Re-exports from single source of truth ────────────────────────────────────
+export { GCARDS, GENRES_ALL, PORTAL_GENRES, PORTAL_GENRE_MAP, PORTAL_SLUGS, PORTAL_KEY_SET, PORTAL_NAME_SET, BROWSE_ONLY_GENRES, GENRE_NAV_LINKS, TMDB_GENRE_ID_MAP, TMDB_GENRE_NAME_MAP } from '@/config/genres';
