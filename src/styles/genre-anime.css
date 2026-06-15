@@ -1,4 +1,241 @@
-@keyframes speed-sweep{0%{transform:translateX(-110%);opacity:0}30%{opacity:.07}70%{opacity:.05}100%{transform:translateX(210%);opacity:0}}
-@keyframes neon-pulse{0%,100%{filter:drop-shadow(0 0 8px #FF0096) drop-shadow(0 0 20px #FF009655)}50%{filter:drop-shadow(0 0 16px #FF0096) drop-shadow(0 0 40px #FF009688)}}
-@keyframes scan{0%{top:-2px}100%{top:100%}}
-@keyframes glitch{0%,88%,100%{transform:translateX(0)}90%{transform:translateX(-3px)}92%{transform:translateX(3px)}94%{transform:translateX(-1px)}96%{transform:translateX(2px) scaleX(1.01)}}
+/* ═══════════════════════════════════════════
+   ANIME GENRE — SAKURA / CHERRY BLOSSOM THEME
+   Pinkish anime aesthetic with realistic falling petals
+   ═══════════════════════════════════════════ */
+
+/* ── Cherry blossom petal fall ──
+   Natural, slow, surreal falling with multi-axis rotation,
+   gentle swaying drift, and 3D perspective depth.
+   Petals tumble realistically using separate X/Y/Z rotations. */
+@keyframes sakura-fall {
+  0% {
+    transform:
+      translateY(-5vh)
+      translateX(0)
+      rotateX(0deg)
+      rotateY(0deg)
+      rotateZ(0deg)
+      scale(var(--petal-scale, 1));
+    opacity: 0;
+  }
+  3% {
+    opacity: var(--petal-op, 0.7);
+  }
+  15% {
+    transform:
+      translateY(12vh)
+      translateX(calc(var(--sway-x, 25px) * 0.4))
+      rotateX(60deg)
+      rotateY(30deg)
+      rotateZ(20deg)
+      scale(var(--petal-scale, 1));
+  }
+  30% {
+    transform:
+      translateY(28vh)
+      translateX(calc(var(--sway-x, 25px) * -0.3))
+      rotateX(140deg)
+      rotateY(-45deg)
+      rotateZ(-15deg)
+      scale(var(--petal-scale, 1));
+  }
+  45% {
+    transform:
+      translateY(44vh)
+      translateX(calc(var(--sway-x, 25px) * 0.7))
+      rotateX(220deg)
+      rotateY(60deg)
+      rotateZ(35deg)
+      scale(var(--petal-scale, 1));
+  }
+  60% {
+    transform:
+      translateY(60vh)
+      translateX(calc(var(--sway-x, 25px) * -0.2))
+      rotateX(300deg)
+      rotateY(-30deg)
+      rotateZ(-25deg)
+      scale(var(--petal-scale, 1));
+  }
+  75% {
+    transform:
+      translateY(76vh)
+      translateX(calc(var(--sway-x, 25px) * 0.5))
+      rotateX(380deg)
+      rotateY(50deg)
+      rotateZ(15deg)
+      scale(var(--petal-scale, 1));
+    opacity: var(--petal-op, 0.7);
+  }
+  92% {
+    opacity: calc(var(--petal-op, 0.7) * 0.3);
+  }
+  100% {
+    transform:
+      translateY(105vh)
+      translateX(calc(var(--sway-x, 25px) * -0.4))
+      rotateX(440deg)
+      rotateY(-20deg)
+      rotateZ(-10deg)
+      scale(calc(var(--petal-scale, 1) * 0.8));
+    opacity: 0;
+  }
+}
+
+/* ── Secondary petal drift (slower, wider sway for depth) ── */
+@keyframes sakura-drift {
+  0% {
+    transform:
+      translateY(-3vh)
+      translateX(0)
+      rotateZ(0deg)
+      rotateX(0deg)
+      scale(var(--petal-scale, 0.7));
+    opacity: 0;
+  }
+  5% {
+    opacity: calc(var(--petal-op, 0.5) * 0.8);
+  }
+  25% {
+    transform:
+      translateY(20vh)
+      translateX(calc(var(--sway-x, 40px) * 0.8))
+      rotateZ(45deg)
+      rotateX(90deg)
+      scale(var(--petal-scale, 0.7));
+  }
+  50% {
+    transform:
+      translateY(45vh)
+      translateX(calc(var(--sway-x, 40px) * -0.6))
+      rotateZ(-30deg)
+      rotateX(200deg)
+      scale(var(--petal-scale, 0.7));
+    opacity: calc(var(--petal-op, 0.5) * 0.6);
+  }
+  75% {
+    transform:
+      translateY(70vh)
+      translateX(calc(var(--sway-x, 40px) * 0.5))
+      rotateZ(20deg)
+      rotateX(310deg)
+      scale(var(--petal-scale, 0.7));
+  }
+  95% {
+    opacity: calc(var(--petal-op, 0.5) * 0.15);
+  }
+  100% {
+    transform:
+      translateY(108vh)
+      translateX(calc(var(--sway-x, 40px) * -0.3))
+      rotateZ(-10deg)
+      rotateX(380deg)
+      scale(calc(var(--petal-scale, 0.7) * 0.5));
+    opacity: 0;
+  }
+}
+
+/* ── Close-up petal (larger, slower, foreground bokeh effect) ── */
+@keyframes sakura-bokeh {
+  0% {
+    transform:
+      translateY(-2vh)
+      translateX(-20px)
+      rotateZ(-10deg)
+      scale(var(--petal-scale, 1.8));
+    opacity: 0;
+    filter: blur(2px);
+  }
+  8% {
+    opacity: calc(var(--petal-op, 0.25) * 0.9);
+    filter: blur(1px);
+  }
+  30% {
+    transform:
+      translateY(25vh)
+      translateX(calc(var(--sway-x, 60px) * 0.6))
+      rotateZ(50deg)
+      scale(var(--petal-scale, 1.8));
+    filter: blur(3px);
+  }
+  55% {
+    transform:
+      translateY(52vh)
+      translateX(calc(var(--sway-x, 60px) * -0.4))
+      rotateZ(-25deg)
+      scale(var(--petal-scale, 1.8));
+    opacity: calc(var(--petal-op, 0.25) * 0.5);
+    filter: blur(2px);
+  }
+  80% {
+    transform:
+      translateY(78vh)
+      translateX(calc(var(--sway-x, 60px) * 0.3))
+      rotateZ(15deg)
+      scale(var(--petal-scale, 1.8));
+    filter: blur(4px);
+  }
+  100% {
+    transform:
+      translateY(110vh)
+      translateX(calc(var(--sway-x, 60px) * -0.2))
+      rotateZ(-5deg)
+      scale(calc(var(--petal-scale, 1.8) * 0.7));
+    opacity: 0;
+    filter: blur(5px);
+  }
+}
+
+/* ── Gentle shimmer for sakura glow elements ── */
+@keyframes sakura-shimmer {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(255, 183, 197, 0.3));
+    opacity: 0.6;
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(255, 150, 170, 0.5));
+    opacity: 1;
+  }
+}
+
+/* ── Slow pulsing pink glow for background orbs ── */
+@keyframes sakura-glow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.08;
+    filter: blur(60px);
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.15;
+    filter: blur(70px);
+  }
+}
+
+/* ── Subtle title gradient flow (sakura pink palette) ── */
+@keyframes sakura-title-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Delicate line sweep (replaces aggressive speed-sweep) ── */
+@keyframes sakura-sweep {
+  0% { transform: translateX(-110%); opacity: 0; }
+  20% { opacity: 0.04; }
+  50% { opacity: 0.06; }
+  80% { opacity: 0.03; }
+  100% { transform: translateX(210%); opacity: 0; }
+}
+
+/* ── Floating sparkle for subtle magic dust ── */
+@keyframes sakura-sparkle {
+  0%, 100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+}

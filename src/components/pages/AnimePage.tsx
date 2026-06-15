@@ -68,101 +68,104 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
     return result;
   }, [shows, searchTerm, sortBy, activeGenre]);
 
-  const sweeps = useMemo(() => Array.from({ length: 6 }, (_, i) => ({
-    id: i,
-    top: `${8 + i * 14}%`,
-    delay: `${i * 1.3}s`,
-    dur: `${2.4 + i * 0.5}s`,
-    h: `${2 + (i % 3)}px`,
-  })), []);
-  const gridDots = useMemo(() => Array.from({ length: 80 }, (_, i) => ({
-    id: i,
-    left: `${(i % 10) * 10}%`,
-    top: `${Math.floor(i / 10) * 10}%`,
-    op: 0.04 + (i % 3) * 0.015,
-  })), []);
-
   return (
     <div className="page" style={{
         position: 'relative',
         minHeight: '100vh',
-        background: '#000',
+        background: 'linear-gradient(175deg, #1a0a12 0%, #0d0610 35%, #120818 65%, #0a0510 100%)',
         paddingTop: 'clamp(60px,7vw,80px)',
         overflow: 'hidden',
       }}>
-        {/* Background layers */}
+
+        {/* ── Background: Soft pink atmospheric glows ── */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
           background: `
-            radial-gradient(ellipse at 15% 25%, rgba(255,0,150,0.12) 0%, transparent 50%),
-            radial-gradient(ellipse at 85% 35%, rgba(0,255,255,0.10) 0%, transparent 50%),
-            radial-gradient(ellipse at 50% 80%, rgba(255,230,0,0.06) 0%, transparent 50%)
+            radial-gradient(ellipse 600px 500px at 12% 18%, rgba(255, 130, 170, 0.10) 0%, transparent 70%),
+            radial-gradient(ellipse 500px 600px at 88% 22%, rgba(255, 183, 197, 0.07) 0%, transparent 70%),
+            radial-gradient(ellipse 700px 400px at 45% 75%, rgba(219, 112, 147, 0.06) 0%, transparent 70%),
+            radial-gradient(ellipse 400px 400px at 70% 55%, rgba(255, 105, 140, 0.05) 0%, transparent 70%)
           `,
         }} />
-        {/* Dot grid */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-          {gridDots.map(d => (
-            <div key={d.id} style={{
-              position: 'absolute', left: d.left, top: d.top,
-              width: 2, height: 2, borderRadius: '50%',
-              background: '#00FFFF', opacity: d.op,
+
+        {/* ── Background: Slowly pulsing sakura glow orbs ── */}
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        }}>
+          {[
+            { left: '8%', top: '15%', size: 320, color: 'rgba(255,150,170,0.12)', delay: '0s', dur: '14s' },
+            { left: '75%', top: '10%', size: 280, color: 'rgba(255,130,180,0.10)', delay: '4s', dur: '18s' },
+            { left: '50%', top: '60%', size: 350, color: 'rgba(219,112,147,0.08)', delay: '7s', dur: '16s' },
+            { left: '25%', top: '45%', size: 200, color: 'rgba(255,183,197,0.09)', delay: '2s', dur: '20s' },
+          ].map((orb, i) => (
+            <div key={i} style={{
+              position: 'absolute',
+              left: orb.left,
+              top: orb.top,
+              width: orb.size,
+              height: orb.size,
+              borderRadius: '50%',
+              background: orb.color,
+              animation: `sakura-glow ${orb.dur} ${orb.delay} ease-in-out infinite`,
+              pointerEvents: 'none',
             }} />
           ))}
         </div>
 
-        {/* Scan line */}
-        <div style={{
-          position: 'absolute', left: 0, right: 0, height: 2, zIndex: 1,
-          background: 'linear-gradient(90deg,transparent,rgba(0,255,255,0.25),rgba(255,0,150,0.2),transparent)',
-          animation: 'scan 4s linear infinite', pointerEvents: 'none',
-        }} />
-
-        {/* Speed sweep lines */}
-        {sweeps.map(s => (
+        {/* ── Delicate horizontal sweep lines (very subtle) ── */}
+        {useMemo(() => Array.from({ length: 4 }, (_, i) => ({
+          id: i,
+          top: `${12 + i * 22}%`,
+          delay: `${i * 3.5}s`,
+          dur: `${12 + i * 2}s`,
+          h: 1,
+        })), []).map(s => (
           <div key={s.id} style={{
             position: 'absolute', left: 0, right: 0, top: s.top, height: s.h, zIndex: 1,
-            background: 'linear-gradient(90deg,transparent,rgba(255,0,150,0.15),rgba(0,255,255,0.12),transparent)',
-            animation: `speed-sweep ${s.dur} ${s.delay} linear infinite`,
+            background: 'linear-gradient(90deg, transparent, rgba(255,183,197,0.08), rgba(255,150,170,0.06), transparent)',
+            animation: `sakura-sweep ${s.dur} ${s.delay} linear infinite`,
             pointerEvents: 'none',
           } as React.CSSProperties} />
         ))}
 
-        {/* Header */}
+        {/* ── Header ── */}
         <div style={{ position: 'relative', zIndex: 5, padding: '3rem clamp(1rem,5vw,3rem) 2rem', textAlign: 'center' }}>
           <h1 style={{
-            fontFamily: "'Bangers',cursive",
-            fontSize: 'clamp(3rem,8vw,6rem)',
-            letterSpacing: '0.06em',
-            background: 'linear-gradient(135deg,#FF0096,#00FFFF,#FFE600,#FF0096)',
+            fontFamily: "'Cinzel Decorative', 'Cinzel', serif",
+            fontSize: 'clamp(2.8rem,7.5vw,5.5rem)',
+            letterSpacing: '0.08em',
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #FFB7C5 0%, #FF85A2 25%, #E8789A 40%, #FFB7C5 55%, #FFC8D6 70%, #FF85A2 85%, #FFB7C5 100%)',
             backgroundSize: '300% 300%',
-            animation: 'g-flow 4s ease infinite',
+            animation: 'sakura-title-flow 6s ease infinite',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            
+            filter: 'drop-shadow(0 0 20px rgba(255,150,170,0.3))',
             marginBottom: '0.5rem',
-          }}><GenreIntro text="ANIME VAULT" genre="anime" /></h1>
+          }}>
+            <GenreIntro text="ANIME VAULT" genre="anime" />
+          </h1>
           <p className="f-cinzel" style={{
-            
             fontSize: '0.85rem',
-            color: 'rgba(0,255,255,0.5)',
-            letterSpacing: '0.12em',
+            color: 'rgba(255,183,197,0.45)',
+            letterSpacing: '0.14em',
             textTransform: 'uppercase',
-            animation: 'neon-pulse 3s ease-in-out infinite',
           }}>
             {filteredShows.length} series in the archive · Powered by AniList
           </p>
           <div style={{
-            width: 200, height: 2, margin: '1rem auto 0',
-            background: 'linear-gradient(90deg,transparent,#FF0096,#00FFFF,#FF0096,transparent)',
-            animation: 'g-flow 3s ease infinite',
+            width: 220, height: 1.5, margin: '1rem auto 0',
+            background: 'linear-gradient(90deg, transparent, #FF85A2, #FFB7C5, #FF85A2, transparent)',
             backgroundSize: '200% 100%',
+            animation: 'sakura-title-flow 4s ease infinite',
+            borderRadius: 1,
           }} />
         </div>
 
         <GenreParticles genre="anime" />
-        <GenreTrivia genre="anime" color="rgba(0,255,255,.45)" />
+        <GenreTrivia genre="anime" color="rgba(255,183,197,.4)" />
 
-        {/* Search, sort, filter toolbar */}
+        {/* ── Search, sort, filter toolbar ── */}
         <GenreToolbar
           onSearch={setSearchTerm}
           onSort={setSortBy}
@@ -172,7 +175,7 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
           activeGenre={activeGenre}
         />
 
-        {/* Cards grid */}
+        {/* ── Cards grid ── */}
         <div style={{
           position: 'relative', zIndex: 3,
           padding: '0 clamp(1rem,5vw,3rem) 5.5rem',
@@ -183,23 +186,27 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
           {filteredShows.length === 0 ? (
             <div className="f-cinzel" style={{
               gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0',
-              color: 'rgba(0,255,255,0.3)',  letterSpacing: '.1em',
+              color: 'rgba(255,183,197,0.25)', letterSpacing: '.1em',
             }}>No results found</div>
-          ) : filteredShows.map((s, i) => (
+          ) : filteredShows.map((s) => (
             <div key={s.id}>
-              <Card show={s} ring="linear-gradient(135deg,#FF0096,#00FFFF,#FFE600,#FF0096)" />
+              <Card
+                show={s}
+                ring="linear-gradient(135deg, #FF85A2, #FFB7C5, #E8789A, #FFC8D6, #FF85A2)"
+              />
             </div>
           ))}
         </div>
-        {/* Infinite scroll sentinel */}
+
+        {/* ── Infinite scroll sentinel ── */}
         <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
         {loadingMore && (
-          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em' }}>
+          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,183,197,.3)', fontSize: '.8rem', letterSpacing: '.08em' }}>
             ✦ Loading...
           </div>
         )}
         {!hasMore && (
-          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.2)', fontSize: '.75rem', letterSpacing: '.06em' }}>
+          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,183,197,.15)', fontSize: '.75rem', letterSpacing: '.06em' }}>
             — End of catalog —
           </div>
         )}

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 const GENRE_STYLES: Record<string, { primary: string; secondary: string; blurPx: number; jitter: number; stagger: number }> = {
   horror:  { primary: '#DC143C', secondary: '#8B0000', blurPx: 10, jitter: 6,  stagger: 55 },
-  anime:   { primary: '#FF0096', secondary: '#00FFFF', blurPx: 8,  jitter: 3,  stagger: 40 },
+  anime:   { primary: '#FFB7C5', secondary: '#FF85A2', blurPx: 6,  jitter: 1,  stagger: 50 },
   romance: { primary: '#FF6B8A', secondary: '#FF4D6D', blurPx: 7,  jitter: 2,  stagger: 50 },
   mystery: { primary: '#FFB347', secondary: '#FFD700', blurPx: 6,  jitter: 1,  stagger: 65 },
   fantasy: { primary: '#C39BD3', secondary: '#FFD700', blurPx: 8,  jitter: 2,  stagger: 45 },
