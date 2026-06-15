@@ -72,7 +72,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
         result.push({
           id: i,
           left: `${r() * 100}%`,
-          top: '-30px',
+          top: '0',
           w: size,
           h: size * 0.72,
           background: pc.bg,
@@ -99,7 +99,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
         result.push({
           id: 100 + i,
           left: `${r() * 100}%`,
-          top: '-20px',
+          top: '0',
           w: size,
           h: size * 0.7,
           background: pc.bg,
@@ -126,7 +126,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
         result.push({
           id: 200 + i,
           left: `${r() * 100}%`,
-          top: '-40px',
+          top: '0',
           w: size,
           h: size * 0.68,
           background: pc.bg,

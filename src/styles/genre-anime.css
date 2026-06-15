@@ -6,14 +6,14 @@
 /* ── Cherry blossom petal fall ──
    Natural, slow, surreal falling with multi-axis rotation,
    gentle swaying drift, and 3D perspective depth.
-   Petals tumble realistically using separate X/Y/Z rotations. */
+   Petals tumble realistically using separate X/Y/Z rotations.
+   IMPORTANT: element must have top:0 (not negative) since the
+   animation starts at translateY(-5vh) to spawn above viewport. */
 @keyframes sakura-fall {
   0% {
     transform:
       translateY(-5vh)
       translateX(0)
-      rotateX(0deg)
-      rotateY(0deg)
       rotateZ(0deg)
       scale(var(--petal-scale, 1));
     opacity: 0;
@@ -25,45 +25,35 @@
     transform:
       translateY(12vh)
       translateX(calc(var(--sway-x, 25px) * 0.4))
-      rotateX(60deg)
-      rotateY(30deg)
-      rotateZ(20deg)
+      rotateZ(55deg)
       scale(var(--petal-scale, 1));
   }
   30% {
     transform:
       translateY(28vh)
       translateX(calc(var(--sway-x, 25px) * -0.3))
-      rotateX(140deg)
-      rotateY(-45deg)
-      rotateZ(-15deg)
+      rotateZ(-40deg)
       scale(var(--petal-scale, 1));
   }
   45% {
     transform:
       translateY(44vh)
       translateX(calc(var(--sway-x, 25px) * 0.7))
-      rotateX(220deg)
-      rotateY(60deg)
-      rotateZ(35deg)
+      rotateZ(70deg)
       scale(var(--petal-scale, 1));
   }
   60% {
     transform:
       translateY(60vh)
       translateX(calc(var(--sway-x, 25px) * -0.2))
-      rotateX(300deg)
-      rotateY(-30deg)
-      rotateZ(-25deg)
+      rotateZ(-50deg)
       scale(var(--petal-scale, 1));
   }
   75% {
     transform:
       translateY(76vh)
       translateX(calc(var(--sway-x, 25px) * 0.5))
-      rotateX(380deg)
-      rotateY(50deg)
-      rotateZ(15deg)
+      rotateZ(30deg)
       scale(var(--petal-scale, 1));
     opacity: var(--petal-op, 0.7);
   }
@@ -74,9 +64,7 @@
     transform:
       translateY(105vh)
       translateX(calc(var(--sway-x, 25px) * -0.4))
-      rotateX(440deg)
-      rotateY(-20deg)
-      rotateZ(-10deg)
+      rotateZ(-15deg)
       scale(calc(var(--petal-scale, 1) * 0.8));
     opacity: 0;
   }
@@ -89,7 +77,6 @@
       translateY(-3vh)
       translateX(0)
       rotateZ(0deg)
-      rotateX(0deg)
       scale(var(--petal-scale, 0.7));
     opacity: 0;
   }
@@ -101,7 +88,6 @@
       translateY(20vh)
       translateX(calc(var(--sway-x, 40px) * 0.8))
       rotateZ(45deg)
-      rotateX(90deg)
       scale(var(--petal-scale, 0.7));
   }
   50% {
@@ -109,7 +95,6 @@
       translateY(45vh)
       translateX(calc(var(--sway-x, 40px) * -0.6))
       rotateZ(-30deg)
-      rotateX(200deg)
       scale(var(--petal-scale, 0.7));
     opacity: calc(var(--petal-op, 0.5) * 0.6);
   }
@@ -118,7 +103,6 @@
       translateY(70vh)
       translateX(calc(var(--sway-x, 40px) * 0.5))
       rotateZ(20deg)
-      rotateX(310deg)
       scale(var(--petal-scale, 0.7));
   }
   95% {
@@ -129,7 +113,6 @@
       translateY(108vh)
       translateX(calc(var(--sway-x, 40px) * -0.3))
       rotateZ(-10deg)
-      rotateX(380deg)
       scale(calc(var(--petal-scale, 0.7) * 0.5));
     opacity: 0;
   }
