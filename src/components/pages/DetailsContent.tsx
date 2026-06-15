@@ -81,9 +81,31 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [failoverMsg, setFailoverMsg] = useState('');
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const triedProviders = useRef<Set<number>>(new Set());
+  const playerRef = useRef<HTMLDivElement>(null);
 
   // Wake Lock - keep screen awake during video playback
   useWakeLock(playing);
+
+  // Keyboard shortcuts (only active when player is open) — must be before early return
+  const DETAIL_TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
+  useKeyboardShortcuts(playing, {
+    onTogglePlayPause: () => setPlaying(p => !p),
+    onToggleFullscreen: () => { playerRef.current?.requestFullscreen?.(); },
+    onExit: () => setPlaying(false),
+    onPreviousEpisode: () => { if (epIdx > 1) setEpIdx(epIdx - 1); },
+    onNextEpisode: () => setEpIdx(epIdx + 1),
+    onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); } },
+    onToggleSubtitles: () => {},
+    onSwitchProvider: () => { if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
+    onPopOutPip: () => { if (show && activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: CS[show.cs].bg, acc: CS[show.cs].acc }, show.id); } },
+    onNextSeason: () => { const maxSeason = show?.media_type === 'tv' ? Math.ceil((show?.eps || 12) / 12) : 1; if (season < maxSeason) { setSeason(season + 1); setEpIdx(1); } },
+    onPreviousSeason: () => { if (season > 1) { setSeason(season - 1); setEpIdx(1); } },
+    onToggleWatchlist: () => toggleWatchlist(),
+    onGoBack: () => router.back(),
+    onNextTab: () => { const tabs = DETAIL_TABS.map(t => t[0]); const ci = tabs.indexOf(tab); if (ci < tabs.length - 1) setTab(tabs[ci + 1]); },
+    onPrevTab: () => { const tabs = DETAIL_TABS.map(t => t[0]); const ci = tabs.indexOf(tab); if (ci > 0) setTab(tabs[ci - 1]); },
+    onScrollToTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+  });
 
   // If show came from SSR, seed fullDetails with initial credits/similar
   useEffect(() => {
@@ -318,27 +340,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     || null;
 
   const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
-
-  // Keyboard shortcuts (only active when player is open)
-  const playerRef = useRef<HTMLDivElement>(null);
-  useKeyboardShortcuts(playing, {
-    onTogglePlayPause: () => setPlaying(p => !p),
-    onToggleFullscreen: () => { playerRef.current?.requestFullscreen?.(); },
-    onExit: () => setPlaying(false),
-    onPreviousEpisode: () => { if (epIdx > 1) setEpIdx(epIdx - 1); },
-    onNextEpisode: () => setEpIdx(epIdx + 1),
-    onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); } },
-    onToggleSubtitles: () => {}, // placeholder for future real subtitles
-    onSwitchProvider: () => { if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
-    onPopOutPip: () => { if (activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); } },
-    onNextSeason: () => { if (season < seasons) { setSeason(season + 1); setEpIdx(1); } },
-    onPreviousSeason: () => { if (season > 1) { setSeason(season - 1); setEpIdx(1); } },
-    onToggleWatchlist: () => toggleWatchlist(),
-    onGoBack: () => router.back(),
-    onNextTab: () => { const tabs = TABS.map(t => t[0]); const ci = tabs.indexOf(tab); if (ci < tabs.length - 1) setTab(tabs[ci + 1]); },
-    onPrevTab: () => { const tabs = TABS.map(t => t[0]); const ci = tabs.indexOf(tab); if (ci > 0) setTab(tabs[ci - 1]); },
-    onScrollToTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
-  });
 
   const handlePostComment = async () => {
     if (!user || !profile || !commentText.trim() || !show) return;

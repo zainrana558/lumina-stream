@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { isSupabaseConfigured, createClient } from '@/lib/supabase/client';
+import { useState, useEffect } from 'react';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 const BADGES: Record<string, { min: number; label: string; color: string }> = {
   explorer: { min: 0,  label: 'Explorer',  color: '#78D621' },
@@ -60,40 +60,29 @@ interface GenreProgressProps {
 }
 
 export default function GenreProgress({ genre }: GenreProgressProps) {
-  const [count, setCount] = useState(0);
-  const [loaded, setLoaded] = useState(false);
+  const [count, setCount] = useState(() => getLocalVisits()[genre] || 0);
+  const [serverLoaded, setServerLoaded] = useState(() => !isSupabaseConfigured());
+  const loaded = serverLoaded;
 
-  // Load visit count: Supabase first, localStorage fallback
-  const loadCount = useCallback(async () => {
-    // Start with localStorage value (synchronous, fast)
-    const localCount = getLocalVisits()[genre] || 0;
-    setCount(localCount);
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
 
-    // Try Supabase for cross-device count
-    if (isSupabaseConfigured()) {
-      try {
-        const res = await fetch('/api/genre-visits');
-        const data = await res.json() as { visits?: Record<string, number> };
+    fetch('/api/genre-visits')
+      .then(res => res.json() as Promise<{ visits?: Record<string, number> }>)
+      .then(data => {
         const serverCount = data.visits?.[genre] ?? 0;
-        // Use the higher of local vs server (merge)
+        const localCount = getLocalVisits()[genre] || 0;
         const merged = Math.max(localCount, serverCount);
         setCount(merged);
         if (serverCount > localCount) {
-          // Sync server count down to localStorage
           const visits = getLocalVisits();
           visits[genre] = serverCount;
           setLocalVisits(visits);
         }
-      } catch {
-        // Keep localStorage value
-      }
-    }
-    setLoaded(true);
+      })
+      .catch(() => {})
+      .finally(() => setServerLoaded(true));
   }, [genre]);
-
-  useEffect(() => {
-    loadCount();
-  }, [loadCount]);
 
   // Listen for localStorage changes (other tabs)
   useEffect(() => {

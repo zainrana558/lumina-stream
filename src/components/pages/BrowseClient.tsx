@@ -94,7 +94,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const [sort, setSort] = useState<SortKey>('r');
   const [isMobile, setIsMobile] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [moodHasMore, setMoodHasMore] = useState(true);
   const [browseSource, setBrowseSource] = useState<BrowseSource>('all');
   const currentPageRef = useRef(1);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -105,7 +105,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const [searchPage, setSearchPage] = useState(1);
   const [searchTotalPages, setSearchTotalPages] = useState(0);
   const [searchTotalResults, setSearchTotalResults] = useState(0);
-  const [activeQuery, setActiveQuery] = useState('');
+
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
@@ -119,8 +119,18 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const [moodLoading, setMoodLoading] = useState(false);
   const moodInitRef = useRef(false);
 
+  const activeQuery = q.trim();
   const isSearching = activeQuery.length > 0;
   const isMoodMode = !!moodConfig;
+
+  // Determine hasMore based on mode (derived — no setState effect needed)
+  const hasMore = isMoodMode
+    ? moodHasMore
+    : isSearching
+      ? searchPage < searchTotalPages
+      : browseSource === 'anime'
+        ? animeHasMore
+        : true;
 
   // Track viewport width for mobile detection
   useEffect(() => {
@@ -140,7 +150,13 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         setAnimeShows([]);
         currentPageRef.current = 1;
         setAnimePage(1);
-        setHasMore(true);
+        setMoodHasMore(true);
+        setQ('');
+        setSearchResults([]);
+        setSearchPage(1);
+        setSearchTotalPages(0);
+        setSearchTotalResults(0);
+        setSuggestions([]);
         moodInitRef.current = false;
       }
       return;
@@ -153,7 +169,6 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     setMoodLoading(true);
     setGenre('All');
     setQ('');
-    setActiveQuery('');
     setSearchResults([]);
 
     const genresCsv = moodConfig.anilistGenres.join(',');
@@ -173,12 +188,12 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       currentPageRef.current = 1;
       setAnimePage(1);
       setAnimeHasMore(!!animeData.pageInfo?.hasNextPage);
-      setHasMore(tmdbItems.length > 0 || (animeData.results || []).length > 0);
+      setMoodHasMore(tmdbItems.length > 0 || (animeData.results || []).length > 0);
       setMoodLoading(false);
     }).catch(() => {
       setMoodLoading(false);
     });
-  }, [moodParam]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [moodParam]);
 
   // Fetch initial AniList batch when source includes anime (non-mood mode only)
   useEffect(() => {
@@ -202,23 +217,14 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (searchAbortRef.current) searchAbortRef.current.abort();
 
-    if (!q.trim()) {
-      setActiveQuery('');
-      setSearchResults([]);
-      setSearchPage(1);
-      setSearchTotalPages(0);
-      setSearchTotalResults(0);
-      setSuggestions([]);
-      return;
-    }
-
-    setSearchLoading(true);
+    if (!q.trim()) return; // searchResults, searchPage etc. cleared by q-change handler in mood reset
 
     debounceRef.current = setTimeout(async () => {
       const controller = new AbortController();
       searchAbortRef.current = controller;
 
       try {
+        setSearchLoading(true);
         const res = await fetch(
           `/api/search?q=${encodeURIComponent(q.trim())}&page=1&source=${browseSource}`,
           { signal: controller.signal }
@@ -234,7 +240,6 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         setSearchTotalPages(data.total_pages || 0);
         setSearchTotalResults(data.total_results || 0);
         setSuggestions(data.suggestions || []);
-        setActiveQuery(q.trim());
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
       } finally {
@@ -257,7 +262,6 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       if (isSearching) {
         const nextPage = searchPage + 1;
         if (nextPage > searchTotalPages) {
-          setHasMore(false);
           setLoadingMore(false);
           return;
         }
@@ -268,7 +272,6 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         const fresh = newItems.filter(i => !existingIds.has(i.id));
         setSearchResults(prev => [...prev, ...fresh]);
         setSearchPage(nextPage);
-        if (nextPage >= searchTotalPages || fresh.length === 0) setHasMore(false);
       } else if (isMoodMode && moodConfig) {
         // Mood mode — load more from TMDB discover + AniList genre
         const tmdbNext = currentPageRef.current + 1;
@@ -305,7 +308,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
 
         // Stop when both are exhausted
         if ((tmdbData.results?.length || 0) === 0 && (animeData.results?.length || 0) === 0) {
-          setHasMore(false);
+          setMoodHasMore(false);
         }
       } else {
         // Normal browse mode — load more based on source
@@ -353,9 +356,9 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
             setAnimeHasMore(animeData.pageInfo?.hasNextPage ?? false);
           }
 
-          // Stop when both are exhausted
+          // Stop when both are exhausted — moodHasMoreRef prevents further calls
           if (tmdbData.results?.length === 0 && animeData.results?.length === 0) {
-            setHasMore(false);
+            setMoodHasMore(false);
           }
         } else {
           // TMDB only
@@ -372,7 +375,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
             });
             currentPageRef.current = nextPage;
           } else {
-            setHasMore(false);
+            // No more TMDB results — stop loading
+            currentPageRef.current = nextPage - 1;
           }
         }
       }
@@ -381,24 +385,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, isSearching, isMoodMode, searchPage, searchTotalPages, activeQuery, browseSource, animePage, animeShows.length, searchResults.length, moodConfig]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Determine hasMore based on mode
-  useEffect(() => {
-    if (isMoodMode) {
-      // In mood mode, hasMore is managed by loadMore
-      return;
-    }
-    if (isSearching) {
-      setHasMore(searchPage < searchTotalPages);
-    } else if (browseSource === 'anime') {
-      setHasMore(animeHasMore);
-    } else if (browseSource === 'all') {
-      setHasMore(true);
-    } else {
-      setHasMore(true);
-    }
-  }, [isSearching, searchPage, searchTotalPages, browseSource, animeHasMore, isMoodMode]);
+  }, [loadingMore, hasMore, isSearching, isMoodMode, searchPage, searchTotalPages, activeQuery, browseSource, animePage, animeShows.length, searchResults.length, moodConfig]);
 
   // Get the combined source list for browse mode
   const browseList = useMemo(() => {

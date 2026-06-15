@@ -29,7 +29,8 @@ export default function HorrorPage({ initialShows }: { initialShows: MediaItem[]
 
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
-  hasMoreRef.current = hasMore;
+
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;

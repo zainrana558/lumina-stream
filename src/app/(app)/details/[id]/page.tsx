@@ -3,7 +3,7 @@ import { getAnimeDetail, anilistToMediaItem } from '@/lib/anilist/client';
 import DetailsContent from '@/components/pages/DetailsContent';
 import type { Metadata } from 'next';
 import { tmdbToMedia, isAnilistId, toAnilistId } from '@/types';
-import type { TMDBShow } from '@/types';
+import type { TMDBShow, MediaItem } from '@/types';
 
 interface TMDBShowData {
   id: number;
@@ -92,20 +92,13 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
 
   // ── AniList route: ID >= ANILIST_ID_OFFSET ──
   if (isAnilistId(showId)) {
+    let show: MediaItem | null = null;
     try {
       const anilistId = toAnilistId(showId);
       const data = await getAnimeDetail(anilistId);
-      if (data) {
-        const show = anilistToMediaItem(data);
-        return (
-          <DetailsContent
-            showId={showId}
-            initialShow={show}
-          />
-        );
-      }
+      if (data) show = anilistToMediaItem(data);
     } catch { /* fall through to null */ }
-    return <DetailsContent showId={showId} initialShow={null} />;
+    return <DetailsContent showId={showId} initialShow={show} />;
   }
 
   // ── TMDB route: standard ID ──
