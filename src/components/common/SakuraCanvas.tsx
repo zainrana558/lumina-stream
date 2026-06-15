@@ -4,8 +4,10 @@ import { useEffect, useRef } from 'react';
 
 /* ═══════════════════════════════════════════════════════════════
    SakuraCanvas — Canvas 2D cherry blossom petal system
-   ~250 petals with smooth cursor repulsion: petals gently
-   push away from the cursor and flutter back naturally.
+   ~250 falling petals + cursor breeze vortex + trail wake.
+   Nearby petals swirl tangentially around the cursor like
+   a gentle wind vortex. Micro-petals spawn along the cursor
+   path for a magical trailing effect.
    ═══════════════════════════════════════════════════════════════ */
 
 interface Petal {
@@ -22,18 +24,37 @@ interface Petal {
   hue: number;
   saturation: number;
   lightness: number;
-  vx: number;  // velocity x (for cursor push)
-  vy: number;  // velocity y (for cursor push)
+  vx: number;
+  vy: number;
+}
+
+interface TrailPetal {
+  x: number;
+  y: number;
+  size: number;
+  rotation: number;
+  rotSpeed: number;
+  fallSpeed: number;
+  swayAmp: number;
+  swayFreq: number;
+  swayPhase: number;
+  opacity: number;
+  life: number;
+  hue: number;
+  saturation: number;
+  lightness: number;
+  vx: number;
+  vy: number;
 }
 
 interface Cursor {
   x: number;
   y: number;
-  px: number; // previous x
-  py: number; // previous y
+  px: number;
+  py: number;
   active: boolean;
-  dx: number; // delta x this frame
-  dy: number; // delta y this frame
+  dx: number;
+  dy: number;
 }
 
 const PETAL_COLORS = [
@@ -74,7 +95,7 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
   };
 }
 
-function drawPetal(ctx: CanvasRenderingContext2D, p: Petal) {
+function drawPetal(ctx: CanvasRenderingContext2D, p: { x: number; y: number; size: number; rotation: number; hue: number; saturation: number; lightness: number; opacity: number }) {
   const { x, y, size, rotation, hue, saturation, lightness, opacity } = p;
   const halfS = size * 0.5;
 
@@ -143,7 +164,12 @@ export default function SakuraCanvas() {
     for (let i = 0; i < 50; i++) petals.push(createPetal(w, h, 'medium', true));
     for (let i = 0; i < 20; i++) petals.push(createPetal(w, h, 'large', true));
 
-    // ── Cursor tracking (listens on document so it works everywhere) ──
+    // ── Trail system ──
+    const trail: TrailPetal[] = [];
+    const MAX_TRAIL = 60;
+    let trailSpawnAccum = 0;
+
+    // ── Cursor tracking ──
     const onMouseMove = (e: MouseEvent) => {
       const cur = cursorRef.current;
       cur.px = cur.x;
@@ -160,16 +186,21 @@ export default function SakuraCanvas() {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseleave', onMouseLeave);
 
-    // Interaction params
-    const PUSH_RADIUS = 150;       // influence radius
-    const PUSH_STRENGTH = 2.5;     // radial repulsion force
-    const VELOCITY_DECAY = 0.92;   // velocity damping per frame
-    const MOUSE_SPEED_FACTOR = 0.12; // how much cursor speed amplifies push
+    // ── Vortex params ──
+    const VORTEX_RADIUS = 160;
+    const TANGENT_STRENGTH = 3.0;
+    const REPULSE_STRENGTH = 0.8;
+    const VELOCITY_DECAY = 0.92;
+    const MOUSE_SPEED_FACTOR = 0.15;
+
+    // ── Trail params ──
+    const TRAIL_SPEED_THRESHOLD = 2;
+    const TRAIL_SPAWN_RATE = 0.35;
 
     let lastTime = performance.now();
 
     const animate = (now: number) => {
-      const dt = Math.min((now - lastTime) / 16.667, 3); // normalize to ~60fps, cap at 3x
+      const dt = Math.min((now - lastTime) / 16.667, 3);
       lastTime = now;
       timeRef.current += 0.016 * dt;
       const t = timeRef.current;
@@ -179,41 +210,101 @@ export default function SakuraCanvas() {
 
       ctx.clearRect(0, 0, cw, ch);
 
+      // ── Spawn trail petals along cursor path ──
+      if (cur.active) {
+        const mouseSpeed = Math.sqrt(cur.dx * cur.dx + cur.dy * cur.dy);
+        if (mouseSpeed > TRAIL_SPEED_THRESHOLD) {
+          trailSpawnAccum += mouseSpeed * TRAIL_SPAWN_RATE;
+          while (trailSpawnAccum >= 1 && trail.length < MAX_TRAIL) {
+            trailSpawnAccum -= 1;
+            const col = PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)];
+            const sz = 2 + Math.random() * 5;
+            const angle = Math.random() * Math.PI * 2;
+            const spread = 5 + Math.random() * 12;
+            trail.push({
+              x: cur.x + Math.cos(angle) * spread,
+              y: cur.y + Math.sin(angle) * spread,
+              size: sz,
+              rotation: Math.random() * 360,
+              rotSpeed: (Math.random() - 0.5) * 4,
+              fallSpeed: 0.2 + Math.random() * 0.4,
+              swayAmp: 8 + Math.random() * 15,
+              swayFreq: 0.4 + Math.random() * 0.8,
+              swayPhase: Math.random() * Math.PI * 2,
+              opacity: 0.5 + Math.random() * 0.4,
+              life: 1,
+              hue: col.h + (Math.random() - 0.5) * 15,
+              saturation: col.s + (Math.random() - 0.5) * 10,
+              lightness: col.l + (Math.random() - 0.5) * 8,
+              vx: (Math.random() - 0.5) * 0.5,
+              vy: (Math.random() - 0.5) * 0.3,
+            });
+          }
+        }
+      }
+
+      // ── Update & draw trail petals ──
+      for (let i = trail.length - 1; i >= 0; i--) {
+        const tp = trail[i];
+        tp.life -= 0.012 * dt;
+        if (tp.life <= 0) { trail.splice(i, 1); continue; }
+        tp.y += tp.fallSpeed * dt;
+        tp.x += Math.sin(t * tp.swayFreq + tp.swayPhase) * tp.swayAmp * 0.01 * dt;
+        tp.x += tp.vx * dt;
+        tp.y += tp.vy * dt;
+        tp.rotation += tp.rotSpeed * dt;
+        tp.vx *= 0.97;
+        tp.vy *= 0.97;
+        drawPetal(ctx, { ...tp, opacity: tp.opacity * tp.life * tp.life });
+      }
+
+      // ── Update & draw main petals ──
       for (const p of petals) {
-        // ── Cursor interaction: smooth radial repulsion ──
+        // ── Breeze vortex: tangential swirl + mild radial push ──
         if (cur.active) {
           const ddx = p.x - cur.x;
           const ddy = p.y - cur.y;
           const dist = Math.sqrt(ddx * ddx + ddy * ddy);
 
-          if (dist < PUSH_RADIUS && dist > 1) {
-            // Smooth cubic falloff — strongest at center, zero at edge
-            const norm = 1 - dist / PUSH_RADIUS;
+          if (dist < VORTEX_RADIUS && dist > 1) {
+            const norm = 1 - dist / VORTEX_RADIUS;
             const force = norm * norm * (3 - 2 * norm); // smoothstep
 
-            // Radial push direction (away from cursor)
+            // Radial unit vector (outward)
             const nx = ddx / dist;
             const ny = ddy / dist;
 
-            // Mouse speed amplifies the push
+            // Tangent unit vector (perpendicular)
+            const tx = -ny;
+            const ty = nx;
+
             const mouseSpeed = Math.sqrt(cur.dx * cur.dx + cur.dy * cur.dy);
             const speedBoost = 1 + mouseSpeed * MOUSE_SPEED_FACTOR;
 
-            p.vx += nx * PUSH_STRENGTH * force * speedBoost * dt;
-            p.vy += ny * PUSH_STRENGTH * force * speedBoost * dt;
+            // Swirl direction follows cursor movement cross product
+            const cross = cur.dx * ny - cur.dy * nx;
+            const swirlDir = cross >= 0 ? 1 : -1;
 
-            // Gentle spin from the turbulence
-            p.rotation += (cur.dx * ny - cur.dy * nx) * 0.15 * force * dt;
+            // Tangent force — main swirl effect (petals curve around cursor)
+            p.vx += tx * TANGENT_STRENGTH * force * speedBoost * swirlDir * dt;
+            p.vy += ty * TANGENT_STRENGTH * force * speedBoost * swirlDir * dt;
+
+            // Mild radial push — prevents collapsing into cursor
+            p.vx += nx * REPULSE_STRENGTH * force * speedBoost * dt;
+            p.vy += ny * REPULSE_STRENGTH * force * speedBoost * dt;
+
+            // Spin from turbulence
+            p.rotation += cross * 0.2 * force * dt;
           }
         }
 
-        // Apply velocity with smooth decay
+        // Apply velocity with frame-rate independent decay
         p.x += p.vx * dt;
         p.y += p.vy * dt;
         p.vx *= Math.pow(VELOCITY_DECAY, dt);
         p.vy *= Math.pow(VELOCITY_DECAY, dt);
 
-        // Natural falling motion
+        // Natural falling motion (always runs, never stops)
         p.y += p.fallSpeed * dt;
         p.x += Math.sin(t * p.swayFreq + p.swayPhase) * p.swayAmp * 0.008 * dt;
         p.rotation += p.rotSpeed * dt;
