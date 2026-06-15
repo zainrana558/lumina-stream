@@ -48,7 +48,7 @@ const PETAL_COLORS = [
 
 function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', spread: boolean): Petal {
   const col = PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)];
-  const sizeMulti = tier === 'tiny' ? 2.2 : tier === 'medium' ? 3.5 : 5;
+  const sizeMulti = tier === 'tiny' ? 1.4 : tier === 'medium' ? 2.2 : 3.2;
   const baseSize = (3 + Math.random() * 5) * sizeMulti;
 
   return {
