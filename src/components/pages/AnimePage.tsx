@@ -5,7 +5,7 @@ import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
 import Card from '@/components/common/Card';
 import GenreToolbar from '@/components/common/GenreToolbar';
-import GenreParticles from '@/components/common/GenreParticles';
+import SakuraCanvas from '@/components/common/SakuraCanvas';
 import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
@@ -183,7 +183,7 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
           }} />
         </div>
 
-        <GenreParticles genre="anime" />
+        <SakuraCanvas />
         <GenreTrivia genre="anime" color="rgba(255,183,197,.4)" />
 
         {/* ── Search, sort, filter toolbar ── */}
