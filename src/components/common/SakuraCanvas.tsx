@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react';
 
 /* ═══════════════════════════════════════════════════════════════
    SakuraCanvas — Canvas 2D cherry blossom petal system
-   ~250 petals with cursor interaction: petals get pushed by
-   mouse movement and gently drift toward the cursor.
+   ~250 petals with smooth cursor repulsion: petals gently
+   push away from the cursor and flutter back naturally.
    ═══════════════════════════════════════════════════════════════ */
 
 interface Petal {
@@ -161,10 +161,10 @@ export default function SakuraCanvas() {
     document.addEventListener('mouseleave', onMouseLeave);
 
     // Interaction params
-    const PUSH_RADIUS = 120;    // how far cursor influence reaches
-    const PUSH_STRENGTH = 0.35; // how hard cursor pushes petals
-    const DRIFT_STRENGTH = 0.012; // gentle pull toward cursor when still
-    const VELOCITY_DECAY = 0.94; // how fast pushed velocity fades
+    const PUSH_RADIUS = 150;       // influence radius
+    const PUSH_STRENGTH = 2.5;     // radial repulsion force
+    const VELOCITY_DECAY = 0.92;   // velocity damping per frame
+    const MOUSE_SPEED_FACTOR = 0.12; // how much cursor speed amplifies push
 
     let lastTime = performance.now();
 
@@ -180,37 +180,38 @@ export default function SakuraCanvas() {
       ctx.clearRect(0, 0, cw, ch);
 
       for (const p of petals) {
-        // ── Cursor interaction ──
+        // ── Cursor interaction: smooth radial repulsion ──
         if (cur.active) {
           const ddx = p.x - cur.x;
           const ddy = p.y - cur.y;
           const dist = Math.sqrt(ddx * ddx + ddy * ddy);
 
-          if (dist < PUSH_RADIUS && dist > 0.1) {
+          if (dist < PUSH_RADIUS && dist > 1) {
+            // Smooth cubic falloff — strongest at center, zero at edge
             const norm = 1 - dist / PUSH_RADIUS;
+            const force = norm * norm * (3 - 2 * norm); // smoothstep
 
-            // Push away from cursor movement direction
-            if (Math.abs(cur.dx) > 0.5 || Math.abs(cur.dy) > 0.5) {
-              p.vx += cur.dx * PUSH_STRENGTH * norm * dt;
-              p.vy += cur.dy * PUSH_STRENGTH * norm * dt;
-            }
+            // Radial push direction (away from cursor)
+            const nx = ddx / dist;
+            const ny = ddy / dist;
 
-            // Gentle drift toward cursor when cursor is still
-            if (Math.abs(cur.dx) < 1 && Math.abs(cur.dy) < 1) {
-              p.vx -= (ddx / dist) * DRIFT_STRENGTH * norm * dt;
-              p.vy -= (ddy / dist) * DRIFT_STRENGTH * norm * dt;
-            }
+            // Mouse speed amplifies the push
+            const mouseSpeed = Math.sqrt(cur.dx * cur.dx + cur.dy * cur.dy);
+            const speedBoost = 1 + mouseSpeed * MOUSE_SPEED_FACTOR;
 
-            // Extra rotation from cursor turbulence
-            p.rotation += (cur.dx + cur.dy) * 0.3 * norm * dt;
+            p.vx += nx * PUSH_STRENGTH * force * speedBoost * dt;
+            p.vy += ny * PUSH_STRENGTH * force * speedBoost * dt;
+
+            // Gentle spin from the turbulence
+            p.rotation += (cur.dx * ny - cur.dy * nx) * 0.15 * force * dt;
           }
         }
 
-        // Apply velocity with decay
+        // Apply velocity with smooth decay
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        p.vx *= VELOCITY_DECAY;
-        p.vy *= VELOCITY_DECAY;
+        p.vx *= Math.pow(VELOCITY_DECAY, dt);
+        p.vy *= Math.pow(VELOCITY_DECAY, dt);
 
         // Natural falling motion
         p.y += p.fallSpeed * dt;
@@ -233,9 +234,9 @@ export default function SakuraCanvas() {
         drawPetal(ctx, p);
       }
 
-      // Decay cursor delta each frame so "still" detection works
-      cur.dx *= 0.8;
-      cur.dy *= 0.8;
+      // Decay cursor delta each frame
+      cur.dx *= 0.6;
+      cur.dy *= 0.6;
 
       rafRef.current = requestAnimationFrame(animate);
     };
