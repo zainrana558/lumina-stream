@@ -314,7 +314,6 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem {
     _anilistCover: getAniListCover(media) || undefined,
     _anilistBanner: media.bannerImage || undefined,
     _malId: media.idMal || undefined,
-    _anilistId: media.id,
     _anilistUrl: media.siteUrl,
   };
 }

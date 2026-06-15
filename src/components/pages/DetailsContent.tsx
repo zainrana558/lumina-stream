@@ -178,7 +178,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       .then(r => r.json())
       .then(data => { setProviders(data.providers || []); setSelectedProvider(0); })
       .catch(() => setProviders([]));
-  }, [playing, showId, season, epIdx, show, isAnilist, anilistId]);
+  }, [playing, showId, season, epIdx, show]);
 
   // Fetch comments
   useEffect(() => {
@@ -232,7 +232,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       }
     } catch { /* silent */ }
     setLoadingSimilar(false);
-  }, [show?.id, show?.media_type, loadingSimilar, hasMoreSimilar, fullDetails?.similar?.results, isAnilist]);
+  }, [show?.id, show?.media_type, show?._isAnilist, loadingSimilar, hasMoreSimilar, fullDetails?.similar?.results]);
 
   // Auto-failover: if provider fails, try the next one automatically
   const handleProviderFail = useCallback(() => {
