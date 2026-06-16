@@ -118,36 +118,85 @@ export default function SakuraCanvas() {
       ctx.clearRect(0, 0, cw, ch);
 
       // ── Wind system ──
-      // Base wind: steady leftward drift
       const baseWind = -(0.35 + Math.sin(t * 0.15) * 0.12);
-      // Gust: periodic bursts (peaks every ~21s, lasts ~4s)
       const gustCycle = Math.sin(t * 0.3);
       const gust = gustCycle > 0.5 ? (gustCycle - 0.5) * 5.0 : 0;
-      const gustDir = -(baseWind > 0 ? 1 : -1); // gust always in wind direction
-      const totalGust = gust * gustDir;
+      const totalGust = -gust; // always leftward
 
-      // ── Draw gust visual streaks ──
-      if (gust > 0.1) {
-        const gustAlpha = Math.min((gust - 0.1) * 0.12, 0.06);
-        // Multiple horizontal streaks sweeping left
-        for (let g = 0; g < 5; g++) {
-          const yBase = (t * 40 + g * ch / 5) % (ch + 200) - 100;
-          const xOff = Math.sin(t * 0.8 + g * 1.7) * 60;
-          const streakLen = 200 + gust * 150;
-          const grad = ctx.createLinearGradient(cw - xOff, yBase, cw - xOff - streakLen, yBase);
-          grad.addColorStop(0, `rgba(255, 180, 200, 0)`);
-          grad.addColorStop(0.3, `rgba(255, 180, 200, ${gustAlpha})`);
-          grad.addColorStop(0.7, `rgba(255, 180, 200, ${gustAlpha * 0.7})`);
-          grad.addColorStop(1, `rgba(255, 180, 200, 0)`);
+      // ── Draw organic wind gust ribbons ──
+      if (gust > 0.05) {
+        const gustStrength = Math.min(gust / 2.5, 1); // 0–1 normalized
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+
+        for (let r = 0; r < 8; r++) {
+          const seed = r * 2.39 + 0.5;
+          // Each ribbon drifts across the screen leftward, looping
+          const speed = 120 + r * 25;
+          const xHead = ((cw + 300) - (t * speed + seed * 400) % (cw + 600));
+          // Vertical center oscillates organically
+          const yCenter = ch * (0.1 + r * 0.11) + Math.sin(t * 0.4 + seed) * 40;
+
+          // Ribbon thickness varies along its length
+          const ribbonLen = 250 + gustStrength * 200;
+          const segments = 12;
+
+          // Build top and bottom edges as bezier curves
+          const topPts: [number, number][] = [];
+          const botPts: [number, number][] = [];
+
+          for (let s = 0; s <= segments; s++) {
+            const frac = s / segments;
+            // Position along ribbon (sweeps right-to-left)
+            const x = xHead - frac * ribbonLen;
+            // Sway: multi-frequency sinusoidal for organic undulation
+            const sway1 = Math.sin(t * 1.8 + frac * 4 + seed) * (15 + gustStrength * 25);
+            const sway2 = Math.sin(t * 2.7 + frac * 7 + seed * 1.3) * (6 + gustStrength * 10);
+            const sway3 = Math.cos(t * 0.9 + frac * 2.5 + seed * 0.7) * (8 + gustStrength * 12);
+            const totalSway = sway1 + sway2 + sway3;
+
+            // Thickness: thickest at head, tapering to nothing at tail
+            const thickness = (1 - frac * frac) * (12 + gustStrength * 22) * (0.6 + Math.sin(t * 1.2 + seed + frac * 3) * 0.4);
+
+            topPts.push([x, yCenter + totalSway - thickness]);
+            botPts.push([x, yCenter + totalSway + thickness]);
+          }
+
+          // Draw as a filled shape with smooth curves
           ctx.beginPath();
-          ctx.moveTo(cw - xOff, yBase - 25 - gust * 15);
-          ctx.lineTo(cw - xOff - streakLen, yBase - 10);
-          ctx.lineTo(cw - xOff - streakLen, yBase + 10);
-          ctx.lineTo(cw - xOff, yBase + 25 + gust * 15);
+          ctx.moveTo(topPts[0][0], topPts[0][1]);
+          for (let s = 1; s < topPts.length - 1; s++) {
+            const xc = (topPts[s][0] + topPts[s + 1][0]) / 2;
+            const yc = (topPts[s][1] + topPts[s + 1][1]) / 2;
+            ctx.quadraticCurveTo(topPts[s][0], topPts[s][1], xc, yc);
+          }
+          ctx.lineTo(topPts[topPts.length - 1][0], topPts[topPts.length - 1][1]);
+
+          // Bottom edge (reverse)
+          for (let s = botPts.length - 1; s >= 1; s--) {
+            if (s === botPts.length - 1) {
+              ctx.lineTo(botPts[s][0], botPts[s][1]);
+            } else {
+              const xc = (botPts[s][0] + botPts[s - 1][0]) / 2;
+              const yc = (botPts[s][1] + botPts[s - 1][1]) / 2;
+              ctx.quadraticCurveTo(botPts[s][0], botPts[s][1], xc, yc);
+            }
+          }
+          ctx.lineTo(botPts[0][0], botPts[0][1]);
           ctx.closePath();
+
+          // Gradient fill along ribbon length
+          const grad = ctx.createLinearGradient(xHead, yCenter, xHead - ribbonLen, yCenter);
+          const baseAlpha = gustStrength * 0.035 * (0.5 + Math.sin(t * 0.6 + seed) * 0.5);
+          grad.addColorStop(0, `rgba(255, 190, 210, 0)`);
+          grad.addColorStop(0.15, `rgba(255, 190, 210, ${baseAlpha})`);
+          grad.addColorStop(0.45, `rgba(255, 200, 220, ${baseAlpha * 1.2})`);
+          grad.addColorStop(0.8, `rgba(255, 180, 200, ${baseAlpha * 0.5})`);
+          grad.addColorStop(1, `rgba(255, 180, 200, 0)`);
           ctx.fillStyle = grad;
           ctx.fill();
         }
+        ctx.restore();
       }
 
       // ── Petals ──
