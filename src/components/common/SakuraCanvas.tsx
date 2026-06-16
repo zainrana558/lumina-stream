@@ -16,6 +16,12 @@ interface Petal {
   fallSpeed: number;
   swayAmp: number; swayFreq: number; swayPhase: number;
   rotSpeed: number;
+  // Per-petal gust response
+  gustDelay: number;      // how quickly this petal catches the gust (0–1)
+  gustCatch: number;      // how much wind this petal catches (size-dependent)
+  flutterFreq: number;    // high-freq flutter during gust
+  flutterPhase: number;
+  gustSwayX: number;      // smoothed current gust sway (for inertia)
 }
 
 const COLORS = [
@@ -45,6 +51,11 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
     swayFreq: 0.2 + Math.random() * 0.45,
     swayPhase: Math.random() * Math.PI * 2,
     rotSpeed: (Math.random() - 0.5) * (tier === 'tiny' ? 1.0 : tier === 'medium' ? 1.8 : 2.5),
+    gustDelay: 0.3 + Math.random() * 0.7,
+    gustCatch: 0.4 + Math.random() * 0.6 + (tier === 'tiny' ? 0.3 : 0),
+    flutterFreq: 3 + Math.random() * 4,
+    flutterPhase: Math.random() * Math.PI * 2,
+    gustSwayX: 0,
   };
 }
 
@@ -201,13 +212,24 @@ export default function SakuraCanvas() {
 
       // ── Petals ──
       for (const p of petals) {
-        // Gust amplifies the sway dramatically
-        const gustSway = totalGust * p.swayAmp * 0.04;
-        const wobble = Math.sin(t * p.swayFreq + p.swayPhase) * 0.06;
-        const drift = baseWind + totalGust + gustSway + wobble;
+        // Staggered gust pickup: each petal responds with its own delay
+        const gustResponse = Math.max(0, (gust - 0.5 * p.gustDelay) / (1 - 0.5 * p.gustDelay));
+        const gustForce = -gustResponse * p.gustCatch;
+
+        // Smooth the gust sway with inertia (prevents instant lurch)
+        const gustTarget = gustForce * p.swayAmp * 0.012;
+        p.gustSwayX += (gustTarget - p.gustSwayX) * 0.04 * dt;
+
+        // High-freq flutter that intensifies during gust (like a leaf catching air)
+        const flutterAmp = 0.03 + Math.abs(gustForce) * 0.25;
+        const flutter = Math.sin(t * p.flutterFreq + p.flutterPhase) * flutterAmp;
+
+        // Secondary low flutter for organic feel
+        const flutter2 = Math.sin(t * p.flutterFreq * 0.4 + p.flutterPhase * 1.7) * flutterAmp * 0.5;
+
+        const drift = baseWind + p.gustSwayX + flutter + flutter2;
         p.x += drift * p.swayAmp * 0.006 * dt;
-        p.y += (p.fallSpeed + Math.abs(totalGust) * 0.12) * dt;
-        // No rotation from gust — only natural gentle tumble
+        p.y += (p.fallSpeed + Math.abs(gustForce) * 0.1) * dt;
         p.rotation += p.rotSpeed * 0.015 * dt;
 
         if (p.y > ch + p.size * 2) {
