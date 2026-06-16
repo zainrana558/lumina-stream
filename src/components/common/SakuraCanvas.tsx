@@ -129,7 +129,7 @@ export default function SakuraCanvas() {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
 
-        for (let r = 0; r < 8; r++) {
+        for (let r = 0; r < 5; r++) {
           const seed = r * 2.39 + 0.5;
           // Each ribbon drifts across the screen leftward, looping
           const speed = 120 + r * 25;
@@ -139,7 +139,7 @@ export default function SakuraCanvas() {
 
           // Ribbon thickness varies along its length
           const ribbonLen = 250 + gustStrength * 200;
-          const segments = 12;
+          const segments = 8;
 
           // Build top and bottom edges as bezier curves
           const topPts: [number, number][] = [];
@@ -201,11 +201,14 @@ export default function SakuraCanvas() {
 
       // ── Petals ──
       for (const p of petals) {
-        // Per-petal drift (always leftward, slight wobble)
-        const drift = baseWind + totalGust + Math.sin(t * p.swayFreq + p.swayPhase) * 0.06;
+        // Gust amplifies the sway dramatically
+        const gustSway = totalGust * p.swayAmp * 0.04;
+        const wobble = Math.sin(t * p.swayFreq + p.swayPhase) * 0.06;
+        const drift = baseWind + totalGust + gustSway + wobble;
         p.x += drift * p.swayAmp * 0.006 * dt;
         p.y += (p.fallSpeed + Math.abs(totalGust) * 0.12) * dt;
-        p.rotation += (p.rotSpeed * 0.015 + totalGust * 0.3) * dt;
+        // No rotation from gust — only natural gentle tumble
+        p.rotation += p.rotSpeed * 0.015 * dt;
 
         if (p.y > ch + p.size * 2) {
           p.y = -p.size * 2 - Math.random() * 60;
