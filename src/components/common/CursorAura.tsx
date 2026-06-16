@@ -4,13 +4,13 @@ import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 
 /* ═══════════════════════════════════════════════════════════════
-   CursorAura — GSAP-driven petal trail that follows the cursor
+   CursorAura — GSAP-driven petal trail that streams behind
+   the cursor like petals caught in the wind.
 
-   A pool of sakura petals orbit and trail behind the cursor using
-   GSAP tweens for buttery-smooth following with staggered delays.
-   Each petal has its own bezier-curve shape, soft pink gradient,
-   and gentle rotation. Petals scatter outward on fast movement
-   and reconverge when the cursor slows.
+   Each petal follows the cursor with increasing stagger delay,
+   forming a trail. Petals sway side-to-side (cosine wave) to
+   simulate wind drift. When the cursor moves fast, the trail
+   stretches and petals fan out; when slow, they gently converge.
    ═══════════════════════════════════════════════════════════════ */
 
 const PETAL_COUNT = 18;
@@ -18,19 +18,24 @@ const PETAL_COUNT = 18;
 interface TrailPetal {
   el: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  // GSAP-tweened position (the smoothed follow point)
   x: number;
   y: number;
+  // Visual properties
   size: number;
   rotation: number;
   rotSpeed: number;
   hue: number;
   sat: number;
   lit: number;
-  opacity: number;
-  angle: number;        // orbital angle around cursor
-  orbitRadius: number;  // base distance from cursor center
-  scatter: number;      // extra scatter on fast movement
-  delay: number;        // GSAP follow delay (staggered)
+  baseOpacity: number;
+  // Trail behavior
+  followDelay: number;    // GSAP tween duration — higher = trails further behind
+  swayAmp: number;        // Side-to-side wind sway amplitude
+  swayFreq: number;       // Sway oscillation speed
+  swayPhase: number;      // Phase offset so petals don't sway in sync
+  trailOffset: number;    // How far back in the trail (normalized 0–1)
+  windBias: number;       // Slight vertical drift (petals gently falling as they trail)
 }
 
 const COLORS = [
@@ -40,12 +45,13 @@ const COLORS = [
   { h: 342, s: 82, l: 85 },
 ];
 
-function drawPetalShape(ctx: CanvasRenderingContext2D, size: number, hue: number, sat: number, lit: number, opacity: number) {
+function drawPetalShape(ctx: CanvasRenderingContext2D, size: number, hue: number, sat: number, lit: number) {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const px = size * dpr;
-  ctx.clearRect(0, 0, px * 3, px * 3);
+  const canvasSize = px * 3;
+  ctx.clearRect(0, 0, canvasSize, canvasSize);
   ctx.save();
-  ctx.translate(px * 1.5, px * 1.5);
+  ctx.translate(canvasSize / 2, canvasSize / 2);
 
   const hs = px * 0.5;
 
@@ -60,15 +66,13 @@ function drawPetalShape(ctx: CanvasRenderingContext2D, size: number, hue: number
   g.addColorStop(0.4, `hsla(${hue}, ${sat}%, ${lit}%, 1)`);
   g.addColorStop(1, `hsla(${hue - 5}, ${Math.min(100, sat + 10)}%, ${Math.max(50, lit - 15)}%, 1)`);
   ctx.fillStyle = g;
-  ctx.globalAlpha = opacity;
   ctx.fill();
 
-  // Subtle vein for larger petals
   if (size > 8) {
     ctx.beginPath();
     ctx.moveTo(0, -hs * 0.6);
     ctx.quadraticCurveTo(hs * 0.05, 0, 0, hs * 0.7);
-    ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${Math.max(40, lit - 25)}%, ${opacity * 0.3})`;
+    ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${Math.max(40, lit - 25)}%, 0.25)`;
     ctx.lineWidth = 0.6 * dpr;
     ctx.stroke();
   }
@@ -76,11 +80,10 @@ function drawPetalShape(ctx: CanvasRenderingContext2D, size: number, hue: number
   ctx.restore();
 }
 
-function createTrailPetal(index: number): TrailPetal {
+function createTrailPetal(index: number, total: number): TrailPetal {
   const canvas = document.createElement('canvas');
   const col = COLORS[Math.floor(Math.random() * COLORS.length)];
-  // Mix of small, medium petals for the trail
-  const size = 6 + Math.random() * 12;
+  const size = 5 + Math.random() * 11;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const pxSize = Math.ceil(size * 3 * dpr);
   canvas.width = pxSize;
@@ -93,31 +96,34 @@ function createTrailPetal(index: number): TrailPetal {
   const sat = col.s + (Math.random() - 0.5) * 15;
   const lit = col.l + (Math.random() - 0.5) * 10;
 
-  drawPetalShape(ctx, size, hue, sat, lit, 1);
+  drawPetalShape(ctx, size, hue, sat, lit);
+
+  // Normalize position in trail: 0 = closest to cursor, 1 = furthest
+  const trailNorm = index / total;
 
   return {
     el: canvas,
     ctx,
-    x: -100,
-    y: -100,
+    x: -200,
+    y: -200,
     size,
     rotation: Math.random() * Math.PI * 2,
-    rotSpeed: (Math.random() - 0.5) * 2.5,
+    rotSpeed: (Math.random() - 0.5) * 3,
     hue, sat, lit,
-    opacity: 0.55 + Math.random() * 0.35,
-    angle: (index / PETAL_COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.8,
-    orbitRadius: 12 + Math.random() * 35,
-    scatter: 0,
-    delay: 0.06 + index * 0.018, // Staggered delays for trailing
+    baseOpacity: 0.7 - trailNorm * 0.45, // Fade out toward the tail
+    followDelay: 0.12 + trailNorm * 0.55, // 0.12s → 0.67s follow delay
+    swayAmp: 8 + Math.random() * 18 + trailNorm * 10, // Tail petals sway wider
+    swayFreq: 1.8 + Math.random() * 2.5,
+    swayPhase: Math.random() * Math.PI * 2 + index * 0.4,
+    trailOffset: trailNorm,
+    windBias: 0.15 + Math.random() * 0.35, // Gentle downward drift
   };
 }
 
 export default function CursorAura() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const petalsRef = useRef<TrailPetal[]>([]);
   const rafRef = useRef(0);
-  const cursorRef = useRef({ x: -200, y: -200, speed: 0, visible: false });
-  const targetScatterRef = useRef(0);
+  const cursorRef = useRef({ x: -200, y: -200, speed: 0, visible: false, prevX: -200, prevY: -200 });
 
   useEffect(() => {
     const container = containerRef.current;
@@ -126,43 +132,42 @@ export default function CursorAura() {
     // Create petal pool
     const petals: TrailPetal[] = [];
     for (let i = 0; i < PETAL_COUNT; i++) {
-      const petal = createTrailPetal(i);
+      const petal = createTrailPetal(i, PETAL_COUNT);
       petal.el.style.position = 'absolute';
       petal.el.style.top = '0';
       petal.el.style.left = '0';
       petal.el.style.willChange = 'transform';
       petal.el.style.pointerEvents = 'none';
-      petal.el.style.filter = 'drop-shadow(0 0 3px rgba(255,150,180,0.3))';
+      petal.el.style.filter = 'drop-shadow(0 0 2px rgba(255,150,180,0.25))';
       container.appendChild(petal.el);
       petals.push(petal);
     }
-    petalsRef.current = petals;
 
-    const speedMapper = gsap.utils.mapRange(0, 40, 0, 1);
+    const speedMapper = gsap.utils.mapRange(0, 45, 0, 1);
     const clamp = gsap.utils.clamp(0, 1);
 
-    // GSAP quickTo for smooth scatter interpolation
-    const scatterTween = { value: 0 };
-    const scatterTo = gsap.quickTo(scatterTween, 'value', {
-      duration: 0.4,
-      ease: 'power2.out',
+    // Smooth speed for trail stretch
+    const speedState = { value: 0 };
+    const speedTo = gsap.quickTo(speedState, 'value', {
+      duration: 0.5,
+      ease: 'power3.out',
     });
 
     const onMove = (e: MouseEvent) => {
-      const speed = Math.abs(e.movementX) + Math.abs(e.movementY);
-      const mappedSpeed = clamp(speedMapper(speed));
+      const rawSpeed = Math.abs(e.movementX) + Math.abs(e.movementY);
+      const mapped = clamp(speedMapper(rawSpeed));
+      cursorRef.current.prevX = cursorRef.current.x;
+      cursorRef.current.prevY = cursorRef.current.y;
       cursorRef.current.x = e.clientX;
       cursorRef.current.y = e.clientY;
-      cursorRef.current.speed = mappedSpeed;
+      cursorRef.current.speed = mapped;
       cursorRef.current.visible = true;
-
-      // More scatter on fast movement
-      scatterTo(mappedSpeed * 45);
+      speedTo(mapped);
     };
 
     const onLeave = () => {
       cursorRef.current.visible = false;
-      scatterTo(0);
+      speedTo(0);
     };
 
     const onEnter = () => {
@@ -173,43 +178,60 @@ export default function CursorAura() {
     document.addEventListener('mouseleave', onLeave);
     document.addEventListener('mouseenter', onEnter);
 
-    // Animation loop — updates petal positions each frame
-    let lastTime = performance.now();
+    // Animation loop
+    const startTime = performance.now();
+    let lastTime = startTime;
+
     const animate = (now: number) => {
       const dt = Math.min(now - lastTime, 50) / 16.667;
       lastTime = now;
+      const elapsed = (now - startTime) * 0.001; // seconds
+
       const { x: cx, y: cy, visible } = cursorRef.current;
-      const scatter = scatterTween.value;
+      const smoothSpeed = speedState.value;
 
       for (let i = 0; i < petals.length; i++) {
         const p = petals[i];
 
-        // GSAP smooth follow with per-petal staggered delay
+        // GSAP tween toward cursor — staggered duration creates the trail
         gsap.to(p, {
           x: cx,
           y: cy,
-          duration: 0.5 + p.delay * 0.6,
+          duration: p.followDelay,
           ease: 'power2.out',
           overwrite: 'auto',
         });
 
-        // Calculate orbital position around the smoothed (x, y)
-        const orbAngle = p.angle + now * 0.0004 * (i % 2 === 0 ? 1 : -1);
-        const effectiveRadius = p.orbitRadius + scatter * (0.5 + (i / PETAL_COUNT) * 0.5);
+        // The petal's actual GSAP-smoothed position lags behind cursor.
+        // We add wind sway perpendicular to nothing specific — just a
+        // gentle sinusoidal drift that makes it look like wind.
+        const swayX = Math.cos(elapsed * p.swayFreq + p.swayPhase) * p.swayAmp;
+        const swayY = Math.sin(elapsed * p.swayFreq * 0.7 + p.swayPhase) * p.swayAmp * 0.4;
 
-        const offsetX = Math.cos(orbAngle) * effectiveRadius;
-        const offsetY = Math.sin(orbAngle) * effectiveRadius * 0.6; // Slight elliptical
+        // Gentle downward drift — petals in the tail sink a bit
+        const drift = p.trailOffset * p.windBias * 25;
 
-        // Gentle rotation
-        p.rotation += p.rotSpeed * 0.02 * dt;
+        // Speed stretches the trail: faster = more offset from center
+        const speedSpread = smoothSpeed * p.trailOffset * 12;
 
-        // Fade based on visibility and distance
-        const targetOpacity = visible ? p.opacity : 0;
+        // Rotation — faster when cursor moves, gentle tumble when still
+        const rotBoost = smoothSpeed * 0.08;
+        p.rotation += (p.rotSpeed * 0.018 + rotBoost) * dt;
+
+        // Opacity: fade tail, fade when invisible
+        const targetOpacity = visible ? p.baseOpacity : 0;
 
         const drawSize = Math.ceil(p.size * 3);
         const halfDraw = drawSize / 2;
 
-        p.el.style.transform = `translate(${p.x + offsetX - halfDraw}px, ${p.y + offsetY - halfDraw}px) rotate(${p.rotation}rad)`;
+        // Final position = GSAP-smoothed follow + wind sway + drift
+        // Deterministic per-petal speed scatter using sin (no Math.random in render loop)
+        const scatterX = Math.sin(elapsed * 3.7 + i * 1.9) * speedSpread;
+        const scatterY = Math.cos(elapsed * 2.3 + i * 2.7) * speedSpread * 0.3;
+        const finalX = p.x + swayX + scatterX;
+        const finalY = p.y + swayY + drift + scatterY;
+
+        p.el.style.transform = `translate(${finalX - halfDraw}px, ${finalY - halfDraw}px) rotate(${p.rotation}rad)`;
         p.el.style.opacity = String(targetOpacity);
       }
 
