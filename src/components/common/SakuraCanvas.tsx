@@ -170,10 +170,10 @@ export default function SakuraCanvas() {
 
     // ── Cursor attraction params ──
     const ATTRACT_R = 200;
-    const ATTRACT_FORCE = 0.04;
-    const SPRING_K = 0.03;
-    const SPRING_DAMP = 0.90;
-    const WAKE_FORCE = 0.02;
+    const ATTRACT_FORCE = 0.06;
+    const SPRING_K = 0.04;
+    const SPRING_DAMP = 0.96;   // overdamped — no oscillation
+    const WAKE_FORCE = 0.025;
 
     // ── Bend params ──
     const BEND_K = 0.08;
@@ -216,9 +216,10 @@ export default function SakuraCanvas() {
         // ════════════════════════════════════
         // 1) NATURAL FALLING — kinematic, direct
         // ════════════════════════════════════
+        // Gentle downward drift + cosine sway (derivative-based for smoothness)
         p.y += p.fallSpeed * dt;
-        p.x += Math.sin(t * p.swayFreq + p.swayPhase) * p.swayAmp * 0.004 * dt;
-        p.rotation += p.rotSpeed * dt;
+        p.x += Math.cos(t * p.swayFreq + p.swayPhase) * p.swayAmp * 0.003 * dt;
+        p.rotation += p.rotSpeed * 0.015 * dt;  // slow gentle tumble
 
         // ════════════════════════════════════
         // 2) CURSOR ATTRACTION — spring offset
