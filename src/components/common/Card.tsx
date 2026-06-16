@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useRef, useCallback, useEffect, useState } from 'react';
+import { memo, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { MediaItem } from '@/types';
@@ -14,20 +14,12 @@ interface CardProps {
   sz?: 'sm' | 'md' | 'lg';
   rank?: number;
   ring?: string;
-  index?: number;
 }
 
-const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '', index }: CardProps) {
+const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: CardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const raf = useRef<number | undefined>(undefined);
   const router = useRouter();
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const delay = (index ?? 0) * 40;
-    const t = setTimeout(() => setVisible(true), delay + 100);
-    return () => clearTimeout(t);
-  }, [index]);
   const s = CS[show.cs];
   const h = { sm: 200, md: 296, lg: 370 }[sz];
   // Support both TMDB poster paths and AniList full cover URLs
@@ -74,23 +66,15 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '', ind
   const onLeave = useCallback(() => {
     const el = ref.current;
     if (el) {
-      el.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
       el.style.transform = 'perspective(750px) rotateY(0) rotateX(0) scale3d(1,1,1)';
       const sh = el.querySelector('.cshine');
       if (sh) (sh as HTMLElement).style.opacity = '0';
-      // Remove transition after it completes so hover is instant again
-      setTimeout(() => { if (el) el.style.transition = ''; }, 500);
     }
   }, []);
 
   useEffect(() => () => { if (raf.current) cancelAnimationFrame(raf.current); }, []);
 
   return (
-    <div style={{
-      opacity: visible ? 1 : 0,
-      transform: visible ? 'none' : 'translateY(16px) scale(0.97)',
-      transition: visible ? 'opacity 0.4s ease, transform 0.4s ease' : 'none',
-    }}>
     <div ref={ref} className="card" style={{ height: h }} onMouseMove={onMove} onTouchMove={onTouchMove} onMouseLeave={onLeave} onClick={() => {
       vibrateTap();
       if (onClick) {
@@ -100,7 +84,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '', ind
         router.push(`/details/${show.id}`);
       }
     }}>
-      <div className="cring" style={ring ? { background: ring, backgroundSize: '200% 200%', animation: 'ring-shimmer 3s ease infinite' } : {}} />
+      <div className="cring" style={ring ? { background: ring } : {}} />
       <div style={{ position: 'relative', height: '100%', borderRadius: 'inherit', overflow: 'hidden', background: s.bg }}>
         {/* TMDB poster image */}
         {hasPoster && posterSrc && (
@@ -170,7 +154,6 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '', ind
           {sz !== 'sm' && <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.48)' }}>{show.genre.slice(0, 2).join(' · ')} · {show.eps} eps</div>}
         </div>
       </div>
-    </div>
     </div>
   );
 });

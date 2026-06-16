@@ -3,37 +3,28 @@
 import { useEffect, useRef } from 'react';
 
 /* ═══════════════════════════════════════════════════════════════════
-   SakuraCanvas — Natural falling cherry blossom petals with depth
+   SakuraCanvas — Pure natural falling cherry blossom petals
 
-   3 depth layers (far / mid / near) for parallax illusion.
-   Per-petal gust amplification + turbulence for organic wind response.
-   Spatially-optimized hit detection with ribbon bounding boxes.
-   Pre-rendered petal sprites for GPU-friendly drawImage.
+   Kinematic motion only — no cursor interaction (handled by
+   CursorAura + GSAP). Just beautiful, slow, swaying petals.
    ═══════════════════════════════════════════════════════════════════ */
-
-// ── Depth constants ──
-const DEPTH_FAR = 0;
-const DEPTH_MID = 1;
-const DEPTH_NEAR = 2;
 
 interface Petal {
   x: number; y: number;
   size: number; rotation: number;
   hue: number; sat: number; lit: number; opacity: number;
   fallSpeed: number;
-  depth: number;  // 0=far, 1=mid, 2=near
-  spriteIdx: number; // index into pre-rendered sprite array
   // Multi-layer sway — 3 independent oscillators per petal
   swayAmp1: number; swayFreq1: number; swayPhase1: number;
   swayAmp2: number; swayFreq2: number; swayPhase2: number;
   swayAmp3: number; swayFreq3: number; swayPhase3: number;
   // Fall pattern
-  fallOscAmp: number;
-  fallOscFreq: number;
+  fallOscAmp: number;  // vertical bobbing amplitude
+  fallOscFreq: number; // vertical bobbing frequency
   fallOscPhase: number;
   // Rotation
   rotSpeed: number;
-  rotOscAmp: number;
+  rotOscAmp: number;  // rotation speed oscillation
   rotOscFreq: number;
   rotOscPhase: number;
   // Per-petal gust response (velocity-based physics)
@@ -41,13 +32,13 @@ interface Petal {
   gustCatch: number;
   flutterFreq: number;
   flutterPhase: number;
-  gustExposure: number;
-  gustVelX: number;
-  turbPhase1: number;
+  gustExposure: number;  // smoothed 0-1 how much gust is touching this petal
+  gustVelX: number;      // gentle leftward drift from gust
+  turbPhase1: number;    // unique turbulence oscillator phases
   turbPhase2: number;
   turbFreq1: number;
   turbFreq2: number;
-  windVar: number;
+  windVar: number;       // per-petal baseWind variation
 }
 
 const COLORS = [
@@ -57,117 +48,89 @@ const COLORS = [
   { h: 342, s: 94, l: 85 },
 ];
 
-// ── Pre-render petal sprites to offscreen canvases ──
-// One sprite per base color, at a reference size. Scaled at draw time.
-const SPRITE_REF_SIZE = 40;
-const spriteCanvases: HTMLCanvasElement[] = [];
-
-function initSprites() {
-  if (spriteCanvases.length > 0) return;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const px = SPRITE_REF_SIZE * dpr;
-
-  for (const col of COLORS) {
-    const c = document.createElement('canvas');
-    c.width = px;
-    c.height = px;
-    const cx = c.getContext('2d')!;
-    cx.scale(dpr, dpr);
-    const hs = SPRITE_REF_SIZE * 0.5;
-
-    cx.beginPath();
-    cx.moveTo(0, -hs);
-    cx.bezierCurveTo(hs * 0.8, -hs * 0.6, hs, hs * 0.2, 0, hs);
-    cx.bezierCurveTo(-hs, hs * 0.2, -hs * 0.8, -hs * 0.6, 0, -hs);
-    cx.closePath();
-
-    const g = cx.createLinearGradient(0, -hs, 0, hs);
-    g.addColorStop(0, `hsla(${col.h}, ${Math.min(100, col.s - 30)}%, ${Math.min(97, col.l + 12)}%, 1)`);
-    g.addColorStop(0.4, `hsla(${col.h}, ${col.s}%, ${col.l}%, 1)`);
-    g.addColorStop(1, `hsla(${col.h - 5}, ${Math.min(100, col.s + 10)}%, ${Math.max(50, col.l - 15)}%, 1)`);
-    cx.fillStyle = g;
-    cx.fill();
-
-    // Center vein
-    cx.beginPath();
-    cx.moveTo(0, -hs * 0.6);
-    cx.quadraticCurveTo(hs * 0.05, 0, 0, hs * 0.7);
-    cx.strokeStyle = `hsla(${col.h}, ${col.s}%, ${Math.max(40, col.l - 25)}%, 0.3)`;
-    cx.lineWidth = 0.6;
-    cx.stroke();
-
-    spriteCanvases.push(c);
-  }
-}
-
-function createPetal(w: number, h: number, depth: number, spread: boolean): Petal {
+function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', spread: boolean): Petal {
   const col = COLORS[Math.floor(Math.random() * COLORS.length)];
-  const isFar = depth === DEPTH_FAR;
-  const isNear = depth === DEPTH_NEAR;
-
-  // Depth-based size scaling
-  const sizeMult = isFar ? 0.55 : isNear ? 1.25 : 1.0;
-  const baseSize = isFar ? 3 + Math.random() * 4 : 3 + Math.random() * 5;
-  const sz = baseSize * 2.8 * sizeMult;
+  const sm = tier === 'tiny' ? 1.8 : tier === 'medium' ? 2.8 : 4.0;
+  const sz = (3 + Math.random() * 5) * sm;
   const x = Math.random() * w;
   const y = spread ? Math.random() * h * 1.2 - h * 0.1 : -sz * 2 - Math.random() * h * 0.5;
   const rand = Math.random;
-
-  // Depth-based opacity and fall speed
-  const depthOpacity = isFar ? 0.2 + rand() * 0.15 : isNear ? 0.55 + rand() * 0.3 : 0.4 + rand() * 0.35;
-  const depthFall = isFar ? 0.4 : isNear ? 1.15 : 1.0;
-
-  // Amp scaling by depth
-  const amp = isFar ? 0.5 : isNear ? 1.15 : 1.0;
-
+  const amp = tier === 'tiny' ? 0.7 : tier === 'medium' ? 1.0 : 1.4;
   return {
     x, y, size: sz,
     rotation: rand() * Math.PI * 2,
     hue: col.h + (rand() - 0.5) * 8,
     sat: col.s + (rand() - 0.5) * 5,
     lit: col.l + (rand() - 0.5) * 5,
-    opacity: depthOpacity,
-    fallSpeed: (0.06 + rand() * 0.45) * depthFall,
-    depth,
-    spriteIdx: COLORS.indexOf(col),
+    opacity: tier === 'tiny' ? 0.35 + rand() * 0.3 : 0.6 + rand() * 0.3,
+    fallSpeed: 0.06 + rand() * 0.45 + (tier === 'tiny' ? 0.03 : 0),
+    // Layer 1: slow broad sweep — wider variation
     swayAmp1: (15 + rand() * 55) * amp,
     swayFreq1: 0.08 + rand() * 0.35,
     swayPhase1: rand() * Math.PI * 2,
+    // Layer 2: medium undulation
     swayAmp2: (6 + rand() * 28) * amp,
     swayFreq2: 0.3 + rand() * 1.1,
     swayPhase2: rand() * Math.PI * 2,
+    // Layer 3: quick flutter
     swayAmp3: (2 + rand() * 12) * amp,
     swayFreq3: 1.2 + rand() * 3.2,
     swayPhase3: rand() * Math.PI * 2,
+    // Vertical bobbing (some petals float, some dive)
     fallOscAmp: rand() * 0.12,
     fallOscFreq: 0.3 + rand() * 0.6,
     fallOscPhase: rand() * Math.PI * 2,
-    rotSpeed: (rand() - 0.5) * (isFar ? 0.6 : isNear ? 2.5 : 2.2),
+    // Rotation with speed variation
+    rotSpeed: (rand() - 0.5) * (tier === 'tiny' ? 1.2 : 2.2),
     rotOscAmp: rand() * 0.8,
     rotOscFreq: 0.2 + rand() * 0.5,
     rotOscPhase: rand() * Math.PI * 2,
-    gustDelay: isFar ? 10 : 0.15 + rand() * 0.9, // far petals never gust-hit
-    gustCatch: isFar ? 0 : (isNear ? 0.4 + rand() * 0.6 : 0.25 + rand() * 0.75),
+    // Gust response
+    gustDelay: 0.15 + rand() * 0.9,
+    gustCatch: 0.25 + rand() * 0.75 + (tier === 'tiny' ? 0.2 : 0),
     flutterFreq: 2.5 + rand() * 5,
     flutterPhase: rand() * Math.PI * 2,
     gustExposure: 0,
     gustVelX: 0,
+    // Turbulence oscillators — unique chaotic motion per petal
     turbPhase1: rand() * Math.PI * 2,
     turbPhase2: rand() * Math.PI * 2,
     turbFreq1: 1.8 + rand() * 3.5,
     turbFreq2: 3.0 + rand() * 4.0,
+    // Per-petal wind variation to prevent clustering
     windVar: (rand() - 0.5) * 0.12,
   };
 }
 
-// ── Ribbon with pre-computed bounding box for spatial optimization ──
-interface RibbonData {
-  yCenter: number;
-  pts: { x: number; y: number; thickness: number }[];
-  yMin: number;  // bounding box
-  yMax: number;
-  xMin: number;
-  xMax: number;
+function drawPetal(ctx: CanvasRenderingContext2D, p: Petal) {
+  const hs = p.size * 0.5;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.rotation);
+  ctx.globalAlpha = p.opacity;
+
+  ctx.beginPath();
+  ctx.moveTo(0, -hs);
+  ctx.bezierCurveTo(hs * 0.8, -hs * 0.6, hs, hs * 0.2, 0, hs);
+  ctx.bezierCurveTo(-hs, hs * 0.2, -hs * 0.8, -hs * 0.6, 0, -hs);
+  ctx.closePath();
+
+  const g = ctx.createLinearGradient(0, -hs, 0, hs);
+  g.addColorStop(0, `hsla(${p.hue}, ${Math.min(100, p.sat - 30)}%, ${Math.min(97, p.lit + 12)}%, 1)`);
+  g.addColorStop(0.4, `hsla(${p.hue}, ${p.sat}%, ${p.lit}%, 1)`);
+  g.addColorStop(1, `hsla(${p.hue - 5}, ${Math.min(100, p.sat + 10)}%, ${Math.max(50, p.lit - 15)}%, 1)`);
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  if (p.size > 10) {
+    ctx.beginPath();
+    ctx.moveTo(0, -hs * 0.6);
+    ctx.quadraticCurveTo(hs * 0.05, 0, 0, hs * 0.7);
+    ctx.strokeStyle = `hsla(${p.hue}, ${p.sat}%, ${Math.max(40, p.lit - 25)}%, ${p.opacity * 0.3})`;
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 export default function SakuraCanvas() {
@@ -180,8 +143,6 @@ export default function SakuraCanvas() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    initSprites();
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -196,11 +157,8 @@ export default function SakuraCanvas() {
 
     const w = window.innerWidth, h = window.innerHeight;
     const petals: Petal[] = [];
-
-    // ── Create 3 depth layers (painter's order: far → mid → near) ──
-    for (let i = 0; i < 40; i++) petals.push(createPetal(w, h, DEPTH_FAR, true));
-    for (let i = 0; i < 100; i++) petals.push(createPetal(w, h, DEPTH_MID, true));
-    for (let i = 0; i < 40; i++) petals.push(createPetal(w, h, DEPTH_NEAR, true));
+    for (let i = 0; i < 50; i++) petals.push(createPetal(w, h, 'tiny', true));
+    for (let i = 0; i < 130; i++) petals.push(createPetal(w, h, 'medium', true));
 
     let lastTime = performance.now();
 
@@ -215,11 +173,13 @@ export default function SakuraCanvas() {
 
       // ── Wind system ──
       const baseWind = -(0.18 + Math.sin(t * 0.15) * 0.06);
+      // Smooth gust cycle — soft ramp, no hard on/off threshold
       const gustCycle = Math.sin(t * 0.3);
       const gust = Math.max(0, (gustCycle - 0.15)) * 3.2;
 
-      // ── Compute ribbon centerlines with bounding boxes ──
-      const ribbons: RibbonData[] = [];
+      // ── Compute ribbon centerlines (used for both drawing & petal hit-test) ──
+      interface RibbonCenter { yCenter: number; pts: { x: number; y: number; thickness: number }[] }
+      const ribbons: RibbonCenter[] = [];
 
       if (gust > 0.05) {
         const gustStrength = Math.min(gust / 2.5, 1);
@@ -235,7 +195,6 @@ export default function SakuraCanvas() {
           const centerPts: { x: number; y: number; thickness: number }[] = [];
           const topPts: [number, number][] = [];
           const botPts: [number, number][] = [];
-          let rYMin = Infinity, rYMax = -Infinity, rXMin = Infinity, rXMax = -Infinity;
 
           for (let s = 0; s <= segments; s++) {
             const frac = s / segments;
@@ -252,16 +211,9 @@ export default function SakuraCanvas() {
             centerPts.push({ x, y: cy, thickness });
             topPts.push([x, cy - thickness]);
             botPts.push([x, cy + thickness]);
-
-            // Expand bounding box (use visual thickness = ±thickness for accuracy)
-            const pad = thickness + 20;
-            if (cy - pad < rYMin) rYMin = cy - pad;
-            if (cy + pad > rYMax) rYMax = cy + pad;
-            if (x < rXMin) rXMin = x;
-            if (x > rXMax) rXMax = x;
           }
 
-          ribbons.push({ yCenter, pts: centerPts, yMin: rYMin, yMax: rYMax, xMin: rXMin, xMax: rXMax });
+          ribbons.push({ yCenter, pts: centerPts });
 
           // ── Draw ribbon ──
           ctx.save();
@@ -302,44 +254,30 @@ export default function SakuraCanvas() {
       }
 
       // ── Helper: how much gust hits a petal (0 = none, 1 = full) ──
-      // Uses bounding box early-exit to skip most petals per frame
       const getPetalGustHit = (px: number, py: number): number => {
         if (ribbons.length === 0) return 0;
         let maxHit = 0;
         for (const ribbon of ribbons) {
-          // Bounding box early-exit — O(1) instead of O(segments)
-          if (px < ribbon.xMin || px > ribbon.xMax || py < ribbon.yMin || py > ribbon.yMax) continue;
-
           for (const pt of ribbon.pts) {
             const dx = px - pt.x;
             const dy = py - pt.y;
-            const distSq = dx * dx + dy * dy;
-            // Hit radius matches visual ribbon (thickness = half-width)
-            const hitR = pt.thickness * 1.0;
-            const hitRSq = hitR * hitR * 2.25; // (1.5× radius)² for Gaussian tail
-            if (distSq > hitRSq) continue;
-            const norm = Math.sqrt(distSq) / hitR;
-            const hit = Math.exp(-norm * norm * 2.5);
-            if (hit > maxHit) maxHit = hit;
+            // Distance from ribbon centerline, normalized by thickness
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const hitRadius = pt.thickness * 0.85;
+            // Smooth bell-curve falloff — no hard edge
+            const norm = dist / hitRadius;
+            if (norm < 1.5) {
+              const hit = Math.exp(-norm * norm * 2.5);
+              if (hit > maxHit) maxHit = hit;
+            }
           }
         }
         return maxHit;
       };
 
-      // ── Update & draw petals (already in depth order: far → mid → near) ──
-      let currentDepth = DEPTH_FAR;
+      // ── Petals ──
       for (const p of petals) {
-        // Apply depth-of-field blur when transitioning to near layer
-        if (p.depth !== currentDepth) {
-          currentDepth = p.depth;
-          if (currentDepth === DEPTH_NEAR) {
-            ctx.filter = 'blur(0.8px)';
-          } else {
-            ctx.filter = 'none';
-          }
-        }
-
-        // Spatial hit test (far petals have gustDelay=10 so they never accumulate exposure)
+        // Spatial hit test against ribbon centerlines
         const rawHit = getPetalGustHit(p.x, p.y);
 
         // Temporal smoothing: fast pickup, very slow release
@@ -349,23 +287,28 @@ export default function SakuraCanvas() {
         p.gustExposure += (rawHit - p.gustExposure) * expRate * dt;
         p.gustExposure = Math.max(0, Math.min(1, p.gustExposure));
 
+        // How much gust this petal feels right now
         const feltGust = gust * p.gustExposure;
 
-        // Gust amplifies each petal's unique natural sway
+        // ── Core idea: gust AMPLIFIES the petal's unique natural sway ──
+        // Each petal already has 3 unique oscillators. The gust multiplies
+        // their amplitude, so 180 petals produce 180 different gust responses.
         const gustAmp = 1 + feltGust * p.gustCatch * 1.8;
         const sway1 = Math.sin(t * p.swayFreq1 + p.swayPhase1) * p.swayAmp1 * 0.009 * gustAmp;
         const sway2 = Math.sin(t * p.swayFreq2 + p.swayPhase2) * p.swayAmp2 * 0.006 * gustAmp;
         const sway3 = Math.cos(t * p.swayFreq3 + p.swayPhase3) * p.swayAmp3 * 0.003 * gustAmp;
 
-        // Turbulent perturbation — unique per petal
+        // Turbulent perturbation — unique per petal, only active during gust
+        // Two oscillators with different freqs create chaotic-looking motion
         const turb1 = Math.sin(t * p.turbFreq1 + p.turbPhase1) * feltGust * 0.8;
         const turb2 = Math.cos(t * p.turbFreq2 + p.turbPhase2) * feltGust * 0.5;
 
-        // Gentle leftward drift from gust
+        // Gentle leftward drift (undercurrent, NOT the main effect)
         const gustAccel = feltGust * p.gustCatch * 0.04;
         p.gustVelX -= gustAccel * dt;
         p.gustVelX *= Math.pow(0.975, dt);
 
+        // Per-petal base wind variation prevents clustering
         const petalWind = baseWind + p.windVar;
 
         p.x += (petalWind + sway1 + sway2 + sway3 + p.gustVelX + turb1 + turb2) * dt;
@@ -380,30 +323,15 @@ export default function SakuraCanvas() {
         const gustWobble = feltGust * 0.25 * Math.sin(t * p.turbFreq2 * 0.4 + p.turbPhase2);
         p.rotation += (p.rotSpeed * 0.015 * rotMod + gustWobble * 0.02) * dt;
 
-        // Wraparound — deterministic respawn position
         if (p.y > ch + p.size * 2) {
-          p.y = -p.size * 2 - 60 * ((p.hue * 7 + p.sat * 3) % 1);
-          p.x = cw * ((p.lit * 13 + p.swayPhase1) % 1);
+          p.y = -p.size * 2 - Math.random() * 60;
+          p.x = Math.random() * cw;
         }
         if (p.x < -100) p.x = cw + 80;
         if (p.x > cw + 100) p.x = -80;
 
-        // ── Draw using pre-rendered sprite ──
-        const sprite = spriteCanvases[p.spriteIdx];
-        if (sprite) {
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.rotation);
-          ctx.globalAlpha = p.opacity;
-          // Scale sprite from reference size to actual petal size
-          const scale = p.size / SPRITE_REF_SIZE;
-          ctx.drawImage(sprite, -p.size * 0.5, -p.size * 0.5, p.size, p.size);
-          ctx.restore();
-        }
+        drawPetal(ctx, p);
       }
-
-      // Reset filter after near layer
-      if (currentDepth === DEPTH_NEAR) ctx.filter = 'none';
 
       rafRef.current = requestAnimationFrame(animate);
     };

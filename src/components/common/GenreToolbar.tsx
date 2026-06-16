@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
 interface GenreToolbarProps {
   onSearch: (query: string) => void;
   onSort: (sort: string) => void;
@@ -21,9 +19,6 @@ const SORT_OPTIONS = [
 ];
 
 export default function GenreToolbar({ onSearch, onSort, genres, onGenreFilter, activeSort = 'rating_desc', activeGenre = null }: GenreToolbarProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { requestAnimationFrame(() => setMounted(true)); }, []);
-
   return (
     <div style={{
       padding: '0 clamp(1rem,5vw,3rem)',
@@ -31,13 +26,7 @@ export default function GenreToolbar({ onSearch, onSort, genres, onGenreFilter, 
       display: 'flex', flexDirection: 'column', gap: '.75rem',
       position: 'sticky', top: 64, zIndex: 5,
       paddingTop: 12, paddingBottom: 8,
-      background: 'linear-gradient(to bottom, rgba(26,10,18,0.92) 60%, rgba(26,10,18,0.6) 85%, transparent)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      borderBottom: '1px solid rgba(255,183,197,0.06)',
-      opacity: mounted ? 1 : 0,
-      transform: mounted ? 'translateY(0)' : 'translateY(-12px)',
-      transition: 'opacity 0.6s ease, transform 0.6s ease',
+      background: 'linear-gradient(to bottom, #07040F 60%, transparent)',
     }}>
       <div style={{ display: 'flex', gap: '.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: '1 1 200px' }}>

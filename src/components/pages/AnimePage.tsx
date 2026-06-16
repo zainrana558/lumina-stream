@@ -21,34 +21,9 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
   const [shows, setShows] = useState(initialShows);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [showSubtitle, setShowSubtitle] = useState(false);
-  const [showTrivia, setShowTrivia] = useState(false);
   const pageRef = useRef(3);
-  const scrollYRef = useRef(0);
-  const treeRef = useRef<HTMLDivElement>(null);
-  const orbsWrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { trackGenreVisit('anime'); }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      scrollYRef.current = window.scrollY;
-      if (treeRef.current) {
-        treeRef.current.style.transform = `translateY(${window.scrollY * 0.15}px)`;
-      }
-      if (orbsWrapperRef.current) {
-        orbsWrapperRef.current.style.transform = `translateY(${window.scrollY * 0.04}px)`;
-      }
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const t1 = setTimeout(() => setShowSubtitle(true), 800);
-    const t2 = setTimeout(() => setShowTrivia(true), 1200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
 
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
@@ -106,14 +81,13 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
         }}>
-          {/* Tree image — fixed position so it stays behind on scroll, with parallax */}
-          <div ref={treeRef} style={{
+          {/* Tree image — fixed position so it stays behind on scroll */}
+          <div style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             height: '100vh',
-            willChange: 'transform',
             backgroundImage: 'url(/anime-sakura-bg.webp)',
             backgroundSize: 'cover',
             backgroundPosition: 'center top',
@@ -135,10 +109,9 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
           `,
         }} />
 
-        {/* ── Background: Slowly pulsing sakura glow orbs (scroll-responsive) ── */}
-        <div ref={orbsWrapperRef} style={{
+        {/* ── Background: Slowly pulsing sakura glow orbs ── */}
+        <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-          willChange: 'transform',
         }}>
           {[
             { left: '8%', top: '15%', size: 320, color: 'rgba(255,150,170,0.12)', delay: '0s', dur: '14s' },
@@ -161,6 +134,21 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
           ))}
         </div>
 
+        {/* ── Delicate horizontal sweep lines ── */}
+        {useMemo(() => Array.from({ length: 4 }, (_, i) => ({
+          id: i,
+          top: `${12 + i * 22}%`,
+          delay: `${i * 3.5}s`,
+          dur: `${12 + i * 2}s`,
+        })), []).map(s => (
+          <div key={s.id} style={{
+            position: 'absolute', left: 0, right: 0, top: s.top, height: 1, zIndex: 1,
+            background: 'linear-gradient(90deg, transparent, rgba(255,183,197,0.08), rgba(255,150,170,0.06), transparent)',
+            animation: `sakura-sweep ${s.dur} ${s.delay} linear infinite`,
+            pointerEvents: 'none',
+          } as React.CSSProperties} />
+        ))}
+
         {/* ── Header ── */}
         <div style={{ position: 'relative', zIndex: 5, padding: '3rem clamp(1rem,5vw,3rem) 2rem', textAlign: 'center' }}>
           <h1 style={{
@@ -168,6 +156,12 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
             fontSize: 'clamp(2.8rem,7.5vw,5.5rem)',
             letterSpacing: '0.08em',
             fontWeight: 700,
+            background: 'linear-gradient(135deg, #FFB7C5 0%, #FF85A2 25%, #E8789A 40%, #FFB7C5 55%, #FFC8D6 70%, #FF85A2 85%, #FFB7C5 100%)',
+            backgroundSize: '300% 300%',
+            animation: 'sakura-title-flow 6s ease infinite',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            filter: 'drop-shadow(0 0 20px rgba(255,150,170,0.3))',
             marginBottom: '0.5rem',
           }}>
             <GenreIntro text="ANIME VAULT" genre="anime" />
@@ -177,30 +171,20 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
             color: 'rgba(255,183,197,0.45)',
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
-            opacity: showSubtitle ? 1 : 0,
-            transition: 'opacity 0.8s ease, transform 0.8s ease',
-            transform: showSubtitle ? 'translateY(0)' : 'translateY(8px)',
           }}>
             {filteredShows.length} series in the archive · Powered by AniList
           </p>
           <div style={{
             width: 220, height: 1.5, margin: '1rem auto 0',
             background: 'linear-gradient(90deg, transparent, #FF85A2, #FFB7C5, #FF85A2, transparent)',
+            backgroundSize: '200% 100%',
+            animation: 'sakura-title-flow 4s ease infinite',
             borderRadius: 1,
-            opacity: showSubtitle ? 1 : 0,
-            transition: 'opacity 0.8s ease, transform 0.8s ease',
-            transform: showSubtitle ? 'translateY(0)' : 'translateY(8px)',
           }} />
         </div>
 
         <SakuraCanvas />
-        <div style={{
-          opacity: showTrivia ? 1 : 0,
-          transition: 'opacity 0.8s ease 0.2s',
-          transform: showTrivia ? 'translateY(0)' : 'translateY(10px)',
-        }}>
-          <GenreTrivia genre="anime" color="rgba(255,183,197,.4)" />
-        </div>
+        <GenreTrivia genre="anime" color="rgba(255,183,197,.4)" />
 
         {/* ── Search, sort, filter toolbar ── */}
         <GenreToolbar
@@ -225,11 +209,10 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
               gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0',
               color: 'rgba(255,183,197,0.25)', letterSpacing: '.1em',
             }}>No results found</div>
-          ) : filteredShows.map((s, i) => (
+          ) : filteredShows.map((s) => (
             <div key={s.id}>
               <Card
                 show={s}
-                index={i}
                 ring="linear-gradient(135deg, #FF85A2, #FFB7C5, #E8789A, #FFC8D6, #FF85A2)"
               />
             </div>
@@ -239,19 +222,15 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
         {/* ── Infinite scroll sentinel ── */}
         <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
         {loadingMore && (
-          <div style={{ textAlign: 'center', padding: '0 0 4rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: 24, height: 24, border: '2px solid rgba(255,183,197,0.15)', borderTopColor: 'rgba(255,133,162,0.6)', borderRadius: '50%', animation: 'sakura-spin 0.8s linear infinite' }} />
-            <span style={{ color: 'rgba(255,183,197,.3)', fontSize: '.75rem', letterSpacing: '.08em' }}>Loading more</span>
+          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,183,197,.3)', fontSize: '.8rem', letterSpacing: '.08em' }}>
+            ✦ Loading...
           </div>
         )}
         {!hasMore && (
-          <div style={{ textAlign: 'center', padding: '0 0 4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-            <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,183,197,0.2))' }} />
-            <span style={{ color: 'rgba(255,183,197,.15)', fontSize: '.75rem', letterSpacing: '.06em' }} className="f-cinzel">End of archive</span>
-            <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg, rgba(255,183,197,0.2), transparent)' }} />
+          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,183,197,.15)', fontSize: '.75rem', letterSpacing: '.06em' }}>
+            — End of catalog —
           </div>
         )}
-
       </div>
   );
 }
