@@ -10,8 +10,8 @@ import { useEffect, useRef } from 'react';
    like real gusts sweeping petals sideways.
    ═══════════════════════════════════════════════════════════════ */
 
-const PETAL_COUNT = 36;
-const HISTORY_LENGTH = 80;
+const PETAL_COUNT = 30;
+const HISTORY_LENGTH = 50;
 
 // Wind gust parameters — 3 overlapping gust layers
 const GUSTS = [
@@ -83,7 +83,7 @@ function createTrailPetal(index: number): TrailPetal {
 
   const trailNorm = index / PETAL_COUNT;
   // Smaller petals overall; front slightly larger
-  const size = (3 + Math.random() * 7) * (1 - trailNorm * 0.3);
+  const size = (5 + Math.random() * 11) * (1 - trailNorm * 0.25);
 
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const pxSize = Math.ceil(size * 3 * dpr);
