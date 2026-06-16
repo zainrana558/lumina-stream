@@ -170,15 +170,15 @@ export default function SakuraCanvas() {
 
     // ── Cursor attraction params ──
     const ATTRACT_R = 200;
-    const ATTRACT_FORCE = 0.06;
-    const SPRING_K = 0.04;
-    const SPRING_DAMP = 0.96;   // overdamped — no oscillation
-    const WAKE_FORCE = 0.025;
+    const ATTRACT_FORCE = 0.25;  // strong enough for visible 40px+ drift
+    const SPRING_K = 0.006;      // weak spring — lets petals drift far toward cursor
+    const SPRING_DAMP = 0.95;    // smooth settle, no oscillation
+    const WAKE_FORCE = 0.06;
 
-    // ── Bend params ──
-    const BEND_K = 0.08;
-    const BEND_DAMP = 0.85;
-    const BEND_MAX = 28;
+    // ── Bend params (minimal — user wants attraction, not deformation) ──
+    const BEND_K = 0.06;
+    const BEND_DAMP = 0.80;
+    const BEND_MAX = 5;  // nearly invisible — just a hint of curvature
 
     let lastTime = performance.now();
 
