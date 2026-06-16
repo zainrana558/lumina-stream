@@ -161,48 +161,49 @@ export default function SakuraCanvas() {
       const baseWind = -(0.35 + Math.sin(t * 0.15) * 0.12);
       const gustCycle = Math.sin(t * 0.3);
       const gust = gustCycle > 0.5 ? (gustCycle - 0.5) * 5.0 : 0;
-      const totalGust = -gust; // always leftward
 
-      // ── Draw organic wind gust ribbons ──
+      // ── Compute ribbon centerlines (used for both drawing & petal hit-test) ──
+      interface RibbonCenter { yCenter: number; pts: { x: number; y: number; thickness: number }[] }
+      const ribbons: RibbonCenter[] = [];
+
       if (gust > 0.05) {
-        const gustStrength = Math.min(gust / 2.5, 1); // 0–1 normalized
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
+        const gustStrength = Math.min(gust / 2.5, 1);
 
         for (let r = 0; r < 5; r++) {
           const seed = r * 2.39 + 0.5;
           const speed = 140 + r * 30;
           const xHead = ((cw + 400) - (t * speed + seed * 500) % (cw + 800));
           const yCenter = ch * (0.08 + r * 0.18) + Math.sin(t * 0.4 + seed) * 50;
-
           const ribbonLen = 350 + gustStrength * 300;
           const segments = 10;
 
-          // Build top and bottom edges as bezier curves
+          const centerPts: { x: number; y: number; thickness: number }[] = [];
           const topPts: [number, number][] = [];
           const botPts: [number, number][] = [];
 
           for (let s = 0; s <= segments; s++) {
             const frac = s / segments;
-            // Position along ribbon (sweeps right-to-left)
             const x = xHead - frac * ribbonLen;
-            // Sway: multi-frequency sinusoidal for organic undulation
             const sway1 = Math.sin(t * 1.8 + frac * 4 + seed) * (15 + gustStrength * 25);
             const sway2 = Math.sin(t * 2.7 + frac * 7 + seed * 1.3) * (6 + gustStrength * 10);
             const sway3 = Math.cos(t * 0.9 + frac * 2.5 + seed * 0.7) * (8 + gustStrength * 12);
             const totalSway = sway1 + sway2 + sway3;
-
-            // Thickness: big thick head that tapers naturally to a thin tail
-            // Uses cubic falloff for that real gust feel
             const taper = Math.pow(1 - frac, 2.5);
             const baseThickness = 25 + gustStrength * 45;
             const thickness = taper * baseThickness * (0.7 + Math.sin(t * 1.2 + seed + frac * 3) * 0.3);
+            const cy = yCenter + totalSway;
 
-            topPts.push([x, yCenter + totalSway - thickness]);
-            botPts.push([x, yCenter + totalSway + thickness]);
+            centerPts.push({ x, y: cy, thickness });
+            topPts.push([x, cy - thickness]);
+            botPts.push([x, cy + thickness]);
           }
 
-          // Draw as a filled shape with smooth curves
+          ribbons.push({ yCenter, pts: centerPts });
+
+          // ── Draw ribbon ──
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+
           ctx.beginPath();
           ctx.moveTo(topPts[0][0], topPts[0][1]);
           for (let s = 1; s < topPts.length - 1; s++) {
@@ -212,7 +213,6 @@ export default function SakuraCanvas() {
           }
           ctx.lineTo(topPts[topPts.length - 1][0], topPts[topPts.length - 1][1]);
 
-          // Bottom edge (reverse)
           for (let s = botPts.length - 1; s >= 1; s--) {
             if (s === botPts.length - 1) {
               ctx.lineTo(botPts[s][0], botPts[s][1]);
@@ -225,7 +225,6 @@ export default function SakuraCanvas() {
           ctx.lineTo(botPts[0][0], botPts[0][1]);
           ctx.closePath();
 
-          // Gradient fill along ribbon length
           const grad = ctx.createLinearGradient(xHead, yCenter, xHead - ribbonLen, yCenter);
           const baseAlpha = gustStrength * 0.08 * (0.6 + Math.sin(t * 0.6 + seed) * 0.4);
           grad.addColorStop(0, `rgba(255, 195, 215, 0)`);
@@ -235,14 +234,36 @@ export default function SakuraCanvas() {
           grad.addColorStop(1, `rgba(255, 185, 205, 0)`);
           ctx.fillStyle = grad;
           ctx.fill();
+          ctx.restore();
         }
-        ctx.restore();
       }
+
+      // ── Helper: how much gust hits a petal (0 = none, 1 = full) ──
+      const getPetalGustHit = (px: number, py: number): number => {
+        if (ribbons.length === 0) return 0;
+        let maxHit = 0;
+        for (const ribbon of ribbons) {
+          for (const pt of ribbon.pts) {
+            const dx = px - pt.x;
+            const dy = py - pt.y;
+            // Distance from ribbon centerline, normalized by thickness
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const hitRadius = pt.thickness * 1.8; // affect zone slightly wider than visible ribbon
+            if (dist < hitRadius) {
+              const hit = (1 - dist / hitRadius);
+              if (hit > maxHit) maxHit = hit;
+            }
+          }
+        }
+        return maxHit;
+      };
 
       // ── Petals ──
       for (const p of petals) {
-        // Staggered gust pickup
-        const gustResponse = Math.max(0, (gust - 0.3 * p.gustDelay) / (1 - 0.3 * p.gustDelay));
+        // Only petals in the path of a ribbon get gust force
+        const gustHit = getPetalGustHit(p.x, p.y);
+        const localGust = gust * gustHit;
+        const gustResponse = Math.max(0, (localGust - 0.3 * p.gustDelay) / (1 - 0.3 * p.gustDelay));
         const gustForce = -gustResponse * p.gustCatch;
 
         // Smooth gust with fast attack / slow release
@@ -255,17 +276,17 @@ export default function SakuraCanvas() {
         const sway2 = Math.sin(t * p.swayFreq2 + p.swayPhase2) * p.swayAmp2 * 0.002;
         const sway3 = Math.cos(t * p.swayFreq3 + p.swayPhase3) * p.swayAmp3 * 0.001;
 
-        // Gust flutter
+        // Gust flutter (only if hit)
         const flutterAmp = 0.015 + Math.abs(gustForce) * 0.35;
         const flutter = Math.sin(t * p.flutterFreq + p.flutterPhase) * flutterAmp;
 
         p.x += (baseWind + sway1 + sway2 + sway3 + p.gustSwayX + flutter) * dt;
 
-        // Fall with vertical bobbing — some petals hover, some dive
+        // Fall with vertical bobbing — gust push only if hit
         const fallMod = 1 + Math.sin(t * p.fallOscFreq + p.fallOscPhase) * p.fallOscAmp;
         p.y += (p.fallSpeed * fallMod + Math.abs(gustForce) * 0.06) * dt;
 
-        // Rotation with oscillating speed — some spin fast then slow
+        // Rotation with oscillating speed
         const rotMod = 1 + Math.sin(t * p.rotOscFreq + p.rotOscPhase) * p.rotOscAmp;
         p.rotation += p.rotSpeed * 0.015 * rotMod * dt;
 
