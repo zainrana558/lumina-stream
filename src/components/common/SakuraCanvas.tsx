@@ -71,9 +71,9 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
 
   return {
     cx: x, cy: y,
-    // Pre-seed Verlet with downward velocity = fallSpeed
-    // so petals start at terminal velocity (no ramp-up)
-    px: x, py: y - fallSpeed,
+    // Pre-seed Verlet with downward velocity matching terminal v
+    // v_term = fallSpeed × GRAV_SCALE / (1−DAMP) = fallSpeed × 0.714
+    px: x, py: y - fallSpeed * 0.714,
     size: sz,
     rotation: Math.random() * Math.PI * 2,
     hue: col.h + (Math.random() - 0.5) * 10,
@@ -191,25 +191,28 @@ export default function SakuraCanvas() {
     // Physics constants (frame-normalized: dt ≡ 1 @ 60fps)
     //
     // Terminal velocity: v_term = a / (1 − damping)
-    // So a = v_desired × (1 − damping)
-    //
     // Damping = 0.965 → (1−d) = 0.035
-    //   Fall 0.5 px/f → a_grav = 0.5 × 0.035 = 0.0175
-    //   Cursor pull 3 px/f at r=30 → a = 3 × 0.035 = 0.105
-    //     F/m = G/(r²+ε²) = G/1900 → G = 0.105 × 1900 = 200
+    //
+    // Per-petal gravity: g = fallSpeed × 0.025
+    //   Tiny  (0.45-0.75): terminal 0.32-0.54 px/f (slow atmosphere)
+    //   Medium(0.30-0.90): terminal 0.21-0.64 px/f
+    //   Large (0.25-0.85): terminal 0.18-0.61 px/f
+    //
+    // Cursor field: F/m = G/(r²+ε²)
+    //   At r=80:  a = 1200/6725 = 0.178  (10× gravity → strong pull)
+    //   At r=150: a = 1200/23225 = 0.052 (3× gravity → visible)
+    //   At r=250: a = 1200/63725 = 0.019 (≈ gravity → gentle nudge)
     // ═══════════════════════════════════════════════════════
     const DAMP = 0.965;
-    const INV_DAMP_COMP = 1 - DAMP; // 0.035
+    const GRAV_SCALE = 0.025;    // per-petal: g = fallSpeed × this
+    const SWAY_ACCEL = 0.12;
 
-    const GRAV_ACCEL = 0.018;     // downward gravity (gives ~0.51 px/f terminal)
-    const SWAY_ACCEL = 0.12;      // lateral sway force magnitude
+    const FIELD_R = 280;          // cursor field radius (wider reach)
+    const FIELD_G = 1200;         // cursor gravitational constant (6× stronger)
+    const FIELD_EPS = 35;
+    const FIELD_INNER = 0.25;     // full strength below 25% of radius (70px)
 
-    const FIELD_R = 250;          // cursor field radius
-    const FIELD_G = 200;          // cursor gravitational constant
-    const FIELD_EPS = 35;         // softening radius
-    const FIELD_INNER = 0.35;     // inner boundary ratio (full strength below)
-
-    const WAKE_G_LOCAL = WAKE_G;
+    const WAKE_G_LOCAL = 400;     // wake pull (scaled up with field)
     const BEND_K = 0.1;
     const BEND_DAMP = 0.88;
     const BEND_MAX = 30;
@@ -252,9 +255,10 @@ export default function SakuraCanvas() {
       for (const p of petals) {
         let fx = 0, fy = 0;
 
-        // ── Force 1: Gravity (constant downward) ──
-        // F = m·g, so a = g (mass cancels)
-        fy += p.mass * GRAV_ACCEL;
+        // ── Force 1: Per-petal gravity (constant downward) ──
+        // Each petal has its own g based on fallSpeed → natural speed variation
+        // F = m·g_petal, terminal v = fallSpeed × GRAV_SCALE / (1−DAMP)
+        fy += p.mass * p.fallSpeed * GRAV_SCALE;
 
         // ── Force 2: Sway (oscillating lateral) ──
         // Cosine-derived acceleration for smooth back-and-forth
@@ -336,7 +340,7 @@ export default function SakuraCanvas() {
           const nx2 = Math.random() * cw;
           const ny2 = -p.size * 2 - Math.random() * 40;
           p.cx = nx2; p.cy = ny2;
-          p.px = nx2; p.py = ny2 - p.fallSpeed; // pre-seed fall velocity
+          p.px = nx2; p.py = ny2 - p.fallSpeed * 0.714; // pre-seed terminal velocity
           p.swayPhase = Math.random() * Math.PI * 2;
           p.rotSpeed = (Math.random() - 0.5) * (p.size < 10 ? 1.5 : p.size < 20 ? 2.5 : 3.5);
           p.bendX = 0; p.bendY = 0; p.bendVX = 0; p.bendVY = 0;
