@@ -131,15 +131,12 @@ export default function SakuraCanvas() {
 
         for (let r = 0; r < 5; r++) {
           const seed = r * 2.39 + 0.5;
-          // Each ribbon drifts across the screen leftward, looping
-          const speed = 120 + r * 25;
-          const xHead = ((cw + 300) - (t * speed + seed * 400) % (cw + 600));
-          // Vertical center oscillates organically
-          const yCenter = ch * (0.1 + r * 0.11) + Math.sin(t * 0.4 + seed) * 40;
+          const speed = 140 + r * 30;
+          const xHead = ((cw + 400) - (t * speed + seed * 500) % (cw + 800));
+          const yCenter = ch * (0.08 + r * 0.18) + Math.sin(t * 0.4 + seed) * 50;
 
-          // Ribbon thickness varies along its length
-          const ribbonLen = 250 + gustStrength * 200;
-          const segments = 8;
+          const ribbonLen = 350 + gustStrength * 300;
+          const segments = 10;
 
           // Build top and bottom edges as bezier curves
           const topPts: [number, number][] = [];
@@ -155,8 +152,11 @@ export default function SakuraCanvas() {
             const sway3 = Math.cos(t * 0.9 + frac * 2.5 + seed * 0.7) * (8 + gustStrength * 12);
             const totalSway = sway1 + sway2 + sway3;
 
-            // Thickness: thickest at head, tapering to nothing at tail
-            const thickness = (1 - frac * frac) * (12 + gustStrength * 22) * (0.6 + Math.sin(t * 1.2 + seed + frac * 3) * 0.4);
+            // Thickness: big thick head that tapers naturally to a thin tail
+            // Uses cubic falloff for that real gust feel
+            const taper = Math.pow(1 - frac, 2.5);
+            const baseThickness = 25 + gustStrength * 45;
+            const thickness = taper * baseThickness * (0.7 + Math.sin(t * 1.2 + seed + frac * 3) * 0.3);
 
             topPts.push([x, yCenter + totalSway - thickness]);
             botPts.push([x, yCenter + totalSway + thickness]);
@@ -187,12 +187,12 @@ export default function SakuraCanvas() {
 
           // Gradient fill along ribbon length
           const grad = ctx.createLinearGradient(xHead, yCenter, xHead - ribbonLen, yCenter);
-          const baseAlpha = gustStrength * 0.035 * (0.5 + Math.sin(t * 0.6 + seed) * 0.5);
-          grad.addColorStop(0, `rgba(255, 190, 210, 0)`);
-          grad.addColorStop(0.15, `rgba(255, 190, 210, ${baseAlpha})`);
-          grad.addColorStop(0.45, `rgba(255, 200, 220, ${baseAlpha * 1.2})`);
-          grad.addColorStop(0.8, `rgba(255, 180, 200, ${baseAlpha * 0.5})`);
-          grad.addColorStop(1, `rgba(255, 180, 200, 0)`);
+          const baseAlpha = gustStrength * 0.08 * (0.6 + Math.sin(t * 0.6 + seed) * 0.4);
+          grad.addColorStop(0, `rgba(255, 195, 215, 0)`);
+          grad.addColorStop(0.08, `rgba(255, 200, 220, ${baseAlpha * 1.3})`);
+          grad.addColorStop(0.3, `rgba(255, 205, 225, ${baseAlpha})`);
+          grad.addColorStop(0.6, `rgba(255, 190, 210, ${baseAlpha * 0.4})`);
+          grad.addColorStop(1, `rgba(255, 185, 205, 0)`);
           ctx.fillStyle = grad;
           ctx.fill();
         }
