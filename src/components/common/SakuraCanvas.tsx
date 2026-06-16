@@ -33,7 +33,12 @@ interface Petal {
   flutterFreq: number;
   flutterPhase: number;
   gustExposure: number;  // smoothed 0-1 how much gust is touching this petal
-  gustVelX: number;      // horizontal velocity from gust (accumulates, decays via drag)
+  gustVelX: number;      // gentle leftward drift from gust
+  turbPhase1: number;    // unique turbulence oscillator phases
+  turbPhase2: number;
+  turbFreq1: number;
+  turbFreq2: number;
+  windVar: number;       // per-petal baseWind variation
 }
 
 const COLORS = [
@@ -58,18 +63,18 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
     sat: col.s + (rand() - 0.5) * 5,
     lit: col.l + (rand() - 0.5) * 5,
     opacity: tier === 'tiny' ? 0.35 + rand() * 0.3 : 0.6 + rand() * 0.3,
-    fallSpeed: 0.12 + rand() * 0.3 + (tier === 'tiny' ? 0.04 : 0),
-    // Layer 1: slow broad sweep
-    swayAmp1: (20 + rand() * 40) * amp,
-    swayFreq1: 0.12 + rand() * 0.25,
+    fallSpeed: 0.06 + rand() * 0.45 + (tier === 'tiny' ? 0.03 : 0),
+    // Layer 1: slow broad sweep — wider variation
+    swayAmp1: (15 + rand() * 55) * amp,
+    swayFreq1: 0.08 + rand() * 0.35,
     swayPhase1: rand() * Math.PI * 2,
     // Layer 2: medium undulation
-    swayAmp2: (8 + rand() * 20) * amp,
-    swayFreq2: 0.4 + rand() * 0.8,
+    swayAmp2: (6 + rand() * 28) * amp,
+    swayFreq2: 0.3 + rand() * 1.1,
     swayPhase2: rand() * Math.PI * 2,
     // Layer 3: quick flutter
-    swayAmp3: (3 + rand() * 8) * amp,
-    swayFreq3: 1.5 + rand() * 2.5,
+    swayAmp3: (2 + rand() * 12) * amp,
+    swayFreq3: 1.2 + rand() * 3.2,
     swayPhase3: rand() * Math.PI * 2,
     // Vertical bobbing (some petals float, some dive)
     fallOscAmp: rand() * 0.12,
@@ -81,12 +86,19 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
     rotOscFreq: 0.2 + rand() * 0.5,
     rotOscPhase: rand() * Math.PI * 2,
     // Gust response
-    gustDelay: 0.2 + rand() * 0.8,
-    gustCatch: 0.3 + rand() * 0.7 + (tier === 'tiny' ? 0.3 : 0),
+    gustDelay: 0.15 + rand() * 0.9,
+    gustCatch: 0.25 + rand() * 0.75 + (tier === 'tiny' ? 0.2 : 0),
     flutterFreq: 2.5 + rand() * 5,
     flutterPhase: rand() * Math.PI * 2,
     gustExposure: 0,
     gustVelX: 0,
+    // Turbulence oscillators — unique chaotic motion per petal
+    turbPhase1: rand() * Math.PI * 2,
+    turbPhase2: rand() * Math.PI * 2,
+    turbFreq1: 1.8 + rand() * 3.5,
+    turbFreq2: 3.0 + rand() * 4.0,
+    // Per-petal wind variation to prevent clustering
+    windVar: (rand() - 0.5) * 0.12,
   };
 }
 
@@ -146,7 +158,7 @@ export default function SakuraCanvas() {
     const w = window.innerWidth, h = window.innerHeight;
     const petals: Petal[] = [];
     for (let i = 0; i < 50; i++) petals.push(createPetal(w, h, 'tiny', true));
-    for (let i = 0; i < 100; i++) petals.push(createPetal(w, h, 'medium', true));
+    for (let i = 0; i < 130; i++) petals.push(createPetal(w, h, 'medium', true));
 
     let lastTime = performance.now();
 
@@ -268,39 +280,48 @@ export default function SakuraCanvas() {
         // Spatial hit test against ribbon centerlines
         const rawHit = getPetalGustHit(p.x, p.y);
 
-        // Temporal smoothing: fast pickup, slow release — prevents flicker
-        const upRate = 0.06 / (0.4 + p.gustDelay);
-        const downRate = 0.018;
+        // Temporal smoothing: fast pickup, very slow release
+        const upRate = 0.045 / (0.3 + p.gustDelay * 0.7);
+        const downRate = 0.012;
         const expRate = rawHit > p.gustExposure ? upRate : downRate;
         p.gustExposure += (rawHit - p.gustExposure) * expRate * dt;
         p.gustExposure = Math.max(0, Math.min(1, p.gustExposure));
 
-        // Wind acceleration from gust (proportional to exposure × gust strength)
-        const gustAccel = gust * p.gustExposure * p.gustCatch * 0.18;
-        // Apply as force to velocity — this is real physics: F = ma
+        // How much gust this petal feels right now
+        const feltGust = gust * p.gustExposure;
+
+        // ── Core idea: gust AMPLIFIES the petal's unique natural sway ──
+        // Each petal already has 3 unique oscillators. The gust multiplies
+        // their amplitude, so 180 petals produce 180 different gust responses.
+        const gustAmp = 1 + feltGust * p.gustCatch * 0.7;
+        const sway1 = Math.sin(t * p.swayFreq1 + p.swayPhase1) * p.swayAmp1 * 0.003 * gustAmp;
+        const sway2 = Math.sin(t * p.swayFreq2 + p.swayPhase2) * p.swayAmp2 * 0.002 * gustAmp;
+        const sway3 = Math.cos(t * p.swayFreq3 + p.swayPhase3) * p.swayAmp3 * 0.001 * gustAmp;
+
+        // Turbulent perturbation — unique per petal, only active during gust
+        // Two oscillators with different freqs create chaotic-looking motion
+        const turb1 = Math.sin(t * p.turbFreq1 + p.turbPhase1) * feltGust * 0.4;
+        const turb2 = Math.cos(t * p.turbFreq2 + p.turbPhase2) * feltGust * 0.25;
+
+        // Gentle leftward drift (undercurrent, NOT the main effect)
+        const gustAccel = feltGust * p.gustCatch * 0.04;
         p.gustVelX -= gustAccel * dt;
-        // Aerodynamic drag: velocity decays toward zero (light petals = high drag)
-        const drag = Math.pow(0.978, dt);
-        p.gustVelX *= drag;
+        p.gustVelX *= Math.pow(0.975, dt);
 
-        // 3 independent sway layers — each petal has unique combination
-        const sway1 = Math.sin(t * p.swayFreq1 + p.swayPhase1) * p.swayAmp1 * 0.003;
-        const sway2 = Math.sin(t * p.swayFreq2 + p.swayPhase2) * p.swayAmp2 * 0.002;
-        const sway3 = Math.cos(t * p.swayFreq3 + p.swayPhase3) * p.swayAmp3 * 0.001;
+        // Per-petal base wind variation prevents clustering
+        const petalWind = baseWind + p.windVar;
 
-        // Gust flutter (only if exposed to gust)
-        const flutterAmp = 0.015 + p.gustExposure * gust * 0.12;
-        const flutter = Math.sin(t * p.flutterFreq + p.flutterPhase) * flutterAmp;
+        p.x += (petalWind + sway1 + sway2 + sway3 + p.gustVelX + turb1 + turb2) * dt;
 
-        p.x += (baseWind + sway1 + sway2 + sway3 + p.gustVelX + flutter) * dt;
-
-        // Fall with vertical bobbing — gust push only if exposed
+        // Fall with vertical bobbing + gust vertical turbulence
         const fallMod = 1 + Math.sin(t * p.fallOscFreq + p.fallOscPhase) * p.fallOscAmp;
-        p.y += (p.fallSpeed * fallMod + p.gustExposure * gust * 0.015) * dt;
+        const gustVertTurb = Math.sin(t * p.turbFreq1 * 0.6 + p.turbPhase1 + 2.3) * feltGust * 0.08;
+        p.y += (p.fallSpeed * fallMod + gustVertTurb) * dt;
 
-        // Rotation with oscillating speed
+        // Rotation — gust adds chaotic wobble
         const rotMod = 1 + Math.sin(t * p.rotOscFreq + p.rotOscPhase) * p.rotOscAmp;
-        p.rotation += p.rotSpeed * 0.015 * rotMod * dt;
+        const gustWobble = feltGust * 0.25 * Math.sin(t * p.turbFreq2 * 0.4 + p.turbPhase2);
+        p.rotation += (p.rotSpeed * 0.015 * rotMod + gustWobble * 0.02) * dt;
 
         if (p.y > ch + p.size * 2) {
           p.y = -p.size * 2 - Math.random() * 60;
