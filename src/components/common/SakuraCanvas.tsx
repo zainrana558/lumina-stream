@@ -27,12 +27,13 @@ interface Petal {
   rotOscAmp: number;  // rotation speed oscillation
   rotOscFreq: number;
   rotOscPhase: number;
-  // Per-petal gust response
+  // Per-petal gust response (velocity-based physics)
   gustDelay: number;
   gustCatch: number;
   flutterFreq: number;
   flutterPhase: number;
-  gustSwayX: number;
+  gustExposure: number;  // smoothed 0-1 how much gust is touching this petal
+  gustVelX: number;      // horizontal velocity from gust (accumulates, decays via drag)
 }
 
 const COLORS = [
@@ -84,7 +85,8 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
     gustCatch: 0.3 + rand() * 0.7 + (tier === 'tiny' ? 0.3 : 0),
     flutterFreq: 2.5 + rand() * 5,
     flutterPhase: rand() * Math.PI * 2,
-    gustSwayX: 0,
+    gustExposure: 0,
+    gustVelX: 0,
   };
 }
 
@@ -158,9 +160,10 @@ export default function SakuraCanvas() {
       ctx.clearRect(0, 0, cw, ch);
 
       // ── Wind system ──
-      const baseWind = -(0.35 + Math.sin(t * 0.15) * 0.12);
+      const baseWind = -(0.18 + Math.sin(t * 0.15) * 0.06);
+      // Smooth gust cycle — soft ramp, no hard on/off threshold
       const gustCycle = Math.sin(t * 0.3);
-      const gust = gustCycle > 0.5 ? (gustCycle - 0.5) * 5.0 : 0;
+      const gust = Math.max(0, (gustCycle - 0.15)) * 3.2;
 
       // ── Compute ribbon centerlines (used for both drawing & petal hit-test) ──
       interface RibbonCenter { yCenter: number; pts: { x: number; y: number; thickness: number }[] }
@@ -248,9 +251,11 @@ export default function SakuraCanvas() {
             const dy = py - pt.y;
             // Distance from ribbon centerline, normalized by thickness
             const dist = Math.sqrt(dx * dx + dy * dy);
-            const hitRadius = pt.thickness * 1.8; // affect zone slightly wider than visible ribbon
-            if (dist < hitRadius) {
-              const hit = (1 - dist / hitRadius);
+            const hitRadius = pt.thickness * 0.85;
+            // Smooth bell-curve falloff — no hard edge
+            const norm = dist / hitRadius;
+            if (norm < 1.5) {
+              const hit = Math.exp(-norm * norm * 2.5);
               if (hit > maxHit) maxHit = hit;
             }
           }
@@ -260,31 +265,38 @@ export default function SakuraCanvas() {
 
       // ── Petals ──
       for (const p of petals) {
-        // Only petals in the path of a ribbon get gust force
-        const gustHit = getPetalGustHit(p.x, p.y);
-        const localGust = gust * gustHit;
-        const gustResponse = Math.max(0, (localGust - 0.3 * p.gustDelay) / (1 - 0.3 * p.gustDelay));
-        const gustForce = -gustResponse * p.gustCatch;
+        // Spatial hit test against ribbon centerlines
+        const rawHit = getPetalGustHit(p.x, p.y);
 
-        // Smooth gust with fast attack / slow release
-        const gustTarget = gustForce * 1.2;
-        const lerpRate = gustForce < p.gustSwayX ? 0.12 : 0.06;
-        p.gustSwayX += (gustTarget - p.gustSwayX) * lerpRate * dt;
+        // Temporal smoothing: fast pickup, slow release — prevents flicker
+        const upRate = 0.06 / (0.4 + p.gustDelay);
+        const downRate = 0.018;
+        const expRate = rawHit > p.gustExposure ? upRate : downRate;
+        p.gustExposure += (rawHit - p.gustExposure) * expRate * dt;
+        p.gustExposure = Math.max(0, Math.min(1, p.gustExposure));
+
+        // Wind acceleration from gust (proportional to exposure × gust strength)
+        const gustAccel = gust * p.gustExposure * p.gustCatch * 0.18;
+        // Apply as force to velocity — this is real physics: F = ma
+        p.gustVelX -= gustAccel * dt;
+        // Aerodynamic drag: velocity decays toward zero (light petals = high drag)
+        const drag = Math.pow(0.978, dt);
+        p.gustVelX *= drag;
 
         // 3 independent sway layers — each petal has unique combination
         const sway1 = Math.sin(t * p.swayFreq1 + p.swayPhase1) * p.swayAmp1 * 0.003;
         const sway2 = Math.sin(t * p.swayFreq2 + p.swayPhase2) * p.swayAmp2 * 0.002;
         const sway3 = Math.cos(t * p.swayFreq3 + p.swayPhase3) * p.swayAmp3 * 0.001;
 
-        // Gust flutter (only if hit)
-        const flutterAmp = 0.015 + Math.abs(gustForce) * 0.35;
+        // Gust flutter (only if exposed to gust)
+        const flutterAmp = 0.015 + p.gustExposure * gust * 0.12;
         const flutter = Math.sin(t * p.flutterFreq + p.flutterPhase) * flutterAmp;
 
-        p.x += (baseWind + sway1 + sway2 + sway3 + p.gustSwayX + flutter) * dt;
+        p.x += (baseWind + sway1 + sway2 + sway3 + p.gustVelX + flutter) * dt;
 
-        // Fall with vertical bobbing — gust push only if hit
+        // Fall with vertical bobbing — gust push only if exposed
         const fallMod = 1 + Math.sin(t * p.fallOscFreq + p.fallOscPhase) * p.fallOscAmp;
-        p.y += (p.fallSpeed * fallMod + Math.abs(gustForce) * 0.06) * dt;
+        p.y += (p.fallSpeed * fallMod + p.gustExposure * gust * 0.015) * dt;
 
         // Rotation with oscillating speed
         const rotMod = 1 + Math.sin(t * p.rotOscFreq + p.rotOscPhase) * p.rotOscAmp;
