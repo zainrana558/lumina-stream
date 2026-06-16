@@ -72,8 +72,8 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
   return {
     cx: x, cy: y,
     // Pre-seed Verlet with downward velocity matching terminal v
-    // v_term = fallSpeed × GRAV_SCALE / (1−DAMP) = fallSpeed × 0.714
-    px: x, py: y - fallSpeed * 0.714,
+    // v_term = fallSpeed × GRAV_SCALE / (1−DAMP) = fallSpeed × 0.286
+    px: x, py: y - fallSpeed * 0.286,
     size: sz,
     rotation: Math.random() * Math.PI * 2,
     hue: col.h + (Math.random() - 0.5) * 10,
@@ -204,7 +204,7 @@ export default function SakuraCanvas() {
     //   At r=250: a = 1200/63725 = 0.019 (≈ gravity → gentle nudge)
     // ═══════════════════════════════════════════════════════
     const DAMP = 0.965;
-    const GRAV_SCALE = 0.025;    // per-petal: g = fallSpeed × this
+    const GRAV_SCALE = 0.010;    // per-petal: g = fallSpeed × this (slower fall)
     const SWAY_ACCEL = 0.12;
 
     const FIELD_R = 280;          // cursor field radius (wider reach)
@@ -340,7 +340,7 @@ export default function SakuraCanvas() {
           const nx2 = Math.random() * cw;
           const ny2 = -p.size * 2 - Math.random() * 40;
           p.cx = nx2; p.cy = ny2;
-          p.px = nx2; p.py = ny2 - p.fallSpeed * 0.714; // pre-seed terminal velocity
+          p.px = nx2; p.py = ny2 - p.fallSpeed * 0.286; // pre-seed terminal velocity
           p.swayPhase = Math.random() * Math.PI * 2;
           p.rotSpeed = (Math.random() - 0.5) * (p.size < 10 ? 1.5 : p.size < 20 ? 2.5 : 3.5);
           p.bendX = 0; p.bendY = 0; p.bendVX = 0; p.bendVY = 0;
