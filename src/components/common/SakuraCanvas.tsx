@@ -104,9 +104,8 @@ export default function SakuraCanvas() {
 
     const w = window.innerWidth, h = window.innerHeight;
     const petals: Petal[] = [];
-    for (let i = 0; i < 180; i++) petals.push(createPetal(w, h, 'tiny', true));
+    for (let i = 0; i < 150; i++) petals.push(createPetal(w, h, 'tiny', true));
     for (let i = 0; i < 50; i++) petals.push(createPetal(w, h, 'medium', true));
-    for (let i = 0; i < 20; i++) petals.push(createPetal(w, h, 'large', true));
 
     let lastTime = performance.now();
 
