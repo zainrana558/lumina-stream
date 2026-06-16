@@ -27,7 +27,7 @@ const COLORS = [
 
 function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', spread: boolean): Petal {
   const col = COLORS[Math.floor(Math.random() * COLORS.length)];
-  const sm = tier === 'tiny' ? 1.4 : tier === 'medium' ? 2.2 : 3.2;
+  const sm = tier === 'tiny' ? 1.0 : tier === 'medium' ? 1.6 : 2.4;
   const sz = (3 + Math.random() * 5) * sm;
   const x = Math.random() * w;
   const y = spread ? Math.random() * h * 1.2 - h * 0.1 : -sz * 2 - Math.random() * h * 0.5;
@@ -42,8 +42,8 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
       : 0.7 + Math.random() * 0.25,
     fallSpeed: 0.15 + Math.random() * 0.25
       + (tier === 'tiny' ? 0.05 : tier === 'large' ? -0.03 : 0),
-    swayAmp: 20 + Math.random() * 50 + (tier === 'large' ? 30 : 0),
-    swayFreq: 0.15 + Math.random() * 0.35,
+    swayAmp: 30 + Math.random() * 55 + (tier === 'large' ? 25 : 0),
+    swayFreq: 0.2 + Math.random() * 0.45,
     swayPhase: Math.random() * Math.PI * 2,
     rotSpeed: (Math.random() - 0.5) * (tier === 'tiny' ? 1.0 : tier === 'medium' ? 1.8 : 2.5),
   };
@@ -121,7 +121,11 @@ export default function SakuraCanvas() {
 
       for (const p of petals) {
         p.y += p.fallSpeed * dt;
-        p.x += Math.cos(t * p.swayFreq + p.swayPhase) * p.swayAmp * 0.003 * dt;
+        // Global wind gust + individual sway
+        const gustX = Math.sin(t * 0.35) * 18 + Math.sin(t * 0.9) * 8;
+        const gustY = Math.cos(t * 0.25) * 2;
+        p.x += (Math.cos(t * p.swayFreq + p.swayPhase) * p.swayAmp * 0.004 + gustX * 0.012) * dt;
+        p.y += gustY * 0.05 * dt;
         p.rotation += p.rotSpeed * 0.015 * dt;
 
         if (p.y > ch + p.size * 2) {
