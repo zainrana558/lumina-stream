@@ -14,14 +14,25 @@ interface Petal {
   size: number; rotation: number;
   hue: number; sat: number; lit: number; opacity: number;
   fallSpeed: number;
-  swayAmp: number; swayFreq: number; swayPhase: number;
+  // Multi-layer sway — 3 independent oscillators per petal
+  swayAmp1: number; swayFreq1: number; swayPhase1: number;
+  swayAmp2: number; swayFreq2: number; swayPhase2: number;
+  swayAmp3: number; swayFreq3: number; swayPhase3: number;
+  // Fall pattern
+  fallOscAmp: number;  // vertical bobbing amplitude
+  fallOscFreq: number; // vertical bobbing frequency
+  fallOscPhase: number;
+  // Rotation
   rotSpeed: number;
+  rotOscAmp: number;  // rotation speed oscillation
+  rotOscFreq: number;
+  rotOscPhase: number;
   // Per-petal gust response
-  gustDelay: number;      // how quickly this petal catches the gust (0–1)
-  gustCatch: number;      // how much wind this petal catches (size-dependent)
-  flutterFreq: number;    // high-freq flutter during gust
+  gustDelay: number;
+  gustCatch: number;
+  flutterFreq: number;
   flutterPhase: number;
-  gustSwayX: number;      // smoothed current gust sway (for inertia)
+  gustSwayX: number;
 }
 
 const COLORS = [
@@ -37,24 +48,42 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
   const sz = (3 + Math.random() * 5) * sm;
   const x = Math.random() * w;
   const y = spread ? Math.random() * h * 1.2 - h * 0.1 : -sz * 2 - Math.random() * h * 0.5;
+  const rand = Math.random;
+  const amp = tier === 'tiny' ? 0.7 : tier === 'medium' ? 1.0 : 1.4;
   return {
     x, y, size: sz,
-    rotation: Math.random() * Math.PI * 2,
-    hue: col.h + (Math.random() - 0.5) * 8,
-    sat: col.s + (Math.random() - 0.5) * 5,
-    lit: col.l + (Math.random() - 0.5) * 5,
-    opacity: tier === 'tiny' ? 0.35 + Math.random() * 0.3
-      : 0.6 + Math.random() * 0.3,
-    fallSpeed: 0.15 + Math.random() * 0.25
-      + (tier === 'tiny' ? 0.05 : tier === 'large' ? -0.03 : 0),
-    swayAmp: 30 + Math.random() * 55 + (tier === 'large' ? 25 : 0),
-    swayFreq: 0.2 + Math.random() * 0.45,
-    swayPhase: Math.random() * Math.PI * 2,
-    rotSpeed: (Math.random() - 0.5) * (tier === 'tiny' ? 1.0 : tier === 'medium' ? 1.8 : 2.5),
-    gustDelay: 0.3 + Math.random() * 0.7,
-    gustCatch: 0.4 + Math.random() * 0.6 + (tier === 'tiny' ? 0.3 : 0),
-    flutterFreq: 3 + Math.random() * 4,
-    flutterPhase: Math.random() * Math.PI * 2,
+    rotation: rand() * Math.PI * 2,
+    hue: col.h + (rand() - 0.5) * 8,
+    sat: col.s + (rand() - 0.5) * 5,
+    lit: col.l + (rand() - 0.5) * 5,
+    opacity: tier === 'tiny' ? 0.35 + rand() * 0.3 : 0.6 + rand() * 0.3,
+    fallSpeed: 0.12 + rand() * 0.3 + (tier === 'tiny' ? 0.04 : 0),
+    // Layer 1: slow broad sweep
+    swayAmp1: (20 + rand() * 40) * amp,
+    swayFreq1: 0.12 + rand() * 0.25,
+    swayPhase1: rand() * Math.PI * 2,
+    // Layer 2: medium undulation
+    swayAmp2: (8 + rand() * 20) * amp,
+    swayFreq2: 0.4 + rand() * 0.8,
+    swayPhase2: rand() * Math.PI * 2,
+    // Layer 3: quick flutter
+    swayAmp3: (3 + rand() * 8) * amp,
+    swayFreq3: 1.5 + rand() * 2.5,
+    swayPhase3: rand() * Math.PI * 2,
+    // Vertical bobbing (some petals float, some dive)
+    fallOscAmp: rand() * 0.12,
+    fallOscFreq: 0.3 + rand() * 0.6,
+    fallOscPhase: rand() * Math.PI * 2,
+    // Rotation with speed variation
+    rotSpeed: (rand() - 0.5) * (tier === 'tiny' ? 1.2 : 2.2),
+    rotOscAmp: rand() * 0.8,
+    rotOscFreq: 0.2 + rand() * 0.5,
+    rotOscPhase: rand() * Math.PI * 2,
+    // Gust response
+    gustDelay: 0.2 + rand() * 0.8,
+    gustCatch: 0.3 + rand() * 0.7 + (tier === 'tiny' ? 0.3 : 0),
+    flutterFreq: 2.5 + rand() * 5,
+    flutterPhase: rand() * Math.PI * 2,
     gustSwayX: 0,
   };
 }
@@ -212,31 +241,37 @@ export default function SakuraCanvas() {
 
       // ── Petals ──
       for (const p of petals) {
-        // Staggered gust pickup: each petal catches the gust at its own time
+        // Staggered gust pickup
         const gustResponse = Math.max(0, (gust - 0.3 * p.gustDelay) / (1 - 0.3 * p.gustDelay));
         const gustForce = -gustResponse * p.gustCatch;
 
-        // Smooth gust with responsive inertia (fast attack, slow release)
-        const gustTarget = gustForce * p.swayAmp * 0.015;
-        const lerpRate = gustForce < p.gustSwayX ? 0.12 : 0.06; // quick to catch, slow to release
+        // Smooth gust with fast attack / slow release
+        const gustTarget = gustForce * 1.2;
+        const lerpRate = gustForce < p.gustSwayX ? 0.12 : 0.06;
         p.gustSwayX += (gustTarget - p.gustSwayX) * lerpRate * dt;
 
-        // Primary gentle sway (the original beautiful drift)
-        const sway = Math.sin(t * p.swayFreq + p.swayPhase) * p.swayAmp * 0.004;
+        // 3 independent sway layers — each petal has unique combination
+        const sway1 = Math.sin(t * p.swayFreq1 + p.swayPhase1) * p.swayAmp1 * 0.003;
+        const sway2 = Math.sin(t * p.swayFreq2 + p.swayPhase2) * p.swayAmp2 * 0.002;
+        const sway3 = Math.cos(t * p.swayFreq3 + p.swayPhase3) * p.swayAmp3 * 0.001;
 
-        // Gust intensifies the flutter — rapid but per-petal unique
-        const flutterAmp = 0.02 + Math.abs(gustForce) * 0.4;
-        const flutter = Math.sin(t * p.flutterFreq + p.flutterPhase) * flutterAmp * p.swayAmp * 0.003;
+        // Gust flutter
+        const flutterAmp = 0.015 + Math.abs(gustForce) * 0.35;
+        const flutter = Math.sin(t * p.flutterFreq + p.flutterPhase) * flutterAmp;
 
-        const drift = baseWind + sway + p.gustSwayX + flutter;
-        p.x += drift * dt;
-        p.y += (p.fallSpeed + Math.abs(gustForce) * 0.08) * dt;
-        p.rotation += p.rotSpeed * 0.015 * dt;
+        p.x += (baseWind + sway1 + sway2 + sway3 + p.gustSwayX + flutter) * dt;
+
+        // Fall with vertical bobbing — some petals hover, some dive
+        const fallMod = 1 + Math.sin(t * p.fallOscFreq + p.fallOscPhase) * p.fallOscAmp;
+        p.y += (p.fallSpeed * fallMod + Math.abs(gustForce) * 0.06) * dt;
+
+        // Rotation with oscillating speed — some spin fast then slow
+        const rotMod = 1 + Math.sin(t * p.rotOscFreq + p.rotOscPhase) * p.rotOscAmp;
+        p.rotation += p.rotSpeed * 0.015 * rotMod * dt;
 
         if (p.y > ch + p.size * 2) {
           p.y = -p.size * 2 - Math.random() * 60;
           p.x = Math.random() * cw;
-          p.swayPhase = Math.random() * Math.PI * 2;
         }
         if (p.x < -100) p.x = cw + 80;
         if (p.x > cw + 100) p.x = -80;
