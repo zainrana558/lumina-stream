@@ -6,6 +6,7 @@ import { CS } from '@/styles/themes';
 import Card from '@/components/common/Card';
 import GenreToolbar from '@/components/common/GenreToolbar';
 import SakuraCanvas from '@/components/common/SakuraCanvas';
+import CursorAura from '@/components/common/CursorAura';
 import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
@@ -184,6 +185,7 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
         </div>
 
         <SakuraCanvas />
+        <CursorAura />
         <GenreTrivia genre="anime" color="rgba(255,183,197,.4)" />
 
         {/* ── Search, sort, filter toolbar ── */}
