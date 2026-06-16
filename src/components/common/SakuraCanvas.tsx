@@ -293,15 +293,15 @@ export default function SakuraCanvas() {
         // ── Core idea: gust AMPLIFIES the petal's unique natural sway ──
         // Each petal already has 3 unique oscillators. The gust multiplies
         // their amplitude, so 180 petals produce 180 different gust responses.
-        const gustAmp = 1 + feltGust * p.gustCatch * 0.7;
-        const sway1 = Math.sin(t * p.swayFreq1 + p.swayPhase1) * p.swayAmp1 * 0.003 * gustAmp;
-        const sway2 = Math.sin(t * p.swayFreq2 + p.swayPhase2) * p.swayAmp2 * 0.002 * gustAmp;
-        const sway3 = Math.cos(t * p.swayFreq3 + p.swayPhase3) * p.swayAmp3 * 0.001 * gustAmp;
+        const gustAmp = 1 + feltGust * p.gustCatch * 1.8;
+        const sway1 = Math.sin(t * p.swayFreq1 + p.swayPhase1) * p.swayAmp1 * 0.009 * gustAmp;
+        const sway2 = Math.sin(t * p.swayFreq2 + p.swayPhase2) * p.swayAmp2 * 0.006 * gustAmp;
+        const sway3 = Math.cos(t * p.swayFreq3 + p.swayPhase3) * p.swayAmp3 * 0.003 * gustAmp;
 
         // Turbulent perturbation — unique per petal, only active during gust
         // Two oscillators with different freqs create chaotic-looking motion
-        const turb1 = Math.sin(t * p.turbFreq1 + p.turbPhase1) * feltGust * 0.4;
-        const turb2 = Math.cos(t * p.turbFreq2 + p.turbPhase2) * feltGust * 0.25;
+        const turb1 = Math.sin(t * p.turbFreq1 + p.turbPhase1) * feltGust * 0.8;
+        const turb2 = Math.cos(t * p.turbFreq2 + p.turbPhase2) * feltGust * 0.5;
 
         // Gentle leftward drift (undercurrent, NOT the main effect)
         const gustAccel = feltGust * p.gustCatch * 0.04;
