@@ -117,27 +117,54 @@ export default function SakuraCanvas() {
 
       ctx.clearRect(0, 0, cw, ch);
 
+      // ── Wind system ──
+      // Base wind: steady leftward drift
+      const baseWind = -(0.35 + Math.sin(t * 0.15) * 0.12);
+      // Gust: periodic bursts (peaks every ~21s, lasts ~4s)
+      const gustCycle = Math.sin(t * 0.3);
+      const gust = gustCycle > 0.5 ? (gustCycle - 0.5) * 5.0 : 0;
+      const gustDir = -(baseWind > 0 ? 1 : -1); // gust always in wind direction
+      const totalGust = gust * gustDir;
+
+      // ── Draw gust visual streaks ──
+      if (gust > 0.1) {
+        const gustAlpha = Math.min((gust - 0.1) * 0.12, 0.06);
+        // Multiple horizontal streaks sweeping left
+        for (let g = 0; g < 5; g++) {
+          const yBase = (t * 40 + g * ch / 5) % (ch + 200) - 100;
+          const xOff = Math.sin(t * 0.8 + g * 1.7) * 60;
+          const streakLen = 200 + gust * 150;
+          const grad = ctx.createLinearGradient(cw - xOff, yBase, cw - xOff - streakLen, yBase);
+          grad.addColorStop(0, `rgba(255, 180, 200, 0)`);
+          grad.addColorStop(0.3, `rgba(255, 180, 200, ${gustAlpha})`);
+          grad.addColorStop(0.7, `rgba(255, 180, 200, ${gustAlpha * 0.7})`);
+          grad.addColorStop(1, `rgba(255, 180, 200, 0)`);
+          ctx.beginPath();
+          ctx.moveTo(cw - xOff, yBase - 25 - gust * 15);
+          ctx.lineTo(cw - xOff - streakLen, yBase - 10);
+          ctx.lineTo(cw - xOff - streakLen, yBase + 10);
+          ctx.lineTo(cw - xOff, yBase + 25 + gust * 15);
+          ctx.closePath();
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+      }
+
+      // ── Petals ──
       for (const p of petals) {
-        // Steady wind direction + periodic gusts
-        // Base wind: always drifting right with gentle undulation
-        const baseWind = 0.35 + Math.sin(t * 0.15) * 0.15;
-        // Gust: periodic bursts that spike and fade
-        const gustCycle = Math.sin(t * 0.3);
-        const gust = gustCycle > 0.6 ? (gustCycle - 0.6) * 4.0 : 0;
-        // Per-petal variation within the wind (no zigzag — stays positive/rightward)
-        const drift = baseWind + gust + Math.sin(t * p.swayFreq + p.swayPhase) * 0.08;
+        // Per-petal drift (always leftward, slight wobble)
+        const drift = baseWind + totalGust + Math.sin(t * p.swayFreq + p.swayPhase) * 0.06;
         p.x += drift * p.swayAmp * 0.006 * dt;
-        // Gust adds a slight downward push
-        p.y += (p.fallSpeed + gust * 0.15) * dt;
-        p.rotation += p.rotSpeed * 0.015 * dt;
+        p.y += (p.fallSpeed + Math.abs(totalGust) * 0.12) * dt;
+        p.rotation += (p.rotSpeed * 0.015 + totalGust * 0.3) * dt;
 
         if (p.y > ch + p.size * 2) {
           p.y = -p.size * 2 - Math.random() * 60;
           p.x = Math.random() * cw;
           p.swayPhase = Math.random() * Math.PI * 2;
         }
-        if (p.x > cw + 80) p.x = -80;
-        if (p.x < -80) p.x = cw + 80;
+        if (p.x < -100) p.x = cw + 80;
+        if (p.x > cw + 100) p.x = -80;
 
         drawPetal(ctx, p);
       }
