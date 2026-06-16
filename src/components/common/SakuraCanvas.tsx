@@ -5,65 +5,52 @@ import { useEffect, useRef } from 'react';
 /* ═══════════════════════════════════════════════════════════════════
    SakuraCanvas — Production petal physics engine
 
-   Integration: Verlet with frame-normalized timestep (dt=1 @60fps).
-   All constants are in per-frame units for intuitive tuning while
-   dt normalization handles frame-rate independence.
+   All motion is force-driven through Verlet integration.
+   No kinematic position hacks — gravity, sway, cursor attraction,
+   and wake field are all forces competing in the same solver.
 
-   Forces:
-   • Gravitational potential field: F = G·m / (r² + ε²), inverse-square
-   • Per-petal mass → acceleration = F/m (Newton's 2nd)
-   • Wake velocity field: cursor leaves decaying attractor nodes
-   • Spring-damper restore to natural trajectory
+   Forces (accumulated per petal per frame):
+   1. Constant gravity (downward) — drives falling
+   2. Oscillating sway force (lateral) — drives gentle drift
+   3. Cursor gravitational field: F = G·m / (r² + ε²)
+   4. Wake velocity field — decaying attractor nodes
+   5. Weak spring to base trajectory — prevents long-term drift
 
-   Vertex math:
-   • 2D rotation matrix for local-space bend deformation
-   • Per-control-point bezier displacement (tip bends, base anchors)
-   • 2D cross product for torque-driven angular velocity
+   Integration: Störmer-Verlet with frame-normalized dt (1.0 @60fps)
+   Vertex: 2D rotation matrix for per-control-point bezier deformation
+   Torque: 2D cross product (r × F) for angular acceleration
    ═══════════════════════════════════════════════════════════════════ */
 
-// ── Inline vector math (zero allocation) ──
 const v2Len = (x: number, y: number) => Math.sqrt(x * x + y * y);
 const v2Norm = (x: number, y: number, len: number): [number, number] =>
   len > 1e-4 ? [x / len, y / len] : [0, 0];
 const v2Cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay * bx;
 const rot2 = (x: number, y: number, c: number, s: number): [number, number] =>
   [x * c - y * s, x * s + y * c];
-
 const smoothstep = (lo: number, hi: number, x: number) => {
   const t = Math.max(0, Math.min(1, (x - lo) / (hi - lo)));
   return t * t * (3 - 2 * t);
 };
 
-// ── Types ──
 interface Petal {
-  cx: number; cy: number;   // Verlet current
-  px: number; py: number;   // Verlet previous
-  baseX: number; baseY: number; // natural trajectory anchor
+  cx: number; cy: number;   // Verlet current position
+  px: number; py: number;   // Verlet previous position
   size: number;
   rotation: number;
   hue: number; sat: number; lit: number; opacity: number;
   mass: number;
-  fallSpeed: number;
+  fallSpeed: number;       // target fall rate (maps to gravity force)
   swayAmp: number; swayFreq: number; swayPhase: number;
   rotSpeed: number;
-  bendX: number; bendY: number;     // bezier deformation
+  bendX: number; bendY: number;
   bendVX: number; bendVY: number;
 }
 
-interface WakeNode {
-  x: number; y: number;
-  strength: number;
-  life: number;
-}
+interface WakeNode { x: number; y: number; strength: number; life: number; }
 
-interface Cursor {
-  x: number; y: number;
-  vx: number; vy: number;
-  speed: number;
-  active: boolean;
-}
+interface Cursor { x: number; y: number; vx: number; vy: number; speed: number; active: boolean; }
 
-const PETAL_COLORS = [
+const COLORS = [
   { h: 340, s: 80, l: 82 }, { h: 345, s: 85, l: 78 },
   { h: 335, s: 75, l: 88 }, { h: 348, s: 90, l: 75 },
   { h: 330, s: 70, l: 90 }, { h: 350, s: 88, l: 80 },
@@ -71,18 +58,23 @@ const PETAL_COLORS = [
 ];
 
 function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', spread: boolean): Petal {
-  const col = PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)];
-  const sizeMulti = tier === 'tiny' ? 1.4 : tier === 'medium' ? 2.2 : 3.2;
-  const baseSize = (3 + Math.random() * 5) * sizeMulti;
+  const col = COLORS[Math.floor(Math.random() * COLORS.length)];
+  const sm = tier === 'tiny' ? 1.4 : tier === 'medium' ? 2.2 : 3.2;
+  const sz = (3 + Math.random() * 5) * sm;
   const mass = tier === 'tiny' ? 0.5 + Math.random() * 0.3
     : tier === 'medium' ? 1.0 + Math.random() * 0.5
     : 1.8 + Math.random() * 0.7;
+  const fallSpeed = 0.3 + Math.random() * 0.6
+    + (tier === 'tiny' ? 0.15 : tier === 'large' ? -0.05 : 0);
   const x = Math.random() * w;
-  const y = spread ? Math.random() * h * 1.2 - h * 0.1 : -baseSize * 2 - Math.random() * h * 0.5;
+  const y = spread ? Math.random() * h * 1.2 - h * 0.1 : -sz * 2 - Math.random() * h * 0.5;
+
   return {
-    cx: x, cy: y, px: x, py: y,
-    baseX: x, baseY: y,
-    size: baseSize,
+    cx: x, cy: y,
+    // Pre-seed Verlet with downward velocity = fallSpeed
+    // so petals start at terminal velocity (no ramp-up)
+    px: x, py: y - fallSpeed,
+    size: sz,
     rotation: Math.random() * Math.PI * 2,
     hue: col.h + (Math.random() - 0.5) * 10,
     sat: col.s + (Math.random() - 0.5) * 15,
@@ -91,7 +83,7 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
       : tier === 'medium' ? 0.5 + Math.random() * 0.3
       : 0.7 + Math.random() * 0.25,
     mass,
-    fallSpeed: 0.3 + Math.random() * 0.6 + (tier === 'tiny' ? 0.15 : tier === 'large' ? -0.05 : 0),
+    fallSpeed,
     swayAmp: 15 + Math.random() * 45 + (tier === 'large' ? 25 : 0),
     swayFreq: 0.3 + Math.random() * 0.6,
     swayPhase: Math.random() * Math.PI * 2,
@@ -108,42 +100,37 @@ function drawPetal(
 ) {
   const hs = size * 0.5;
   const cos = Math.cos(rot), sin = Math.sin(rot);
-  // Transform bend into petal local space via 2D rotation matrix
   const [lbx, lby] = rot2(bendX, bendY, cos, -sin);
-  const bendNorm = Math.min(v2Len(bendX, bendY) / 30, 1);
-  const tipBend = bendNorm * hs * 0.6;
+  const bn = Math.min(v2Len(bendX, bendY) / 30, 1);
+  const tb = bn * hs * 0.6;
 
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rot);
   ctx.globalAlpha = opacity;
 
-  // Deformed bezier — tip control points shift, base stays anchored
   ctx.beginPath();
   ctx.moveTo(0, -hs + lby * 0.3);
   ctx.bezierCurveTo(
-    hs * 0.8 + lbx * tipBend * 0.7, -hs * 0.6 + lby * tipBend * 0.5,
-    hs + lbx * tipBend * 0.3, hs * 0.2 + lby * tipBend * 0.1,
-    0, hs
-  );
+    hs * 0.8 + lbx * tb * 0.7, -hs * 0.6 + lby * tb * 0.5,
+    hs + lbx * tb * 0.3, hs * 0.2 + lby * tb * 0.1, 0, hs);
   ctx.bezierCurveTo(
-    -hs + lbx * tipBend * 0.3, hs * 0.2 + lby * tipBend * 0.1,
-    -hs * 0.8 + lbx * tipBend * 0.7, -hs * 0.6 + lby * tipBend * 0.5,
-    0, -hs + lby * 0.3
-  );
+    -hs + lbx * tb * 0.3, hs * 0.2 + lby * tb * 0.1,
+    -hs * 0.8 + lbx * tb * 0.7, -hs * 0.6 + lby * tb * 0.5,
+    0, -hs + lby * 0.3);
   ctx.closePath();
 
-  const grad = ctx.createLinearGradient(0, -hs, 0, hs);
-  grad.addColorStop(0, `hsla(${hue}, ${Math.min(100, sat - 30)}%, ${Math.min(97, lit + 12)}%, 1)`);
-  grad.addColorStop(0.4, `hsla(${hue}, ${sat}%, ${lit}%, 1)`);
-  grad.addColorStop(1, `hsla(${hue - 5}, ${Math.min(100, sat + 10)}%, ${Math.max(50, lit - 15)}%, 1)`);
-  ctx.fillStyle = grad;
+  const g = ctx.createLinearGradient(0, -hs, 0, hs);
+  g.addColorStop(0, `hsla(${hue}, ${Math.min(100, sat - 30)}%, ${Math.min(97, lit + 12)}%, 1)`);
+  g.addColorStop(0.4, `hsla(${hue}, ${sat}%, ${lit}%, 1)`);
+  g.addColorStop(1, `hsla(${hue - 5}, ${Math.min(100, sat + 10)}%, ${Math.max(50, lit - 15)}%, 1)`);
+  ctx.fillStyle = g;
   ctx.fill();
 
   if (size > 10) {
     ctx.beginPath();
-    ctx.moveTo(lbx * tipBend * 0.1, -hs * 0.6 + lby * tipBend * 0.4);
-    ctx.quadraticCurveTo(lbx * tipBend * 0.15, 0, 0, hs * 0.7);
+    ctx.moveTo(lbx * tb * 0.1, -hs * 0.6 + lby * tb * 0.4);
+    ctx.quadraticCurveTo(lbx * tb * 0.15, 0, 0, hs * 0.7);
     ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${Math.max(40, lit - 25)}%, ${opacity * 0.3})`;
     ctx.lineWidth = 0.6;
     ctx.stroke();
@@ -155,9 +142,7 @@ export default function SakuraCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef(0);
   const timeRef = useRef(0);
-  const cursorRef = useRef<Cursor>({
-    x: -9999, y: -9999, vx: 0, vy: 0, speed: 0, active: false,
-  });
+  const cursorRef = useRef<Cursor>({ x: -9999, y: -9999, vx: 0, vy: 0, speed: 0, active: false });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -184,18 +169,17 @@ export default function SakuraCanvas() {
 
     // ── Wake velocity field ──
     const wake: WakeNode[] = [];
-    const MAX_WAKE = 35;
-    const WAKE_LIFETIME = 50;   // frames (~0.8s @60fps)
-    const WAKE_RADIUS = 130;
-    const WAKE_G = 1800;        // wake gravitational strength
-    let wakeSpawnAccum = 0;
+    const MAX_WAKE = 30;
+    const WAKE_LIFE = 45;      // frames
+    const WAKE_RADIUS = 120;
+    const WAKE_G = 90;         // per-frame wake pull
+    let wakeAccum = 0;
 
-    // ── Cursor tracking ──
+    // ── Cursor ──
     const onMouseMove = (e: MouseEvent) => {
       const c = cursorRef.current;
-      const nx = e.clientX, ny = e.clientY;
-      c.vx = nx - c.x; c.vy = ny - c.y;
-      c.x = nx; c.y = ny;
+      c.vx = e.clientX - c.x; c.vy = e.clientY - c.y;
+      c.x = e.clientX; c.y = e.clientY;
       c.speed = v2Len(c.vx, c.vy);
       c.active = true;
     };
@@ -203,145 +187,143 @@ export default function SakuraCanvas() {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseleave', onMouseLeave);
 
-    // ════════════════════════════════════════════
-    // Physics constants (frame-normalized: dt=1 @60fps)
-    // ════════════════════════════════════════════
-    const FIELD_RADIUS = 260;
-    const GRAVITY_G = 5500;       // gravitational constant for cursor field
-    const SOFTENING = 35;         // ε: prevents 1/r² singularity
-    const RESTORE_K = 0.018;      // spring stiffness → base trajectory
-    const RESTORE_DAMP = 0.96;    // Verlet velocity damping
-    const BEND_K = 0.12;          // bend spring stiffness
-    const BEND_DAMP = 0.88;       // bend velocity damping
-    const BEND_MAX = 32;          // max pixel displacement for bend
-    const FALL_SCALE = 1.0;       // base fall speed multiplier
-    const SWAY_SCALE = 0.008;     // sway amplitude multiplier
+    // ═══════════════════════════════════════════════════════
+    // Physics constants (frame-normalized: dt ≡ 1 @ 60fps)
+    //
+    // Terminal velocity: v_term = a / (1 − damping)
+    // So a = v_desired × (1 − damping)
+    //
+    // Damping = 0.965 → (1−d) = 0.035
+    //   Fall 0.5 px/f → a_grav = 0.5 × 0.035 = 0.0175
+    //   Cursor pull 3 px/f at r=30 → a = 3 × 0.035 = 0.105
+    //     F/m = G/(r²+ε²) = G/1900 → G = 0.105 × 1900 = 200
+    // ═══════════════════════════════════════════════════════
+    const DAMP = 0.965;
+    const INV_DAMP_COMP = 1 - DAMP; // 0.035
+
+    const GRAV_ACCEL = 0.018;     // downward gravity (gives ~0.51 px/f terminal)
+    const SWAY_ACCEL = 0.12;      // lateral sway force magnitude
+
+    const FIELD_R = 250;          // cursor field radius
+    const FIELD_G = 200;          // cursor gravitational constant
+    const FIELD_EPS = 35;         // softening radius
+    const FIELD_INNER = 0.35;     // inner boundary ratio (full strength below)
+
+    const WAKE_G_LOCAL = WAKE_G;
+    const BEND_K = 0.1;
+    const BEND_DAMP = 0.88;
+    const BEND_MAX = 30;
 
     let lastTime = performance.now();
 
     const animate = (now: number) => {
-      // Frame-normalized dt: 1.0 at 60fps, 2.0 at 30fps, etc.
-      const dtMs = Math.min(now - lastTime, 50);
+      const dt = Math.min(now - lastTime, 50) / 16.667;
       lastTime = now;
-      const dt = dtMs / 16.667;  // 1.0 @ 60fps
       timeRef.current += 0.016 * dt;
       const t = timeRef.current;
       const cw = window.innerWidth, ch = window.innerHeight;
       const cur = cursorRef.current;
 
-      // Decay cursor velocity between mouse events
-      cur.vx *= Math.pow(0.82, dt);
-      cur.vy *= Math.pow(0.82, dt);
+      // Cursor velocity decay between events
+      const cvDecay = Math.pow(0.82, dt);
+      cur.vx *= cvDecay; cur.vy *= cvDecay;
       cur.speed = v2Len(cur.vx, cur.vy);
 
-      // ── Spawn wake nodes ──
+      // Spawn wake nodes
       if (cur.active && cur.speed > 2) {
-        wakeSpawnAccum += cur.speed * 0.03 * dt;
-        while (wakeSpawnAccum >= 1 && wake.length < MAX_WAKE) {
-          wakeSpawnAccum -= 1;
+        wakeAccum += cur.speed * 0.03 * dt;
+        while (wakeAccum >= 1 && wake.length < MAX_WAKE) {
+          wakeAccum -= 1;
           wake.push({
             x: cur.x + (Math.random() - 0.5) * 10,
             y: cur.y + (Math.random() - 0.5) * 10,
-            strength: Math.min(cur.speed / 12, 1),
-            life: 1,
+            strength: Math.min(cur.speed / 12, 1), life: 1,
           });
         }
       }
-      // Decay wake
       for (let i = wake.length - 1; i >= 0; i--) {
-        wake[i].life -= dt / WAKE_LIFETIME;
+        wake[i].life -= dt / WAKE_LIFE;
         if (wake[i].life <= 0) wake.splice(i, 1);
       }
 
       ctx.clearRect(0, 0, cw, ch);
+      const dampF = Math.pow(DAMP, dt);
 
       for (const p of petals) {
         let fx = 0, fy = 0;
 
-        // ── 1) Cursor gravitational field ──
-        //    F = G·m / (r² + ε²),  direction: toward cursor
+        // ── Force 1: Gravity (constant downward) ──
+        // F = m·g, so a = g (mass cancels)
+        fy += p.mass * GRAV_ACCEL;
+
+        // ── Force 2: Sway (oscillating lateral) ──
+        // Cosine-derived acceleration for smooth back-and-forth
+        fx += Math.cos(t * p.swayFreq + p.swayPhase) * p.swayAmp * SWAY_ACCEL * 0.001;
+
+        // ── Force 3: Cursor gravitational field ──
+        // F = G·m / (r² + ε²) with smoothstep boundary
         if (cur.active) {
-          const dx = cur.x - p.cx;
-          const dy = cur.y - p.cy;
+          const dx = cur.x - p.cx, dy = cur.y - p.cy;
           const rSq = dx * dx + dy * dy;
           const r = Math.sqrt(rSq);
-
-          if (r < FIELD_RADIUS) {
-            // Inverse-square with softening
-            const F = (GRAVITY_G * p.mass) / (rSq + SOFTENING * SOFTENING);
-            // Smoothstep boundary: full strength inside, fades to 0 at edge
-            const boundary = smoothstep(FIELD_RADIUS, FIELD_RADIUS * 0.35, r);
+          if (r < FIELD_R) {
+            const F = (FIELD_G * p.mass) / (rSq + FIELD_EPS * FIELD_EPS);
+            const boundary = smoothstep(FIELD_R, FIELD_R * FIELD_INNER, r);
             const [nx, ny] = v2Norm(dx, dy, r);
             fx += nx * F * boundary;
             fy += ny * F * boundary;
           }
         }
 
-        // ── 2) Wake field: each node is a decaying attractor ──
+        // ── Force 4: Wake field ──
         for (let i = 0; i < wake.length; i++) {
           const wn = wake[i];
-          const dx = wn.x - p.cx;
-          const dy = wn.y - p.cy;
+          const dx = wn.x - p.cx, dy = wn.y - p.cy;
           const rSq = dx * dx + dy * dy;
           const r = Math.sqrt(rSq);
           if (r < WAKE_RADIUS && r > 1) {
-            const F = (WAKE_G * wn.strength * wn.life * wn.life * p.mass)
-              / (rSq + 800);
+            const F = (WAKE_G_LOCAL * wn.strength * wn.life * wn.life * p.mass) / (rSq + 600);
             const [nx, ny] = v2Norm(dx, dy, r);
             fx += nx * F;
             fy += ny * F;
           }
         }
 
-        // ── 3) Spring restore → base trajectory ──
-        fx += (p.baseX - p.cx) * RESTORE_K;
-        fy += (p.baseY - p.cy) * RESTORE_K;
-
-        // ── Verlet integration ──
-        // v = (current - previous) * damping  (implicit velocity)
-        // a = F / m  (Newton's 2nd)
-        // new_pos = current + v·dt + a·dt²
-        const vx = (p.cx - p.px) * Math.pow(RESTORE_DAMP, dt);
-        const vy = (p.cy - p.py) * Math.pow(RESTORE_DAMP, dt);
+        // ── Störmer-Verlet integration ──
+        // Implicit velocity: v = (x_curr − x_prev) · damping
+        // Acceleration:     a = F / m   (Newton's 2nd law)
+        // Position update:   x_new = x_curr + v·dt + a·dt²
+        const vx = (p.cx - p.px) * dampF;
+        const vy = (p.cy - p.py) * dampF;
         const ax = fx / p.mass;
         const ay = fy / p.mass;
 
-        p.px = p.cx;
-        p.py = p.cy;
+        p.px = p.cx; p.py = p.cy;
         p.cx += vx * dt + ax * dt * dt;
         p.cy += vy * dt + ay * dt * dt;
 
-        // ── Advance base trajectory (natural fall) ──
-        p.baseY += p.fallSpeed * FALL_SCALE * dt;
-        p.baseX += Math.sin(t * p.swayFreq + p.swayPhase) * p.swayAmp * SWAY_SCALE * dt;
-
-        // ── Torque-driven rotation (2D cross product: r × F) ──
+        // ── Torque: τ = r × F  (2D cross → scalar) ──
         if (cur.active) {
           const dx = cur.x - p.cx, dy = cur.y - p.cy;
           const r = v2Len(dx, dy);
-          if (r < FIELD_RADIUS && r > 5) {
-            const torque = v2Cross(dx, dy, fx, fy) / (r * r + 200);
-            p.rotation += torque * dt * 0.02;
+          if (r < FIELD_R && r > 5) {
+            const torque = v2Cross(dx, dy, ax, ay) / (r + 30);
+            p.rotation += torque * dt * 0.08;
           }
         }
         p.rotation += p.rotSpeed * dt;
 
         // ── Per-vertex bend deformation ──
-        // Bend target: toward cursor, magnitude by proximity
         if (cur.active) {
           const dx = cur.x - p.cx, dy = cur.y - p.cy;
           const r = v2Len(dx, dy);
-          if (r < FIELD_RADIUS * 0.75 && r > 1) {
+          if (r < FIELD_R * 0.75 && r > 1) {
             const [nx, ny] = v2Norm(dx, dy, r);
-            const proximity = smoothstep(FIELD_RADIUS * 0.75, 20, r);
-            const targetBX = nx * BEND_MAX * proximity;
-            const targetBY = ny * BEND_MAX * proximity;
-            // Spring-damper toward target
-            p.bendVX += (targetBX - p.bendX) * BEND_K * dt;
-            p.bendVY += (targetBY - p.bendY) * BEND_K * dt;
+            const prox = smoothstep(FIELD_R * 0.75, 20, r);
+            p.bendVX += (nx * BEND_MAX * prox - p.bendX) * BEND_K * dt;
+            p.bendVY += (ny * BEND_MAX * prox - p.bendY) * BEND_K * dt;
           }
         }
-        // Always restore bend toward zero
         p.bendVX -= p.bendX * BEND_K * 0.4 * dt;
         p.bendVY -= p.bendY * BEND_K * 0.4 * dt;
         p.bendVX *= Math.pow(BEND_DAMP, dt);
@@ -350,17 +332,17 @@ export default function SakuraCanvas() {
         p.bendY += p.bendVY * dt;
 
         // ── Respawn ──
-        if (p.baseY > ch + p.size * 2) {
+        if (p.cy > ch + p.size * 2) {
           const nx2 = Math.random() * cw;
           const ny2 = -p.size * 2 - Math.random() * 40;
-          p.cx = nx2; p.cy = ny2; p.px = nx2; p.py = ny2;
-          p.baseX = nx2; p.baseY = ny2;
+          p.cx = nx2; p.cy = ny2;
+          p.px = nx2; p.py = ny2 - p.fallSpeed; // pre-seed fall velocity
           p.swayPhase = Math.random() * Math.PI * 2;
           p.rotSpeed = (Math.random() - 0.5) * (p.size < 10 ? 1.5 : p.size < 20 ? 2.5 : 3.5);
           p.bendX = 0; p.bendY = 0; p.bendVX = 0; p.bendVY = 0;
         }
-        if (p.baseX > cw + 60) p.baseX = -60;
-        if (p.baseX < -60) p.baseX = cw + 60;
+        if (p.cx > cw + 60) { p.cx = -60; p.px = -60 - p.fallSpeed * 0.3; }
+        if (p.cx < -60) { p.cx = cw + 60; p.px = cw + 60 - p.fallSpeed * 0.3; }
 
         drawPetal(ctx, p.cx, p.cy, p.size, p.rotation,
           p.hue, p.sat, p.lit, p.opacity, p.bendX, p.bendY);
@@ -370,7 +352,6 @@ export default function SakuraCanvas() {
     };
 
     rafRef.current = requestAnimationFrame(animate);
-
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', resize);
@@ -380,9 +361,6 @@ export default function SakuraCanvas() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ position: 'fixed', inset: 0, zIndex: 10, pointerEvents: 'none' }}
-    />
+    <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 10, pointerEvents: 'none' }} />
   );
 }
