@@ -212,24 +212,25 @@ export default function SakuraCanvas() {
 
       // ── Petals ──
       for (const p of petals) {
-        // Staggered gust pickup: each petal responds with its own delay
-        const gustResponse = Math.max(0, (gust - 0.5 * p.gustDelay) / (1 - 0.5 * p.gustDelay));
+        // Staggered gust pickup: each petal catches the gust at its own time
+        const gustResponse = Math.max(0, (gust - 0.3 * p.gustDelay) / (1 - 0.3 * p.gustDelay));
         const gustForce = -gustResponse * p.gustCatch;
 
-        // Smooth the gust sway with inertia (prevents instant lurch)
-        const gustTarget = gustForce * p.swayAmp * 0.012;
-        p.gustSwayX += (gustTarget - p.gustSwayX) * 0.04 * dt;
+        // Smooth gust with responsive inertia (fast attack, slow release)
+        const gustTarget = gustForce * p.swayAmp * 0.015;
+        const lerpRate = gustForce < p.gustSwayX ? 0.12 : 0.06; // quick to catch, slow to release
+        p.gustSwayX += (gustTarget - p.gustSwayX) * lerpRate * dt;
 
-        // High-freq flutter that intensifies during gust (like a leaf catching air)
-        const flutterAmp = 0.03 + Math.abs(gustForce) * 0.25;
-        const flutter = Math.sin(t * p.flutterFreq + p.flutterPhase) * flutterAmp;
+        // Primary gentle sway (the original beautiful drift)
+        const sway = Math.sin(t * p.swayFreq + p.swayPhase) * p.swayAmp * 0.004;
 
-        // Secondary low flutter for organic feel
-        const flutter2 = Math.sin(t * p.flutterFreq * 0.4 + p.flutterPhase * 1.7) * flutterAmp * 0.5;
+        // Gust intensifies the flutter — rapid but per-petal unique
+        const flutterAmp = 0.02 + Math.abs(gustForce) * 0.4;
+        const flutter = Math.sin(t * p.flutterFreq + p.flutterPhase) * flutterAmp * p.swayAmp * 0.003;
 
-        const drift = baseWind + p.gustSwayX + flutter + flutter2;
-        p.x += drift * p.swayAmp * 0.006 * dt;
-        p.y += (p.fallSpeed + Math.abs(gustForce) * 0.1) * dt;
+        const drift = baseWind + sway + p.gustSwayX + flutter;
+        p.x += drift * dt;
+        p.y += (p.fallSpeed + Math.abs(gustForce) * 0.08) * dt;
         p.rotation += p.rotSpeed * 0.015 * dt;
 
         if (p.y > ch + p.size * 2) {
