@@ -4,10 +4,11 @@ import { useEffect, useRef } from 'react';
 
 /* ═══════════════════════════════════════════════════════════════
    SakuraCanvas — Canvas 2D cherry blossom petal system
-   ~250 falling petals + cursor breeze vortex + trail wake.
-   Nearby petals swirl tangentially around the cursor like
-   a gentle wind vortex. Micro-petals spawn along the cursor
-   path for a magical trailing effect.
+   ~250 falling petals with cursor attraction trail.
+   Petals are pulled toward the cursor and follow it with a
+   spring-like lag (trailing effect). When the cursor stops,
+   petals smoothly drift back to their natural falling path.
+   No pushing — only attraction + spring return.
    ═══════════════════════════════════════════════════════════════ */
 
 interface Petal {
@@ -24,37 +25,16 @@ interface Petal {
   hue: number;
   saturation: number;
   lightness: number;
-  vx: number;
-  vy: number;
-}
-
-interface TrailPetal {
-  x: number;
-  y: number;
-  size: number;
-  rotation: number;
-  rotSpeed: number;
-  fallSpeed: number;
-  swayAmp: number;
-  swayFreq: number;
-  swayPhase: number;
-  opacity: number;
-  life: number;
-  hue: number;
-  saturation: number;
-  lightness: number;
-  vx: number;
-  vy: number;
+  offX: number;   // cursor attraction displacement X
+  offY: number;   // cursor attraction displacement Y
+  offVX: number;  // offset velocity X
+  offVY: number;  // offset velocity Y
 }
 
 interface Cursor {
   x: number;
   y: number;
-  px: number;
-  py: number;
   active: boolean;
-  dx: number;
-  dy: number;
 }
 
 const PETAL_COLORS = [
@@ -90,8 +70,10 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
     hue: col.h + (Math.random() - 0.5) * 10,
     saturation: col.s + (Math.random() - 0.5) * 15,
     lightness: col.l + (Math.random() - 0.5) * 10,
-    vx: 0,
-    vy: 0,
+    offX: 0,
+    offY: 0,
+    offVX: 0,
+    offVY: 0,
   };
 }
 
@@ -104,14 +86,12 @@ function drawPetal(ctx: CanvasRenderingContext2D, p: { x: number; y: number; siz
   ctx.rotate((rotation * Math.PI) / 180);
   ctx.globalAlpha = opacity;
 
-  // Petal shape — two bezier curves
   ctx.beginPath();
   ctx.moveTo(0, -halfS);
   ctx.bezierCurveTo(halfS * 0.8, -halfS * 0.6, halfS, halfS * 0.2, 0, halfS);
   ctx.bezierCurveTo(-halfS, halfS * 0.2, -halfS * 0.8, -halfS * 0.6, 0, -halfS);
   ctx.closePath();
 
-  // Gradient fill
   const grad = ctx.createLinearGradient(0, -halfS, 0, halfS);
   grad.addColorStop(0, `hsla(${hue}, ${Math.min(100, saturation - 30)}%, ${Math.min(97, lightness + 12)}%, 1)`);
   grad.addColorStop(0.4, `hsla(${hue}, ${saturation}%, ${lightness}%, 1)`);
@@ -119,7 +99,6 @@ function drawPetal(ctx: CanvasRenderingContext2D, p: { x: number; y: number; siz
   ctx.fillStyle = grad;
   ctx.fill();
 
-  // Center vein on larger petals
   if (size > 10) {
     ctx.beginPath();
     ctx.moveTo(0, -halfS * 0.6);
@@ -136,7 +115,9 @@ export default function SakuraCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef(0);
   const timeRef = useRef(0);
-  const cursorRef = useRef<Cursor>({ x: -9999, y: -9999, px: -9999, py: -9999, active: false, dx: 0, dy: 0 });
+  const cursorRef = useRef<Cursor>({ x: -9999, y: -9999, active: false });
+  // Smoothed cursor position for lag-free attraction
+  const smoothCursor = useRef({ x: -9999, y: -9999 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -159,26 +140,15 @@ export default function SakuraCanvas() {
     const h = window.innerHeight;
     const petals: Petal[] = [];
 
-    // Spawn distributed across screen
     for (let i = 0; i < 180; i++) petals.push(createPetal(w, h, 'tiny', true));
     for (let i = 0; i < 50; i++) petals.push(createPetal(w, h, 'medium', true));
     for (let i = 0; i < 20; i++) petals.push(createPetal(w, h, 'large', true));
 
-    // ── Trail system ──
-    const trail: TrailPetal[] = [];
-    const MAX_TRAIL = 60;
-    let trailSpawnAccum = 0;
-
     // ── Cursor tracking ──
     const onMouseMove = (e: MouseEvent) => {
-      const cur = cursorRef.current;
-      cur.px = cur.x;
-      cur.py = cur.y;
-      cur.x = e.clientX;
-      cur.y = e.clientY;
-      cur.dx = cur.x - cur.px;
-      cur.dy = cur.y - cur.py;
-      cur.active = true;
+      cursorRef.current.x = e.clientX;
+      cursorRef.current.y = e.clientY;
+      cursorRef.current.active = true;
     };
     const onMouseLeave = () => {
       cursorRef.current.active = false;
@@ -186,16 +156,13 @@ export default function SakuraCanvas() {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseleave', onMouseLeave);
 
-    // ── Vortex params ──
-    const VORTEX_RADIUS = 160;
-    const TANGENT_STRENGTH = 3.0;
-    const REPULSE_STRENGTH = 0.8;
-    const VELOCITY_DECAY = 0.92;
-    const MOUSE_SPEED_FACTOR = 0.15;
-
-    // ── Trail params ──
-    const TRAIL_SPEED_THRESHOLD = 2;
-    const TRAIL_SPAWN_RATE = 0.35;
+    // ── Attraction physics params ──
+    const ATTRACT_RADIUS = 220;       // how far attraction reaches
+    const ATTRACT_STRENGTH = 0.06;    // how strongly petals are pulled toward cursor
+    const SPRING_CONSTANT = 0.025;    // spring-back force (return to natural pos)
+    const SPRING_DAMPING = 0.88;      // how quickly offset velocity decays
+    const MAX_OFFSET = 80;            // max displacement from natural position
+    const SMOOTH_FACTOR = 0.12;       // how fast smoothed cursor follows real cursor (lower = more lag = more trail)
 
     let lastTime = performance.now();
 
@@ -207,104 +174,66 @@ export default function SakuraCanvas() {
       const cw = window.innerWidth;
       const ch = window.innerHeight;
       const cur = cursorRef.current;
+      const sm = smoothCursor.current;
+
+      // Smooth cursor with lag — this is what creates the trailing effect
+      // Petals chase this smoothed position, not the raw cursor
+      if (cur.active) {
+        sm.x += (cur.x - sm.x) * SMOOTH_FACTOR * dt;
+        sm.y += (cur.y - sm.y) * SMOOTH_FACTOR * dt;
+      }
 
       ctx.clearRect(0, 0, cw, ch);
 
-      // ── Spawn trail petals along cursor path ──
-      if (cur.active) {
-        const mouseSpeed = Math.sqrt(cur.dx * cur.dx + cur.dy * cur.dy);
-        if (mouseSpeed > TRAIL_SPEED_THRESHOLD) {
-          trailSpawnAccum += mouseSpeed * TRAIL_SPAWN_RATE;
-          while (trailSpawnAccum >= 1 && trail.length < MAX_TRAIL) {
-            trailSpawnAccum -= 1;
-            const col = PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)];
-            const sz = 2 + Math.random() * 5;
-            const angle = Math.random() * Math.PI * 2;
-            const spread = 5 + Math.random() * 12;
-            trail.push({
-              x: cur.x + Math.cos(angle) * spread,
-              y: cur.y + Math.sin(angle) * spread,
-              size: sz,
-              rotation: Math.random() * 360,
-              rotSpeed: (Math.random() - 0.5) * 4,
-              fallSpeed: 0.2 + Math.random() * 0.4,
-              swayAmp: 8 + Math.random() * 15,
-              swayFreq: 0.4 + Math.random() * 0.8,
-              swayPhase: Math.random() * Math.PI * 2,
-              opacity: 0.5 + Math.random() * 0.4,
-              life: 1,
-              hue: col.h + (Math.random() - 0.5) * 15,
-              saturation: col.s + (Math.random() - 0.5) * 10,
-              lightness: col.l + (Math.random() - 0.5) * 8,
-              vx: (Math.random() - 0.5) * 0.5,
-              vy: (Math.random() - 0.5) * 0.3,
-            });
-          }
-        }
-      }
-
-      // ── Update & draw trail petals ──
-      for (let i = trail.length - 1; i >= 0; i--) {
-        const tp = trail[i];
-        tp.life -= 0.012 * dt;
-        if (tp.life <= 0) { trail.splice(i, 1); continue; }
-        tp.y += tp.fallSpeed * dt;
-        tp.x += Math.sin(t * tp.swayFreq + tp.swayPhase) * tp.swayAmp * 0.01 * dt;
-        tp.x += tp.vx * dt;
-        tp.y += tp.vy * dt;
-        tp.rotation += tp.rotSpeed * dt;
-        tp.vx *= 0.97;
-        tp.vy *= 0.97;
-        drawPetal(ctx, { ...tp, opacity: tp.opacity * tp.life * tp.life });
-      }
-
-      // ── Update & draw main petals ──
       for (const p of petals) {
-        // ── Breeze vortex: tangential swirl + mild radial push ──
+        // ── Cursor attraction via spring offset ──
         if (cur.active) {
-          const ddx = p.x - cur.x;
-          const ddy = p.y - cur.y;
-          const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+          // Distance from petal's NATURAL position to smoothed cursor
+          const toCursorX = sm.x - p.x;
+          const toCursorY = sm.y - p.y;
+          const dist = Math.sqrt(toCursorX * toCursorX + toCursorY * toCursorY);
 
-          if (dist < VORTEX_RADIUS && dist > 1) {
-            const norm = 1 - dist / VORTEX_RADIUS;
-            const force = norm * norm * (3 - 2 * norm); // smoothstep
+          if (dist < ATTRACT_RADIUS && dist > 1) {
+            // Smoothstep falloff — full strength near cursor, none at edge
+            const norm = 1 - dist / ATTRACT_RADIUS;
+            const force = norm * norm * (3 - 2 * norm);
 
-            // Radial unit vector (outward)
-            const nx = ddx / dist;
-            const ny = ddy / dist;
+            // Direction toward cursor (normalized)
+            const nx = toCursorX / dist;
+            const ny = toCursorY / dist;
 
-            // Tangent unit vector (perpendicular)
-            const tx = -ny;
-            const ty = nx;
+            // Attraction: pull offset toward cursor
+            p.offVX += nx * ATTRACT_STRENGTH * force * dt;
+            p.offVY += ny * ATTRACT_STRENGTH * force * dt;
 
-            const mouseSpeed = Math.sqrt(cur.dx * cur.dx + cur.dy * cur.dy);
-            const speedBoost = 1 + mouseSpeed * MOUSE_SPEED_FACTOR;
-
-            // Swirl direction follows cursor movement cross product
-            const cross = cur.dx * ny - cur.dy * nx;
-            const swirlDir = cross >= 0 ? 1 : -1;
-
-            // Tangent force — main swirl effect (petals curve around cursor)
-            p.vx += tx * TANGENT_STRENGTH * force * speedBoost * swirlDir * dt;
-            p.vy += ty * TANGENT_STRENGTH * force * speedBoost * swirlDir * dt;
-
-            // Mild radial push — prevents collapsing into cursor
-            p.vx += nx * REPULSE_STRENGTH * force * speedBoost * dt;
-            p.vy += ny * REPULSE_STRENGTH * force * speedBoost * dt;
-
-            // Spin from turbulence
-            p.rotation += cross * 0.2 * force * dt;
+            // Extra gentle spin when being attracted
+            p.rotation += force * 0.5 * dt;
           }
         }
 
-        // Apply velocity with frame-rate independent decay
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vx *= Math.pow(VELOCITY_DECAY, dt);
-        p.vy *= Math.pow(VELOCITY_DECAY, dt);
+        // Spring-back: always pull offset back toward zero (natural position)
+        p.offVX -= p.offX * SPRING_CONSTANT * dt;
+        p.offVY -= p.offY * SPRING_CONSTANT * dt;
 
-        // Natural falling motion (always runs, never stops)
+        // Damping
+        p.offVX *= Math.pow(SPRING_DAMPING, dt);
+        p.offVY *= Math.pow(SPRING_DAMPING, dt);
+
+        // Update offset
+        p.offX += p.offVX * dt;
+        p.offY += p.offVY * dt;
+
+        // Clamp offset so petals don't fly off screen
+        const offMag = Math.sqrt(p.offX * p.offX + p.offY * p.offY);
+        if (offMag > MAX_OFFSET) {
+          const scale = MAX_OFFSET / offMag;
+          p.offX *= scale;
+          p.offY *= scale;
+          p.offVX *= 0.5;
+          p.offVY *= 0.5;
+        }
+
+        // Natural falling motion (always runs on base position)
         p.y += p.fallSpeed * dt;
         p.x += Math.sin(t * p.swayFreq + p.swayPhase) * p.swayAmp * 0.008 * dt;
         p.rotation += p.rotSpeed * dt;
@@ -315,19 +244,28 @@ export default function SakuraCanvas() {
           p.x = Math.random() * cw;
           p.swayPhase = Math.random() * Math.PI * 2;
           p.rotSpeed = (Math.random() - 0.5) * (p.size < 10 ? 1.5 : p.size < 20 ? 2.5 : 3.5);
-          p.vx = 0;
-          p.vy = 0;
+          // Reset offset so respawned petals don't drift in from weird angles
+          p.offX = 0;
+          p.offY = 0;
+          p.offVX = 0;
+          p.offVY = 0;
         }
         // Wrap horizontally
         if (p.x > cw + 60) p.x = -60;
         if (p.x < -60) p.x = cw + 60;
 
-        drawPetal(ctx, p);
+        // Draw at natural position + offset
+        drawPetal(ctx, {
+          x: p.x + p.offX,
+          y: p.y + p.offY,
+          size: p.size,
+          rotation: p.rotation,
+          hue: p.hue,
+          saturation: p.saturation,
+          lightness: p.lightness,
+          opacity: p.opacity,
+        });
       }
-
-      // Decay cursor delta each frame
-      cur.dx *= 0.6;
-      cur.dy *= 0.6;
 
       rafRef.current = requestAnimationFrame(animate);
     };
