@@ -3,10 +3,7 @@
    Pinkish anime aesthetic with realistic falling petals
    ═══════════════════════════════════════════ */
 
-/* ── Cherry blossom petal fall (main layer) ──
-   Petals stay vibrant and fully visible until they exit the viewport.
-   Only fade in at start (0-3%) and fade out at the very bottom (97-100%).
-   Wind gusts at 35% and 70% push petals sideways naturally. */
+/* ── Cherry blossom petal fall (used by GenreParticles for other genres) ── */
 @keyframes sakura-fall {
   0% {
     transform: translateY(-5vh) translateX(0) rotateZ(0deg) scale(var(--petal-scale, 1));
@@ -62,101 +59,6 @@
   }
 }
 
-/* ── Secondary petal drift (slower, wider sway) ── */
-@keyframes sakura-drift {
-  0% {
-    transform: translateY(-3vh) translateX(0) rotateZ(0deg) scale(var(--petal-scale, 0.7));
-    opacity: 0;
-  }
-  4% {
-    opacity: var(--petal-op, 0.75);
-  }
-  12% {
-    transform: translateY(8vh) translateX(calc(var(--sway-x, 40px) * 0.5)) rotateZ(30deg) scale(var(--petal-scale, 0.7));
-    opacity: var(--petal-op, 0.75);
-  }
-  25% {
-    transform: translateY(20vh) translateX(calc(var(--sway-x, 40px) * 0.9)) rotateZ(55deg) scale(var(--petal-scale, 0.7));
-    opacity: var(--petal-op, 0.75);
-  }
-  37% {
-    transform: translateY(32vh) translateX(calc(var(--sway-x, 40px) * -0.2)) rotateZ(-10deg) scale(var(--petal-scale, 0.7));
-    opacity: var(--petal-op, 0.75);
-  }
-  50% {
-    transform: translateY(45vh) translateX(calc(var(--sway-x, 40px) * -0.7)) rotateZ(-35deg) scale(var(--petal-scale, 0.7));
-    opacity: var(--petal-op, 0.75);
-  }
-  62% {
-    transform: translateY(56vh) translateX(calc(var(--sway-x, 40px) * -0.4)) rotateZ(-15deg) scale(var(--petal-scale, 0.7));
-    opacity: var(--petal-op, 0.75);
-  }
-  75% {
-    transform: translateY(70vh) translateX(calc(var(--sway-x, 40px) * 0.5)) rotateZ(20deg) scale(var(--petal-scale, 0.7));
-    opacity: var(--petal-op, 0.75);
-  }
-  87% {
-    transform: translateY(85vh) translateX(calc(var(--sway-x, 40px) * 0.2)) rotateZ(8deg) scale(var(--petal-scale, 0.7));
-    opacity: var(--petal-op, 0.75);
-  }
-  97% {
-    transform: translateY(103vh) translateX(calc(var(--sway-x, 40px) * -0.05)) rotateZ(-3deg) scale(var(--petal-scale, 0.7));
-    opacity: var(--petal-op, 0.75);
-  }
-  100% {
-    transform: translateY(110vh) translateX(0) rotateZ(-5deg) scale(var(--petal-scale, 0.7));
-    opacity: 0;
-  }
-}
-
-/* ── Close-up bokeh petal (large, blurred, cinematic foreground) ── */
-@keyframes sakura-bokeh {
-  0% {
-    transform: translateY(-2vh) translateX(-20px) rotateZ(-10deg) scale(var(--petal-scale, 1.8));
-    opacity: 0;
-    filter: blur(3px);
-  }
-  5% {
-    opacity: var(--petal-op, 0.35);
-    filter: blur(2px);
-  }
-  20% {
-    transform: translateY(18vh) translateX(calc(var(--sway-x, 60px) * 0.5)) rotateZ(35deg) scale(var(--petal-scale, 1.8));
-    opacity: var(--petal-op, 0.35);
-    filter: blur(1px);
-  }
-  35% {
-    transform: translateY(32vh) translateX(calc(var(--sway-x, 60px) * 0.9)) rotateZ(60deg) scale(var(--petal-scale, 1.8));
-    opacity: var(--petal-op, 0.35);
-    filter: blur(3px);
-  }
-  50% {
-    transform: translateY(50vh) translateX(calc(var(--sway-x, 60px) * -0.3)) rotateZ(-20deg) scale(var(--petal-scale, 1.8));
-    opacity: var(--petal-op, 0.35);
-    filter: blur(4px);
-  }
-  65% {
-    transform: translateY(65vh) translateX(calc(var(--sway-x, 60px) * -0.7)) rotateZ(-40deg) scale(var(--petal-scale, 1.8));
-    opacity: var(--petal-op, 0.35);
-    filter: blur(3px);
-  }
-  80% {
-    transform: translateY(80vh) translateX(calc(var(--sway-x, 60px) * 0.2)) rotateZ(10deg) scale(var(--petal-scale, 1.8));
-    opacity: var(--petal-op, 0.35);
-    filter: blur(5px);
-  }
-  97% {
-    transform: translateY(103vh) translateX(calc(var(--sway-x, 60px) * -0.05)) rotateZ(-3deg) scale(var(--petal-scale, 1.8));
-    opacity: var(--petal-op, 0.35);
-    filter: blur(4px);
-  }
-  100% {
-    transform: translateY(112vh) translateX(0) rotateZ(-5deg) scale(var(--petal-scale, 1.8));
-    opacity: 0;
-    filter: blur(6px);
-  }
-}
-
 /* ── Slow pulsing pink glow for background orbs ── */
 @keyframes sakura-glow {
   0%, 100% {
@@ -171,34 +73,14 @@
   }
 }
 
-/* ── Subtle title gradient flow ── */
-@keyframes sakura-title-flow {
+/* ── Ring shimmer animation for card borders ── */
+@keyframes ring-shimmer {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
-/* ── Delicate line sweep ── */
-@keyframes sakura-sweep {
-  0% { transform: translateX(-110%); opacity: 0; }
-  20% { opacity: 0.04; }
-  50% { opacity: 0.06; }
-  80% { opacity: 0.03; }
-  100% { transform: translateX(210%); opacity: 0; }
-}
-
-/* ── Floating sparkle dust ── */
-@keyframes sakura-sparkle {
-  0%, 100% {
-    transform: scale(0.3);
-    opacity: 0;
-  }
-  30% {
-    transform: scale(1.2);
-    opacity: 0.8;
-  }
-  70% {
-    transform: scale(0.9);
-    opacity: 0.4;
-  }
+/* ── Loading spinner ── */
+@keyframes sakura-spin {
+  to { transform: rotate(360deg); }
 }
