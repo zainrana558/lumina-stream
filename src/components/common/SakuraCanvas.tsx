@@ -19,10 +19,10 @@ interface Petal {
 }
 
 const COLORS = [
-  { h: 340, s: 80, l: 82 }, { h: 345, s: 85, l: 78 },
-  { h: 335, s: 75, l: 88 }, { h: 348, s: 90, l: 75 },
-  { h: 330, s: 70, l: 90 }, { h: 350, s: 88, l: 80 },
-  { h: 342, s: 82, l: 85 },
+  { h: 340, s: 95, l: 82 }, { h: 345, s: 98, l: 80 },
+  { h: 335, s: 90, l: 86 }, { h: 348, s: 100, l: 78 },
+  { h: 330, s: 88, l: 88 }, { h: 350, s: 96, l: 83 },
+  { h: 342, s: 94, l: 85 },
 ];
 
 function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', spread: boolean): Petal {
@@ -34,12 +34,11 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
   return {
     x, y, size: sz,
     rotation: Math.random() * Math.PI * 2,
-    hue: col.h + (Math.random() - 0.5) * 10,
-    sat: col.s + (Math.random() - 0.5) * 15,
-    lit: col.l + (Math.random() - 0.5) * 10,
-    opacity: tier === 'tiny' ? 0.25 + Math.random() * 0.25
-      : tier === 'medium' ? 0.5 + Math.random() * 0.3
-      : 0.7 + Math.random() * 0.25,
+    hue: col.h + (Math.random() - 0.5) * 8,
+    sat: col.s + (Math.random() - 0.5) * 5,
+    lit: col.l + (Math.random() - 0.5) * 5,
+    opacity: tier === 'tiny' ? 0.35 + Math.random() * 0.3
+      : 0.6 + Math.random() * 0.3,
     fallSpeed: 0.15 + Math.random() * 0.25
       + (tier === 'tiny' ? 0.05 : tier === 'large' ? -0.03 : 0),
     swayAmp: 30 + Math.random() * 55 + (tier === 'large' ? 25 : 0),
@@ -119,12 +118,17 @@ export default function SakuraCanvas() {
       ctx.clearRect(0, 0, cw, ch);
 
       for (const p of petals) {
-        p.y += p.fallSpeed * dt;
-        // Global wind gust + individual sway
-        const gustX = Math.sin(t * 0.35) * 18 + Math.sin(t * 0.9) * 8;
-        const gustY = Math.cos(t * 0.25) * 2;
-        p.x += (Math.cos(t * p.swayFreq + p.swayPhase) * p.swayAmp * 0.004 + gustX * 0.012) * dt;
-        p.y += gustY * 0.05 * dt;
+        // Steady wind direction + periodic gusts
+        // Base wind: always drifting right with gentle undulation
+        const baseWind = 0.35 + Math.sin(t * 0.15) * 0.15;
+        // Gust: periodic bursts that spike and fade
+        const gustCycle = Math.sin(t * 0.3);
+        const gust = gustCycle > 0.6 ? (gustCycle - 0.6) * 4.0 : 0;
+        // Per-petal variation within the wind (no zigzag — stays positive/rightward)
+        const drift = baseWind + gust + Math.sin(t * p.swayFreq + p.swayPhase) * 0.08;
+        p.x += drift * p.swayAmp * 0.006 * dt;
+        // Gust adds a slight downward push
+        p.y += (p.fallSpeed + gust * 0.15) * dt;
         p.rotation += p.rotSpeed * 0.015 * dt;
 
         if (p.y > ch + p.size * 2) {
