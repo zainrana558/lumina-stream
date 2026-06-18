@@ -197,7 +197,7 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
       {/* Active filter chips */}
       {activeFilters.length > 0 && (
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.3)',  letterSpacing: '.08em' }}>FILTERS:</span>
+          <span className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.5)',  letterSpacing: '.08em' }}>FILTERS:</span>
           {activeFilters.map(f => (
             <span
               key={f.key}

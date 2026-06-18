@@ -34,7 +34,7 @@ export const commentPostSchema = z.object({
   mediaId: z.number().int().positive(),
   mediaType: z.enum(['movie', 'tv']),
   content: z.string().trim().min(1).max(2000).transform(v => v.replace(/<[^>]*>/g, '')),
-  rating: z.number().min(1).max(5).optional(),
+  rating: z.number().min(1).max(10).optional(),
 });
 
 export const commentDeleteSchema = z.object({

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 
-export default function GenreError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GenreError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const router = useRouter();
 
   return (

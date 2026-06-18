@@ -117,7 +117,7 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="f-cinzel" style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>
+      <div className="f-cinzel" style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>
         <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
         <div>Loading leaderboard...</div>
       </div>
@@ -145,7 +145,7 @@ export default function LeaderboardPage() {
           <div className="neo-raised" style={{ padding: '3rem 2rem', borderRadius: 16, textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: .3 }}>🏆</div>
             <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No ratings yet</h3>
-            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>
+            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.95rem' }}>
               Be the first to rate shows and build the community leaderboard!
             </p>
             <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
@@ -207,7 +207,7 @@ export default function LeaderboardPage() {
                       <span className="gtag" style={{ fontSize: '.52rem', padding: '2px 8px' }}>
                         {entry.media_type === 'movie' ? 'Movie' : 'Series'}
                       </span>
-                      <span className="f-mono" style={{ fontSize: '.56rem', color: 'rgba(255,245,232,.3)', }}>
+                      <span className="f-mono" style={{ fontSize: '.56rem', color: 'rgba(255,245,232,.5)', }}>
                         {entry.rating_count} {entry.rating_count === 1 ? 'rating' : 'ratings'}
                       </span>
                     </div>

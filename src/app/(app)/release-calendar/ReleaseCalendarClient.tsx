@@ -135,7 +135,7 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                         </div>
                         <div className="f-cinzel" style={{
                           fontSize: '.58rem',
-                          color: 'rgba(255,245,232,.3)',
+                          color: 'rgba(255,245,232,.5)',
                           
                           letterSpacing: '.08em',
                           textTransform: 'uppercase',

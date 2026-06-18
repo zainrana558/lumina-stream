@@ -316,7 +316,7 @@ function ProfileSection({ profile, showToast }: { profile: any; showToast: (msg:
             <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
               👶 Kids Mode
             </div>
-            <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  marginTop: 2 }}>
+            <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.5)',  marginTop: 2 }}>
               Filter content suitable for younger audiences
             </div>
           </div>
@@ -385,7 +385,7 @@ function AppearanceSection({ showToast }: { showToast: (msg: string) => void }) 
             <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
               🌊 Reduced Motion
             </div>
-            <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  marginTop: 2 }}>
+            <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.5)',  marginTop: 2 }}>
               Minimize animations and transitions
             </div>
           </div>
@@ -421,7 +421,7 @@ function AppearanceSection({ showToast }: { showToast: (msg: string) => void }) 
         <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
           THEME COLORS
         </div>
-        <p className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  lineHeight: 1.5, marginBottom: '.8rem' }}>
+        <p className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.5)',  lineHeight: 1.5, marginBottom: '.8rem' }}>
           Use the theme switcher in the top-right corner to toggle between dark and light themes. Additional theme customization will be available in a future update.
         </p>
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
@@ -469,7 +469,7 @@ function NotificationsSection({ showToast }: { showToast: (msg: string) => void 
             <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
               Browser Notifications
             </div>
-            <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  marginTop: 2 }}>
+            <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.5)',  marginTop: 2 }}>
               Get notified about new episodes and releases
             </div>
           </div>
@@ -505,7 +505,7 @@ function NotificationsSection({ showToast }: { showToast: (msg: string) => void 
           <div className="f-crimson" style={{
             marginTop: '.6rem', padding: '.5rem .8rem', borderRadius: 8,
             background: 'rgba(255,74,74,.06)', border: '1px solid rgba(255,74,74,.15)',
-            fontSize: '.58rem', color: 'rgba(255,245,232,.3)', 
+            fontSize: '.58rem', color: 'rgba(255,245,232,.5)', 
             lineHeight: 1.5,
           }}>
             Notifications are blocked in your browser settings. To enable them, go to your browser&apos;s site settings and allow notifications for this website.
@@ -560,7 +560,7 @@ function PrivacySection({ showToast }: { showToast: (msg: string) => void }) {
         <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
           PRIVACY INFO
         </div>
-        <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  lineHeight: 1.6 }}>
+        <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.5)',  lineHeight: 1.6 }}>
           Your viewing data is stored securely and used only to personalize your experience. We do not share your personal information with third parties. All data is stored on Supabase&apos;s encrypted infrastructure.
         </div>
       </div>
@@ -579,7 +579,7 @@ function AboutSection() {
         <div className="f-cinzel-dec" style={{  fontSize: '1.8rem', color: '#FFB347', marginBottom: '.3rem', letterSpacing: '.06em' }}>
           LUMINA
         </div>
-        <div className="f-crimson" style={{  fontSize: '.85rem', color: 'rgba(255,245,232,.3)', fontStyle: 'italic', marginBottom: '1rem' }}>
+        <div className="f-crimson" style={{  fontSize: '.85rem', color: 'rgba(255,245,232,.5)', fontStyle: 'italic', marginBottom: '1rem' }}>
           Dream, Discover, Stream
         </div>
         <div className="f-mono" style={{
@@ -630,7 +630,7 @@ function SectionHeader({ icon, title, subtitle }: { icon: string; title: string;
         <span style={{ fontSize: '1.1rem' }}>{icon}</span>
         <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.8vw,1.15rem)' }}>{title}</h2>
       </div>
-      <p className="f-crimson" style={{  fontSize: '.78rem', color: 'rgba(255,245,232,.3)', fontStyle: 'italic', paddingLeft: '1.7rem' }}>
+      <p className="f-crimson" style={{  fontSize: '.78rem', color: 'rgba(255,245,232,.5)', fontStyle: 'italic', paddingLeft: '1.7rem' }}>
         {subtitle}
       </p>
     </div>

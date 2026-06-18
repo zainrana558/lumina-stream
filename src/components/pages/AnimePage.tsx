@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { lazy, Suspense, useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
 import Card from '@/components/common/Card';
 import GenreToolbar from '@/components/common/GenreToolbar';
-import SakuraCanvas from '@/components/common/SakuraCanvas';
+const SakuraCanvas = lazy(() => import('@/components/common/SakuraCanvas'));
 import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
@@ -183,7 +183,7 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
           }} />
         </div>
 
-        <SakuraCanvas />
+        <Suspense fallback={null}><SakuraCanvas /></Suspense>
         <GenreTrivia genre="anime" color="rgba(255,183,197,.4)" />
 
         {/* ── Search, sort, filter toolbar ── */}

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) return NextResponse.json({ notifications: [], unreadCount: 0 });
+    if (error) return NextResponse.json({ notifications: [], unreadCount: 0, error: error.message }, { status: 500 });
 
     // Get unread count
     const { count: unreadCount } = await supabase
@@ -96,7 +96,7 @@ export async function PATCH(request: NextRequest) {
       .eq('id', notificationId)
       .eq('profile_id', profileId);
 
-    if (error) return NextResponse.json({ error: error.message });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';

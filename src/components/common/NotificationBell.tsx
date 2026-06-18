@@ -205,14 +205,14 @@ export default function NotificationBell() {
           {/* Notification list */}
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {loading ? (
-              <div className="f-cinzel" style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,245,232,.3)',  fontSize: '.75rem' }}>
+              <div className="f-cinzel" style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,245,232,.5)',  fontSize: '.75rem' }}>
                 <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.2rem', marginBottom: '.5rem' }}>✦</div>
                 <div>Loading...</div>
               </div>
             ) : notifications.length === 0 ? (
               <div style={{ padding: '3rem 2rem', textAlign: 'center' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '.5rem', opacity: .3 }}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,245,232,.2)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,245,232,.4)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', margin: '0 auto' }}>
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                   </svg>
@@ -220,7 +220,7 @@ export default function NotificationBell() {
                 <div className="f-crimson" style={{  fontSize: '.85rem', color: 'rgba(255,245,232,.35)' }}>
                   No notifications yet
                 </div>
-                <div className="f-mono" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.2)', marginTop: 4, }}>
+                <div className="f-mono" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.4)', marginTop: 4, }}>
                   Activity from people you follow will appear here
                 </div>
               </div>

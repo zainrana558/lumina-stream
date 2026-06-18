@@ -4,6 +4,7 @@ import DetailsContent from '@/components/pages/DetailsContent';
 import type { Metadata } from 'next';
 import { tmdbToMedia, isAnilistId, toAnilistId } from '@/types';
 import type { TMDBShow, MediaItem } from '@/types';
+import { buildDetailJsonLd } from '@/lib/jsonld';
 
 interface TMDBShowData {
   id: number;
@@ -98,7 +99,21 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
       const data = await getAnimeDetail(anilistId);
       if (data) show = anilistToMediaItem(data);
     } catch { /* fall through to null */ }
-    return <DetailsContent showId={showId} initialShow={show} />;
+    return show ? (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              buildDetailJsonLd(show, process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app'),
+            ),
+          }}
+        />
+        <DetailsContent showId={showId} initialShow={show} />
+      </>
+    ) : (
+      <DetailsContent showId={showId} initialShow={null} />
+    );
   }
 
   // ── TMDB route: standard ID ──
@@ -136,11 +151,21 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   const show = tmdbToMedia({ ...rawData, media_type: mediaType } as TMDBShow);
 
   return (
-    <DetailsContent
-      showId={showId}
-      initialShow={show}
-      initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
-      initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildDetailJsonLd(show, process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app'),
+          ),
+        }}
+      />
+      <DetailsContent
+        showId={showId}
+        initialShow={show}
+        initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
+        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
+      />
+    </>
   );
 }

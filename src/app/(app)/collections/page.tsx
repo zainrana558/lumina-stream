@@ -144,7 +144,7 @@ export default function CollectionsPage() {
 
       <div style={{ padding: `1.5rem ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>
         {loading ? (
-          <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
+          <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem', color: 'rgba(255,245,232,.5)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
             <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem', marginBottom: '.5rem' }}>✦</div>
             <div>Loading collections...</div>
           </div>
@@ -152,7 +152,7 @@ export default function CollectionsPage() {
           <div style={{ textAlign: 'center', padding: '5rem 2rem' }}>
             <div style={{ fontSize: '3.5rem', marginBottom: '1rem', opacity: .25 }}>📋</div>
             <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No collections yet</h3>
-            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.9rem', maxWidth: 400, margin: '0 auto 1.5rem' }}>
+            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.9rem', maxWidth: 400, margin: '0 auto 1.5rem' }}>
               Create your first collection to organize your favorite shows into curated lists like &quot;My Top 10 Shonen&quot; or &quot;Weekend Binge&quot;
             </p>
             <button className="btn-p" onClick={() => setShowCreate(true)} style={{ padding: '10px 28px', borderRadius: 12, fontSize: '.75rem' }}>

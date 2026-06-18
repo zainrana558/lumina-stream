@@ -160,6 +160,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
                 width={220}
                 height={320}
                 loading="eager"
+                priority
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
@@ -239,7 +240,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
           <div style={{ marginBottom: '2.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
               <div>
-                <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>Most recognized for</div>
+                <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.5)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>Most recognized for</div>
                 <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>🌟 Known For</div>
               </div>
             </div>
@@ -259,7 +260,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: '.75rem' }}>
               <div>
                 <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>🎬 Full Filmography</div>
-                <div className="f-crimson" style={{ fontSize: '.72rem', color: 'rgba(255,245,232,.3)',  marginTop: 4 }}>
+                <div className="f-crimson" style={{ fontSize: '.72rem', color: 'rgba(255,245,232,.5)',  marginTop: 4 }}>
                   {filteredCredits.length} titles
                 </div>
               </div>

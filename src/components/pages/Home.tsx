@@ -9,11 +9,13 @@ import Card from '@/components/common/Card';
 import ContentRow from '@/components/common/ContentRow';
 import ContinueWatchingCard from '@/components/common/ContinueWatchingCard';
 import MoodRoulette from '@/components/common/MoodRoulette';
-import MoodQuiz from '@/components/common/MoodQuiz';
-import AIMoodDetector from '@/components/common/AIMoodDetector';
-import AmbientSoundscape from '@/components/common/AmbientSoundscape';
 import GenreProgress from '@/components/common/GenreProgress';
 import { getBackdropUrl } from '@/lib/images';
+import { lazy, Suspense } from 'react';
+
+const MoodQuiz = lazy(() => import('@/components/common/MoodQuiz'));
+const AIMoodDetector = lazy(() => import('@/components/common/AIMoodDetector'));
+const AmbientSoundscape = lazy(() => import('@/components/common/AmbientSoundscape'));
 import type { GenreFeatured } from '@/app/(app)/page';
 
 interface RowData {
@@ -213,12 +215,22 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
       <div ref={bgRef} key={`bg-${idx}`} style={{
         position: 'absolute', inset: '-6%',
         background: F.backdrop_path
-          ? `url(${getBackdropUrl(F.backdrop_path, 'w1280')}) center/cover no-repeat`
+          ? undefined
           : `linear-gradient(135deg,${s.base} 0%,#18063A 22%,#2D1B5E 45%,${s.base} 80%)`,
         transition: 'transform .3s ease', zIndex: 0, animation: 'hero-swap .7s ease both',
       }}>
         {F.backdrop_path && (
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.85) 0%,rgba(7,4,15,.6) 40%,rgba(7,4,15,.75) 100%)' }} />
+          <>
+            <Image
+              src={getBackdropUrl(F.backdrop_path, 'w1280')!}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              style={{ objectFit: 'cover', zIndex: 0 }}
+            />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.85) 0%,rgba(7,4,15,.6) 40%,rgba(7,4,15,.75) 100%)', zIndex: 1 }} />
+          </>
         )}
         <div style={{ position: 'absolute', top: '16%', left: '55%', width: 400, height: 400, borderRadius: '50%', background: `radial-gradient(circle,${s.acc}28 0%,transparent 68%)`, filter: 'blur(50px)', animation: 'aurora 11s ease-in-out infinite' }} />
         <div style={{ position: 'absolute', bottom: '22%', right: '16%', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(139,120,255,.22) 0%,transparent 68%)', filter: 'blur(52px)', animation: 'aurora 15s ease-in-out infinite reverse' }} />
@@ -296,10 +308,22 @@ function GenrePortalCard({
         className="portal-backdrop"
         style={{
           backgroundImage: backdropUrl
-            ? `url(${backdropUrl})`
+            ? undefined
             : g.col,
+          position: 'relative',
         }}
-      />
+      >
+        {backdropUrl && (
+          <Image
+            src={backdropUrl}
+            alt=""
+            fill
+            loading="lazy"
+            sizes="(max-width: 768px) 100vw, 33vw"
+            style={{ objectFit: 'cover' }}
+          />
+        )}
+      </div>
       {/* Dark gradient overlay */}
       <div className="portal-overlay" />
       {/* Colored glow orb on hover */}
@@ -662,7 +686,7 @@ export default function Home({
           <div style={{ marginBottom: 44 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16, paddingInline: 'clamp(1rem,5vw,3rem)' }}>
               <div>
-                <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>Pick up where you left off</div>
+                <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.5)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>Pick up where you left off</div>
                 <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>Continue Watching</div>
               </div>
             </div>
@@ -719,8 +743,8 @@ export default function Home({
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <MoodRoulette />
-            <MoodQuiz />
-            <AIMoodDetector />
+            <Suspense fallback={null}><MoodQuiz /></Suspense>
+            <Suspense fallback={null}><AIMoodDetector /></Suspense>
           </div>
         </div>
         <div className="hide-scroll" style={{ display: 'flex', gap: 'clamp(.8rem,1.4vw,1.2rem)', overflowX: 'auto', paddingBottom: 8 }}>
@@ -737,7 +761,7 @@ export default function Home({
       </section>
 
       {/* Ambient Soundscape */}
-      <AmbientSoundscape />
+      <Suspense fallback={null}><AmbientSoundscape /></Suspense>
 
       {/* ── Footer ── */}
       <footer style={{ position: 'relative', zIndex: 3, background: '#05030C', borderTop: '1px solid rgba(255,255,255,.055)', padding: '3rem clamp(1rem,5vw,3rem) 2.5rem', boxShadow: '0 -6px 0 rgba(0,0,0,.7),0 -10px 38px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04)' }}>

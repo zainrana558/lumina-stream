@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(50);
 
-    if (error) return NextResponse.json({ comments: [] });
+    if (error) return NextResponse.json({ comments: [], error: 'Failed to load comments' }, { status: 500 });
 
     const comments: CommentRow[] = (data as unknown as CommentQueryRow[] || []).map((c) => ({
       id: c.id,

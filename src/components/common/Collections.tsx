@@ -240,7 +240,7 @@ export function CollectionDetail({ collectionId }: { collectionId: string }) {
 
   if (loading) {
     return (
-      <div className="f-cinzel" style={{ textAlign: 'center', padding: '4rem', color: 'rgba(255,245,232,.3)', }}>
+      <div className="f-cinzel" style={{ textAlign: 'center', padding: '4rem', color: 'rgba(255,245,232,.5)', }}>
         <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem' }}>✦</div>
         <div style={{ marginTop: '.5rem' }}>Loading collection...</div>
       </div>

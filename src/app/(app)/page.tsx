@@ -221,5 +221,29 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const { featured, rows, genreFeatured } = await getTMDBData();
-  return <Home featured={featured} rows={rows} genreFeatured={genreFeatured} />;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Lumina Stream',
+    url: siteUrl,
+    description: 'Stream movies, TV shows, anime, and cartoons for free.',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${siteUrl}/browse?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <Home featured={featured} rows={rows} genreFeatured={genreFeatured} />
+    </>
+  );
 }

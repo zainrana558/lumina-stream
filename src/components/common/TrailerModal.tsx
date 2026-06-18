@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { CS } from '@/styles/themes';
 import { getYoutubeThumbnail } from '@/lib/images';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface Trailer {
   key: string;
@@ -18,12 +19,14 @@ export default function TrailerModal({ trailers, showTitle, onClose }: {
   onClose: () => void;
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const trapRef = useFocusTrap<HTMLDivElement>(true);
 
   if (trailers.length === 0) return null;
   const trailer = trailers[activeIdx];
 
   return (
     <div
+      ref={trapRef}
       style={{
         position: 'fixed', inset: 0, zIndex: 10000,
         background: 'rgba(0,0,0,.85)', backdropFilter: 'blur(6px)',
@@ -33,7 +36,8 @@ export default function TrailerModal({ trailers, showTitle, onClose }: {
       onClick={onClose}
       onKeyDown={e => { if (e.key === 'Escape') onClose(); }}
       role="dialog"
-      aria-label="Trailer for ${showTitle}"
+      aria-label={`Trailer for ${showTitle}`}
+      aria-modal="true"
     >
       <div
         onClick={e => e.stopPropagation()}

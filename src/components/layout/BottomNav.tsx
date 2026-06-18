@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, lazy, Suspense } from 'react';
-const ShortcutOverlay = lazy(() => import('@/components/common/ShortcutOverlay'));
+import type { ReactNode } from 'react';
 
 interface BottomNavProps {
   page: string;
   go: (target: string) => void;
   openSearch: () => void;
+  onShowShortcuts?: () => void;
 }
 
 const ITEMS: { key: string; label: string }[] = [
@@ -17,9 +17,7 @@ const ITEMS: { key: string; label: string }[] = [
   { key: 'login', label: 'Account' },
 ];
 
-export default function BottomNav({ page, go, openSearch }: BottomNavProps) {
-  const [showShortcuts, setShowShortcuts] = useState(false);
-
+export default function BottomNav({ page, go, openSearch, onShowShortcuts }: BottomNavProps) {
   return (
     <>
       <nav className="bottom-nav" aria-label="Mobile navigation">
@@ -55,11 +53,11 @@ export default function BottomNav({ page, go, openSearch }: BottomNavProps) {
           role="button"
           tabIndex={0}
           aria-label="Keyboard shortcuts"
-          onClick={() => setShowShortcuts(true)}
+          onClick={() => onShowShortcuts?.()}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              setShowShortcuts(true);
+              onShowShortcuts?.();
             }
           }}
           style={{ position: 'relative' }}
@@ -68,13 +66,6 @@ export default function BottomNav({ page, go, openSearch }: BottomNavProps) {
           <span className="lb">Keys</span>
         </div>
       </nav>
-
-      {/* Shortcuts overlay from bottom nav */}
-      {showShortcuts && (
-        <Suspense fallback={null}>
-          <ShortcutOverlay visible={showShortcuts} onClose={() => setShowShortcuts(false)} />
-        </Suspense>
-      )}
     </>
   );
 }

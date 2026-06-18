@@ -85,7 +85,7 @@ function SeasonCard({ item, index }: { item: MediaItem; index: number }) {
             <span key={g} className="gtag" style={{ fontSize: '.5rem', padding: '1px 6px' }}>{g}</span>
           ))}
           {item.eps > 0 && (
-            <span className="f-mono" style={{ fontSize: '.56rem', color: 'rgba(255,245,232,.3)', }}>
+            <span className="f-mono" style={{ fontSize: '.56rem', color: 'rgba(255,245,232,.5)', }}>
               {item.eps} eps
             </span>
           )}
@@ -159,7 +159,7 @@ export default function SeasonalClient({ airingToday, trendingThisWeek, returnin
           <div className="neo-raised" style={{ padding: '3rem 2rem', borderRadius: 16, textAlign: 'center' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: .3 }}>🌸</div>
             <h3 className="f-cinzel" style={{  fontSize: '1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No titles found</h3>
-            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', fontSize: '.9rem' }}>
+            <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', fontSize: '.9rem' }}>
               Check back later for seasonal updates
             </p>
           </div>

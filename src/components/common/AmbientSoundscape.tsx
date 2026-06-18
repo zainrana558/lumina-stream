@@ -198,7 +198,7 @@ export default function AmbientSoundscape({ mood }: { mood?: string }) {
             ))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)' }}>Vol</span>
+            <span style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.5)' }}>Vol</span>
             <input
               type="range"
               min={0}

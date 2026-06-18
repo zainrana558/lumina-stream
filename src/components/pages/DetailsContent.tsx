@@ -413,13 +413,24 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     <div className="page" style={{ minHeight: '100vh' }}>
       {/* Hero backdrop */}
       <div style={{ position: 'relative', height: 'clamp(35vh,42vh,50vh)', overflow: 'hidden' }}>
-        <div key={show.id} style={{ position: 'absolute', inset: 0, background: show._isAnilist && show._anilistBanner
-          ? `url(${show._anilistBanner}) center/cover no-repeat`
-          : show.backdrop_path
-          ? `url(${getBackdropUrl(show.backdrop_path, 'w1280')}) center/cover no-repeat`
-          : `linear-gradient(135deg,${s.base} 0%,#18063A 40%,#2D1B5E 100%)`, animation: 'hero-swap .6s ease both' }}>
-          {(show.backdrop_path || (show._isAnilist && show._anilistBanner)) && (            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)' }} />
-          )}
+        <div key={show.id} style={{
+          position: 'absolute', inset: 0,
+          background: (!show.backdrop_path && !(show._isAnilist && show._anilistBanner))
+          ? `linear-gradient(135deg,${s.base} 0%,#18063A 40%,#2D1B5E 100%)`
+          : undefined,
+          animation: 'hero-swap .6s ease both'
+        }}>
+          {(show._isAnilist && show._anilistBanner) ? (
+            <>
+              <Image src={show._anilistBanner} alt="" fill priority sizes="100vw" style={{ objectFit: 'cover', zIndex: 0 }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)', zIndex: 1 }} />
+            </>
+          ) : show.backdrop_path ? (
+            <>
+              <Image src={getBackdropUrl(show.backdrop_path, 'w1280')!} alt="" fill priority sizes="100vw" style={{ objectFit: 'cover', zIndex: 0 }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)', zIndex: 1 }} />
+            </>
+          ) : null}
           <div style={{ position: 'absolute', top: '10%', left: '45%', width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle,${s.acc}30 0%,transparent 68%)`, filter: 'blur(62px)', animation: 'aurora 12s ease-in-out infinite' }} />
           <div style={{ position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', fontSize: 'clamp(9rem,15vw,17rem)', opacity: .04, filter: 'blur(5px)', animation: 'float 8s ease-in-out infinite', userSelect: 'none' }}>{s.em}</div>
         </div>
@@ -440,10 +451,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               }}>{contentRating}</div>
             )}
             {show.genre.slice(0, 3).map(g => <span key={g} className="gtag">{g}</span>)}
-            <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)', alignSelf: 'center', }}>{show.yr} · {show.media_type === 'tv' ? `${show.eps} eps` : `${show.eps} min`} · {show.st}</span>
+            <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.55)', alignSelf: 'center', }}>{show.yr} · {show.media_type === 'tv' ? `${show.eps} eps` : `${show.eps} min`} · {show.st}</span>
           </div>
           <h1 className="s2 f-cinzel-dec" style={{  fontWeight: 900, fontSize: 'clamp(1.4rem,3.5vw,2.8rem)', background: `linear-gradient(135deg,#FFF 0%,${s.acc} 65%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: 4, lineHeight: 1.1 }}>{show.title}</h1>
-          <p className="s3 f-cinzel" style={{  fontSize: '.82rem', color: 'rgba(255,245,232,.48)', letterSpacing: '.05em' }}>{show.sub}</p>
+          <p className="s3 f-cinzel" style={{  fontSize: '.82rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.05em' }}>{show.sub}</p>
         </div>
       </div>
 
@@ -491,7 +502,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               </div>
             )}
             {loadingSeason ? (
-              <div className="f-cinzel" style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>Loading episodes…</div>
+              <div className="f-cinzel" style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255,245,232,.5)',  fontSize: '.82rem', letterSpacing: '.1em' }}>Loading episodes…</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
                 {epData.map((e, i) => {
@@ -551,7 +562,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 )}
                 <div>
                   <div className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{c.name}</div>
-                  <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)' }}>{c.character || 'Actor'}</div>
+                  <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.55)' }}>{c.character || 'Actor'}</div>
                 </div>
               </div>
             ))}
@@ -580,14 +591,14 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                         </div>
                         <div style={{ padding: '.6rem 0' }}>
                           <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
-                          <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)', }}>{v.type}</span>
+                          <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.5)', }}>{v.type}</span>
                         </div>
                       </div>
                     ))}
                 </div>
               </>
             ) : (
-              <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
+              <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.5)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '.8rem', opacity: .4 }}>🎬</div>
                 No trailers available
               </div>
@@ -630,7 +641,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               </div>
             )}
             {commentLoading ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'rgba(255,245,232,.3)' }}>Loading comments...</div>
+              <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'rgba(255,245,232,.5)' }}>Loading comments...</div>
             ) : comments.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'rgba(255,245,232,.25)', fontStyle: 'italic' }}>No comments yet. Be the first to share your thoughts!</div>
             ) : (

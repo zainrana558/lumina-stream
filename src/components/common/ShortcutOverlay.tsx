@@ -1,6 +1,7 @@
 'use client';
 
 import { CS } from '@/styles/themes';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 const SHORTCUTS = [
   { key: 'Space / K', action: 'Play / Pause', icon: '⏯' },
@@ -21,11 +22,13 @@ const SHORTCUTS = [
 ];
 
 export default function ShortcutOverlay({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const trapRef = useFocusTrap<HTMLDivElement>(visible);
   if (!visible) return null;
   const s = CS[0];
 
   return (
     <div
+      ref={trapRef}
       style={{
         position: 'fixed', inset: 0, zIndex: 10001,
         background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(6px)',
@@ -35,6 +38,7 @@ export default function ShortcutOverlay({ visible, onClose }: { visible: boolean
       onClick={onClose}
       onKeyDown={e => { if (e.key === 'Escape') onClose(); }}
       role="dialog"
+      aria-modal="true"
       aria-label="Keyboard shortcuts"
     >
       <div

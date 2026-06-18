@@ -58,11 +58,13 @@ export const metadata: Metadata = {
     url: siteUrl,
     siteName: "Lumina Stream",
     locale: "en_US",
+    images: [{ url: `${siteUrl}/logo.svg`, width: 512, height: 512, alt: "Lumina Stream" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Lumina Stream",
     description: "Explore a curated collection of movies, TV shows, anime, and cartoons.",
+    images: [`${siteUrl}/logo.svg`],
   },
   icons: {
     icon: [

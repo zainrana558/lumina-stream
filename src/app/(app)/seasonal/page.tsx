@@ -1,9 +1,19 @@
 import { getSeasonalAnime, getTrendingAnime, getUpcomingAnime, anilistToMediaItem } from '@/lib/anilist/client';
 import type { MediaItem } from '@/types';
 import type { AniListMedia } from '@/lib/anilist/client';
+import type { Metadata } from 'next';
 import SeasonalClient from './SeasonalClient';
 
-export const revalidate = 0; // Bust CDN cache — change back to 600 once confirmed working
+export const revalidate = 600;
+
+export const metadata: Metadata = {
+  title: 'Seasonal Anime - Currently Airing & Trending',
+  description: 'Discover this season\'s best anime. Browse currently airing, trending, and upcoming series updated every week with episode counts and ratings.',
+  openGraph: {
+    title: 'Seasonal Anime | Lumina Stream',
+    description: 'Currently airing, trending, and upcoming anime series this season.',
+  },
+};
 
 async function getSeasonalData() {
   try {

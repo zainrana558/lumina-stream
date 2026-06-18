@@ -8,6 +8,7 @@ import { CS } from '@/styles/themes';
 import Image from 'next/image';
 import SearchFilters, { type FilterState } from '@/components/common/SearchFilters';
 import { addSearch, getRecentSearches, clearSearchHistory } from '@/lib/searchHistory';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { getPosterUrl, getProfileUrl } from '@/lib/images';
 
 interface TMDBPersonResult {
@@ -37,6 +38,7 @@ const DEFAULT_FILTERS: FilterState = {
 
 export default function SearchOverlay({ onClose }: SearchOverlayProps) {
   const router = useRouter();
+  const trapRef = useFocusTrap<HTMLDivElement>(true);
   const [q, setQ] = useState('');
   const [results, setResults] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -201,11 +203,11 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
   };
 
   return (
-    <div className="s-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="s-overlay" ref={trapRef} role="dialog" aria-modal="true" aria-label="Search" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ width: '100%', maxWidth: 640 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <span className="sec" style={{ fontSize: '1.2rem' }}>Search Lumina</span>
-          <button className="btn-icon" onClick={onClose}>✕</button>
+          <button className="btn-icon" onClick={onClose} aria-label="Close search">✕</button>
         </div>
 
         {/* Tab bar: Shows / People */}
@@ -223,7 +225,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
         </div>
 
         <div style={{ position: 'relative', marginBottom: '1rem' }}>
-          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,245,232,.3)', fontSize: '1.1rem' }}>🔍</span>
+          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,245,232,.5)', fontSize: '1.1rem' }}>🔍</span>
           <input className="inp" autoFocus style={{ paddingLeft: 44, fontSize: '1.05rem' }} placeholder={searchTab === 'people' ? 'Search actors, directors…' : searchTab === 'anime' ? 'Search anime titles…' : 'Search shows, genres…'} value={q} onChange={(e) => handleInputChange(e.target.value)} />
         </div>
 
@@ -279,7 +281,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="f-cinzel" style={{  fontWeight: 600, fontSize: '.88rem', color: '#FFF5E8', marginBottom: 3 }}>{p.name}</div>
                   <div style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)', marginBottom: 2 }}>{p.known_for_department}</div>
-                  <div className="f-crimson" style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.3)',  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div className="f-crimson" style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.5)',  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {p.known_for?.slice(0, 3).map((kf) => kf.title || kf.name).join(', ') || 'No known works'}
                   </div>
                 </div>
@@ -311,8 +313,8 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
           </div>
         ) : searched && q.length > 1 ? (
           <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-            <div className="f-cinzel" style={{ color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em', marginBottom: '.7rem' }}>✦ No results ✦</div>
-            <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.2)', marginBottom: suggestions.length > 0 ? '1rem' : 0 }}>
+            <div className="f-cinzel" style={{ color: 'rgba(255,245,232,.5)',  fontSize: '.82rem', letterSpacing: '.1em', marginBottom: '.7rem' }}>✦ No results ✦</div>
+            <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.4)', marginBottom: suggestions.length > 0 ? '1rem' : 0 }}>
               Try fewer words or check spelling
             </div>
             {suggestions.length > 0 && (
@@ -355,7 +357,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
         ) : recentSearches.length > 0 ? (
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.6rem' }}>
-              <span className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>RECENT SEARCHES</span>
+              <span className="f-cinzel" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>RECENT SEARCHES</span>
               <button className="f-cinzel" onClick={() => { clearSearchHistory(); setRecentSearches([]); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.58rem', color: 'rgba(255,107,138,.6)',  letterSpacing: '.06em' }}>Clear all</button>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.45rem' }}>

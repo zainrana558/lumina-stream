@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import type { MediaItem } from '@/types';
 import { tmdbToMedia } from '@/types';
 import type { TMDBShow } from '@/types';
 import Card from '@/components/common/Card';
 import GenreToolbar from '@/components/common/GenreToolbar';
-import GenreParticles from '@/components/common/GenreParticles';
+const GenreParticles = lazy(() => import('@/components/common/GenreParticles'));
 import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
@@ -214,7 +214,7 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
           </div>
         </div>
 
-        <GenreParticles genre="fantasy" />
+        <Suspense fallback={null}><GenreParticles genre="fantasy" /></Suspense>
         <GenreTrivia genre="fantasy" color="rgba(195,155,211,.45)" />
 
         {/* Search, sort, filter toolbar */}
@@ -254,7 +254,7 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
           </div>
         )}
         {!hasMore && (
-          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.2)', fontSize: '.75rem', letterSpacing: '.06em' }}>
+          <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.4)', fontSize: '.75rem', letterSpacing: '.06em' }}>
             — End of catalog —
           </div>
         )}

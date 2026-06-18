@@ -108,7 +108,7 @@ export default function StatsPage() {
   // Wait for profile to load (redirect handled by useEffect above)
   if (!profile || loading) {
     return (
-      <div className="f-cinzel" style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>
+      <div className="f-cinzel" style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>
         <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
         <div>Loading your stats...</div>
       </div>
@@ -124,7 +124,7 @@ export default function StatsPage() {
         <div style={{ padding: '0 ' + P + ' 5.5rem', position: 'relative', zIndex: 3, textAlign: 'center', paddingTop: '4rem' }}>
           <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>📊</div>
           <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No viewing data yet</h3>
-          <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start watching to see your stats here</p>
+          <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start watching to see your stats here</p>
           <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
         </div>
       </div>
@@ -163,7 +163,7 @@ export default function StatsPage() {
               <div className="f-cinzel" style={{ fontSize: '.72rem', color: '#FFB347',  letterSpacing: '.08em', marginBottom: 4 }}>Average Rating</div>
               <div className="f-cinzel-dec" style={{  fontSize: '1.8rem', color: '#FFF5E8' }}>
                 <AnimatedCounter target={stats.avgRating} /> / 5
-                <span className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.3)',  marginLeft: 8 }}>
+                <span className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.5)',  marginLeft: 8 }}>
                   ({stats.totalRatings} {stats.totalRatings === 1 ? 'rating' : 'ratings'})
                 </span>
               </div>
@@ -220,7 +220,7 @@ export default function StatsPage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="f-cinzel" style={{  fontSize: '.8rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
-                    <div className="f-mono" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)',  marginTop: 3 }}>
+                    <div className="f-mono" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.5)',  marginTop: 3 }}>
                       {new Date(item.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                   </div>

@@ -65,7 +65,7 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
     <div style={{ marginBottom: 44 }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16, paddingInline: 'clamp(1rem,5vw,3rem)' }}>
         <div>
-          {sub && <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>{sub}</div>}
+          {sub && <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.5)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>{sub}</div>}
           <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>{title}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>

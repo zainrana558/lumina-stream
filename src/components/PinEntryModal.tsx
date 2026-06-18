@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface PinEntryModalProps {
   profileName: string;
@@ -36,6 +37,7 @@ export default function PinEntryModal({ profileName, profileColor, onSubmit, onC
   const [lockTimer, setLockTimer] = useState(0);
   const attemptsRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const trapRef = useFocusTrap<HTMLDivElement>(true);
 
   useEffect(() => {
     return () => {
@@ -109,7 +111,11 @@ export default function PinEntryModal({ profileName, profileColor, onSubmit, onC
 
   return (
     <div
+      ref={trapRef}
       className="s-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Enter PIN"
       style={{ alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
@@ -156,7 +162,7 @@ export default function PinEntryModal({ profileName, profileColor, onSubmit, onC
                 width: pin.length > i ? 14 : 10,
                 height: pin.length > i ? 14 : 10,
                 borderRadius: '50%',
-                background: pin.length > i ? '#FFB347' : 'rgba(255,245,232,.2)',
+                background: pin.length > i ? '#FFB347' : 'rgba(255,245,232,.4)',
                 transition: 'all .2s ease',
                 boxShadow: pin.length > i ? '0 0 8px rgba(255,179,71,.4)' : 'none',
               }}

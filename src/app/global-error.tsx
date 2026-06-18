@@ -9,7 +9,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log error for monitoring (in production)
+    console.error('[GlobalError]', error);
   }, [error]);
 
   return (

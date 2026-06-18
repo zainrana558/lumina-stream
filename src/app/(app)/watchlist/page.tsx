@@ -234,7 +234,7 @@ export default function WatchlistPage() {
         {/* Watchlist Tab */}
         {activeTab === 'watchlist' && (
           loading ? (
-            <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>
+            <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>
               <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
               <div>Loading watchlist...</div>
             </div>
@@ -242,7 +242,7 @@ export default function WatchlistPage() {
             <div style={{ textAlign: 'center', padding: '5rem 0' }}>
               <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>🌙</div>
               <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>Your watchlist is empty</h3>
-              <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start adding shows you want to watch later</p>
+              <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start adding shows you want to watch later</p>
               <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
             </div>
           ) : (
@@ -292,7 +292,7 @@ export default function WatchlistPage() {
         {/* Reminders Tab */}
         {activeTab === 'reminders' && (
           remindersLoading ? (
-            <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.3)',  letterSpacing: '.1em' }}>
+            <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>
               <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
               <div>Loading reminders...</div>
             </div>
@@ -300,7 +300,7 @@ export default function WatchlistPage() {
             <div style={{ textAlign: 'center', padding: '5rem 0' }}>
               <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>🔔</div>
               <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No reminders set</h3>
-              <p className="f-crimson" style={{  color: 'rgba(255,245,232,.3)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Click the bell icon on any title to get a reminder</p>
+              <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Click the bell icon on any title to get a reminder</p>
               <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
             </div>
           ) : (

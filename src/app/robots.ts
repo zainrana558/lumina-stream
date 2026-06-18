@@ -7,8 +7,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/browse', '/genre/', '/details/', '/login', '/signup'],
-        disallow: ['/api/', '/auth/', '/embed/', '/stats', '/watchlist', '/profiles', '/select-profile'],
+        allow: ['/', '/browse', '/genre/', '/details/', '/person/', '/seasonal', '/leaderboard', '/release-calendar'],
+        disallow: ['/api/', '/auth/', '/embed/', '/stats', '/watchlist', '/profiles', '/select-profile', '/login', '/signup', '/settings', '/collections', '/activity', '/year-in-review'],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
