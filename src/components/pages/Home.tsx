@@ -11,6 +11,7 @@ import ContinueWatchingCard from '@/components/common/ContinueWatchingCard';
 import MoodRoulette from '@/components/common/MoodRoulette';
 import GenreProgress from '@/components/common/GenreProgress';
 import { getBackdropUrl } from '@/lib/images';
+import Image from 'next/image';
 import { lazy, Suspense } from 'react';
 
 const MoodQuiz = lazy(() => import('@/components/common/MoodQuiz'));
