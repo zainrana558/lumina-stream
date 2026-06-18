@@ -103,6 +103,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Lumina" />
         <meta name="theme-color" content="#FFB347" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="google-site-verification" content="IZ_kgkZCobezDHfENC4rcTL_eNcV1i71jvcEVmTRrlc" />
       </head>
       <body style={{ margin: 0, padding: 0 }}>
         <script
