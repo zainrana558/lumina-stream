@@ -1,9 +1,9 @@
 -- ============================================================
--- LUMINA STREAM - Full Schema Dump (for fresh setup or reset)
+-- LUMINA STREAM - Full Schema Dump (idempotent — safe to re-run)
 -- ============================================================
 -- Run this in Supabase Dashboard → SQL Editor
--- This is the complete schema for ALL 17 tables used by the app.
--- Safe to run on an existing project — uses IF NOT EXISTS / CREATE OR REPLACE.
+-- This is the complete schema for ALL 18 tables used by the app.
+-- Safe to run on an existing project — uses IF NOT EXISTS / DROP IF EXISTS.
 -- ============================================================
 
 -- ── 1. PROFILES (core user profiles, linked to auth.users) ─────
@@ -18,9 +18,18 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read profiles" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "Users can update own profiles" ON public.profiles FOR UPDATE USING (account_id = auth.uid());
-CREATE POLICY "Authenticated users can insert profiles" ON public.profiles FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+DO $$ BEGIN
+  CREATE POLICY "Anyone can read profiles" ON public.profiles FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can update own profiles" ON public.profiles FOR UPDATE USING (account_id = auth.uid());
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can insert profiles" ON public.profiles FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 2. AVATARS (predefined avatar options) ─────────────────────
 CREATE TABLE IF NOT EXISTS public.avatars (
@@ -31,7 +40,10 @@ CREATE TABLE IF NOT EXISTS public.avatars (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.avatars ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read avatars" ON public.avatars FOR SELECT USING (true);
+DO $$ BEGIN
+  CREATE POLICY "Anyone can read avatars" ON public.avatars FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 3. WATCHLIST ───────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.watchlist (
@@ -46,14 +58,26 @@ CREATE TABLE IF NOT EXISTS public.watchlist (
   UNIQUE(profile_id, media_id, media_type)
 );
 ALTER TABLE public.watchlist ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read own watchlist" ON public.watchlist FOR SELECT
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can insert own watchlist" ON public.watchlist FOR INSERT
-  WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can update own watchlist" ON public.watchlist FOR UPDATE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can delete own watchlist" ON public.watchlist FOR DELETE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Users can read own watchlist" ON public.watchlist FOR SELECT
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can insert own watchlist" ON public.watchlist FOR INSERT
+    WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can update own watchlist" ON public.watchlist FOR UPDATE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can delete own watchlist" ON public.watchlist FOR DELETE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 4. WATCH_PROGRESS (continue watching) ──────────────────────
 CREATE TABLE IF NOT EXISTS public.watch_progress (
@@ -71,12 +95,21 @@ CREATE TABLE IF NOT EXISTS public.watch_progress (
   UNIQUE(profile_id, media_id, media_type)
 );
 ALTER TABLE public.watch_progress ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read own watch progress" ON public.watch_progress FOR SELECT
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can insert own watch progress" ON public.watch_progress FOR INSERT
-  WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can update own watch progress" ON public.watch_progress FOR UPDATE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Users can read own watch progress" ON public.watch_progress FOR SELECT
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can insert own watch progress" ON public.watch_progress FOR INSERT
+    WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can update own watch progress" ON public.watch_progress FOR UPDATE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 5. WATCH_HISTORY (completed watches) ───────────────────────
 CREATE TABLE IF NOT EXISTS public.watch_history (
@@ -92,10 +125,16 @@ CREATE TABLE IF NOT EXISTS public.watch_history (
   watched_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.watch_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read own watch history" ON public.watch_history FOR SELECT
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can insert own watch history" ON public.watch_history FOR INSERT
-  WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Users can read own watch history" ON public.watch_history FOR SELECT
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can insert own watch history" ON public.watch_history FOR INSERT
+    WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 6. RATINGS (1-10 scale) ───────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.ratings (
@@ -109,11 +148,20 @@ CREATE TABLE IF NOT EXISTS public.ratings (
   UNIQUE(profile_id, media_id, media_type)
 );
 ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read all ratings" ON public.ratings FOR SELECT USING (true);
-CREATE POLICY "Users can insert own ratings" ON public.ratings FOR INSERT
-  WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can update own ratings" ON public.ratings FOR UPDATE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Users can read all ratings" ON public.ratings FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can insert own ratings" ON public.ratings FOR INSERT
+    WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can update own ratings" ON public.ratings FOR UPDATE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 7. COMMENTS ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.comments (
@@ -126,11 +174,20 @@ CREATE TABLE IF NOT EXISTS public.comments (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read comments" ON public.comments FOR SELECT USING (true);
-CREATE POLICY "Users can insert own comments" ON public.comments FOR INSERT
-  WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can delete own comments" ON public.comments FOR DELETE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Anyone can read comments" ON public.comments FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can insert own comments" ON public.comments FOR INSERT
+    WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can delete own comments" ON public.comments FOR DELETE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 8. COLLECTIONS ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.collections (
@@ -144,14 +201,26 @@ CREATE TABLE IF NOT EXISTS public.collections (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read public collections" ON public.collections FOR SELECT
-  USING (is_public = true OR profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can insert own collections" ON public.collections FOR INSERT
-  WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can update own collections" ON public.collections FOR UPDATE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can delete own collections" ON public.collections FOR DELETE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Anyone can read public collections" ON public.collections FOR SELECT
+    USING (is_public = true OR profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can insert own collections" ON public.collections FOR INSERT
+    WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can update own collections" ON public.collections FOR UPDATE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can delete own collections" ON public.collections FOR DELETE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 9. COLLECTION_ITEMS ────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.collection_items (
@@ -165,21 +234,30 @@ CREATE TABLE IF NOT EXISTS public.collection_items (
   added_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.collection_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read items of public collections" ON public.collection_items FOR SELECT
-  USING (
-    collection_id IN (
-      SELECT id FROM public.collections
-      WHERE is_public = true OR profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid())
-    )
-  );
-CREATE POLICY "Users can insert own collection items" ON public.collection_items FOR INSERT
-  WITH CHECK (
-    collection_id IN (SELECT id FROM public.collections WHERE profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()))
-  );
-CREATE POLICY "Users can delete own collection items" ON public.collection_items FOR DELETE
-  USING (
-    collection_id IN (SELECT id FROM public.collections WHERE profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()))
-  );
+DO $$ BEGIN
+  CREATE POLICY "Anyone can read items of public collections" ON public.collection_items FOR SELECT
+    USING (
+      collection_id IN (
+        SELECT id FROM public.collections
+        WHERE is_public = true OR profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid())
+      )
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can insert own collection items" ON public.collection_items FOR INSERT
+    WITH CHECK (
+      collection_id IN (SELECT id FROM public.collections WHERE profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()))
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can delete own collection items" ON public.collection_items FOR DELETE
+    USING (
+      collection_id IN (SELECT id FROM public.collections WHERE profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()))
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 10. ACTIVITIES (social feed) ───────────────────────────────
 CREATE TABLE IF NOT EXISTS public.activities (
@@ -194,9 +272,15 @@ CREATE TABLE IF NOT EXISTS public.activities (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.activities ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read activities" ON public.activities FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can insert activities" ON public.activities FOR INSERT
-  WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Anyone can read activities" ON public.activities FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can insert activities" ON public.activities FOR INSERT
+    WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 11. FOLLOWS ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.follows (
@@ -208,9 +292,15 @@ CREATE TABLE IF NOT EXISTS public.follows (
   CHECK (follower_id != following_id)
 );
 ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read follows" ON public.follows FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can manage follows" ON public.follows FOR ALL
-  USING (follower_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Anyone can read follows" ON public.follows FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can manage follows" ON public.follows FOR ALL
+    USING (follower_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 12. NOTIFICATIONS ──────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.notifications (
@@ -227,14 +317,26 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read own notifications" ON public.notifications FOR SELECT
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can insert own notifications" ON public.notifications FOR INSERT
-  WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Users can read own notifications" ON public.notifications FOR SELECT
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can insert own notifications" ON public.notifications FOR INSERT
+    WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 13. REMINDERS ──────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.reminders (
@@ -249,12 +351,21 @@ CREATE TABLE IF NOT EXISTS public.reminders (
   UNIQUE(profile_id, media_id, media_type)
 );
 ALTER TABLE public.reminders ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read own reminders" ON public.reminders FOR SELECT
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Authenticated users can insert reminders" ON public.reminders FOR INSERT
-  WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
-CREATE POLICY "Users can delete own reminders" ON public.reminders FOR DELETE
-  USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+DO $$ BEGIN
+  CREATE POLICY "Users can read own reminders" ON public.reminders FOR SELECT
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can insert reminders" ON public.reminders FOR INSERT
+    WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Users can delete own reminders" ON public.reminders FOR DELETE
+    USING (profile_id IN (SELECT id FROM public.profiles WHERE account_id = auth.uid()));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 14. GENRES (DB-driven genre config) ────────────────────────
 CREATE TABLE IF NOT EXISTS public.genres (
@@ -277,8 +388,14 @@ CREATE TABLE IF NOT EXISTS public.genres (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.genres ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "genres_public_read" ON public.genres FOR SELECT USING (true);
-CREATE POLICY "genres_authenticated_write" ON public.genres FOR ALL USING (auth.role() = 'authenticated');
+DO $$ BEGIN
+  CREATE POLICY "genres_public_read" ON public.genres FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "genres_authenticated_write" ON public.genres FOR ALL USING (auth.role() = 'authenticated');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 15. GENRE_VISITS (cross-device visit tracking) ─────────────
 CREATE TABLE IF NOT EXISTS public.genre_visits (
@@ -289,9 +406,18 @@ CREATE TABLE IF NOT EXISTS public.genre_visits (
   PRIMARY KEY (user_id, genre_slug)
 );
 ALTER TABLE public.genre_visits ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "visits_own_read" ON public.genre_visits FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "visits_own_insert" ON public.genre_visits FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "visits_own_update" ON public.genre_visits FOR UPDATE USING (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "visits_own_read" ON public.genre_visits FOR SELECT USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "visits_own_insert" ON public.genre_visits FOR INSERT WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "visits_own_update" ON public.genre_visits FOR UPDATE USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 16. WATCH_PARTY_ROOMS ──────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.watch_party_rooms (
@@ -310,10 +436,22 @@ CREATE TABLE IF NOT EXISTS public.watch_party_rooms (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.watch_party_rooms ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Authenticated users can read watch party rooms" ON public.watch_party_rooms FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Authenticated users can create watch party rooms" ON public.watch_party_rooms FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Authenticated users can update watch party rooms" ON public.watch_party_rooms FOR UPDATE USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Authenticated users can delete watch party rooms" ON public.watch_party_rooms FOR DELETE USING (auth.uid() IS NOT NULL);
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can read watch party rooms" ON public.watch_party_rooms FOR SELECT USING (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can create watch party rooms" ON public.watch_party_rooms FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can update watch party rooms" ON public.watch_party_rooms FOR UPDATE USING (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can delete watch party rooms" ON public.watch_party_rooms FOR DELETE USING (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 17. WATCH_PARTY_PARTICIPANTS ───────────────────────────────
 CREATE TABLE IF NOT EXISTS public.watch_party_participants (
@@ -324,10 +462,22 @@ CREATE TABLE IF NOT EXISTS public.watch_party_participants (
   UNIQUE(room_id, profile_id)
 );
 ALTER TABLE public.watch_party_participants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Authenticated users can read watch party participants" ON public.watch_party_participants FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Authenticated users can insert watch party participants" ON public.watch_party_participants FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Participants can update their own participant record" ON public.watch_party_participants FOR UPDATE USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Participants can delete their own participant record" ON public.watch_party_participants FOR DELETE USING (auth.uid() IS NOT NULL);
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can read watch party participants" ON public.watch_party_participants FOR SELECT USING (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can insert watch party participants" ON public.watch_party_participants FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Participants can update their own participant record" ON public.watch_party_participants FOR UPDATE USING (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Participants can delete their own participant record" ON public.watch_party_participants FOR DELETE USING (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ── 18. WATCH_PARTY_MESSAGES ───────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.watch_party_messages (
@@ -338,8 +488,14 @@ CREATE TABLE IF NOT EXISTS public.watch_party_messages (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.watch_party_messages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Authenticated users can read watch party messages" ON public.watch_party_messages FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Authenticated users can insert watch party messages" ON public.watch_party_messages FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can read watch party messages" ON public.watch_party_messages FOR SELECT USING (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can insert watch party messages" ON public.watch_party_messages FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ============================================================
 -- FUNCTIONS
