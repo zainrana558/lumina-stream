@@ -17,7 +17,21 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/details/") ||
     pathname.startsWith("/person/") ||
     pathname.startsWith("/login") ||
-    pathname.startsWith("/signup")
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/movies") ||
+    pathname.startsWith("/tv-shows") ||
+    pathname.startsWith("/top-rated") ||
+    pathname.startsWith("/new-releases") ||
+    pathname.startsWith("/genres") ||
+    pathname.startsWith("/about") ||
+    pathname.startsWith("/decade/") ||
+    pathname.startsWith("/year/") ||
+    pathname.startsWith("/seasonal") ||
+    pathname.startsWith("/leaderboard") ||
+    pathname.startsWith("/release-calendar") ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname === "/google08ae0ae380a50693.html"
   );
 }
 
