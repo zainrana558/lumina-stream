@@ -90,6 +90,20 @@ export default function GenresPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
+      <style>{`
+        .genre-portal-link {
+          display: block; text-decoration: none; border-radius: 12px;
+          padding: 24px 20px; transition: transform .2s, border-color .2s;
+        }
+        .genre-portal-link:hover { transform: translateY(-2px); }
+        .genre-portal-link:hover .portal-border { border-color: var(--tc-60) !important; }
+        .genre-list-link {
+          display: block; padding: 16px 20px; border-radius: 10px;
+          text-decoration: none; transition: background .2s, border-color .2s;
+        }
+        .genre-list-link:hover { background: rgba(255,245,232,.06) !important; }
+      `}</style>
+
       <div style={{
         maxWidth: 1000,
         margin: '0 auto',
@@ -130,24 +144,10 @@ export default function GenresPage() {
             <Link
               key={g.key}
               href={`/genre/${g.key}`}
-              style={{
-                display: 'block',
-                background: g.col,
-                border: `1px solid ${g.tc}30`,
-                borderRadius: 12,
-                padding: '24px 20px',
-                textDecoration: 'none',
-                transition: 'transform .2s, border-color .2s',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.borderColor = `${g.tc}60`;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = `${g.tc}30`;
-              }}
+              className="genre-portal-link"
+              style={{ '--tc-60': `${g.tc}60`, background: g.col } as React.CSSProperties}
             >
+              <div className="portal-border" style={{ border: `1px solid ${g.tc}30`, borderRadius: 12, padding: '24px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <span style={{ fontSize: '1.3rem' }}>{g.em}</span>
                 <span className="f-cinzel-dec" style={{
@@ -180,6 +180,7 @@ export default function GenresPage() {
                   }}>{sg}</span>
                 ))}
               </div>
+              </div>
             </Link>
           ))}
         </div>
@@ -201,22 +202,10 @@ export default function GenresPage() {
             <Link
               key={g.key}
               href={g.slug}
+              className="genre-list-link"
               style={{
-                display: 'block',
-                padding: '16px 20px',
                 background: 'rgba(255,245,232,.03)',
                 border: '1px solid rgba(255,245,232,.07)',
-                borderRadius: 10,
-                textDecoration: 'none',
-                transition: 'background .2s, border-color .2s',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255,245,232,.06)';
-                e.currentTarget.style.borderColor = `${g.color}40`;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255,245,232,.03)';
-                e.currentTarget.style.borderColor = 'rgba(255,245,232,.07)';
               }}
             >
               <div className="f-cinzel" style={{

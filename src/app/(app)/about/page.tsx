@@ -106,6 +106,17 @@ export default function AboutPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }} />
 
+      <style>{`
+        .about-link {
+          display: block; padding: 12px 16px;
+          background: rgba(255,245,232,.04);
+          border: 1px solid rgba(255,245,232,.08);
+          border-radius: 8px; color: #FFB347;
+          text-decoration: none; font-size: .88rem;
+          transition: background .2s, border-color .2s;
+        }
+        .about-link:hover { background: rgba(255,245,232,.08); border-color: rgba(255,179,71,.3); }
+      `}</style>
       <div style={{
         maxWidth: 800,
         margin: '0 auto',
@@ -206,25 +217,7 @@ export default function AboutPage() {
             <Link
               key={link.href}
               href={link.href}
-              style={{
-                display: 'block',
-                padding: '12px 16px',
-                background: 'rgba(255,245,232,.04)',
-                border: '1px solid rgba(255,245,232,.08)',
-                borderRadius: 8,
-                color: '#FFB347',
-                textDecoration: 'none',
-                fontSize: '.88rem',
-                transition: 'background .2s, border-color .2s',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255,245,232,.08)';
-                e.currentTarget.style.borderColor = 'rgba(255,179,71,.3)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255,245,232,.04)';
-                e.currentTarget.style.borderColor = 'rgba(255,245,232,.08)';
-              }}
+              className="about-link"
             >
               {link.label}
             </Link>
