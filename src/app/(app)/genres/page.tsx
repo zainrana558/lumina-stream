@@ -18,7 +18,9 @@ export const metadata: Metadata = {
     title: 'All Genres | Lumina Stream',
     description: 'Browse all genres — Action, Comedy, Drama, Horror, Romance, Sci-Fi, and more.',
     siteName: 'Lumina Stream',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'All Genres on Lumina Stream' }],
   },
+  twitter: { card: 'summary_large_image', title: 'All Genres | Lumina Stream', description: 'Browse all genres on Lumina Stream.' },
 };
 
 const GENRE_DESCRIPTIONS: Record<string, string> = {

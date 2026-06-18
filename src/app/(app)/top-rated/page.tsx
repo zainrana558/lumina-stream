@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: 'Top Rated Movies & TV Shows | Lumina Stream',
     description: 'Explore the highest-rated movies and TV shows of all time.',
     siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og-top-rated.png`, width: 1200, height: 630, alt: 'Top Rated on Lumina Stream' }],
+    images: [{ url: `${siteUrl}/og/og-top-rated.png`, width: 1344, height: 768, alt: 'Top Rated on Lumina Stream' }],
   },
   twitter: {
     card: 'summary_large_image',

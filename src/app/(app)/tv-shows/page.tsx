@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: 'TV Shows - Watch Free TV Series Online | Lumina Stream',
     description: 'Stream the best TV shows online for free. Drama, comedy, thriller, and more.',
     siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og-tv.png`, width: 1200, height: 630, alt: 'Lumina Stream TV Shows' }],
+    images: [{ url: `${siteUrl}/og/og-tv.png`, width: 1344, height: 768, alt: 'Lumina Stream TV Shows' }],
   },
   twitter: {
     card: 'summary_large_image',

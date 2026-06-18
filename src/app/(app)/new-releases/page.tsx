@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: 'New Releases - Latest Movies & TV Shows | Lumina Stream',
     description: 'Watch the latest movies and TV show releases on Lumina Stream.',
     siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og-new-releases.png`, width: 1200, height: 630, alt: 'New Releases on Lumina Stream' }],
+    images: [{ url: `${siteUrl}/og/og-new-releases.png`, width: 1344, height: 768, alt: 'New Releases on Lumina Stream' }],
   },
   twitter: {
     card: 'summary_large_image',

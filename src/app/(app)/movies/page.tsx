@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: 'Movies - Watch Free Movies Online | Lumina Stream',
     description: 'Browse and stream thousands of free movies. Action, comedy, horror, romance, sci-fi, and more.',
     siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og-movies.png`, width: 1200, height: 630, alt: 'Lumina Stream Movies' }],
+    images: [{ url: `${siteUrl}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumina Stream Movies' }],
   },
   twitter: {
     card: 'summary_large_image',
