@@ -6,12 +6,18 @@ import SeasonalClient from './SeasonalClient';
 
 export const revalidate = 600;
 
+const seasonalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app'}/seasonal`;
+
 export const metadata: Metadata = {
   title: 'Seasonal Anime - Currently Airing & Trending',
   description: 'Discover this season\'s best anime. Browse currently airing, trending, and upcoming series updated every week with episode counts and ratings.',
+  alternates: { canonical: seasonalUrl },
   openGraph: {
+    type: 'website',
+    url: seasonalUrl,
     title: 'Seasonal Anime | Lumina Stream',
     description: 'Currently airing, trending, and upcoming anime series this season.',
+    siteName: 'Lumina Stream',
   },
 };
 

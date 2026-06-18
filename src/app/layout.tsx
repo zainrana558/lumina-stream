@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   },
   description: "Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.",
   metadataBase: new URL(siteUrl),
-  alternates: { canonical: siteUrl },
+  alternates: { canonical: siteUrl, languages: { 'en-US': siteUrl } },
   manifest: '/manifest.json',
   openGraph: {
     title: "Lumina Stream",
@@ -105,6 +105,19 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body style={{ margin: 0, padding: 0 }}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Lumina Stream',
+              url: siteUrl,
+              logo: `${siteUrl}/logo.svg`,
+              sameAs: [],
+            }),
+          }}
+        />
         {children}
       </body>
     </html>

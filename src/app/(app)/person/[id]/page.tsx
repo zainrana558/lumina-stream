@@ -4,22 +4,37 @@ import PersonPageClient from '@/components/pages/PersonPage';
 
 export const revalidate = 86400; // 24h — person details rarely change
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const personId = Number(id);
+  const pageUrl = `${siteUrl}/person/${id}`;
   try {
-    const data = await tmdbFetch<{ name: string; biography?: string }>(`/person/${personId}`).catch(() => ({ name: 'Person', biography: '' as string | undefined }));
+    const data = await tmdbFetch<{ name: string; biography?: string; profile_path?: string | null }>(`/person/${personId}`).catch(() => ({ name: 'Person', biography: '' as string | undefined, profile_path: null }));
     const bio = data.biography || '';
+    const profileImg = data.profile_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profile_path}` : undefined;
     return {
       title: `${data.name} | Lumina Stream`,
       description: bio.slice(0, 160) || `View details and filmography for ${data.name} on Lumina Stream.`,
+      alternates: { canonical: pageUrl },
       openGraph: {
+        type: 'profile',
+        url: pageUrl,
+        title: `${data.name} | Lumina Stream`,
+        description: bio.slice(0, 160) || `View details and filmography for ${data.name} on Lumina Stream.`,
+        siteName: 'Lumina Stream',
+        images: profileImg ? [{ url: profileImg, width: 600, height: 900, alt: data.name }] : [],
+      },
+      twitter: {
+        card: 'summary_large_image',
         title: `${data.name} | Lumina Stream`,
         description: bio.slice(0, 160),
+        images: profileImg ? [profileImg] : [],
       },
     };
   } catch {
-    return { title: 'Person | Lumina Stream' };
+    return { title: 'Person | Lumina Stream', alternates: { canonical: pageUrl } };
   }
 }
 
@@ -92,5 +107,32 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  return <PersonPageClient person={data} />;
+  // Person JSON-LD
+  const personJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: data.name,
+    url: `${siteUrl}/person/${personId}`,
+    image: data.profile_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profile_path}` : undefined,
+    jobTitle: data.known_for_department || undefined,
+    description: data.biography || undefined,
+    birthDate: data.birthday || undefined,
+    birthPlace: data.place_of_birth || undefined,
+  };
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: data.name, item: `${siteUrl}/person/${personId}` },
+    ],
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <PersonPageClient person={data} />
+    </>
+  );
 }

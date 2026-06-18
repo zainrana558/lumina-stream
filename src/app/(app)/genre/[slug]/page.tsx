@@ -24,14 +24,26 @@ const COMPONENT_MAP: Record<string, React.ComponentType<{ initialShows: MediaIte
 
 // ─── SEO metadata ───────────────────────────────────────────────────────────
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const genre = PORTAL_GENRE_MAP[slug];
   if (!genre) return { title: 'Genre Not Found' };
+  const pageUrl = `${siteUrl}/genre/${slug}`;
   return {
-    title: genre.title,
+    title: `${genre.title} | Lumina Stream`,
     description: genre.description,
+    alternates: { canonical: pageUrl },
     openGraph: {
+      type: 'website',
+      url: pageUrl,
+      title: `${genre.title} | Lumina Stream`,
+      description: genre.description,
+      siteName: 'Lumina Stream',
+    },
+    twitter: {
+      card: 'summary_large_image',
       title: `${genre.title} | Lumina Stream`,
       description: genre.description,
     },
@@ -165,5 +177,30 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
     }
   }
 
-  return <Component initialShows={shows} />;
+  // Build CollectionPage + BreadcrumbList JSON-LD
+  const pageUrl = `${siteUrl}/genre/${slug}`;
+  const collectionJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: config.title,
+    description: config.description,
+    url: pageUrl,
+    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+  };
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: config.title, item: pageUrl },
+    ],
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <Component initialShows={shows} />
+    </>
+  );
 }

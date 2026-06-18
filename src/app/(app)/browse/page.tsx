@@ -7,12 +7,19 @@ import type { Metadata } from 'next';
 
 export const revalidate = 300; // 5 min — browse catalog changes slowly
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const browseUrl = `${siteUrl}/browse`;
+
 export const metadata: Metadata = {
   title: 'Browse - Movies & TV Shows',
   description: 'Browse the full catalog of movies and TV shows. Discover trending, popular, top-rated, and newly released content.',
+  alternates: { canonical: browseUrl },
   openGraph: {
+    type: 'website',
+    url: browseUrl,
     title: 'Browse - Movies & TV Shows | Lumina Stream',
     description: 'Browse the full catalog of movies and TV shows on Lumina Stream.',
+    siteName: 'Lumina Stream',
   },
 };
 

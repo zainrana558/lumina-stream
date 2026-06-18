@@ -35,9 +35,12 @@ interface TMDBDetails {
 
 export const revalidate = 600; // 10 min
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const showId = Number(id);
+  const pageUrl = `${siteUrl}/details/${id}`;
 
   // AniList ID — fetch metadata from AniList
   if (isAnilistId(showId)) {
@@ -51,7 +54,17 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         return {
           title: `${title} | Lumina Stream`,
           description,
+          alternates: { canonical: pageUrl },
           openGraph: {
+            type: 'video.tv_show',
+            url: pageUrl,
+            title: `${title} | Lumina Stream`,
+            description,
+            siteName: 'Lumina Stream',
+            images: cover ? [{ url: cover, width: 1200, height: 630, alt: title }] : [],
+          },
+          twitter: {
+            card: 'summary_large_image',
             title: `${title} | Lumina Stream`,
             description,
             images: cover ? [cover] : [],
@@ -59,31 +72,43 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         };
       }
     } catch { /* fall through */ }
-    return { title: 'Anime | Lumina Stream' };
+    return { title: 'Anime | Lumina Stream', alternates: { canonical: pageUrl } };
   }
 
-  // TMDB ID — existing logic
+  // TMDB ID — detect media type for correct og:type
+  let resolvedMediaType: 'movie' | 'tv' | null = null;
   try {
     const [tvRes, movieRes] = await Promise.all([
       tmdbFetch<{ id?: number }>(`/tv/${showId}`).catch(() => ({ id: undefined })),
       tmdbFetch<{ id?: number }>(`/movie/${showId}`).catch(() => ({ id: undefined })),
     ]);
-    const data = tvRes.id ? tvRes : movieRes.id ? movieRes : null;
+    const data = tvRes.id ? (resolvedMediaType = 'tv', tvRes) : movieRes.id ? (resolvedMediaType = 'movie', movieRes) : null;
     const title = (data as TMDBShowData)?.title || (data as TMDBShowData)?.name || 'Show';
     const description = (data as TMDBShowData)?.overview || 'Watch on Lumina Stream';
     const backdrop = (data as TMDBShowData)?.backdrop_path;
+    const ogType = resolvedMediaType === 'movie' ? 'video.movie' : 'video.tv_show';
 
     return {
       title: `${title} | Lumina Stream`,
       description: description.slice(0, 160),
+      alternates: { canonical: pageUrl },
       openGraph: {
+        type: ogType,
+        url: pageUrl,
+        title: `${title} | Lumina Stream`,
+        description: description.slice(0, 160),
+        siteName: 'Lumina Stream',
+        images: backdrop ? [{ url: `https://image.tmdb.org/t/p/original${backdrop}`, width: 1200, height: 630, alt: title }] : [],
+      },
+      twitter: {
+        card: 'summary_large_image',
         title: `${title} | Lumina Stream`,
         description: description.slice(0, 160),
         images: backdrop ? [`https://image.tmdb.org/t/p/original${backdrop}`] : [],
       },
     };
   } catch {
-    return { title: 'Show | Lumina Stream' };
+    return { title: 'Show | Lumina Stream', alternates: { canonical: pageUrl } };
   }
 }
 
@@ -99,15 +124,30 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
       const data = await getAnimeDetail(anilistId);
       if (data) show = anilistToMediaItem(data);
     } catch { /* fall through to null */ }
-    return show ? (
+    const pageUrl = `${siteUrl}/details/${showId}`;
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: show.media_type === 'movie' || show.tag === 'Movie' ? 'Movies' : 'TV Shows', item: `${siteUrl}/browse` },
+      { '@type': 'ListItem', position: 3, name: show.title, item: pageUrl },
+    ],
+  };
+
+  return show ? (
       <>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(
-              buildDetailJsonLd(show, process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app'),
+              buildDetailJsonLd(show, siteUrl),
             ),
           }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
         <DetailsContent showId={showId} initialShow={show} />
       </>
@@ -149,6 +189,16 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   }
 
   const show = tmdbToMedia({ ...rawData, media_type: mediaType } as TMDBShow);
+  const pageUrl = `${siteUrl}/details/${showId}`;
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: mediaType === 'movie' ? 'Movies' : 'TV Shows', item: `${siteUrl}/browse` },
+      { '@type': 'ListItem', position: 3, name: show.title, item: pageUrl },
+    ],
+  };
 
   return (
     <>
@@ -156,9 +206,13 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
-            buildDetailJsonLd(show, process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app'),
+            buildDetailJsonLd(show, siteUrl),
           ),
         }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <DetailsContent
         showId={showId}

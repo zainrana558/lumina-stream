@@ -3,9 +3,19 @@ import type { TMDBShow } from '@/types';
 import type { Metadata } from 'next';
 import ReleaseCalendarClient from './ReleaseCalendarClient';
 
+const calendarUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app'}/release-calendar`;
+
 export const metadata: Metadata = {
   title: 'Release Calendar | Lumina Stream',
   description: 'Discover upcoming movie releases organized by month.',
+  alternates: { canonical: calendarUrl },
+  openGraph: {
+    type: 'website',
+    url: calendarUrl,
+    title: 'Release Calendar | Lumina Stream',
+    description: 'Discover upcoming movie releases organized by month.',
+    siteName: 'Lumina Stream',
+  },
 };
 
 export const revalidate = 3600;
