@@ -290,7 +290,10 @@ function GenrePortalCard({
   index: number;
   onClick: () => void;
 }) {
-  const backdropUrl = feat?.backdrop ? getBackdropUrl(feat.backdrop, 'w780') : null;
+  // feat.backdrop is either a TMDB path (e.g. "/abc.jpg") or a full URL (e.g. AniList banner)
+  const backdropUrl = feat?.backdrop
+    ? (feat.backdrop.startsWith('http') ? feat.backdrop : getBackdropUrl(feat.backdrop, 'w780'))
+    : null;
   const featuredTitle = feat?.title || '';
   const count = feat?.count || 0;
   const tagline = feat?.tagline || '';

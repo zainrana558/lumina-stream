@@ -54,7 +54,7 @@ const HOME_FETCHES = [
   { id: 'acclaimed',    endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' }, category: 'discover' as const },
   { id: 'warHistory',   endpoint: '/discover/movie', params: { with_genres: '10752,36', sort_by: 'popularity.desc' },          category: 'discover' as const },
   // 6 genre featured backdrop fetches
-  { id: 'feat-anime',   endpoint: '/discover/tv', params: { with_genres: '16,10759', sort_by: 'popularity.desc', with_original_language: 'ja', vote_count_gte: '100' }, category: 'discover' as const },
+  { id: 'feat-anime',   endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', vote_count_gte: '50' }, category: 'discover' as const },
   { id: 'feat-cartoon', endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', without_genres: '10759', with_original_language: 'en' },     category: 'discover' as const },
   { id: 'feat-horror',  endpoint: '/discover/movie', params: { with_genres: '27', sort_by: 'popularity.desc' },               category: 'discover' as const },
   { id: 'feat-romance', endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' },            category: 'discover' as const },
@@ -177,6 +177,16 @@ async function getTMDBData() {
       fantasy: 'Beyond imagination awaits',
     };
 
+    // Fallback: fetch an AniList banner for anime portal (more reliable than TMDB for anime)
+    let anilistBanner: string | null = null;
+    try {
+      const animeData = await getTrendingAnime(1, 10);
+      const withBanner = animeData.media.filter(m => m.bannerImage);
+      if (withBanner.length) {
+        anilistBanner = withBanner[Math.floor(Math.random() * withBanner.length)].bannerImage!;
+      }
+    } catch { /* skip */ }
+
     const genreFeatured = [
       { key: 'anime',   name: 'Anime' },
       { key: 'cartoon', name: 'Cartoon' },
@@ -191,10 +201,16 @@ async function getTMDBData() {
         ? withBackdrop.filter(r => r.vote_average >= 7 || r.popularity >= 50)
         : withBackdrop;
       const pick = pool.length > 1 ? pool[Math.floor(Math.random() * pool.length)] : (pool[0] || withBackdrop[0] || results[0]);
+      let backdrop = pick?.backdrop_path || null;
+      // For anime: use AniList banner as fallback if no TMDB backdrop
+      if (key === 'anime' && !backdrop && anilistBanner) {
+        // Store AniList banner URL directly (not a TMDB path)
+        backdrop = anilistBanner;
+      }
       return {
         key,
         name,
-        backdrop: pick?.backdrop_path || null,
+        backdrop,
         title: pick?.title || pick?.name || '',
         count: getTotal(`feat-${key}`) || Math.max(results.length, 100),
         tagline: GENRE_TAGLINES[key] || '',
