@@ -18,7 +18,7 @@ async function fetchPages(endpoint: string, params?: Record<string, string>, max
 }
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+  const baseUrl = 'https://lumina-stream-omega.vercel.app';
   const now = new Date().toISOString();
 
   const ids = new Set<number>();

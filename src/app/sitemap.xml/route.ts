@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 // Sitemap index — points to smaller, fast-loading sub-sitemaps.
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+  // Sitemap URLs must match the Search Console verified property domain.
+  const baseUrl = 'https://lumina-stream-omega.vercel.app';
   const now = new Date().toISOString();
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

@@ -7,7 +7,7 @@ const DECADES = ['2020s', '2010s', '2000s', '1990s', '1980s', '1970s'] as const;
 const CURRENT_YEAR = new Date().getFullYear();
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+  const baseUrl = 'https://lumina-stream-omega.vercel.app';
   const now = new Date().toISOString();
 
   const urls: string[] = [];

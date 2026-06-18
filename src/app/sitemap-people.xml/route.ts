@@ -4,7 +4,7 @@ import { tmdbFetch, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/se
 // People sitemap — trending + popular person URLs.
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+  const baseUrl = 'https://lumina-stream-omega.vercel.app';
   const now = new Date().toISOString();
 
   const ids = new Set<number>();

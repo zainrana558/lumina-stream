@@ -85,7 +85,10 @@ const CACHEABLE_EXTENSIONS = new Set([
 function isStaticAsset(pathname) {
   const dot = pathname.lastIndexOf('.');
   if (dot === -1) return false;
-  return CACHEABLE_EXTENSIONS.has(pathname.slice(dot).toLowerCase());
+  const ext = pathname.slice(dot).toLowerCase();
+  // Sitemap XMLs change frequently — don't treat as static assets
+  if (ext === '.xml' && pathname.includes('sitemap')) return false;
+  return CACHEABLE_EXTENSIONS.has(ext);
 }
 
 // ─── Edge cache TTL (seconds) ───────────────────────────────────────────
