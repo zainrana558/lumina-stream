@@ -162,6 +162,8 @@ export interface MediaItem {
   _malId?: number;
   /** AniList page URL */
   _anilistUrl?: string;
+  /** AniList trailer (YouTube) */
+  _anilistTrailer?: { id: string; site: string; thumbnail: string } | null;
 }
 
 /**

@@ -77,6 +77,11 @@ export interface AniListMedia {
     timeUntilAiring: number | null;
   } | null;
   siteUrl: string;
+  trailer: {
+    id: string;
+    site: string;
+    thumbnail: string;
+  } | null;
   externalLinks: Array<{
     site: string;
     url: string;
@@ -124,6 +129,7 @@ const MEDIA_LIST_FRAGMENT = `
   nextAiringEpisode { airingAt episode timeUntilAiring }
   studios { nodes { name isAnimationStudio } }
   siteUrl
+  trailer { id site thumbnail }
 `;
 
 // Full fields for detail views
@@ -150,6 +156,7 @@ const MEDIA_DETAIL_FRAGMENT = `
   nextAiringEpisode { airingAt episode timeUntilAiring }
   studios { nodes { name isAnimationStudio } }
   siteUrl
+  trailer { id site thumbnail }
   externalLinks { site url icon }
 `;
 
@@ -315,6 +322,7 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem {
     _anilistBanner: media.bannerImage || undefined,
     _malId: media.idMal || undefined,
     _anilistUrl: media.siteUrl,
+    _anilistTrailer: media.trailer?.site === 'youtube' ? media.trailer : null,
   };
 }
 

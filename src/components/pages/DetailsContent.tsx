@@ -571,14 +571,34 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
         {tab === 'trailers' && (
           <div>
-            {fullDetails?.videos?.results?.length ? (
+            {(fullDetails?.videos?.results?.length || show?._anilistTrailer) ? (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1rem' }}>
-                  {fullDetails.videos.results
-                    .filter((v: { type: string; site: string }) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
+                  {/* AniList YouTube trailer (anime) */}
+                  {show?._anilistTrailer && (
+                    <div style={{ animation: 'card-in .42s 0s both' }}>
+                      <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
+                        <iframe
+                          src={`https://www.youtube.com/embed/${show._anilistTrailer.id}?rel=0`}
+                          title="Trailer"
+                          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          loading="lazy"
+                        />
+                      </div>
+                      <div style={{ padding: '.6rem 0' }}>
+                        <div className="f-cinzel" style={{ fontSize: '.72rem', color: '#FFF5E8' }}>Official Trailer</div>
+                        <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.5)' }}>YouTube</span>
+                      </div>
+                    </div>
+                  )}
+                  {/* TMDB YouTube trailers */}
+                  {fullDetails?.videos?.results
+                    ?.filter((v: { type: string; site: string }) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
                     .slice(0, 8)
                     .map((v: { id: string; key: string; name: string; type: string }, i: number) => (
-                      <div key={v.id} style={{ animation: `card-in .42s ${i * 0.06}s both` }}>
+                      <div key={v.id} style={{ animation: `card-in .42s ${(show?._anilistTrailer ? i + 1 : i) * 0.06}s both` }}>
                         <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
                           <iframe
                             src={`https://www.youtube.com/embed/${v.key}?rel=0`}
@@ -590,7 +610,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                           />
                         </div>
                         <div style={{ padding: '.6rem 0' }}>
-                          <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
+                          <div className="f-cinzel" style={{ fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
                           <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.5)', }}>{v.type}</span>
                         </div>
                       </div>
@@ -605,6 +625,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
             )}
           </div>
         )}
+
 
         {tab === 'comments' && (
           <div className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16 }}>
