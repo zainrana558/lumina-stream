@@ -15,6 +15,7 @@ interface TMDBShowData {
   poster_path: string | null;
   backdrop_path: string | null;
   vote_average: number;
+  vote_count?: number;
   media_type?: string;
   popularity: number;
   genre_ids?: number[];
@@ -195,7 +196,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         '@type': 'AggregateRating',
         ratingValue: rawData.vote_average.toFixed(1),
         bestRating: '10',
-        ratingCount: rawData.popularity ? Math.round(rawData.popularity * 10) : undefined,
+        ratingCount: rawData.vote_count || undefined,
       },
     } : {}),
     ...(genreNames.length ? { genre: genreNames.slice(0, 5) } : {}),

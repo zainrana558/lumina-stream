@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import type { MediaItem, TMDBCastMember, TMDBShow } from '@/types';
 import { tmdbToMedia, isAnilistId, toAnilistId } from '@/types';
@@ -470,8 +471,8 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           </div>
         </div>
 
-        <div className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16, marginBottom: '2rem' }}>
-          <h3 className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>SYNOPSIS</h3>
+        <section aria-label="Synopsis" className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16, marginBottom: '2rem' }}>
+          <h2 className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>SYNOPSIS</h2>
           <p className="f-crimson" style={{  lineHeight: 1.85, color: 'rgba(255,245,232,.8)', fontSize: 'clamp(.95rem,1.2vw,1.05rem)' }}>{show.desc}</p>
         </div>
 
@@ -535,13 +536,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 <div className="f-crimson" style={{  fontSize: '1rem', color: 'rgba(255,245,232,.78)', fontWeight: 600 }}>{v}</div>
               </div>
             ))}
-          </div>
-        )}
-
-        {tab === 'cast' && (
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          </section>
+          <section aria-label="Cast" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             {castList.map((c, i) => (
-              <div key={c.id || c.name || i} className="neo-card" style={{ padding: '13px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .42s ${i * 0.08}s both` }}>
+              <Link key={c.id || c.name || i} href={c.id ? `/person/${c.id}` : '#'} className="neo-card" style={{ padding: '13px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .42s ${i * 0.08}s both`, textDecoration: 'none', color: 'inherit' }}>
                 {c.profile_path ? (
                   <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', boxShadow: `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px ${s.acc}40` }}>
                     <Image src={getTmdbImageUrl(c.profile_path, 'w185')!} alt={c.name} width={40} height={40} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -553,7 +551,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   <div className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{c.name}</div>
                   <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)' }}>{c.character || 'Actor'}</div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -665,7 +663,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         )}
 
         {tab === 'related' && (
-          <div>
+          <section aria-label="Related shows">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(155px,1fr))', gap: '1.2rem' }}>
               {similar.map((x, i) => (
                 <div key={x.id} style={{ animation: i < 12 ? `card-in .42s ${i * 0.06}s both` : 'none' }}>
@@ -685,7 +683,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 </button>
               </div>
             )}
-          </div>
+          </section>
         )}
         <div style={{ height: 64 }} />
       </div>

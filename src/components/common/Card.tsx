@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useRef, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
@@ -19,7 +19,6 @@ interface CardProps {
 const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: CardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const raf = useRef<number | undefined>(undefined);
-  const router = useRouter();
   const s = CS[show.cs];
   const h = { sm: 200, md: 296, lg: 370 }[sz];
   // Support both TMDB poster paths and AniList full cover URLs
@@ -74,20 +73,29 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
 
   useEffect(() => () => { if (raf.current) cancelAnimationFrame(raf.current); }, []);
 
+  const href = `/details/${show.id}`;
+
   return (
-    <div ref={ref} className="card" style={{ height: h }} onMouseMove={onMove} onTouchMove={onTouchMove} onMouseLeave={onLeave} onClick={() => {
-      vibrateTap();
-      if (onClick) {
-        const rect = ref.current?.getBoundingClientRect();
-        onClick(show, rect);
-      } else {
-        router.push(`/details/${show.id}`);
-      }
-    }}
-      role="button"
-      tabIndex={0}
+    <Link
+      href={onClick ? '#' : href}
+      ref={ref as React.Ref<HTMLAnchorElement>}
+      className="card"
+      style={{ height: h, textDecoration: 'none', color: 'inherit' }}
+      onMouseMove={onMove}
+      onTouchMove={onTouchMove}
+      onMouseLeave={onLeave}
+      onClick={(e) => {
+        if (onClick) {
+          e.preventDefault();
+          vibrateTap();
+          const rect = ref.current?.getBoundingClientRect();
+          onClick(show, rect);
+        } else {
+          vibrateTap();
+        }
+      }}
       aria-label={`${show.title} - ${show.tag}${show.r ? `, rated ${show.r}` : ''}`}
-      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ref.current?.click(); } }}
+      scroll={false}
     >
         <div className="cring" style={ring ? { background: ring } : {}} />
       <div style={{ position: 'relative', height: '100%', borderRadius: 'inherit', overflow: 'hidden', background: s.bg }}>
@@ -159,7 +167,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
           {sz !== 'sm' && <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.6)' }}>{show.genre.slice(0, 2).join(' · ')} · {show.eps} eps</div>}
         </div>
       </div>
-    </div>
+    </Link>
   );
 });
 
