@@ -33,6 +33,7 @@ interface TMDBDetails {
   credits?: { cast: Array<{ id: number; name: string; character: string; profile_path: string | null }> };
   similar?: { results: TMDBShowData[] };
   seasons?: Array<{ season_number: number; name: string; episode_count: number }>;
+  content_ratings?: { results: Array<{ iso_3166_1: string; rating: string }> };
 }
 
 export const revalidate = 600; // 10 min
@@ -48,10 +49,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       const data = await getAnimeDetail(anilistId);
       if (data) {
         const title = data.title.english || data.title.romaji || data.title.native || 'Anime';
+        const year = data.startDate?.year || '';
         const description = (data.description?.replace(/<[^>]*>/g, '') || 'Watch on Lumina Stream').slice(0, 160);
         const cover = data.coverImage?.extraLarge || data.coverImage?.large;
         return {
-          title: `${title} | Lumina Stream`,
+          title: year ? `${title} (${year}) - Watch Anime Online | Lumina Stream` : `${title} - Watch Anime Online | Lumina Stream`,
           description,
           openGraph: {
             title: `${title} | Lumina Stream`,
@@ -71,12 +73,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       tmdbFetch<{ id?: number }>(`/movie/${showId}`).catch(() => ({ id: undefined })),
     ]);
     const data = tvRes.id ? tvRes : movieRes.id ? movieRes : null;
+    const detectedType = tvRes.id ? 'tv' : 'movie';
     const title = (data as TMDBShowData)?.title || (data as TMDBShowData)?.name || 'Show';
     const description = (data as TMDBShowData)?.overview || 'Watch on Lumina Stream';
     const backdrop = (data as TMDBShowData)?.backdrop_path;
+    const releaseDate = (data as TMDBShowData)?.release_date || (data as TMDBShowData)?.first_air_date;
+    const year = releaseDate?.slice(0, 4) || '';
+    const typeLabel = detectedType === 'tv' ? 'TV Series' : 'Movie';
 
     return {
-      title: `${title} | Lumina Stream`,
+      title: year ? `${title} (${year}) - Watch ${typeLabel} Online | Lumina Stream` : `${title} - Watch ${typeLabel} Online | Lumina Stream`,
       description: description.slice(0, 160),
       openGraph: {
         title: `${title} | Lumina Stream`,
@@ -107,15 +113,16 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         const description = (data.description?.replace(/<[^>]*>/g, '') || '').slice(0, 500);
         jsonLd = {
           '@context': 'https://schema.org',
-          '@type': 'Movie',
+          '@type': data.format === 'TV' || data.format === 'TV_SHORT' ? 'TVSeries' : 'Movie',
           name: title,
           description,
           image: cover || undefined,
           url: `${siteUrl}/details/${showId}`,
           datePublished: data.startDate?.year ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}` : undefined,
-          aggregateRating: data.averageScore ? {
+          ...(data.episodes ? { numberOfEpisodes: data.episodes } : {}),
+          aggregateRating: data.meanScore ? {
             '@type': 'AggregateRating',
-            ratingValue: (data.averageScore / 10).toFixed(1),
+            ratingValue: (data.meanScore / 10).toFixed(1),
             bestRating: '10',
             ratingCount: data.favourites || undefined,
           } : undefined,
@@ -160,7 +167,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
       // Step 2: Fetch full details only for the matched type
       fullData = await tmdbFetch<TMDBShowData & TMDBDetails>(
         `/${mediaType}/${showId}`,
-        { append_to_response: 'credits,similar' }
+        { append_to_response: 'credits,similar,content_ratings' }
       ).catch(() => rawData as TMDBShowData & TMDBDetails);
     }
   } catch {
@@ -178,6 +185,8 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   const releaseDate = rawData.release_date || rawData.first_air_date || undefined;
   const castNames = fullData?.credits?.cast?.slice(0, 5).map(c => c.name) || [];
   const genreNames = rawData.genres?.map(g => g.name) || [];
+  const usRating = fullData?.content_ratings?.results?.find(r => r.iso_3166_1 === 'US')?.rating
+    || fullData?.content_ratings?.results?.[0]?.rating;
 
   // Movie or TVSeries schema depending on media type
   const jsonLd: Record<string, unknown> = {
@@ -191,6 +200,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
     ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),
     ...(rawData.number_of_seasons ? { numberOfSeasons: rawData.number_of_seasons } : {}),
     ...(rawData.number_of_episodes ? { numberOfEpisodes: rawData.number_of_episodes } : {}),
+    ...(usRating ? { contentRating: usRating } : {}),
     ...(rawData.vote_average ? {
       aggregateRating: {
         '@type': 'AggregateRating',

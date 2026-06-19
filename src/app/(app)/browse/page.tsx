@@ -59,9 +59,31 @@ async function getBrowseData() {
 
 export default async function BrowsePage() {
   const shows = await getBrowseData();
+
+  const collectionJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Browse',
+    description: metadata.description,
+    url: browseUrl,
+    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+  };
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Browse', item: browseUrl },
+    ],
+  };
+
   return (
-    <Suspense>
-      <BrowseClient initialShows={shows} />
-    </Suspense>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <Suspense>
+        <BrowseClient initialShows={shows} />
+      </Suspense>
+    </>
   );
 }

@@ -3,7 +3,8 @@ import type { TMDBShow } from '@/types';
 import type { Metadata } from 'next';
 import ReleaseCalendarClient from './ReleaseCalendarClient';
 
-const calendarUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app'}/release-calendar`;
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const calendarUrl = `${siteUrl}/release-calendar`;
 
 export const metadata: Metadata = {
   title: 'Release Calendar | Lumina Stream',
@@ -53,8 +54,18 @@ export default async function ReleaseCalendarPage() {
   }
 
   if (error) {
+    const errBreadcrumbJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+        { '@type': 'ListItem', position: 2, name: 'Release Calendar', item: calendarUrl },
+      ],
+    };
     return (
-      <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
+      <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(errBreadcrumbJsonLd) }} />
+        <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ padding: '2.2rem clamp(1rem,5vw,3rem) 0', position: 'relative', zIndex: 3 }}>
           <h1 className="sec" style={{ fontSize: 'clamp(1.3rem,3vw,2rem)', marginBottom: '.5rem' }}>📅 Release Calendar</h1>
           <p className="f-crimson" style={{  color: 'rgba(255,245,232,.45)', fontSize: '1rem' }}>Upcoming movie releases</p>
@@ -63,8 +74,32 @@ export default async function ReleaseCalendarPage() {
           Unable to load upcoming releases. Please try again later.
         </div>
       </div>
+      </>
     );
   }
 
-  return <ReleaseCalendarClient grouped={grouped} sortedMonths={sortedMonths} />;
+  const collectionJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Release Calendar',
+    description: metadata.description,
+    url: calendarUrl,
+    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+  };
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Release Calendar', item: calendarUrl },
+    ],
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <ReleaseCalendarClient grouped={grouped} sortedMonths={sortedMonths} />
+    </>
+  );
 }

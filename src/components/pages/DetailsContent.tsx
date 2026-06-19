@@ -474,7 +474,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         <section aria-label="Synopsis" className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16, marginBottom: '2rem' }}>
           <h2 className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>SYNOPSIS</h2>
           <p className="f-crimson" style={{  lineHeight: 1.85, color: 'rgba(255,245,232,.8)', fontSize: 'clamp(.95rem,1.2vw,1.05rem)' }}>{show.desc}</p>
-        </div>
+        </section>
 
         <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,.06)', marginBottom: '1.8rem', gap: 0 }}>
           {TABS.map(([tabId, lbl]) => (
@@ -521,6 +521,9 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         )}
 
         {tab === 'details' && (
+          <>
+          <section aria-label="Details">
+            <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>DETAILS</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 14 }}>
             {([
               ['Studio', fullDetails?.production_companies?.[0]?.name || 'Dream Weaver Studio'],
@@ -536,8 +539,11 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 <div className="f-crimson" style={{  fontSize: '1rem', color: 'rgba(255,245,232,.78)', fontWeight: 600 }}>{v}</div>
               </div>
             ))}
+          </div>
           </section>
-          <section aria-label="Cast" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <section aria-label="Cast" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.25rem' }}>CAST</h2>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             {castList.map((c, i) => (
               <Link key={c.id || c.name || i} href={c.id ? `/person/${c.id}` : '#'} className="neo-card" style={{ padding: '13px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .42s ${i * 0.08}s both`, textDecoration: 'none', color: 'inherit' }}>
                 {c.profile_path ? (
@@ -553,10 +559,14 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 </div>
               </Link>
             ))}
-          </div>
+            </div>
+          </section>
+          </>
         )}
 
         {tab === 'trailers' && (
+          <section aria-label="Trailers">
+            <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '1rem' }}>TRAILERS</h2>
           <div>
             {fullDetails?.videos?.results?.length ? (
               <>
@@ -591,11 +601,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               </div>
             )}
           </div>
+          </section>
         )}
 
         {tab === 'comments' && (
-          <div className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16 }}>
-            <h3 className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '1rem' }}>COMMENTS ({comments.length})</h3>
+          <section aria-label="Comments" className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16 }}>
+            <h2 className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '1rem' }}>COMMENTS ({comments.length})</h2>
             {!user || !profile ? (
               <div style={{ textAlign: 'center', padding: '2rem 0', color: 'rgba(255,245,232,.35)' }}>
                 <div style={{ fontSize: '1.5rem', marginBottom: '.5rem', opacity: .4 }}>🔒</div>
@@ -659,11 +670,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 })}
               </div>
             )}
-          </div>
+          </section>
         )}
 
         {tab === 'related' && (
           <section aria-label="Related shows">
+            <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '1rem' }}>MORE LIKE THIS</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(155px,1fr))', gap: '1.2rem' }}>
               {similar.map((x, i) => (
                 <div key={x.id} style={{ animation: i < 12 ? `card-in .42s ${i * 0.06}s both` : 'none' }}>

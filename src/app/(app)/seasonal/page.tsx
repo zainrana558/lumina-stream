@@ -6,7 +6,8 @@ import SeasonalClient from './SeasonalClient';
 
 export const revalidate = 600;
 
-const seasonalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app'}/seasonal`;
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const seasonalUrl = `${siteUrl}/seasonal`;
 
 export const metadata: Metadata = {
   title: 'Seasonal Anime - Currently Airing & Trending',
@@ -61,5 +62,29 @@ async function getSeasonalData() {
 
 export default async function SeasonalPage() {
   const data = await getSeasonalData();
-  return <SeasonalClient {...data} />;
+
+  const collectionJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Seasonal Anime',
+    description: metadata.description,
+    url: seasonalUrl,
+    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+  };
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Seasonal Anime', item: seasonalUrl },
+    ],
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <SeasonalClient {...data} />
+    </>
+  );
 }
