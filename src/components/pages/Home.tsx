@@ -224,7 +224,7 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
           <>
             <Image
               src={getBackdropUrl(F.backdrop_path, 'w1280')!}
-              alt=""
+              alt={`${F.title} featured backdrop`}
               fill
               priority
               sizes="100vw"
@@ -322,7 +322,7 @@ function GenrePortalCard({
         {backdropUrl && (
           <Image
             src={backdropUrl}
-            alt=""
+            alt={`${g.label} genre portal`}
             fill
             loading="lazy"
             sizes="(max-width: 768px) 100vw, 33vw"
