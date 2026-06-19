@@ -49,18 +49,23 @@ interface FullDetails {
 
 interface DetailsContentProps {
   showId: number;
-  initialShow: MediaItem | null;  initialCredits?: TMDBCastMember[];
+  initialShow: MediaItem | null;
+  initialCredits?: TMDBCastMember[];
   initialSimilar?: MediaItem[];
+  /** Pre-selected season (from episode URL route) */
+  defaultSeason?: number;
+  /** Pre-selected episode (from episode URL route) */
+  defaultEpisode?: number;
 }
 
-export default function DetailsContent({ showId, initialShow, initialCredits = [], initialSimilar = [] }: DetailsContentProps) {
+export default function DetailsContent({ showId, initialShow, initialCredits = [], initialSimilar = [], defaultSeason, defaultEpisode }: DetailsContentProps) {
   const router = useRouter();
   const { user, profile, openPip, triggerConfetti } = useApp();
 
   const [show, setShow] = useState<MediaItem | null>(initialShow);
   const [tab, setTab] = useState('episodes');
-  const [epIdx, setEpIdx] = useState(1);
-  const [season, setSeason] = useState(1);
+  const [epIdx, setEpIdx] = useState(defaultEpisode || 1);
+  const [season, setSeason] = useState(defaultSeason || 1);
   const [playing, setPlaying] = useState(false);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [userRating, setUserRating] = useState<number | null>(null);
@@ -89,18 +94,25 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
   // Keyboard shortcuts (only active when player is open) — must be before early return
   const DETAIL_TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
+
+  /** Update the URL to reflect the current season/episode for SEO crawlability. */
+  const syncEpisodeUrl = useCallback((s: number, e: number) => {
+    const epUrl = `/details/${showId}/season/${s}/episode/${e}`;
+    router.replace(epUrl, { scroll: false });
+  }, [showId, router]);
+
   useKeyboardShortcuts(playing, {
     onTogglePlayPause: () => setPlaying(p => !p),
     onToggleFullscreen: () => { playerRef.current?.requestFullscreen?.(); },
     onExit: () => setPlaying(false),
-    onPreviousEpisode: () => { if (epIdx > 1) setEpIdx(epIdx - 1); },
-    onNextEpisode: () => setEpIdx(epIdx + 1),
-    onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); } },
+    onPreviousEpisode: () => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } },
+    onNextEpisode: () => { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); },
+    onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); syncEpisodeUrl(season, n); } },
     onToggleSubtitles: () => {},
     onSwitchProvider: () => { if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
     onPopOutPip: () => { if (show && activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: CS[show.cs].bg, acc: CS[show.cs].acc }, show.id); } },
-    onNextSeason: () => { const maxSeason = show?.media_type === 'tv' ? Math.ceil((show?.eps || 12) / 12) : 1; if (season < maxSeason) { setSeason(season + 1); setEpIdx(1); } },
-    onPreviousSeason: () => { if (season > 1) { setSeason(season - 1); setEpIdx(1); } },
+    onNextSeason: () => { const maxSeason = show?.media_type === 'tv' ? Math.ceil((show?.eps || 12) / 12) : 1; if (season < maxSeason) { const ns = season + 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
+    onPreviousSeason: () => { if (season > 1) { const ns = season - 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
     onToggleWatchlist: () => toggleWatchlist(),
     onGoBack: () => router.back(),
     onNextTab: () => { const tabs = DETAIL_TABS.map(t => t[0]); const ci = tabs.indexOf(tab); if (ci < tabs.length - 1) setTab(tabs[ci + 1]); },
@@ -487,7 +499,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
             {show.media_type === 'tv' && seasons > 1 && (
               <div style={{ display: 'flex', gap: '.5rem', marginBottom: '1.2rem' }}>
                 {Array.from({ length: Math.min(seasons, 10) }, (_, i) => (
-                  <button className="f-cinzel" key={i} onClick={() => setSeason(i + 1)} style={{ padding: '6px 14px', borderRadius: 20, border: 'none',  fontSize: '.7rem', fontWeight: 600, cursor: 'pointer', background: season === i + 1 ? s.acc : '#090716', color: season === i + 1 ? '#05020A' : 'rgba(255,245,232,.45)', boxShadow: season === i + 1 ? `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1.5px 0 rgba(255,255,255,.35)` : 'inset 4px 4px 10px rgba(0,0,0,.7),inset -2px -2px 5px rgba(35,20,75,.18)', transition: 'all .25s' }}>S{i + 1}</button>
+                  <button className="f-cinzel" key={i} onClick={() => { const ns = i + 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); }} style={{ padding: '6px 14px', borderRadius: 20, border: 'none',  fontSize: '.7rem', fontWeight: 600, cursor: 'pointer', background: season === i + 1 ? s.acc : '#090716', color: season === i + 1 ? '#05020A' : 'rgba(255,245,232,.45)', boxShadow: season === i + 1 ? `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1.5px 0 rgba(255,255,255,.35)` : 'inset 4px 4px 10px rgba(0,0,0,.7),inset -2px -2px 5px rgba(35,20,75,.18)', transition: 'all .25s' }}>S{i + 1}</button>
                 ))}
               </div>
             )}
@@ -499,7 +511,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   const ac = epIdx === e.ep;
                   const epStill = seasonEpisodes.find(se => se.episode_number === e.ep)?.still_path;
                   return (
-                    <button key={e.ep} type="button" role="button" aria-label={`Episode ${e.ep}: ${e.title}`} tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); vibrateMedium(); setEpIdx(e.ep); } }} className={`ep-row${ac ? ' playing' : ''}`} onClick={() => { vibrateMedium(); setEpIdx(e.ep); }} style={{ padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `el .4s ease ${i * 0.038}s both` }}>
+                    <button key={e.ep} type="button" role="button" aria-label={`Episode ${e.ep}: ${e.title}`} tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); vibrateMedium(); setEpIdx(e.ep); syncEpisodeUrl(season, e.ep); } }} className={`ep-row${ac ? ' playing' : ''}`} onClick={() => { vibrateMedium(); setEpIdx(e.ep); syncEpisodeUrl(season, e.ep); }} style={{ padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `el .4s ease ${i * 0.038}s both` }}>
                       <div style={{ width: 100, height: 60, borderRadius: 9, flexShrink: 0, background: s.bg, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2)' }}>
                         {epStill && (
                           <Image src={getTmdbImageUrl(epStill, 'w300')!} alt={`${show.title} — Episode ${e.ep}${e.title ? `: ${e.title}` : ''} still`} fill style={{ objectFit: 'cover', zIndex: 0 }} sizes="100px" loading="lazy" />
@@ -740,9 +752,9 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Playing'}</div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => { if (epIdx > 1) setEpIdx(epIdx - 1); }}>⏮</button>
+                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }}>⏮</button>
                     <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => setPlaying(false)}>▶</button>
-                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => setEpIdx(epIdx + 1)}>⏭</button>
+                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); }}>⏭</button>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>

@@ -4,8 +4,12 @@ import DetailsContent from '@/components/pages/DetailsContent';
 import type { Metadata } from 'next';
 import { tmdbToMedia, isAnilistId, toAnilistId } from '@/types';
 import type { TMDBShow, MediaItem } from '@/types';
-
-const siteUrl = 'https://lumina-stream-omega.vercel.app';
+import {
+  buildShowMetadata,
+  isThinContent,
+  stripHtml,
+  SITE_URL,
+} from '@/lib/seo/metadata';
 
 interface TMDBShowData {
   id: number;
@@ -42,56 +46,92 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const showId = Number(id);
 
-  // AniList ID — fetch metadata from AniList
+  // ── AniList route ──
   if (isAnilistId(showId)) {
     try {
       const anilistId = toAnilistId(showId);
       const data = await getAnimeDetail(anilistId);
       if (data) {
         const title = data.title.english || data.title.romaji || data.title.native || 'Anime';
-        const year = data.startDate?.year || '';
-        const description = (data.description?.replace(/<[^>]*>/g, '') || 'Watch on Lumina Stream').slice(0, 160);
+        const year = data.startDate?.year || undefined;
+        const description = data.description || '';
+        const genres = data.genres || [];
         const cover = data.coverImage?.extraLarge || data.coverImage?.large;
-        return {
-          title: year ? `${title} (${year}) - Watch Anime Online | Lumina Stream` : `${title} - Watch Anime Online | Lumina Stream`,
+
+        const thin = isThinContent({
           description,
-          openGraph: {
-            title: `${title} | Lumina Stream`,
-            description,
-            images: cover ? [cover] : [],
-          },
-        };
+          genres,
+          cast: [],
+          coverImage: cover,
+        });
+
+        return buildShowMetadata({
+          title,
+          year,
+          mediaType: 'anime',
+          id: showId,
+          description: stripHtml(description),
+          genres,
+          image: cover || undefined,
+          imageWidth: cover ? 1200 : undefined,
+          imageHeight: cover ? 630 : undefined,
+          isThin: thin,
+        });
       }
     } catch { /* fall through */ }
-    return { title: 'Anime | Lumina Stream' };
+    return {
+      title: 'Anime | Lumina Stream',
+      robots: { index: false, follow: true },
+    };
   }
 
-  // TMDB ID — existing logic
+  // ── TMDB route ──
   try {
+    const fallback: TMDBShowData = { id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 };
     const [tvRes, movieRes] = await Promise.all([
-      tmdbFetch<{ id?: number }>(`/tv/${showId}`).catch(() => ({ id: undefined })),
-      tmdbFetch<{ id?: number }>(`/movie/${showId}`).catch(() => ({ id: undefined })),
+      tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => fallback),
+      tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => fallback),
     ]);
     const data = tvRes.id ? tvRes : movieRes.id ? movieRes : null;
-    const detectedType = tvRes.id ? 'tv' : 'movie';
-    const title = (data as TMDBShowData)?.title || (data as TMDBShowData)?.name || 'Show';
-    const description = (data as TMDBShowData)?.overview || 'Watch on Lumina Stream';
-    const backdrop = (data as TMDBShowData)?.backdrop_path;
-    const releaseDate = (data as TMDBShowData)?.release_date || (data as TMDBShowData)?.first_air_date;
-    const year = releaseDate?.slice(0, 4) || '';
-    const typeLabel = detectedType === 'tv' ? 'TV Series' : 'Movie';
+    const detectedType: 'tv' | 'movie' = tvRes.id ? 'tv' : 'movie';
 
-    return {
-      title: year ? `${title} (${year}) - Watch ${typeLabel} Online | Lumina Stream` : `${title} - Watch ${typeLabel} Online | Lumina Stream`,
-      description: description.slice(0, 160),
-      openGraph: {
-        title: `${title} | Lumina Stream`,
-        description: description.slice(0, 160),
-        images: backdrop ? [`https://image.tmdb.org/t/p/original${backdrop}`] : [],
-      },
-    };
+    if (!data?.id) {
+      return {
+        title: 'Show | Lumina Stream',
+        robots: { index: false, follow: true },
+      };
+    }
+
+    const title = data.title || data.name || 'Show';
+    const year = (data.release_date || data.first_air_date)?.slice(0, 4) || undefined;
+    const genres = data.genres?.map(g => g.name) || [];
+    const mediaType = detectedType === 'tv' ? 'tv' : 'movie';
+    const backdrop = data.backdrop_path;
+
+    const thin = isThinContent({
+      description: data.overview,
+      genres,
+      cast: [],
+      posterPath: data.poster_path,
+    });
+
+    return buildShowMetadata({
+      title,
+      year,
+      mediaType,
+      id: showId,
+      description: data.overview,
+      genres,
+      image: backdrop ? `https://image.tmdb.org/t/p/original${backdrop}` : undefined,
+      imageWidth: 1200,
+      imageHeight: 630,
+      isThin: thin,
+    });
   } catch {
-    return { title: 'Show | Lumina Stream' };
+    return {
+      title: 'Show | Lumina Stream',
+      robots: { index: false, follow: true },
+    };
   }
 }
 
@@ -117,7 +157,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
           name: title,
           description,
           image: cover || undefined,
-          url: `${siteUrl}/details/${showId}`,
+          url: `${SITE_URL}/details/${showId}`,
           datePublished: data.startDate?.year ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}` : undefined,
           ...(data.episodes ? { numberOfEpisodes: data.episodes } : {}),
           aggregateRating: data.meanScore ? {
@@ -137,8 +177,8 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
           itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
-            { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${siteUrl}/details/${showId}` },
+            { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+            { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}/details/${showId}` },
           ],
         }) }} />
         <DetailsContent showId={showId} initialShow={show} />
@@ -153,9 +193,10 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
 
   try {
     // Step 1: Detect media type (try TV first, then Movie) — 2 parallel calls
+    const fallback: TMDBShowData = { id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 };
     const [tvRes, movieRes] = await Promise.all([
-      tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => ({ id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 })),
-      tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => ({ id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 })),
+      tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => fallback),
+      tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => fallback),
     ]);
 
     mediaType = tvRes.id ? 'tv' : movieRes.id ? 'movie' : null;
@@ -195,7 +236,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
     name: title,
     description,
     image: poster,
-    url: `${siteUrl}/details/${showId}`,
+    url: `${SITE_URL}/details/${showId}`,
     datePublished: releaseDate,
     ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),
     ...(rawData.number_of_seasons ? { numberOfSeasons: rawData.number_of_seasons } : {}),
@@ -220,8 +261,8 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
-          { '@type': 'ListItem', position: 2, name: title, item: `${siteUrl}/details/${showId}` },
+          { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+          { '@type': 'ListItem', position: 2, name: title, item: `${SITE_URL}/details/${showId}` },
         ],
       }) }} />
       <DetailsContent
