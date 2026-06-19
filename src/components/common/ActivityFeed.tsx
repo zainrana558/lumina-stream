@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useApp } from '@/contexts/AppContext';
 
 interface ActivityItem {
@@ -191,7 +190,7 @@ export default function ActivityFeed({ feedMode = false }: { feedMode?: boolean 
                   overflow: 'hidden', background: 'linear-gradient(135deg,#14052E,#2D1B5E)',
                   boxShadow: '2px 2px 6px rgba(0,0,0,.5)',
                 }}>
-                  <Image src={`https://image.tmdb.org/t/p/w92${activity.poster_path}`} alt={activity.title || 'Activity poster'} fill sizes="36px" style={{ objectFit: 'cover' }} />
+                  <img src={`https://image.tmdb.org/t/p/w92${activity.poster_path}`} alt={activity.title || 'Activity poster'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                 </div>
               )}
             </div>
@@ -202,7 +201,7 @@ export default function ActivityFeed({ feedMode = false }: { feedMode?: boolean 
       {/* Infinite scroll loader */}
       {hasMore && <div ref={loaderRef} style={{ height: 60 }} />}
       {loading && page > 1 && (
-        <div className="f-cinzel" style={{ textAlign: 'center', padding: '1rem', color: 'rgba(255,245,232,.5)',  fontSize: '.72rem' }}>
+        <div className="f-cinzel" style={{ textAlign: 'center', padding: '1rem', color: 'rgba(255,245,232,.3)',  fontSize: '.72rem' }}>
           <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite' }}>✦</div>
         </div>
       )}

@@ -413,24 +413,13 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     <div className="page" style={{ minHeight: '100vh' }}>
       {/* Hero backdrop */}
       <div style={{ position: 'relative', height: 'clamp(35vh,42vh,50vh)', overflow: 'hidden' }}>
-        <div key={show.id} style={{
-          position: 'absolute', inset: 0,
-          background: (!show.backdrop_path && !(show._isAnilist && show._anilistBanner))
-          ? `linear-gradient(135deg,${s.base} 0%,#18063A 40%,#2D1B5E 100%)`
-          : undefined,
-          animation: 'hero-swap .6s ease both'
-        }}>
-          {(show._isAnilist && show._anilistBanner) ? (
-            <>
-              <Image src={show._anilistBanner} alt="" fill priority sizes="100vw" style={{ objectFit: 'cover', zIndex: 0 }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)', zIndex: 1 }} />
-            </>
-          ) : show.backdrop_path ? (
-            <>
-              <Image src={getBackdropUrl(show.backdrop_path, 'w1280')!} alt="" fill priority sizes="100vw" style={{ objectFit: 'cover', zIndex: 0 }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)', zIndex: 1 }} />
-            </>
-          ) : null}
+        <div key={show.id} role="img" aria-label={`${show.title} backdrop`} style={{ position: 'absolute', inset: 0, background: show._isAnilist && show._anilistBanner
+          ? `url(${show._anilistBanner}) center/cover no-repeat`
+          : show.backdrop_path
+          ? `url(${getBackdropUrl(show.backdrop_path, 'w1280')}) center/cover no-repeat`
+          : `linear-gradient(135deg,${s.base} 0%,#18063A 40%,#2D1B5E 100%)`, animation: 'hero-swap .6s ease both' }}>
+          {(show.backdrop_path || (show._isAnilist && show._anilistBanner)) && (            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)' }} />
+          )}
           <div style={{ position: 'absolute', top: '10%', left: '45%', width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle,${s.acc}30 0%,transparent 68%)`, filter: 'blur(62px)', animation: 'aurora 12s ease-in-out infinite' }} />
           <div style={{ position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', fontSize: 'clamp(9rem,15vw,17rem)', opacity: .04, filter: 'blur(5px)', animation: 'float 8s ease-in-out infinite', userSelect: 'none' }}>{s.em}</div>
         </div>
@@ -451,10 +440,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               }}>{contentRating}</div>
             )}
             {show.genre.slice(0, 3).map(g => <span key={g} className="gtag">{g}</span>)}
-            <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.55)', alignSelf: 'center', }}>{show.yr} · {show.media_type === 'tv' ? `${show.eps} eps` : `${show.eps} min`} · {show.st}</span>
+            <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)', alignSelf: 'center', }}>{show.yr} · {show.media_type === 'tv' ? `${show.eps} eps` : `${show.eps} min`} · {show.st}</span>
           </div>
           <h1 className="s2 f-cinzel-dec" style={{  fontWeight: 900, fontSize: 'clamp(1.4rem,3.5vw,2.8rem)', background: `linear-gradient(135deg,#FFF 0%,${s.acc} 65%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: 4, lineHeight: 1.1 }}>{show.title}</h1>
-          <p className="s3 f-cinzel" style={{  fontSize: '.82rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.05em' }}>{show.sub}</p>
+          <p className="s3 f-cinzel" style={{  fontSize: '.82rem', color: 'rgba(255,245,232,.48)', letterSpacing: '.05em' }}>{show.sub}</p>
         </div>
       </div>
 
@@ -502,7 +491,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               </div>
             )}
             {loadingSeason ? (
-              <div className="f-cinzel" style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255,245,232,.5)',  fontSize: '.82rem', letterSpacing: '.1em' }}>Loading episodes…</div>
+              <div className="f-cinzel" style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>Loading episodes…</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
                 {epData.map((e, i) => {
@@ -512,7 +501,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                     <button key={e.ep} type="button" role="button" aria-label={`Episode ${e.ep}: ${e.title}`} tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); vibrateMedium(); setEpIdx(e.ep); } }} className={`ep-row${ac ? ' playing' : ''}`} onClick={() => { vibrateMedium(); setEpIdx(e.ep); }} style={{ padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `el .4s ease ${i * 0.038}s both` }}>
                       <div style={{ width: 100, height: 60, borderRadius: 9, flexShrink: 0, background: s.bg, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2)' }}>
                         {epStill && (
-                          <Image src={getTmdbImageUrl(epStill, 'w300')!} alt="" fill style={{ objectFit: 'cover', zIndex: 0 }} sizes="100px" loading="lazy" />
+                          <Image src={getTmdbImageUrl(epStill, 'w300')!} alt={`${show.title} — Episode ${e.ep}${e.title ? `: ${e.title}` : ''} still`} fill style={{ objectFit: 'cover', zIndex: 0 }} sizes="100px" loading="lazy" />
                         )}
                         <div style={{ width: 28, height: 28, borderRadius: '50%', background: ac ? s.acc : 'rgba(7,4,15,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.72rem', color: ac ? '#05020A' : '#FFF5E8', position: 'relative', zIndex: 1, boxShadow: ac ? `0 0 14px ${s.acc}80,3px 3px 8px rgba(0,0,0,.6)` : '' }}>{ac ? '▶' : e.ep}</div>
                         {e.done && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${s.acc},${s.acc}88)`, boxShadow: `0 0 8px ${s.acc}` }} />}
@@ -562,7 +551,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 )}
                 <div>
                   <div className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{c.name}</div>
-                  <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.55)' }}>{c.character || 'Actor'}</div>
+                  <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)' }}>{c.character || 'Actor'}</div>
                 </div>
               </div>
             ))}
@@ -571,34 +560,14 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
         {tab === 'trailers' && (
           <div>
-            {(fullDetails?.videos?.results?.length || show?._anilistTrailer) ? (
+            {fullDetails?.videos?.results?.length ? (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1rem' }}>
-                  {/* AniList YouTube trailer (anime) */}
-                  {show?._anilistTrailer && (
-                    <div style={{ animation: 'card-in .42s 0s both' }}>
-                      <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
-                        <iframe
-                          src={`https://www.youtube.com/embed/${show._anilistTrailer.id}?rel=0`}
-                          title="Trailer"
-                          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          loading="lazy"
-                        />
-                      </div>
-                      <div style={{ padding: '.6rem 0' }}>
-                        <div className="f-cinzel" style={{ fontSize: '.72rem', color: '#FFF5E8' }}>Official Trailer</div>
-                        <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.5)' }}>YouTube</span>
-                      </div>
-                    </div>
-                  )}
-                  {/* TMDB YouTube trailers */}
-                  {fullDetails?.videos?.results
-                    ?.filter((v: { type: string; site: string }) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
+                  {fullDetails.videos.results
+                    .filter((v: { type: string; site: string }) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
                     .slice(0, 8)
                     .map((v: { id: string; key: string; name: string; type: string }, i: number) => (
-                      <div key={v.id} style={{ animation: `card-in .42s ${(show?._anilistTrailer ? i + 1 : i) * 0.06}s both` }}>
+                      <div key={v.id} style={{ animation: `card-in .42s ${i * 0.06}s both` }}>
                         <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
                           <iframe
                             src={`https://www.youtube.com/embed/${v.key}?rel=0`}
@@ -610,22 +579,21 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                           />
                         </div>
                         <div style={{ padding: '.6rem 0' }}>
-                          <div className="f-cinzel" style={{ fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
-                          <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.5)', }}>{v.type}</span>
+                          <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
+                          <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)', }}>{v.type}</span>
                         </div>
                       </div>
                     ))}
                 </div>
               </>
             ) : (
-              <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.5)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
+              <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '.8rem', opacity: .4 }}>🎬</div>
                 No trailers available
               </div>
             )}
           </div>
         )}
-
 
         {tab === 'comments' && (
           <div className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16 }}>
@@ -662,7 +630,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               </div>
             )}
             {commentLoading ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'rgba(255,245,232,.5)' }}>Loading comments...</div>
+              <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'rgba(255,245,232,.3)' }}>Loading comments...</div>
             ) : comments.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'rgba(255,245,232,.25)', fontStyle: 'italic' }}>No comments yet. Be the first to share your thoughts!</div>
             ) : (

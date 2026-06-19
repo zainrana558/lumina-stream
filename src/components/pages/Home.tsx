@@ -213,7 +213,7 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
         if (e.key === 'ArrowLeft') { setIdx(i => (i - 1 + featured.length) % featured.length); setTick(k => k + 1); }
         if (e.key === 'ArrowRight') { setIdx(i => (i + 1) % featured.length); setTick(k => k + 1); }
       }}>
-      <div ref={bgRef} key={`bg-${idx}`} style={{
+      <div ref={bgRef} key={`bg-${idx}`} role="img" aria-label={`${F.title} backdrop`} style={{
         position: 'absolute', inset: '-6%',
         background: F.backdrop_path
           ? undefined
@@ -310,6 +310,8 @@ function GenrePortalCard({
       {/* Backdrop image or gradient fallback */}
       <div
         className="portal-backdrop"
+        role="img"
+        aria-label={`${g.label} genre portal backdrop`}
         style={{
           backgroundImage: backdropUrl
             ? undefined

@@ -4,7 +4,8 @@ import DetailsContent from '@/components/pages/DetailsContent';
 import type { Metadata } from 'next';
 import { tmdbToMedia, isAnilistId, toAnilistId } from '@/types';
 import type { TMDBShow, MediaItem } from '@/types';
-import { buildDetailJsonLd } from '@/lib/jsonld';
+
+const siteUrl = 'https://lumina-stream-omega.vercel.app';
 
 interface TMDBShowData {
   id: number;
@@ -35,12 +36,9 @@ interface TMDBDetails {
 
 export const revalidate = 600; // 10 min
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
-
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const showId = Number(id);
-  const pageUrl = `${siteUrl}/details/${id}`;
 
   // AniList ID — fetch metadata from AniList
   if (isAnilistId(showId)) {
@@ -54,17 +52,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         return {
           title: `${title} | Lumina Stream`,
           description,
-          alternates: { canonical: pageUrl },
           openGraph: {
-            type: 'video.tv_show',
-            url: pageUrl,
-            title: `${title} | Lumina Stream`,
-            description,
-            siteName: 'Lumina Stream',
-            images: cover ? [{ url: cover, width: 1200, height: 630, alt: title }] : [],
-          },
-          twitter: {
-            card: 'summary_large_image',
             title: `${title} | Lumina Stream`,
             description,
             images: cover ? [cover] : [],
@@ -72,43 +60,31 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         };
       }
     } catch { /* fall through */ }
-    return { title: 'Anime | Lumina Stream', alternates: { canonical: pageUrl } };
+    return { title: 'Anime | Lumina Stream' };
   }
 
-  // TMDB ID — detect media type for correct og:type
-  let resolvedMediaType: 'movie' | 'tv' | null = null;
+  // TMDB ID — existing logic
   try {
     const [tvRes, movieRes] = await Promise.all([
       tmdbFetch<{ id?: number }>(`/tv/${showId}`).catch(() => ({ id: undefined })),
       tmdbFetch<{ id?: number }>(`/movie/${showId}`).catch(() => ({ id: undefined })),
     ]);
-    const data = tvRes.id ? (resolvedMediaType = 'tv', tvRes) : movieRes.id ? (resolvedMediaType = 'movie', movieRes) : null;
+    const data = tvRes.id ? tvRes : movieRes.id ? movieRes : null;
     const title = (data as TMDBShowData)?.title || (data as TMDBShowData)?.name || 'Show';
     const description = (data as TMDBShowData)?.overview || 'Watch on Lumina Stream';
     const backdrop = (data as TMDBShowData)?.backdrop_path;
-    const ogType = resolvedMediaType === 'movie' ? 'video.movie' : 'video.tv_show';
 
     return {
       title: `${title} | Lumina Stream`,
       description: description.slice(0, 160),
-      alternates: { canonical: pageUrl },
       openGraph: {
-        type: ogType,
-        url: pageUrl,
-        title: `${title} | Lumina Stream`,
-        description: description.slice(0, 160),
-        siteName: 'Lumina Stream',
-        images: backdrop ? [{ url: `https://image.tmdb.org/t/p/original${backdrop}`, width: 1200, height: 630, alt: title }] : [],
-      },
-      twitter: {
-        card: 'summary_large_image',
         title: `${title} | Lumina Stream`,
         description: description.slice(0, 160),
         images: backdrop ? [`https://image.tmdb.org/t/p/original${backdrop}`] : [],
       },
     };
   } catch {
-    return { title: 'Show | Lumina Stream', alternates: { canonical: pageUrl } };
+    return { title: 'Show | Lumina Stream' };
   }
 }
 
@@ -119,40 +95,46 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   // ── AniList route: ID >= ANILIST_ID_OFFSET ──
   if (isAnilistId(showId)) {
     let show: MediaItem | null = null;
+    let jsonLd: Record<string, unknown> | null = null;
     try {
       const anilistId = toAnilistId(showId);
       const data = await getAnimeDetail(anilistId);
-      if (data) show = anilistToMediaItem(data);
+      if (data) {
+        show = anilistToMediaItem(data);
+        const title = data.title.english || data.title.romaji || data.title.native || 'Anime';
+        const cover = data.coverImage?.extraLarge || data.coverImage?.large;
+        const description = (data.description?.replace(/<[^>]*>/g, '') || '').slice(0, 500);
+        jsonLd = {
+          '@context': 'https://schema.org',
+          '@type': 'Movie',
+          name: title,
+          description,
+          image: cover || undefined,
+          url: `${siteUrl}/details/${showId}`,
+          datePublished: data.startDate?.year ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}` : undefined,
+          aggregateRating: data.averageScore ? {
+            '@type': 'AggregateRating',
+            ratingValue: (data.averageScore / 10).toFixed(1),
+            bestRating: '10',
+            ratingCount: data.favourites || undefined,
+          } : undefined,
+          genre: data.genres?.slice(0, 5) || undefined,
+        };
+      }
     } catch { /* fall through to null */ }
-    const pageUrl = `${siteUrl}/details/${showId}`;
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
-      { '@type': 'ListItem', position: 2, name: show.media_type === 'movie' || show.tag === 'Movie' ? 'Movies' : 'TV Shows', item: `${siteUrl}/browse` },
-      { '@type': 'ListItem', position: 3, name: show.title, item: pageUrl },
-    ],
-  };
-
-  return show ? (
+    return (
       <>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
-              buildDetailJsonLd(show, siteUrl),
-            ),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-        />
+        {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+            { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${siteUrl}/details/${showId}` },
+          ],
+        }) }} />
         <DetailsContent showId={showId} initialShow={show} />
       </>
-    ) : (
-      <DetailsContent showId={showId} initialShow={null} />
     );
   }
 
@@ -189,31 +171,48 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   }
 
   const show = tmdbToMedia({ ...rawData, media_type: mediaType } as TMDBShow);
-  const pageUrl = `${siteUrl}/details/${showId}`;
-  const breadcrumbJsonLd = {
+  const title = rawData.title || rawData.name || 'Show';
+  const description = (rawData.overview || '').slice(0, 500);
+  const poster = rawData.poster_path ? `https://image.tmdb.org/t/p/w500${rawData.poster_path}` : undefined;
+  const releaseDate = rawData.release_date || rawData.first_air_date || undefined;
+  const castNames = fullData?.credits?.cast?.slice(0, 5).map(c => c.name) || [];
+  const genreNames = rawData.genres?.map(g => g.name) || [];
+
+  // Movie or TVSeries schema depending on media type
+  const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
-      { '@type': 'ListItem', position: 2, name: mediaType === 'movie' ? 'Movies' : 'TV Shows', item: `${siteUrl}/browse` },
-      { '@type': 'ListItem', position: 3, name: show.title, item: pageUrl },
-    ],
+    '@type': mediaType === 'tv' ? 'TVSeries' : 'Movie',
+    name: title,
+    description,
+    image: poster,
+    url: `${siteUrl}/details/${showId}`,
+    datePublished: releaseDate,
+    ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),
+    ...(rawData.number_of_seasons ? { numberOfSeasons: rawData.number_of_seasons } : {}),
+    ...(rawData.number_of_episodes ? { numberOfEpisodes: rawData.number_of_episodes } : {}),
+    ...(rawData.vote_average ? {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: rawData.vote_average.toFixed(1),
+        bestRating: '10',
+        ratingCount: rawData.popularity ? Math.round(rawData.popularity * 10) : undefined,
+      },
+    } : {}),
+    ...(genreNames.length ? { genre: genreNames.slice(0, 5) } : {}),
+    ...(castNames.length ? { actor: castNames.map(n => ({ '@type': 'Person', name: n })) } : {}),
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            buildDetailJsonLd(show, siteUrl),
-          ),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+          { '@type': 'ListItem', position: 2, name: title, item: `${siteUrl}/details/${showId}` },
+        ],
+      }) }} />
       <DetailsContent
         showId={showId}
         initialShow={show}
