@@ -56,13 +56,13 @@ export const metadata: Metadata = {
     url: CANONICAL_BASE,
     siteName: "Lumina Stream",
     locale: "en_US",
-    images: [{ url: `${CANONICAL_BASE}/logo.svg`, width: 512, height: 512, alt: "Lumina Stream" }],
+    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: "Lumina Stream - Dream, Discover, Stream" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Lumina Stream",
     description: "Explore a curated collection of movies, TV shows, anime, and cartoons.",
-    images: [`${CANONICAL_BASE}/logo.svg`],
+    images: [`${CANONICAL_BASE}/og/og-movies.png`],
   },
   icons: {
     icon: [
@@ -113,7 +113,7 @@ export default function RootLayout({
               name: 'Lumina Stream',
               url: CANONICAL_BASE,
               logo: `${CANONICAL_BASE}/logo.svg`,
-              sameAs: [],
+              sameAs: ['https://github.com/zainrana558'],
             }),
           }}
         />

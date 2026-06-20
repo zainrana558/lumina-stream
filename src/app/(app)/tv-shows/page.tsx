@@ -28,6 +28,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'TV Shows - Watch Free TV Series Online | Lumina Stream',
     description: 'Binge-watch free TV shows on Lumina Stream.',
+    images: [`${siteUrl}/og/og-tv.png`],
   },
 };
 

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     siteName: 'Lumina Stream',
     images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'All Genres on Lumina Stream' }],
   },
-  twitter: { card: 'summary_large_image', title: 'All Genres | Lumina Stream', description: 'Browse all genres on Lumina Stream.' },
+  twitter: { card: 'summary_large_image', title: 'All Genres | Lumina Stream', description: 'Browse all genres on Lumina Stream.', images: [`${siteUrl}/og/og-genres.png`] },
 };
 
 const GENRE_DESCRIPTIONS: Record<string, string> = {

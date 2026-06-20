@@ -230,9 +230,18 @@ export const metadata: Metadata = {
   title: 'Lumina Stream - Dream, Discover, Stream',
   description: 'Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.',
   openGraph: {
-    title: 'Lumina Stream',
-    description: 'Explore a curated collection of movies, TV shows, anime, and cartoons.',
+    title: 'Lumina Stream - Dream, Discover, Stream',
+    description: 'Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.',
     type: 'website',
+    url: CANONICAL_BASE,
+    siteName: 'Lumina Stream',
+    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumina Stream - Dream, Discover, Stream' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Lumina Stream - Dream, Discover, Stream',
+    description: 'Explore a curated collection of movies, TV shows, anime, and cartoons.',
+    images: [`${CANONICAL_BASE}/og/og-movies.png`],
   },
 };
 

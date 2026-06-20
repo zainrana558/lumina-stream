@@ -21,6 +21,12 @@ export const metadata: Metadata = {
     title: 'Browse - Movies & TV Shows | Lumina Stream',
     description: 'Browse the full catalog of movies and TV shows on Lumina Stream.',
     siteName: 'Lumina Stream',
+    images: [{ url: `${siteUrl}/og/og-movies.png`, width: 1344, height: 768, alt: 'Browse Movies & TV Shows on Lumina Stream' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Browse - Movies & TV Shows | Lumina Stream',
+    description: 'Browse the full catalog of movies and TV shows on Lumina Stream.',
   },
 };
 

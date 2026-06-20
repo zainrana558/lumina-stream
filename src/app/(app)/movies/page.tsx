@@ -28,6 +28,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Movies - Watch Free Movies Online | Lumina Stream',
     description: 'Stream thousands of free movies on Lumina Stream.',
+    images: [`${siteUrl}/og/og-movies.png`],
   },
 };
 

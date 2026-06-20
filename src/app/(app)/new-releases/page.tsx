@@ -28,6 +28,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'New Releases - Latest Movies & TV Shows | Lumina Stream',
     description: 'Stream the latest releases on Lumina Stream.',
+    images: [`${siteUrl}/og/og-new-releases.png`],
   },
 };
 

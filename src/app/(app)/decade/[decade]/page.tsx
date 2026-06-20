@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: { params: Promise<{ decade: s
       siteName: 'Lumina Stream',
       images: [{ url: `${siteUrl}/og/og-decade.png`, width: 1344, height: 768, alt: `${meta.title} on Lumina Stream` }],
     },
-    twitter: { card: 'summary_large_image', title: `${meta.title} | Lumina Stream`, description: meta.description },
+    twitter: { card: 'summary_large_image', title: `${meta.title} | Lumina Stream`, description: meta.description, images: [`${siteUrl}/og/og-decade.png`] },
   };
 }
 

@@ -4,8 +4,8 @@ import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb
 /**
  * Episode sitemap — Programmatic SEO for individual episode landing pages.
  *
- * Strategy: Include episodes for the top ~30 popular/trending TV shows.
- * Each show includes S1 episodes (capped at 24 to stay under 50K URL limit).
+ * Strategy: Include episodes for the top ~40 popular/trending TV shows.
+ * Each show includes S1-S3 episodes (capped at 24 per season to stay under 50K URL limit).
  * As Google indexes these, it discovers the URL pattern and can follow
  * internal links to deeper seasons/episodes.
  *
@@ -44,27 +44,36 @@ export async function GET() {
     if (seen.has(s.id)) return false;
     seen.add(s.id);
     return true;
-  }).slice(0, 30); // Cap at 30 shows
+  }).slice(0, 40); // Cap at 40 shows
 
-  // 2. Fetch S1 episodes for each show (parallel, with error tolerance)
+  // 2. Fetch S1-S3 episodes for each show (parallel, with error tolerance)
+  const MAX_SEASONS = 3;
+  const MAX_EPS_PER_SEASON = 24;
   const episodeUrls: string[] = [];
 
   const episodePromises = uniqueShows.map(async (show) => {
+    // First, get the total number of seasons (1 API call)
+    let totalSeasons = MAX_SEASONS;
     try {
-      const seasonData = await tmdbFetch<{ episodes: TMDBEpisode[] }>(
-        `/tv/${show.id}/season/1`
-      ).catch(() => null);
-
-      const episodes = seasonData?.episodes || [];
-      // Cap at 24 episodes per show to keep sitemap manageable
-      for (const ep of episodes.slice(0, 24)) {
-        episodeUrls.push(
-          `  <url>\n    <loc>${baseUrl}/details/${show.id}/season/1/episode/${ep.episode_number}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.6</priority>\n  </url>`
-        );
+      const showData = await tmdbFetch<{ number_of_seasons?: number }>(`/tv/${show.id}`).catch(() => null);
+      if (showData?.number_of_seasons) {
+        totalSeasons = Math.min(showData.number_of_seasons, MAX_SEASONS);
       }
-    } catch {
-      // Skip this show if season fetch fails
-    }
+    } catch { /* default to 3 */ }
+
+    const seasonPromises = Array.from({ length: totalSeasons }, (_, i) =>
+      tmdbFetch<{ episodes: TMDBEpisode[] }>(`/tv/${show.id}/season/${i + 1}`)
+        .then(seasonData => {
+          const episodes = seasonData?.episodes || [];
+          for (const ep of episodes.slice(0, MAX_EPS_PER_SEASON)) {
+            episodeUrls.push(
+              `  <url>\n    <loc>${baseUrl}/details/${show.id}/season/${i + 1}/episode/${ep.episode_number}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.6</priority>\n  </url>`
+            );
+          }
+        })
+        .catch(() => {})
+    );
+    await Promise.allSettled(seasonPromises);
   });
 
   await Promise.allSettled(episodePromises);
@@ -76,15 +85,19 @@ export async function GET() {
       if (seen.has(show.id)) continue;
       seen.add(show.id);
       try {
-        const seasonData = await tmdbFetch<{ episodes: TMDBEpisode[] }>(
-          `/tv/${show.id}/season/1`
-        ).catch(() => null);
-        const episodes = seasonData?.episodes || [];
-        for (const ep of episodes.slice(0, 24)) {
-          episodeUrls.push(
-            `  <url>\n    <loc>${baseUrl}/details/${show.id}/season/1/episode/${ep.episode_number}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.6</priority>\n  </url>`
-          );
-        }
+        const seasonPromises = Array.from({ length: MAX_SEASONS }, (_, i) =>
+          tmdbFetch<{ episodes: TMDBEpisode[] }>(`/tv/${show.id}/season/${i + 1}`)
+            .then(seasonData => {
+              const episodes = seasonData?.episodes || [];
+              for (const ep of episodes.slice(0, MAX_EPS_PER_SEASON)) {
+                episodeUrls.push(
+                  `  <url>\n    <loc>${baseUrl}/details/${show.id}/season/${i + 1}/episode/${ep.episode_number}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.6</priority>\n  </url>`
+                );
+              }
+            })
+            .catch(() => {})
+        );
+        await Promise.allSettled(seasonPromises);
       } catch { /* skip */ }
     }
   } catch { /* skip trending fetch */ }

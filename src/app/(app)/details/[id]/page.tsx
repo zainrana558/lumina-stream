@@ -143,6 +143,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   if (isAnilistId(showId)) {
     let show: MediaItem | null = null;
     let jsonLd: Record<string, unknown> | null = null;
+    let videoJsonLd: Record<string, unknown> | null = null;
     try {
       const anilistId = toAnilistId(showId);
       const data = await getAnimeDetail(anilistId);
@@ -168,11 +169,22 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
           } : undefined,
           genre: data.genres?.slice(0, 5) || undefined,
         };
+        videoJsonLd = cover ? {
+          '@context': 'https://schema.org',
+          '@type': 'VideoObject',
+          name: title,
+          description,
+          thumbnailUrl: cover,
+          uploadDate: data.startDate?.year ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}` : new Date().toISOString().split('T')[0],
+          contentUrl: `${SITE_URL}/details/${showId}`,
+          embedUrl: `${SITE_URL}/details/${showId}`,
+        } : null;
       }
     } catch { /* fall through to null */ }
     return (
       <>
         {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
+        {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
@@ -254,9 +266,23 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
     ...(castNames.length ? { actor: castNames.map(n => ({ '@type': 'Person', name: n })) } : {}),
   };
 
+  // VideoObject schema for video rich results in Google
+  const videoJsonLd: Record<string, unknown> | null = rawData.backdrop_path ? {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: title,
+    description,
+    thumbnailUrl: `https://image.tmdb.org/t/p/w1280${rawData.backdrop_path}`,
+    uploadDate: releaseDate || new Date().toISOString().split('T')[0],
+    contentUrl: `${SITE_URL}/details/${showId}`,
+    embedUrl: `${SITE_URL}/details/${showId}`,
+    ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),
+  } : null;
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',

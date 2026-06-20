@@ -355,10 +355,28 @@ export default async function EpisodePage({
     datePublished: episodeData?.air_date || releaseDate,
   };
 
+  // VideoObject for episode pages — enables video rich results
+  const videoJsonLd: Record<string, unknown> | null = (episodeData?.still_path || rawData.backdrop_path) ? {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: episodeData?.name || `${title} Season ${season} Episode ${episode}`,
+    description: episodeData?.overview || description,
+    thumbnailUrl: episodeData?.still_path
+      ? `https://image.tmdb.org/t/p/w1280${episodeData.still_path}`
+      : rawData.backdrop_path
+        ? `https://image.tmdb.org/t/p/w1280${rawData.backdrop_path}`
+        : undefined,
+    uploadDate: episodeData?.air_date || releaseDate || new Date().toISOString().split('T')[0],
+    contentUrl: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
+    embedUrl: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
+    ...(episodeData?.runtime ? { duration: `PT${episodeData.runtime}M` } : {}),
+  } : null;
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(showJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(episodeJsonLd) }} />
+      {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',

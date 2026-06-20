@@ -28,6 +28,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Top Rated Movies & TV Shows | Lumina Stream',
     description: 'Discover the highest-rated content on Lumina Stream.',
+    images: [`${siteUrl}/og/og-top-rated.png`],
   },
 };
 

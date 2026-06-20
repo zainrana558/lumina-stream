@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: `${genre.title} | Lumina Stream`,
       description: genre.description,
       siteName: 'Lumina Stream',
+      images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: `${genre.title} on Lumina Stream` }],
     },
     twitter: {
       card: 'summary_large_image',
