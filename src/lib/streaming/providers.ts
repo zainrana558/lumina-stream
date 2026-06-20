@@ -9,7 +9,7 @@
  * Total: 46 active + 41 replacements = 87 providers available
  * Categories: 'all' = movies + TV, 'anime' = anime-focused embeds
  *
- * All providers verified alive as of 2026-06-19.
+ * All providers verified alive as of 2026-06-20.
  * Auto-refreshed by provider-refresh.mjs script.
  * Anime providers accept MAL (MyAnimeList) IDs from AniList data.
  */
