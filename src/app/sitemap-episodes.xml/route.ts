@@ -5,7 +5,7 @@ import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb
  * Episode sitemap — Programmatic SEO for individual episode landing pages.
  *
  * Strategy: Include episodes for the top ~40 popular/trending TV shows.
- * Each show includes S1-S3 episodes (capped at 24 per season to stay under 50K URL limit).
+ * Each show includes all seasons (capped at 99 seasons, 24 episodes per season).
  * As Google indexes these, it discovers the URL pattern and can follow
  * internal links to deeper seasons/episodes.
  *
@@ -46,8 +46,8 @@ export async function GET() {
     return true;
   }).slice(0, 40); // Cap at 40 shows
 
-  // 2. Fetch S1-S3 episodes for each show (parallel, with error tolerance)
-  const MAX_SEASONS = 3;
+  // 2. Fetch all seasons for each show (parallel, with error tolerance)
+  const MAX_SEASONS = 99;
   const MAX_EPS_PER_SEASON = 24;
   const episodeUrls: string[] = [];
 

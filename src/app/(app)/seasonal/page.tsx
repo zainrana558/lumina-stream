@@ -85,6 +85,12 @@ export default async function SeasonalPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
+        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Seasonal Anime</h1>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          Track the current anime season with real-time data from AniList. This page covers every series currently airing in Japan and internationally, organized into three categories: currently airing shows with new episodes each week, trending series gaining rapid popularity, and upcoming premieres on the horizon. Powered by AniList, our seasonal tracker updates continuously so you always know what to watch next. Whether you follow simulcasts or prefer to binge completed seasons, this is your anime calendar.
+        </p>
+      </header>
       <SeasonalClient {...data} />
     </>
   );

@@ -100,6 +100,12 @@ export default async function ReleaseCalendarPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
+        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Release Calendar</h1>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          Plan your watchlist with our monthly release calendar. This page organizes all upcoming movie releases by month, pulling real-time premiere dates from TMDB. Browse upcoming blockbusters, indie releases, and limited-edition screenings so you never miss a new film. Each entry includes the movie title, poster, release date, and rating, making it easy to decide what to watch in theaters or stream online when it becomes available.
+        </p>
+      </header>
       <ReleaseCalendarClient grouped={grouped} sortedMonths={sortedMonths} />
     </>
   );

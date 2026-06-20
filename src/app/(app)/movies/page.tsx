@@ -88,6 +88,12 @@ export default async function MoviesPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(moviesJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
+        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Movies</h1>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          Explore thousands of movies from every era and genre. From Hollywood blockbusters and award-winning dramas to indie hidden gems and international cinema, our catalog spans action, comedy, horror, sci-fi, romance, thriller, and beyond. Whether you are looking for a recent theatrical release, a critically acclaimed classic, or an undiscovered favorite, you will find it here — all freely accessible and regularly updated with the latest additions from TMDB.
+        </p>
+      </header>
       <Suspense>
         <BrowseClient initialShows={shows} />
       </Suspense>

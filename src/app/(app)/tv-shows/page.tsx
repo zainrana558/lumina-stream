@@ -88,6 +88,12 @@ export default async function TVShowsPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(tvJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
+        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>TV Shows</h1>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          Binge-watch the best television series online. Our TV catalog covers everything from prestige dramas and gripping crime thrillers to laugh-out-loud comedies, mind-bending sci-fi, and beloved anime. Discover trending shows currently on the air, classic series that defined their decade, and hidden gems recommended by millions of viewers on TMDB. New episodes and complete seasons are added regularly so you never run out of things to watch.
+        </p>
+      </header>
       <Suspense>
         <BrowseClient initialShows={shows} />
       </Suspense>

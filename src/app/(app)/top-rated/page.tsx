@@ -90,6 +90,12 @@ export default async function TopRatedPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
+        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Top Rated</h1>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          These are the highest-rated movies and TV shows of all time, ranked by audience scores from millions of viewers on TMDB. Every title on this page has earned exceptional ratings and widespread critical acclaim, making it the perfect starting point when you want to watch something truly great. From cinematic masterpieces like The Shawshank Redemption and The Godfather to modern TV landmarks like Breaking Bad and Chernobyl, this collection represents the very best that film and television have to offer.
+        </p>
+      </header>
       <Suspense>
         <BrowseClient initialShows={shows} />
       </Suspense>

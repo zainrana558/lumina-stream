@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     // Type correctness is verified via `npx tsc --noEmit` in CI instead.
     ignoreBuildErrors: true,
   },
+  poweredByHeader: false,
   reactStrictMode: true,
   images: {
     // Use custom loader to bypass Vercel Image Optimization

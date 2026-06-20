@@ -128,6 +128,15 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
+        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>{isFuture ? `Upcoming ${year}` : `${year}`}</h1>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          {isFuture
+            ? `Get a head start on ${year}. This page previews the most anticipated movies and TV shows scheduled for release throughout the year, from blockbuster franchise installments to promising indie films and new series pickups. Check back regularly as release dates are updated.`
+            : `Relive the best of ${year}. This page curates the most popular and highest-rated movies and TV shows released in ${year}, pulling data from TMDB to surface both crowd-pleasing hits and critically acclaimed titles that defined the year in entertainment.`
+          }
+        </p>
+      </header>
       <Suspense>
         <BrowseClient initialShows={shows} />
       </Suspense>

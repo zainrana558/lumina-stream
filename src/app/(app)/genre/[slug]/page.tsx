@@ -202,6 +202,14 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <p className="f-crimson" style={{
+        maxWidth: 1200, margin: '0 auto',
+        padding: 'clamp(60px,7vw,80px) 20px 0',
+        fontSize: 'clamp(.9rem,1.3vw,1.05rem)',
+        color: 'rgba(255,245,232,.55)', lineHeight: 1.7,
+      }}>
+        {config.description} Our {config.title.toLowerCase()} collection is powered by {config.source === 'anilist' ? 'AniList' : 'TMDB'} and updated regularly with new titles. Use the genre filters and sort options below to find exactly what you are in the mood for.
+      </p>
       <Component initialShows={shows} />
     </>
   );

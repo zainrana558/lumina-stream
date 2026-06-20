@@ -6,7 +6,7 @@ import { ANILIST_ID_OFFSET } from '@/types';
 // Detail pages sitemap — TMDB + AniList content URLs.
 // Reduced API calls for fast generation (~1-2s instead of 5s+).
 
-async function fetchPages(endpoint: string, params?: Record<string, string>, maxPages = 2): Promise<TMDBMediaItem[]> {
+async function fetchPages(endpoint: string, params?: Record<string, string>, maxPages = 5): Promise<TMDBMediaItem[]> {
   const results: TMDBMediaItem[] = [];
   const promises = Array.from({ length: maxPages }, (_, i) =>
     tmdbFetch<TMDBListResponse<TMDBMediaItem>>(endpoint, { ...params, page: String(i + 1) })
@@ -23,13 +23,15 @@ export async function GET() {
 
   const ids = new Set<number>();
 
-  // TMDB: top 5 core endpoints, 2 pages each (50 total items)
+  // TMDB: 5 core endpoints × 5 pages + 2 discovery endpoints × 3 pages (~185 items)
   const coreWork = [
-    fetchPages('/trending/all/week', undefined, 2),
-    fetchPages('/movie/popular', undefined, 2),
-    fetchPages('/tv/popular', undefined, 2),
-    fetchPages('/movie/top_rated', undefined, 2),
-    fetchPages('/tv/top_rated', undefined, 2),
+    fetchPages('/trending/all/week', undefined, 5),
+    fetchPages('/movie/popular', undefined, 5),
+    fetchPages('/tv/popular', undefined, 5),
+    fetchPages('/movie/top_rated', undefined, 5),
+    fetchPages('/tv/top_rated', undefined, 5),
+    fetchPages('/movie/now_playing', undefined, 3),
+    fetchPages('/tv/on_the_air', undefined, 3),
   ];
 
   const coreResults = await Promise.allSettled(coreWork);
@@ -37,12 +39,12 @@ export async function GET() {
     if (r.status === 'fulfilled') for (const item of r.value) ids.add(item.id);
   }
 
-  // AniList: 3 pages each (75 anime)
+  // AniList: 3 pages of 50 each for trending/popular, 2 pages for seasonal (~350 anime)
   const anilistWork = [
-    getTrendingAnime(1, 25), getTrendingAnime(2, 25), getTrendingAnime(3, 25),
-    getPopularAnime(1, 25), getPopularAnime(2, 25), getPopularAnime(3, 25),
-    getSeasonalAnime(undefined, undefined, 1, 25, 'POPULARITY_DESC'),
-    getSeasonalAnime(undefined, undefined, 2, 25, 'POPULARITY_DESC'),
+    getTrendingAnime(1, 50), getTrendingAnime(2, 50), getTrendingAnime(3, 50),
+    getPopularAnime(1, 50), getPopularAnime(2, 50), getPopularAnime(3, 50),
+    getSeasonalAnime(undefined, undefined, 1, 50, 'POPULARITY_DESC'),
+    getSeasonalAnime(undefined, undefined, 2, 50, 'POPULARITY_DESC'),
   ];
 
   const anilistResults = await Promise.allSettled(anilistWork);
