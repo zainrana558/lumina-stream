@@ -20,8 +20,10 @@ import type { Metadata } from 'next';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-export { CANONICAL_BASE as SITE_URL, SITE_NAME } from './constants';
-import { SITE_NAME } from './constants';
+import { CANONICAL_BASE, SITE_NAME } from './constants';
+
+/** Re-export for consumers that import SITE_URL from this module */
+export const SITE_URL = CANONICAL_BASE;
 
 /** CTA suffixes by media type — appended to meta descriptions */
 const CTA_MAP = {
@@ -311,6 +313,6 @@ export function isThinContent(opts: {
   return signals < 2;
 }
 
-// ── Export SITE_URL for use in JSON-LD ─────────────────────────────────────
+// ── Re-exports for JSON-LD consumers ────────────────────────────────────────
 
-export { SITE_URL, SITE_NAME };
+export { SITE_NAME } from './constants';

@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Lumina Stream",
     description: "Explore a curated collection of movies, TV shows, anime, and cartoons.",
-    images: [`${siteUrl}/logo.svg`],
+    images: [`${CANONICAL_BASE}/logo.svg`],
   },
   icons: {
     icon: [
@@ -111,8 +111,8 @@ export default function RootLayout({
               '@context': 'https://schema.org',
               '@type': 'Organization',
               name: 'Lumina Stream',
-              url: siteUrl,
-              logo: `${siteUrl}/logo.svg`,
+              url: CANONICAL_BASE,
+              logo: `${CANONICAL_BASE}/logo.svg`,
               sameAs: [],
             }),
           }}
