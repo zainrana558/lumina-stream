@@ -12,7 +12,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/movies`;
 
 export const metadata: Metadata = {
-  title: 'Movies - Watch Free Movies Online | Lumina Stream',
+  title: 'Movies - Watch Free Movies Online',
   description:
     'Browse thousands of free movies online. From blockbusters to hidden gems, stream the latest releases, top-rated films, and classic cinema on Lumina Stream.',
   alternates: { canonical: pageUrl },

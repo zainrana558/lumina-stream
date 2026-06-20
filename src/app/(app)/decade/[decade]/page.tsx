@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: { params: Promise<{ decade: s
 
   const pageUrl = `${siteUrl}/decade/${decade}`;
   return {
-    title: `${meta.title} - Watch Free Online | Lumina Stream`,
+    title: `${meta.title} - Watch Free Online`,
     description: meta.description,
     alternates: { canonical: pageUrl },
     openGraph: {

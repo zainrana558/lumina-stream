@@ -97,7 +97,7 @@ export async function generateMetadata({
       }
     } catch { /* fall through */ }
     return {
-      title: 'Episode | Lumina Stream',
+      title: 'Episode',
       robots: { index: false, follow: true },
     };
   }
@@ -115,7 +115,7 @@ export async function generateMetadata({
 
     if (!rawData?.id) {
       return {
-        title: 'Episode | Lumina Stream',
+        title: 'Episode',
         robots: { index: false, follow: true },
       };
     }
@@ -162,7 +162,7 @@ export async function generateMetadata({
     });
   } catch {
     return {
-      title: 'Episode | Lumina Stream',
+      title: 'Episode',
       robots: { index: false, follow: true },
     };
   }

@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
     : `Explore the best movies and TV shows from ${year}. Browse the highest-rated and most popular releases from ${year}, all available to discover on Lumina Stream.`;
 
   return {
-    title: `${title} - Watch Free Online | Lumina Stream`,
+    title: `${title} - Watch Free Online`,
     description,
     alternates: { canonical: pageUrl },
     openGraph: {

@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       }
     } catch { /* fall through */ }
     return {
-      title: 'Anime | Lumina Stream',
+      title: 'Anime',
       robots: { index: false, follow: true },
     };
   }
@@ -97,7 +97,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
     if (!data?.id) {
       return {
-        title: 'Show | Lumina Stream',
+        title: 'Show',
         robots: { index: false, follow: true },
       };
     }
@@ -129,7 +129,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     });
   } catch {
     return {
-      title: 'Show | Lumina Stream',
+      title: 'Show',
       robots: { index: false, follow: true },
     };
   }

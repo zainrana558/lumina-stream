@@ -8,7 +8,7 @@ const siteUrl = CANONICAL_BASE;
 const calendarUrl = `${siteUrl}/release-calendar`;
 
 export const metadata: Metadata = {
-  title: 'Release Calendar | Lumina Stream',
+  title: 'Release Calendar',
   description: 'Discover upcoming movie releases organized by month.',
   alternates: { canonical: calendarUrl },
   openGraph: {

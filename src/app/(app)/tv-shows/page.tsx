@@ -12,7 +12,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/tv-shows`;
 
 export const metadata: Metadata = {
-  title: 'TV Shows - Watch Free TV Series Online | Lumina Stream',
+  title: 'TV Shows - Watch Free TV Series Online',
   description:
     'Binge-watch the best TV shows online for free. Discover trending series, popular dramas, hit comedies, and must-see TV on Lumina Stream.',
   alternates: { canonical: pageUrl },

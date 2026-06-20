@@ -152,7 +152,7 @@ export function buildShowMetadata(input: ShowMetadataInput): Metadata {
     mediaType === 'tv' ? 'TV Series' :
     'Movie';
 
-  const titleText = `${title}${yearStr} - Watch ${typeLabel} Online | ${SITE_NAME}`;
+  const titleText = `${title}${yearStr} - Watch ${typeLabel} Online`;
 
   const desc = buildDescription({
     plot: description,
@@ -236,11 +236,11 @@ export function buildEpisodeMetadata(input: EpisodeMetadataInput): Metadata {
   const pageUrl = `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`;
   const yearStr = showYear ? ` (${showYear})` : '';
 
-  // Title: "Breaking Bad (2008) Season 1 Episode 1 - Pilot | Lumina Stream"
+  // Title: "Breaking Bad (2008) Season 1 Episode 1 - Pilot" (template appends " | Lumina Stream")
   const epLabel = `Season ${season} Episode ${episode}`;
   const titleParts = [`${showTitle}${yearStr}`, epLabel];
   if (episodeTitle) titleParts.push(episodeTitle);
-  const titleText = titleParts.join(' - ') + ` | ${SITE_NAME}`;
+  const titleText = titleParts.join(' - ');
 
   // Description: plot or generated fallback
   let desc: string;

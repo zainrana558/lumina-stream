@@ -12,7 +12,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/new-releases`;
 
 export const metadata: Metadata = {
-  title: 'New Releases - Latest Movies & TV Shows | Lumina Stream',
+  title: 'New Releases - Latest Movies & TV Shows',
   description:
     'Stay up to date with the latest movie and TV show releases. Watch brand new films, recently aired episodes, and upcoming content on Lumina Stream.',
   alternates: { canonical: pageUrl },

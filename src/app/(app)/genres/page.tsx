@@ -9,7 +9,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/genres`;
 
 export const metadata: Metadata = {
-  title: 'All Genres - Browse by Genre | Lumina Stream',
+  title: 'All Genres - Browse by Genre',
   description:
     'Explore all genres available on Lumina Stream. Browse movies and TV shows by Action, Comedy, Drama, Horror, Romance, Sci-Fi, Thriller, Mystery, Fantasy, Anime, Cartoons, and more.',
   alternates: { canonical: pageUrl },

@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const bio = data.biography || '';
     const profileImg = data.profile_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profile_path}` : undefined;
     return {
-      title: `${data.name} | Lumina Stream`,
+      title: `${data.name}`,
       description: bio.slice(0, 160) || `View details and filmography for ${data.name} on Lumina Stream.`,
       alternates: { canonical: pageUrl },
       openGraph: {
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       },
     };
   } catch {
-    return { title: 'Person | Lumina Stream', alternates: { canonical: pageUrl } };
+    return { title: 'Person', alternates: { canonical: pageUrl } };
   }
 }
 

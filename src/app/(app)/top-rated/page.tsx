@@ -12,7 +12,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/top-rated`;
 
 export const metadata: Metadata = {
-  title: 'Top Rated Movies & TV Shows - Highest Rated Content | Lumina Stream',
+  title: 'Top Rated Movies & TV Shows - Highest Rated Content',
   description:
     'Discover the highest-rated movies and TV shows of all time. Handpicked from thousands of critically acclaimed titles rated by millions of viewers on Lumina Stream.',
   alternates: { canonical: pageUrl },
