@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/browse', '/genre/', '/details/', '/person/', '/seasonal', '/leaderboard', '/release-calendar', '/movies', '/tv-shows', '/top-rated', '/new-releases', '/genres', '/about', '/decade/', '/year/'],
+        allow: ['/', '/browse', '/genre/', '/details/', '/person/', '/seasonal', '/leaderboard', '/release-calendar', '/movies', '/tv-shows', '/top-rated', '/new-releases', '/genres', '/about', '/decade/', '/year/', '/privacy', '/terms', '/dmca', '/cookies', '/disclaimer'],
         disallow: ['/api/', '/auth/', '/embed/', '/stats', '/watchlist', '/profiles', '/select-profile', '/login', '/signup', '/settings', '/collections', '/activity', '/year-in-review'],
       },
     ],

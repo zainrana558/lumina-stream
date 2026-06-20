@@ -17,6 +17,8 @@ const ShortcutOverlay = lazy(() => import('@/components/common/ShortcutOverlay')
 const Confetti = lazy(() => import('@/components/common/Confetti'));
 import { ToastProvider } from '@/components/common/ToastProvider';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+const CookieConsent = lazy(() => import('@/components/layout/CookieConsent'));
+const Footer = lazy(() => import('@/components/layout/Footer'));
 
 function NotificationBanner() {
   const {
@@ -290,6 +292,14 @@ function AppShell({ children }: { children: ReactNode }) {
 
       {/* Notification permission prompt */}
       <NotificationBanner />
+
+      {/* Cookie consent banner */}
+      <Suspense fallback={null}>
+        <CookieConsent />
+      </Suspense>
+
+      {/* Site footer */}
+      <Footer />
     </div>
   );
 }

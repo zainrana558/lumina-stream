@@ -28,6 +28,11 @@ export async function GET() {
   add('/new-releases', '0.9');
   add('/genres', '0.8');
   add('/about', '0.6');
+  add('/privacy', '0.4');
+  add('/terms', '0.4');
+  add('/dmca', '0.4');
+  add('/cookies', '0.3');
+  add('/disclaimer', '0.3');
 
   // Genre portals
   for (const slug of PORTAL_SLUGS) add(`/genre/${slug}`, '0.8');

@@ -24,6 +24,11 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/new-releases") ||
     pathname.startsWith("/genres") ||
     pathname.startsWith("/about") ||
+    pathname.startsWith("/privacy") ||
+    pathname.startsWith("/terms") ||
+    pathname.startsWith("/dmca") ||
+    pathname.startsWith("/cookies") ||
+    pathname.startsWith("/disclaimer") ||
     pathname.startsWith("/decade/") ||
     pathname.startsWith("/year/") ||
     pathname.startsWith("/seasonal") ||
