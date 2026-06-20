@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cinzel_Decorative, Cinzel, Crimson_Pro, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "@/styles/global.css";
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 
 const cinzelDec = Cinzel_Decorative({
   subsets: ["latin"],
@@ -39,26 +40,23 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
-const _rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
-const siteUrl = _rawSiteUrl.startsWith('http') ? _rawSiteUrl : `https://${_rawSiteUrl}`;
-
 export const metadata: Metadata = {
   title: {
     default: "Lumina Stream - Dream, Discover, Stream",
     template: "%s | Lumina Stream",
   },
   description: "Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.",
-  metadataBase: new URL(siteUrl),
-  alternates: { canonical: siteUrl, languages: { 'en-US': siteUrl } },
+  metadataBase: new URL(CANONICAL_BASE),
+  alternates: { canonical: CANONICAL_BASE, languages: { 'en-US': CANONICAL_BASE } },
   manifest: '/manifest.json',
   openGraph: {
     title: "Lumina Stream",
     description: "Explore a curated collection of movies, TV shows, anime, and cartoons.",
     type: "website",
-    url: siteUrl,
+    url: CANONICAL_BASE,
     siteName: "Lumina Stream",
     locale: "en_US",
-    images: [{ url: `${siteUrl}/logo.svg`, width: 512, height: 512, alt: "Lumina Stream" }],
+    images: [{ url: `${CANONICAL_BASE}/logo.svg`, width: 512, height: 512, alt: "Lumina Stream" }],
   },
   twitter: {
     card: "summary_large_image",

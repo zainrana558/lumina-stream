@@ -1,4 +1,5 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { getPopularAnime, anilistToMediaItem } from '@/lib/anilist/client';
 import type { Metadata } from 'next';
 import AnimeThemedPage from '@/components/pages/AnimePage';
@@ -24,7 +25,7 @@ const COMPONENT_MAP: Record<string, React.ComponentType<{ initialShows: MediaIte
 
 // ─── SEO metadata ───────────────────────────────────────────────────────────
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const siteUrl = CANONICAL_BASE;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

@@ -5,6 +5,7 @@ import { getTrendingAnime, anilistToMediaItem } from '@/lib/anilist/client';
 import Home from '@/components/pages/Home';
 import type { MediaItem, TMDBShow } from '@/types';
 import { tmdbToMedia } from '@/types';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 
 interface RowData {
   title: string;
@@ -237,18 +238,17 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const { featured, rows, genreFeatured } = await getTMDBData();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
   const websiteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Lumina Stream',
-    url: siteUrl,
+    url: CANONICAL_BASE,
     description: 'Stream movies, TV shows, anime, and cartoons for free.',
     potentialAction: {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `${siteUrl}/browse?q={search_term_string}`,
+        urlTemplate: `${CANONICAL_BASE}/browse?q={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
     },

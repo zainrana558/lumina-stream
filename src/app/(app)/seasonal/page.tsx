@@ -1,4 +1,5 @@
 import { getSeasonalAnime, getTrendingAnime, getUpcomingAnime, anilistToMediaItem } from '@/lib/anilist/client';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import type { MediaItem } from '@/types';
 import type { AniListMedia } from '@/lib/anilist/client';
 import type { Metadata } from 'next';
@@ -6,7 +7,7 @@ import SeasonalClient from './SeasonalClient';
 
 export const revalidate = 600;
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const siteUrl = CANONICAL_BASE;
 const seasonalUrl = `${siteUrl}/seasonal`;
 
 export const metadata: Metadata = {

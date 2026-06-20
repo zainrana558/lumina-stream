@@ -1,10 +1,11 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import type { Metadata } from 'next';
 import PersonPageClient from '@/components/pages/PersonPage';
 
 export const revalidate = 86400; // 24h — person details rarely change
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const siteUrl = CANONICAL_BASE;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;

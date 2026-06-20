@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb/server';
 import type { TMDBShow } from '@/types';
 import { tmdbToMedia } from '@/types';
@@ -8,7 +9,7 @@ import { notFound } from 'next/navigation';
 
 export const revalidate = 3600;
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const siteUrl = CANONICAL_BASE;
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_YEAR = 1970;

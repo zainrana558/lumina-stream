@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import Link from 'next/link';
 import { PORTAL_GENRES, BROWSE_ONLY_GENRES, TMDB_GENRE_ID_MAP } from '@/config/genres';
 
 export const revalidate = 86400;
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/genres`;
 
 export const metadata: Metadata = {

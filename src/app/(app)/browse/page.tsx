@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch } from '@/lib/tmdb/server';
 import BrowseClient from '@/components/pages/BrowseClient';
 import type { TMDBShow } from '@/types';
@@ -7,7 +8,7 @@ import type { Metadata } from 'next';
 
 export const revalidate = 300; // 5 min — browse catalog changes slowly
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const siteUrl = CANONICAL_BASE;
 const browseUrl = `${siteUrl}/browse`;
 
 export const metadata: Metadata = {

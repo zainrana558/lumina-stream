@@ -1,9 +1,10 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import type { TMDBShow } from '@/types';
 import type { Metadata } from 'next';
 import ReleaseCalendarClient from './ReleaseCalendarClient';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const siteUrl = CANONICAL_BASE;
 const calendarUrl = `${siteUrl}/release-calendar`;
 
 export const metadata: Metadata = {

@@ -20,8 +20,8 @@ import type { Metadata } from 'next';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const SITE_NAME = 'Lumina Stream';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+export { CANONICAL_BASE as SITE_URL, SITE_NAME } from './constants';
+import { SITE_NAME } from './constants';
 
 /** CTA suffixes by media type — appended to meta descriptions */
 const CTA_MAP = {

@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import Link from 'next/link';
 
 export const revalidate = 86400;
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-stream-omega.vercel.app';
+const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/about`;
 
 export const metadata: Metadata = {
