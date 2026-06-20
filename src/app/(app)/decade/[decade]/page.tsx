@@ -18,32 +18,32 @@ const DECADE_META: Record<Decade, { startYear: number; endYear: number; title: s
   '2020s': {
     startYear: 2020, endYear: 2029,
     title: '2020s Movies & TV Shows',
-    description: 'Explore the best movies and TV shows from the 2020s. From pandemic-era streaming hits to blockbuster franchise films and the rise of limited series, discover the defining content of the current decade.',
+    description: 'Explore the best movies and TV shows from the 2020s. From pandemic-era streaming hits to blockbuster franchise films and the rise of limited series, discover the defining content of the current decade. This period saw an explosion of streaming-first releases, the consolidation of the Marvel and Star Wars universes, and a new wave of international content reaching global audiences through platforms like Netflix and Disney+. Browse our curated selection of the decade\'s most popular and highest-rated titles, updated regularly from TMDB.',
   },
   '2010s': {
     startYear: 2010, endYear: 2019,
     title: '2010s Movies & TV Shows',
-    description: 'Relive the golden age of streaming. The 2010s brought us the Marvel Cinematic Universe at its peak, the prestige TV revolution, groundbreaking animation, and the birth of binge-watching culture.',
+    description: 'Relive the golden age of streaming. The 2010s brought us the Marvel Cinematic Universe at its peak, the prestige TV revolution with shows like Breaking Bad and Game of Thrones, groundbreaking animation from studios like Pixar and Studio Ghibli, and the birth of binge-watching culture. Netflix transitioned from DVD mailer to global entertainment giant, and platforms like Hulu, Amazon Prime, and later Disney+ transformed how audiences consumed television. This page collects the most beloved and critically acclaimed titles from that transformative decade.',
   },
   '2000s': {
     startYear: 2000, endYear: 2009,
     title: '2000s Movies & TV Shows',
-    description: 'Rediscover the iconic content of the 2000s. From the Lord of the Rings trilogy and early superhero films to the reality TV boom and the dawn of digital streaming.',
+    description: 'Rediscover the iconic content of the 2000s. From the Lord of the Rings trilogy and early superhero films like Christopher Nolan\'s Batman Begins to the reality TV boom and the dawn of digital streaming with Netflix\'s first original series. The 2000s gave us cultural touchstones like The Dark Knight, Lost, The Office, and the rise of J.J. Abrams as a Hollywood powerhouse. Browse our selection of the most popular and top-rated titles from this pivotal decade in entertainment history.',
   },
   '1990s': {
     startYear: 1990, endYear: 1999,
     title: '1990s Movies & TV Shows',
-    description: 'Travel back to the 1990s. Experience the era of Tarantino, the Disney Renaissance, the birth of The Simpsons as a cultural phenomenon, and indie film breakthroughs.',
+    description: 'Travel back to the 1990s. Experience the era of Tarantino, the Disney Renaissance with films like The Lion King and Beauty and the Beast, the birth of The Simpsons as a cultural phenomenon, and indie film breakthroughs from directors like P.T. Anderson and David Fincher. The decade also saw the rise of must-see TV with Friends, Seinfeld, and The X-Files, while anime began its global crossover with Ghost in the Shell and Pokemon. Explore the titles that defined a generation.',
   },
   '1980s': {
     startYear: 1980, endYear: 1989,
     title: '1980s Movies & TV Shows',
-    description: 'Explore the iconic 1980s. From John Hughes teen films and Schwarzenegger action classics to the rise of music videos, neon aesthetics, and the birth of the blockbuster franchise.',
+    description: 'Explore the iconic 1980s. From John Hughes teen films like The Breakfast Club and Ferris Bueller\'s Day Off to Schwarzenegger action classics like The Terminator and Predator, the 1980s defined modern blockbuster culture. The decade gave us the birth of the blockbuster franchise with Star Wars sequels, Indiana Jones, and Back to the Future, the rise of music videos and MTV, neon aesthetics, and the birth of the VCR home-video revolution that changed how audiences watched movies forever.',
   },
   '1970s': {
     startYear: 1970, endYear: 1979,
     title: '1970s Movies & TV Shows',
-    description: 'Discover the New Hollywood era. The 1970s gave us The Godfather, Star Wars, Jaws, and a revolution in filmmaking that changed cinema forever.',
+    description: 'Discover the New Hollywood era. The 1970s gave us The Godfather, Star Wars, Jaws, Taxi Driver, and One Flew Over the Cuckoo\'s Nest — a revolution in filmmaking that introduced auteur directors like Scorsese, Coppola, Kubrick, and Spielberg. Television saw the debut of Saturday Night Live, the miniseries format with Roots, and the end of the classic studio system. This page collects the most celebrated films and series from the decade that rewrote the rules of modern entertainment.',
   },
 };
 

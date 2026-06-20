@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb/server';
 
 /**
@@ -18,7 +19,7 @@ interface TMDBEpisode {
 }
 
 export async function GET() {
-  const baseUrl = 'https://lumina-stream-omega.vercel.app';
+  const baseUrl = CANONICAL_BASE;
   const now = new Date().toISOString();
 
   // 1. Fetch top TV shows (popular + top_rated, 2 pages each = ~40 shows)

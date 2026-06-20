@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb/server';
 import { getTrendingAnime, getPopularAnime, getSeasonalAnime } from '@/lib/anilist/client';
 import { ANILIST_ID_OFFSET } from '@/types';
@@ -18,7 +19,7 @@ async function fetchPages(endpoint: string, params?: Record<string, string>, max
 }
 
 export async function GET() {
-  const baseUrl = 'https://lumina-stream-omega.vercel.app';
+  const baseUrl = CANONICAL_BASE;
   const now = new Date().toISOString();
 
   const ids = new Set<number>();

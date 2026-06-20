@@ -124,7 +124,7 @@ export default function GenresPage() {
           lineHeight: 1.7,
           marginBottom: 40,
         }}>
-          Explore our complete catalog organized by genre. From action blockbusters to indie dramas, horror classics to anime — find exactly what you are in the mood for.
+          Explore our complete catalog organized by genre. From action blockbusters to indie dramas, horror classics to anime — find exactly what you are in the mood for. Our genre portal system gives dedicated pages with custom themes for six core genres — Anime, Cartoon, Horror, Romance, Mystery, and Fantasy — while dozens of additional genres like Action, Comedy, Sci-Fi, Thriller, and Documentary are available through our TMDB-powered browse filters. Every genre page includes a curated collection of titles, genre-specific descriptions, and sub-genre tags to help you narrow your search. Whether you are planning a horror movie marathon, looking for a feel-good romance, or exploring the latest anime hits, the genre index below is your fastest path to great content.
         </p>
 
         {/* Portal Genres */}

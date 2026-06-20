@@ -2,6 +2,16 @@ import Link from 'next/link';
 import { GCARDS } from '@/config/genres';
 
 const FOOTER_SECTIONS = [
+  ['Browse', [
+    { label: 'Movies', href: '/movies' },
+    { label: 'TV Shows', href: '/tv-shows' },
+    { label: 'Top Rated', href: '/top-rated' },
+    { label: 'New Releases', href: '/new-releases' },
+    { label: 'Browse All', href: '/browse' },
+    { label: 'Genres', href: '/genres' },
+    { label: 'Seasonal Anime', href: '/seasonal' },
+    { label: 'Release Calendar', href: '/release-calendar' },
+  ]],
   ['Genres', GCARDS.map(g => ({ label: g.name, href: `/genre/${g.key}` }))],
   ['Account', [
     { label: 'Sign In', href: '/login' },
@@ -21,6 +31,13 @@ const FOOTER_SECTIONS = [
     { label: 'Contact', href: '/settings' },
     { label: 'About', href: '/about' },
   ]],
+] as const;
+
+const SOCIAL_LINKS = [
+  { label: '𝕏', href: 'https://x.com/luminastream' },
+  { label: '📘', href: 'https://facebook.com/luminastream' },
+  { label: '📸', href: 'https://instagram.com/luminastream' },
+  { label: '▶', href: 'https://youtube.com/@luminastream' },
 ] as const;
 
 export default function Footer() {
@@ -55,8 +72,16 @@ export default function Footer() {
       <div style={{ borderTop: '1px solid rgba(255,255,255,.055)', paddingTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div className="f-mono" style={{ fontSize: '.62rem', letterSpacing: '.09em', color: 'rgba(255,245,232,.22)' }}>&copy; 2025 LUMINA STREAM &middot; ALL RIGHTS RESERVED</div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          {['𝕏', '📘', '📸', '▶'].map(ic => (
-            <div key={ic} className="footer-icon" style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.78rem', background: '#0C091A', boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.04)', transition: 'all .25s', color: 'rgba(255,245,232,.18)' }}>{ic}</div>
+          {SOCIAL_LINKS.map(({ label, href }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+              className="footer-icon"
+              style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.78rem', background: '#0C091A', boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.04)', transition: 'all .25s', color: 'rgba(255,245,232,.18)', textDecoration: 'none' }}
+            >{label}</a>
           ))}
         </div>
       </div>

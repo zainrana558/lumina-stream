@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
 
 // People sitemap — trending + popular person URLs.
 
 export async function GET() {
-  const baseUrl = 'https://lumina-stream-omega.vercel.app';
+  const baseUrl = CANONICAL_BASE;
   const now = new Date().toISOString();
 
   const ids = new Set<number>();

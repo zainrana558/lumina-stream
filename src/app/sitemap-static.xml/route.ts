@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { PORTAL_SLUGS, BROWSE_ONLY_GENRES } from '@/config/genres';
 
 // Static sitemap — no API calls, instant response. Contains all hand-curated pages.
@@ -7,7 +8,7 @@ const DECADES = ['2020s', '2010s', '2000s', '1990s', '1980s', '1970s'] as const;
 const CURRENT_YEAR = new Date().getFullYear();
 
 export async function GET() {
-  const baseUrl = 'https://lumina-stream-omega.vercel.app';
+  const baseUrl = CANONICAL_BASE;
   const now = new Date().toISOString();
 
   const urls: string[] = [];

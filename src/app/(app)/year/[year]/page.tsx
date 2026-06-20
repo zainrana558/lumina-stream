@@ -49,8 +49,9 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
       title: `${title} | Lumina Stream`,
       description,
       siteName: 'Lumina Stream',
+      images: [{ url: `${siteUrl}/og/og-decade.png`, width: 1344, height: 768, alt: `${title} on Lumina Stream` }],
     },
-    twitter: { card: 'summary_large_image', title: `${title} | Lumina Stream`, description },
+    twitter: { card: 'summary_large_image', title: `${title} | Lumina Stream`, description, images: [`${siteUrl}/og/og-decade.png`] },
   };
 }
 
@@ -132,8 +133,8 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>{isFuture ? `Upcoming ${year}` : `${year}`}</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
           {isFuture
-            ? `Get a head start on ${year}. This page previews the most anticipated movies and TV shows scheduled for release throughout the year, from blockbuster franchise installments to promising indie films and new series pickups. Check back regularly as release dates are updated.`
-            : `Relive the best of ${year}. This page curates the most popular and highest-rated movies and TV shows released in ${year}, pulling data from TMDB to surface both crowd-pleasing hits and critically acclaimed titles that defined the year in entertainment.`
+            ? `Get a head start on ${year}. This page previews the most anticipated movies and TV shows scheduled for release throughout the year, from blockbuster franchise installments to promising indie films and new series pickups. Check back regularly as release dates are finalized and new titles are announced. We pull data from TMDB using discover filters for both movies and television, sorting by popularity and rating to surface the titles generating the most excitement. Use the genre and sort controls below to refine your view of what ${year} has to offer.`
+            : `Relive the best of ${year}. This page curates the most popular and highest-rated movies and TV shows released in ${year}, pulling data from TMDB to surface both crowd-pleasing hits and critically acclaimed titles that defined the year in entertainment. We run four separate TMDB discover queries — popular movies, popular TV, top-rated movies, and top-rated TV — all filtered to ${year}, then deduplicate and sort by relevance. The result is a comprehensive snapshot of the best content from that twelve-month period. Whether you are feeling nostalgic for the year you graduated high school or you want to catch up on titles you missed, this page makes it easy to browse by rating or popularity.`
           }
         </p>
       </header>

@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   },
   description: "Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.",
   metadataBase: new URL(CANONICAL_BASE),
-  alternates: { canonical: CANONICAL_BASE, languages: { 'en-US': CANONICAL_BASE } },
+  alternates: { canonical: CANONICAL_BASE, languages: { 'x-default': CANONICAL_BASE, 'en-US': CANONICAL_BASE } },
   manifest: '/manifest.json',
   openGraph: {
     title: "Lumina Stream",
@@ -94,7 +94,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${cinzelDec.variable} ${cinzel.variable} ${crimson.variable} ${jetbrains.variable} ${playfair.variable}`}>
+    <html lang="en-US" suppressHydrationWarning className={`${cinzelDec.variable} ${cinzel.variable} ${crimson.variable} ${jetbrains.variable} ${playfair.variable}`}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
