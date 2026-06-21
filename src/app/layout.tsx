@@ -117,6 +117,16 @@ export default function RootLayout({
             }),
           }}
         />
+        {/* PopAds anti-adblocker */}
+        <script
+          type="text/javascript"
+          data-cfasync="false"
+          dangerouslySetInnerHTML={{
+            __html: `/*<![CDATA[/* */
+(function(){var x=window,r="c4e022087d618f715bc8450566cf5c61",s=[["siteId",262+776+747+266*823+5089334],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],b=["d3d3LmludGVsbGlnZW5jZWFkeC5jb20veVBuL3VyZXN0ZnVsLm1pbi5qcw==","ZDJrbHg4N2Jnem5nY2UuY2xvdWRmcm9udC5uZXQvTVdGeW4vZ0xpSS9kb25zZW51aS5taW4uY3Nz","d3d3LnN5bWl2Ynh0Z3cuY29tL0RWL25yZXN0ZnVsLm1pbi5qcw==","d3d3Lm9mY2djZGN2ay5jb20vbi9Nay9ub25zZW51aS5taW4uY3Nz"],o=-1,c,g,n=function(){clearTimeout(g);o++;if(b[o]&&!(1807976152000<(new Date).getTime()&&1<o)){c=x.document.createElement("script");c.type="text/javascript";c.async=!0;var i=x.document.getElementsByTagName("script")[0];c.src="https://"+atob(b[o]);c.crossOrigin="anonymous";c.onerror=n;c.onload=function(){clearTimeout(g);x[r.slice(0,16)+r.slice(0,16)]||n()};g=setTimeout(n,5E3);i.parentNode.insertBefore(c,i)}};if(!x[r]){try{Object.freeze(x[r]=s)}catch(e){}n()}})();
+/*]]>/* */`,
+          }}
+        />
         {children}
       </body>
     </html>
