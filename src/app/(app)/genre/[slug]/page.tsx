@@ -1,5 +1,5 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
-import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { CANONICAL_BASE, TMDB_IMAGE_BASE } from '@/lib/seo/constants';
 import { getPopularAnime, anilistToMediaItem } from '@/lib/anilist/client';
 import type { Metadata } from 'next';
 import AnimeThemedPage from '@/components/pages/AnimePage';
@@ -32,6 +32,25 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const genre = PORTAL_GENRE_MAP[slug];
   if (!genre) return { title: 'Genre Not Found' };
   const pageUrl = `${siteUrl}/genre/${slug}`;
+
+  // Fetch the top result's backdrop for a unique, genre-relevant OG image.
+  // Falls back to the generic og-genres.png on any failure.
+  let ogImageUrl = `${siteUrl}/og/og-genres.png`;
+  let ogImageWidth = 1344;
+  let ogImageHeight = 768;
+  try {
+    if (genre.source === 'anilist') {
+      const data = await getPopularAnime(1, 1);
+      const banner = data.media?.[0]?.bannerImage;
+      if (banner) { ogImageUrl = banner; ogImageWidth = 1200; ogImageHeight = 630; }
+    } else {
+      const paramsMap: Record<string, string> = { with_genres: String(genre.genreId), ...genre.extraParams };
+      const data = await tmdbFetch<{ results?: { backdrop_path?: string }[] }>(`/discover/${genre.mediaType}`, { ...paramsMap, page: '1' });
+      const backdrop = data.results?.[0]?.backdrop_path;
+      if (backdrop) { ogImageUrl = `${TMDB_IMAGE_BASE}/original${backdrop}`; ogImageWidth = 1200; ogImageHeight = 630; }
+    }
+  } catch { /* keep fallback */ }
+
   return {
     title: genre.title,
     description: genre.description,
@@ -42,12 +61,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: genre.title,
       description: genre.description,
       siteName: 'Lumina Stream',
-      images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: `${genre.title} on Lumina Stream` }],
+      images: [{ url: ogImageUrl, width: ogImageWidth, height: ogImageHeight, alt: `${genre.title} on Lumina Stream` }],
     },
     twitter: {
       card: 'summary_large_image',
       title: genre.title,
       description: genre.description,
+      images: [ogImageUrl],
     },
   };
 }

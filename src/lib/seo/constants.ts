@@ -7,3 +7,4 @@
  */
 export const CANONICAL_BASE = 'https://lumina-stream-omega.vercel.app';
 export const SITE_NAME = 'Lumina Stream';
+export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
