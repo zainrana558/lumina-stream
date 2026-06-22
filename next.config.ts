@@ -38,6 +38,20 @@ const nextConfig: NextConfig = {
             key: 'Cache-Control',
             value: 'public, s-maxage=300, stale-while-revalidate=600, max-age=60',
           },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.symivbxtgw.com https://www.ofcgcdcvk.com",
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self' data:",
+              "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
+              "media-src 'self' https: blob:",
+              "frame-src 'self' https://vidsrc.fyi https://vidsrc.pm https://vidsrc.in https://vidsrc.io https://autoembed.co https://vidphantom.com https://api.codespecters.com",
+              "connect-src 'self' https: https://*.supabase.co https://*.supabase.com",
+              "worker-src 'self' blob:",
+            ].join('; '),
+          },
         ],
       },
     ];
