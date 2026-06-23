@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel_Decorative, Cinzel, Crimson_Pro, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "@/styles/global.css";
 import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { Analytics } from '@vercel/analytics/next';
 
 const cinzelDec = Cinzel_Decorative({
   subsets: ["latin"],
@@ -128,6 +129,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <Analytics />
       </body>
     </html>
   );
