@@ -25,24 +25,15 @@ const ADSTERRA_ID = process.env.NEXT_PUBLIC_ADSTERRA_ID || '';
 const PROPELLERADS_ID = process.env.NEXT_PUBLIC_PROPELLERADS_ID || '';
 const INTELLIGENCEADX_ID = process.env.NEXT_PUBLIC_INTELLIGENCEADX_ID || '';
 
-// ═══ Pop-under trigger (PopAds) ═══
-function injectPopAds(publisherKey: string) {
+// ═══ Pop-under trigger (PopAds with anti-adblock) ═══
+// Site ID: 5310037
+function injectPopAds() {
   if (typeof window === 'undefined') return;
-  // PopAds popunder — loads from their CDN
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.async = true;
-  script.src = '//c1.popads.net/pop.js';
-  script.onerror = () => {
-    // Fallback CDN
-    const fallback = document.createElement('script');
-    fallback.type = 'text/javascript';
-    fallback.async = true;
-    fallback.src = '//c2.popads.net/pop.js';
-    document.head.appendChild(fallback);
-  };
-  const s = document.getElementsByTagName('script')[0];
-  s.parentNode?.insertBefore(script, s);
+  const s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.setAttribute('data-cfasync', 'false');
+  s.innerHTML = `(function(){var h=window,b="c4e022087d618f715bc8450566cf5c61",i=[["siteId",5310037],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],f=["d3d3LmludGVsbGlnZW5jZWFkeC5jb20vclEva0RyL2R2aWRlb2pzLWNocm9tZWNhc3QubWluLmpz","ZDJrbHg4N2Jnem5nY2UuY2xvdWRmcm9udC5uZXQvaHB1YnN1Yi5taW4uanM=","d3d3Lm9mY2djZGN2ay5jb20vdE9SL2p5d0lady9pdmlkZW9qcy1jaHJvbWVjYXN0Lm1pbi5qcw==","d3d3LmxybnN6bWhldHEuY29tL2hwdWJzdWIubWluLmpz"],v=-1,d,u,q=function(){clearTimeout(u);v++;if(f[v]&&!(1808210701000<(new Date).getTime()&&1<v)){d=h.document.createElement("script");d.type="text/javascript";d.async=!0;var p=h.document.getElementsByTagName("script")[0];d.src="https://"+atob(f[v]);d.crossOrigin="anonymous";d.onerror=q;d.onload=function(){clearTimeout(u);h[b.slice(0,16)+b.slice(0,16)]||q()};u=setTimeout(q,5E3);p.parentNode.insertBefore(d,p)}};if(!h[b]){try{Object.freeze(h[b]=i)}catch(e){}q()}})();`;
+  document.head.appendChild(s);
 }
 
 // ═══ Adsterra banner ═══
@@ -114,7 +105,7 @@ export default function AdScripts() {
       if (POPADS_ID) {
         const shown = sessionStorage.getItem('_pop') === '1';
         if (!shown) {
-          injectPopAds(POPADS_ID);
+          injectPopAds();
           try { sessionStorage.setItem('_pop', '1'); } catch {}
         }
       }
