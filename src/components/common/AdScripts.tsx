@@ -20,19 +20,29 @@ import { useEffect, useRef } from 'react';
 // ═══ Config ═══
 const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED === 'true';
 
-const POPADS_ID = process.env.NEXT_PUBLIC_POPADS_ID || '';
+const POPADS_ID = process.env.NEXT_PUBLIC_POPADS_ID || '2b10b9f44e98bc3f6a9dfa669884297930bd0ae0';
 const ADSTERRA_ID = process.env.NEXT_PUBLIC_ADSTERRA_ID || '';
 const PROPELLERADS_ID = process.env.NEXT_PUBLIC_PROPELLERADS_ID || '';
 const INTELLIGENCEADX_ID = process.env.NEXT_PUBLIC_INTELLIGENCEADX_ID || '';
 
-// ═══ Pop-under trigger ═══
-function injectPopAds(publisherId: string) {
+// ═══ Pop-under trigger (PopAds) ═══
+function injectPopAds(publisherKey: string) {
   if (typeof window === 'undefined') return;
-  const uid = Math.random().toString(36).slice(2, 10);
+  // PopAds popunder — loads from their CDN
   const script = document.createElement('script');
+  script.type = 'text/javascript';
   script.async = true;
-  script.src = `https://popads.net/pop.js?pub=${publisherId}&uid=${uid}`;
-  document.head.appendChild(script);
+  script.src = '//c1.popads.net/pop.js';
+  script.onerror = () => {
+    // Fallback CDN
+    const fallback = document.createElement('script');
+    fallback.type = 'text/javascript';
+    fallback.async = true;
+    fallback.src = '//c2.popads.net/pop.js';
+    document.head.appendChild(fallback);
+  };
+  const s = document.getElementsByTagName('script')[0];
+  s.parentNode?.insertBefore(script, s);
 }
 
 // ═══ Adsterra banner ═══
