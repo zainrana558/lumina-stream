@@ -3,6 +3,7 @@ import { Cinzel_Decorative, Cinzel, Crimson_Pro, JetBrains_Mono, Playfair_Displa
 import "@/styles/global.css";
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const cinzelDec = Cinzel_Decorative({
   subsets: ["latin"],
@@ -131,6 +132,7 @@ export default function RootLayout({
         />
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
