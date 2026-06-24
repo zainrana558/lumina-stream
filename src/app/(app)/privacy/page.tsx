@@ -71,8 +71,11 @@ export default function PrivacyPage() {
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 12 }}>
           <strong style={{ color: '#FFB347' }}>Upstash Redis.</strong> Used exclusively for server-side rate limiting. Your IP is temporarily stored with automatic expiration and is not persisted.
         </p>
-        <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
+        <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 12 }}>
           <strong style={{ color: '#FFB347' }}>Embed Streaming Providers.</strong> Third-party embed providers (such as vidsrc.fyi, vidsrc.pm, autoembed.co, and others) may set their own cookies and collect data independently. We do not control these services — review their individual privacy policies.
+        </p>
+        <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
+          <strong style={{ color: '#FFB347' }}>Advertising Partners.</strong> To support our free service, we may work with advertising partners such as PopAds, Adsterra, PropellerAds, and related networks. These partners may collect anonymized device information, browsing patterns, and interaction data to serve relevant advertisements. Ad networks may set their own cookies and use tracking technologies subject to their respective privacy policies. You can opt out of interest-based advertising through tools provided by the <a href="https://www.networkadvertising.org" target="_blank" rel="noopener noreferrer" style={{ color: '#FFB347' }}>Network Advertising Initiative</a>.
         </p>
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>5. Data Security</h2>

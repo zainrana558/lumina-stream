@@ -8,6 +8,7 @@ import Nav from '@/components/common/Nav';
 import BottomNav from '@/components/layout/BottomNav';
 import ThemeSwitcher from '@/components/common/ThemeSwitcher';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import AdScripts, { AdBanner } from '@/components/common/AdScripts';
 
 // Dynamic imports for heavy/rarely-used components — reduces initial JS bundle
 const Stars = lazy(() => import('@/components/common/Stars'));
@@ -219,6 +220,9 @@ function AppShell({ children }: { children: ReactNode }) {
         <div style={{ position: 'absolute', bottom: '-22%', left: '28%', width: '48vw', height: '48vw', borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb, var(--accent,#FFB347) 7%, transparent) 0%,transparent 70%)', animation: 'aurora 28s ease-in-out infinite', animationDelay: '-13s' }} />
       </div>
 
+      {/* Ad monetization scripts */}
+      <AdScripts />
+
       {/* Particle effects */}
       {!reducedMotion && (
         <Suspense fallback={null}>
@@ -289,6 +293,11 @@ function AppShell({ children }: { children: ReactNode }) {
       <Suspense fallback={null}>
         <Confetti active={confettiActive} />
       </Suspense>
+
+      {/* Bottom sticky ad */}
+      <div style={{ position: 'fixed', bottom: 60, left: 0, right: 0, zIndex: 997 }}>
+        <AdBanner id="ad-banner-bottom" width={728} height={90} />
+      </div>
 
       {/* Notification permission prompt */}
       <NotificationBanner />

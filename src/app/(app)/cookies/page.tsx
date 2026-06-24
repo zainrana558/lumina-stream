@@ -57,7 +57,7 @@ export default function CookiePolicyPage() {
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>4. Advertising Cookies</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
-          <strong style={{ color: '#FFB347' }}>We do not use any advertising cookies.</strong> Lumina Stream does not use Google AdSense or any other advertising network. Our Service is completely free and ad-free. No advertising cookies are set by our Service.
+          <strong style={{ color: '#FFB347' }}>We may display advertisements on our Service.</strong> Advertising partners — including PopAds, Adsterra, PropellerAds, and similar networks — may use cookies and web beacons to serve relevant ads, measure ad performance, and limit how often you see the same ad. These cookies are set by the respective ad networks and are governed by their own privacy policies. You can manage your ad preferences through your browser settings or third-party tools such as the Network Advertising Initiative opt-out page. Please note that opting out of advertising cookies will not remove ads from the Service, but the ads you see may be less relevant to your interests.
         </p>
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>5. Third-Party Cookies</h2>
