@@ -713,29 +713,32 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       </div>
 
       {/* Player overlay */}
+{/* Player overlay — responsive 16:9 */}
       {playing && (
         <div ref={playerRef} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fi .28s ease both' }}>
           <div style={{ position: 'absolute', inset: 0, background: s.bg, opacity: .12 }} />
 
           {activeProviderUrl ? (
             <>
-              <iframe key={`provider-${selectedProvider}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" />
+              <div style={{ position: 'relative', width: 'min(100vw, calc(100vh * 16 / 9))', height: 'min(100vh, calc(100vw * 9 / 16))', flexShrink: 0, overflow: 'hidden' }}>
+                <iframe key={`provider-${selectedProvider}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" />
+              </div>
               {/* Failover toast */}
               {failoverMsg && (
-                <div className="f-cinzel" style={{ position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 30, padding: '8px 20px', borderRadius: 10, background: 'rgba(255,107,138,.18)', border: '1px solid rgba(255,107,138,.4)', color: '#FF6B8A',  fontSize: '.72rem', fontWeight: 600, letterSpacing: '.04em', animation: 'fi .3s ease both', whiteSpace: 'nowrap', boxShadow: '0 0 20px rgba(255,107,138,.15)' }}>
+                <div className="f-cinzel" style={{ position: 'fixed', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 10001, padding: '8px 20px', borderRadius: 10, background: 'rgba(255,107,138,.18)', border: '1px solid rgba(255,107,138,.4)', color: '#FF6B8A',  fontSize: '.72rem', fontWeight: 600, letterSpacing: '.04em', animation: 'fi .3s ease both', whiteSpace: 'nowrap', boxShadow: '0 0 20px rgba(255,107,138,.15)' }}>
                   {failoverMsg}
                 </div>
               )}
               {providers.length > 1 && (
-                <div style={{ position: 'absolute', top: 60, right: 16, zIndex: 10 }}>
-                  <select className="f-cinzel" value={selectedProvider} onChange={(e) => { setSelectedProvider(Number(e.target.value)); triedProviders.current.add(Number(e.target.value)); }} style={{ padding: '8px 14px', background: 'rgba(0,0,0,.8)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 10, color: '#FFF5E8',  fontSize: '.72rem', cursor: 'pointer', outline: 'none' }}>
+                <div style={{ position: 'fixed', top: 60, right: 16, zIndex: 10001 }}>
+                  <select className="f-cinzel" value={selectedProvider} onChange={(e) => { setSelectedProvider(Number(e.target.value)); triedProviders.current.add(Number(e.target.value)); }} style={{ padding: '8px 14px', background: 'rgba(0,0,0,.8)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 10, color: '#FFF5E8', fontSize: '.72rem', cursor: 'pointer', outline: 'none' }}>
                     {providers.map((p, i) => (
                       <option key={i} value={i} style={{ background: '#0C091A' }}>{p.name}{p.tier === 2 ? ' (Backup)' : ''}{p.category === 'anime' ? ' (Anime)' : ''}</option>
                     ))}
                   </select>
                 </div>
               )}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '16px 24px 20px', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
+              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '16px 24px 20px', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} {show.media_type === 'tv' ? `· S${season} E${epIdx}` : ''}</div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -748,7 +751,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           ) : (
             <>
               <div style={{ width: 90, height: 90, borderRadius: '50%', background: 'radial-gradient(circle,rgba(255,160,180,.92) 0%,rgba(255,107,138,.85) 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, color: '#05020A', zIndex: 2, boxShadow: '0 0 70px rgba(255,133,161,.65),8px 8px 20px rgba(0,0,0,.7),inset 0 3px 6px rgba(255,255,255,.35)', animation: 'breathe 2.4s ease-in-out infinite', cursor: 'pointer' }} onClick={() => setPlaying(false)}>▶</div>
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '24px 36px 32px', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
+              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '24px 36px 32px', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Playing'}</div>
                   <div style={{ display: 'flex', gap: 8 }}>
