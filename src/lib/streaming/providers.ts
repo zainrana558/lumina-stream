@@ -6,7 +6,7 @@
  * When a provider is detected as dead, it gets swapped with a replacement
  * from the pool. When a dead provider recovers, it goes back into the pool.
  *
- * Total: 17 active + 12 replacements = 29 providers available
+ * Total: 24 active + 19 replacements = 43 providers available
  * Categories: 'all' = movies + TV, 'anime' = anime-focused embeds
  *
  * All providers verified alive as of 2026-06-27.
@@ -50,20 +50,27 @@ interface ReplacementEntry {
 
 const REPLACEMENT_POOL: ReplacementEntry[] = [
   // General (TMDB) replacements — verified alive
-  { name: 'Series9', category: 'all', getMovieUrl: (id) => `https://series9.io/film/${id}`, getTvUrl: (id, s, e) => `https://series9.io/series/${id}-${s}-${e}` },
-  { name: 'VidSrc FYI', category: 'all', getMovieUrl: (id) => `https://vidsrc.fyi/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.fyi/embed/tv/${id}/${s}/${e}` },
+  { name: 'VidSrc RU', category: 'all', getMovieUrl: (id) => `https://vidsrc.ru/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.ru/embed/tv/${id}/${s}/${e}` },
+  { name: 'VidSrc ME', category: 'all', getMovieUrl: (id) => `https://vidsrc.me/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}` },
   { name: 'VidSrc IO', category: 'all', getMovieUrl: (id) => `https://vidsrc.io/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.io/embed/tv/${id}/${s}/${e}` },
+  { name: 'StreamSilk', category: 'all', getMovieUrl: (id) => `https://streamsilk.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsilk.com/embed/tv/${id}/${s}/${e}` },
+  { name: 'Series9', category: 'all', getMovieUrl: (id) => `https://series9.io/film/${id}`, getTvUrl: (id, s, e) => `https://series9.io/series/${id}-${s}-${e}` },
   { name: 'MovieBox', category: 'all', getMovieUrl: (id) => `https://moviebox.pro/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://moviebox.pro/embed/tv/${id}/${s}/${e}` },
+  { name: 'HDStream', category: 'all', getMovieUrl: (id) => `https://hdstream.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://hdstream.to/embed/tv/${id}/${s}/${e}` },
+  { name: 'MixDrop', category: 'all', getMovieUrl: (id) => `https://mixdrop.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://mixdrop.to/embed/tv/${id}/${s}/${e}` },
+  { name: 'VidSrc FYI', category: 'all', getMovieUrl: (id) => `https://vidsrc.fyi/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.fyi/embed/tv/${id}/${s}/${e}` },
+  { name: 'StreamHide', category: 'all', getMovieUrl: (id) => `https://streamhide.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamhide.to/embed/tv/${id}/${s}/${e}` },
+  { name: 'Series9API', category: 'all', getMovieUrl: (id) => `https://api.series9.io/film/${id}`, getTvUrl: (id, s, e) => `https://api.series9.io/series/${id}/${s}/${e}` },
+  { name: 'StreamSB', category: 'all', getMovieUrl: (id) => `https://streamsb.net/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsb.net/embed/tv/${id}/${s}/${e}` },
+  { name: 'StreamLare', category: 'all', getMovieUrl: (id) => `https://streamlare.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamlare.com/embed/tv/${id}/${s}/${e}` },
+  { name: 'Embed.su', category: 'all', getMovieUrl: (id) => `https://embed.su/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` },
   { name: 'VidPhantom', category: 'all', getMovieUrl: (id) => `https://vidphantom.com/movie/${id}`, getTvUrl: (id, s, e) => `https://vidphantom.com/tv/${id}/${s}/${e}` },
   { name: 'VidSrc IN', category: 'all', getMovieUrl: (id) => `https://vidsrc.in/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.in/embed/tv/${id}/${s}/${e}` },
-  { name: 'Embed.su', category: 'all', getMovieUrl: (id) => `https://embed.su/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}` },
-  { name: 'StreamSB', category: 'all', getMovieUrl: (id) => `https://streamsb.net/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsb.net/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc PRO', category: 'all', getMovieUrl: (id) => `https://vidsrc.pro/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}/${e}` },
   { name: '2Embed', category: 'all', getMovieUrl: (id) => `https://2embed.cc/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://2embed.cc/embed/tv/${id}/${s}/${e}` },
   // Anime replacements — use general providers as fallback since
   // dedicated anime embeds (gogoanime, zoro, animepahe, etc.) are all dead
-  { name: 'NetPlay Anime', category: 'anime', getMovieUrl: (id) => `https://netplay.vip/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://netplay.vip/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://netplay.vip/embed/tv/${malId}/${Math.floor(ep / 25) + 1}/${(ep % 25) || 25}` },
-  { name: 'VidSrc PM Anime', category: 'anime', getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://vidsrc.pm/embed/tv/${malId}/${Math.floor(ep / 25) + 1}/${(ep % 25) || 25}` },
+  { name: 'VidSrc WIN Anime', category: 'anime', getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://vidsrc.win/embed/tv/${malId}/${Math.floor(ep / 25) + 1}/${(ep % 25) || 25}` },
+  { name: 'CodeSpecters2 Anime', category: 'anime', getMovieUrl: (id) => `https://codespecters.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://codespecters.com/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://codespecters.com/embed/tv/${malId}/${Math.floor(ep / 25) + 1}/${(ep % 25) || 25}` },
 ];
 
 // ---- Active Providers ----
@@ -73,22 +80,16 @@ const activeProviders: StreamProvider[] = [
   // TIER 1 — Primary (sorted by latency)
   // ════════════════════════════════════════════
   {
-    name: "NetPlay",
+    name: "VidSrc WIN",
     tier: 1, category: "all",
-    getMovieUrl: (id) => `https://netplay.vip/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://netplay.vip/embed/tv/${id}/${s}/${e}`,
+    getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`,
   },
   {
-    name: "VidSrc PM",
+    name: "CodeSpecters2",
     tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    name: "AutoEmbed",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://autoembed.co/movie/tmdb/${id}`,
-    getTvUrl: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}`,
+    getMovieUrl: (id) => `https://codespecters.com/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://codespecters.com/embed/tv/${id}/${s}/${e}`,
   },
   {
     name: "TVPizza",
@@ -97,25 +98,31 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://tvpizza.com/embed/tv/${id}/${s}/${e}`,
   },
   {
-    name: "VidSrc RU",
+    name: "VidSrc PM",
     tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.ru/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.ru/embed/tv/${id}/${s}/${e}`,
+    getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
+  },
+  {
+    name: "NetPlay",
+    tier: 1, category: "all",
+    getMovieUrl: (id) => `https://netplay.vip/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://netplay.vip/embed/tv/${id}/${s}/${e}`,
   },
   // ════════════════════════════════════════════
   // TIER 2 — Backup
   // ════════════════════════════════════════════
   {
+    name: "AutoEmbed",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://autoembed.co/movie/tmdb/${id}`,
+    getTvUrl: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}`,
+  },
+  {
     name: "CodeSpecters",
     tier: 2, category: "all",
     getMovieUrl: (id) => `https://api.codespecters.com/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://api.codespecters.com/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    name: "VidSrc ME",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.me/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}`,
   }
 ];
 
