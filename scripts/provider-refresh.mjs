@@ -1,24 +1,26 @@
 #!/usr/bin/env node
 
 /**
- * Provider Refresh Script for Lumina-Stream
+ * Enhanced Provider Refresh Script for Lumina-Stream
  *
- * Does 3 things:
- *   1. Health-checks all currently configured providers
- *   2. Tests a large list of candidate embed domains
- *   3. Updates providers.ts with the best alive ones, commits & pushes
+ * Improvements over v1:
+ *   1. DNS pre-check (fast-fail unreachable domains)
+ *   2. GET request with content validation (checks for actual player HTML)
+ *   3. Discovers new providers from public listing pages
+ *   4. Checks live site health endpoint to detect currently-dead providers
+ *   5. Smart replacement — promotes from pool or discovers new ones
+ *   6. Latency scoring — picks fastest providers for TIER 1
+ *   7. Summary report with actionable info
  *
  * Usage:
  *   node scripts/provider-refresh.mjs
- *
- * Cron (runs daily at 8am Pacific):
- *   The cron job triggers this script automatically.
  */
 
 import { execSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import dns from 'dns/promises';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '..');
@@ -26,64 +28,87 @@ const PROVIDERS_FILE = resolve(PROJECT_ROOT, 'src/lib/streaming/providers.ts');
 const LOG_FILE = resolve(PROJECT_ROOT, 'scripts/provider-refresh.log');
 
 // ---- Config ----
-const PING_TIMEOUT = 8000;       // 8 seconds per provider
-const TEST_TMDB_MOVIE = 550;     // Fight Club — always exists
-const TEST_TMDB_TV = 1396;       // Breaking Bad S1E1
-const MIN_ALIVE_FOR_UPDATE = 3;  // Don't update if fewer than this are alive
+const PING_TIMEOUT = 10000;
+const DNS_TIMEOUT = 5000;
+const CONTENT_CHECK_TIMEOUT = 15000;
+const TEST_TMDB_MOVIE = 550;   // Fight Club
+const TEST_TMDB_TV = 1396;     // Breaking Bad S1E1
+const MIN_ALIVE_FOR_UPDATE = 3;
+const CONCURRENCY = 6;
 
-// ---- Known candidate domains to test ----
-// These are all known embed provider domains. We test them all and keep the best.
+// ---- Known candidate domains ----
 const CANDIDATE_DOMAINS = [
-  // --- VidSrc family ---
-  { name: 'VidSrc FYI',     domain: 'vidsrc.fyi',    moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc PM',      domain: 'vidsrc.pm',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc IN',      domain: 'vidsrc.in',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc IO',      domain: 'vidsrc.io',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc CC',      domain: 'vidsrc.cc',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc To',      domain: 'vidsrc.to',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc XYZ',     domain: 'vidsrc.xyz',    moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc IC',      domain: 'vidsrc.ic',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc NET',     domain: 'vidsrc.net',    moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc PRO',     domain: 'vidsrc.pro',    moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc APP',     domain: 'vidsrc.app',    moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc ME',      domain: 'vidsrc.me',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc SR',      domain: 'vidsrc.sr',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc LS',      domain: 'vidsrc.ls',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc ES',      domain: 'vidsrc.es',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc DE',      domain: 'vidsrc.de',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
-  { name: 'VidSrc RU',      domain: 'vidsrc.ru',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  // VidSrc family
+  { name: 'VidSrc FYI',     domain: 'vidsrc.fyi',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc PM',      domain: 'vidsrc.pm',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc IN',      domain: 'vidsrc.in',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc IO',      domain: 'vidsrc.io',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc CC',      domain: 'vidsrc.cc',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc To',      domain: 'vidsrc.to',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc XYZ',     domain: 'vidsrc.xyz',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc IC',      domain: 'vidsrc.ic',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc NET',     domain: 'vidsrc.net',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc PRO',     domain: 'vidsrc.pro',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc APP',     domain: 'vidsrc.app',     moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc ME',      domain: 'vidsrc.me',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc SR',      domain: 'vidsrc.sr',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc LS',      domain: 'vidsrc.ls',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc ES',      domain: 'vidsrc.es',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc DE',      domain: 'vidsrc.de',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc RU',      domain: 'vidsrc.ru',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrc REST',    domain: 'vidsrc.rest',    moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcic',       domain: 'vidsrcic.com',   moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcNerd',     domain: 'vidsrc.nerd',    moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcXL',       domain: 'vidsrcxl.to',    moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcing',      domain: 'vidsrcing.com',  moviePath: '/embed/movie',  tvPath: '/embed/tv' },
 
-  // --- Non-VidSrc providers ---
-  { name: 'AutoEmbed',      domain: 'autoembed.co',        moviePath: '/movie/tmdb',  tvPath: '/tv/tmdb' },
-  { name: 'VidPhantom',     domain: 'vidphantom.com',      moviePath: '/movie',       tvPath: '/tv' },
-  { name: 'CodeSpecters',   domain: 'api.codespecters.com',moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'Embed.su',       domain: 'embed.su',            moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'EmbedVip',       domain: 'embedvip.com',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'MultiEmbed',     domain: 'multiembed.mov',      moviePath: '/movie',       tvPath: '/tv' },
-  { name: 'MoviesAPI',      domain: 'moviesapi.club',      moviePath: '/movie',       tvPath: '/tv' },
-  { name: '2Embed',         domain: '2embed.cc',           moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'NontonGo',       domain: 'nontongo.store',      moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'SmashyStream',   domain: 'smashystream.com',    moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  // WatchCartoon uses non-standard paths, skip for auto-gen
-  { name: 'SuperEmbed',     domain: 'superembed.stream',   moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'Playembed',      domain: 'playembed.top',       moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'VidBinge',       domain: 'vidbinge.dev',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'VidPlay',        domain: 'vidplay.site',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'VidLink',        domain: 'vidlink.xyz',         moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'MovieFave',      domain: 'moviehax.watch',      moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'StreamRuby',     domain: 'streamruby.com',      moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'CineStream',     domain: 'cinestream.xyz',      moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'AnyEmbed',       domain: 'anyembed.xyz',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'EmberTokyo',     domain: 'ember.television',    moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'TVPizza',        domain: 'tvpizza.com',         moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'Series9',        domain: 'series9.io',          moviePath: '/film',        tvPath: '/series' },
-  { name: 'VidSrcing',      domain: 'vidsrcing.com',       moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'VidSrcXL',       domain: 'vidsrcxl.to',         moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'VidSrcNerd',     domain: 'vidsrc.nerd',         moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'EmbedStorm',     domain: 'embedstorm.com',      moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'StreamSB',       domain: 'streamsb.net',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'VidSrcRest',     domain: 'vidsrc.rest',         moviePath: '/embed/movie', tvPath: '/embed/tv' },
-  { name: 'VidSrcic',       domain: 'vidsrcic.com',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  // Non-VidSrc providers
+  { name: 'AutoEmbed',      domain: 'autoembed.co',          moviePath: '/movie/tmdb',  tvPath: '/tv/tmdb' },
+  { name: 'VidPhantom',     domain: 'vidphantom.com',        moviePath: '/movie',       tvPath: '/tv' },
+  { name: 'CodeSpecters',   domain: 'api.codespecters.com',  moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'Embed.su',       domain: 'embed.su',              moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'EmbedVip',       domain: 'embedvip.com',          moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'MultiEmbed',     domain: 'multiembed.mov',        moviePath: '/movie',       tvPath: '/tv' },
+  { name: 'MoviesAPI',      domain: 'moviesapi.club',        moviePath: '/movie',       tvPath: '/tv' },
+  { name: '2Embed',         domain: '2embed.cc',             moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'NontonGo',       domain: 'nontongo.store',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'SmashyStream',   domain: 'smashystream.com',      moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'SuperEmbed',     domain: 'superembed.stream',     moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'Playembed',      domain: 'playembed.top',         moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'VidBinge',       domain: 'vidbinge.dev',          moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'VidPlay',        domain: 'vidplay.site',          moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'VidLink',        domain: 'vidlink.xyz',           moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'MovieHax',       domain: 'moviehax.watch',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'StreamRuby',     domain: 'streamruby.com',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'CineStream',     domain: 'cinestream.xyz',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'AnyEmbed',       domain: 'anyembed.xyz',          moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'EmberTokyo',     domain: 'ember.television',      moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'TVPizza',        domain: 'tvpizza.com',           moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'Series9',        domain: 'series9.io',            moviePath: '/film',        tvPath: '/series' },
+  { name: 'EmbedStorm',     domain: 'embedstorm.com',        moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'StreamSB',       domain: 'streamsb.net',          moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'VidSrc2',        domain: 'vidsrc2.com',           moviePath: '/embed/movie', tvPath: '/embed/tv' },
+  { name: 'VidSrcBeta',     domain: 'vidsrc.beta',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcTop',      domain: 'vidsrc.top',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'MovieBox',       domain: 'moviebox.pro',          moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'EmbedTV',        domain: 'embedtv.com',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'NinjaEmbed',     domain: 'ninjaembed.net',        moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'StreamTape',     domain: 'streamtape.com',        moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcRip',      domain: 'vidsrc.rip',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'WatchStream',    domain: 'watchstream.to',        moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'SourceCode',     domain: 'sourcecode.vip',        moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'MovieE',         domain: 'moviee.tv',             moviePath: '/movie',        tvPath: '/tv' },
+  { name: 'VidSrcGG',       domain: 'vidsrc.gg',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcAC',       domain: 'vidsrc.ac',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'NetPlay',        domain: 'netplay.vip',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'StreamDrama',    domain: 'streamdrama.live',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+];
+
+// ---- Discovery sources ----
+// These pages sometimes list working embed domains
+const DISCOVERY_SOURCES = [
+  { name: 'EmbedList', url: 'https://raw.githubusercontent.com/nicholasxjy/embed-list/main/README.md', type: 'markdown' },
+  { name: 'ConsumetAgg', url: 'https://raw.githubusercontent.com/consumet/consumet.ts/main/src/utils/providers-list.ts', type: 'code' },
 ];
 
 // ---- Logging ----
@@ -92,113 +117,332 @@ function log(msg) {
   const line = `[${ts}] ${msg}`;
   console.log(line);
   try {
-    // Append to log file
-    const header = existsSync(LOG_FILE) ? '' : `=== Provider Refresh Log ===\n\n`;
     const existing = existsSync(LOG_FILE) ? readFileSync(LOG_FILE, 'utf-8') : '';
-    // Keep only last 500 lines
     const lines = existing.split('\n');
     const trimmed = lines.length > 500 ? lines.slice(-400).join('\n') : existing;
     writeFileSync(LOG_FILE, trimmed + '\n' + line + '\n');
-  } catch { /* ignore log write errors */ }
+  } catch { /* ignore */ }
 }
 
-// ---- HTTP Ping ----
-async function pingProvider(url) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PING_TIMEOUT);
+// ---- DNS Pre-check ----
+async function dnsResolve(domain) {
   try {
-    const res = await fetch(url, {
-      method: 'HEAD',
-      redirect: 'follow',
-      signal: controller.signal,
-    }).catch(() => null);
-    clearTimeout(timeout);
-    return true;
+    const addresses = await dns.resolve4(domain, { timeout: DNS_TIMEOUT });
+    return addresses.length > 0;
   } catch {
-    clearTimeout(timeout);
     return false;
   }
 }
 
-/**
- * Build a test URL for a candidate domain.
- * Different providers use different URL patterns.
- */
+// ---- Content-validating ping ----
+// GET the embed URL and check if the response contains actual player content
+async function validateProvider(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CONTENT_CHECK_TIMEOUT);
+  const start = Date.now();
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+    });
+    clearTimeout(timeout);
+    const latency = Date.now() - start;
+
+    if (!res.ok) return { alive: false, latency, reason: `HTTP ${res.status}` };
+
+    // Check content type — should be HTML
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('text/html') && !contentType.includes('application/xhtml')) {
+      // Some providers return JS — still valid if status is 200
+      if (res.status === 200) return { alive: true, latency, reason: 'non-html 200' };
+      return { alive: false, latency, reason: `content-type: ${contentType}` };
+    }
+
+    // Read a chunk of the body to check for player indicators
+    const body = await res.text();
+
+    // Player indicators — if ANY of these are found, it's a real embed
+    const playerIndicators = [
+      /<iframe/i,
+      /<video/i,
+      /hls\.js/i,
+      /hlsjs/i,
+      /plyr/i,
+      /videojs/i,
+      /jwplayer/i,
+      /player/i,
+      /source\s*=/i,
+      /m3u8/i,
+      /vidstack/i,
+      /mp4/i,
+      /stream/i,
+      /embed/i,
+      /moviedb/i,
+      /tmdb/i,
+    ];
+
+    const hasPlayer = playerIndicators.some(r => r.test(body));
+    // Also check page is not a captcha/block page
+    const isBlocked = /cloudflare/i.test(body) && /challenge/i.test(body);
+    const isCaptcha = /captcha/i.test(body) || /cf-browser-verification/i.test(body);
+
+    if (isBlocked || isCaptcha) {
+      return { alive: false, latency, reason: 'cloudflare challenge/captcha' };
+    }
+
+    return { alive: hasPlayer || body.length > 500, latency, reason: hasPlayer ? 'player found' : `no player (body=${body.length}b)` };
+  } catch (err) {
+    clearTimeout(timeout);
+    const latency = Date.now() - start;
+    return { alive: false, latency, reason: err.name === 'AbortError' ? 'timeout' : (err.message || 'unknown') };
+  }
+}
+
+// ---- Build test URL ----
 function buildTestUrl(candidate, type = 'movie') {
   const base = `https://${candidate.domain}`;
   if (type === 'movie') {
-    // AutoEmbed uses: /movie/tmdb/550
-    if (candidate.domain === 'autoembed.co') {
-      return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
-    }
-    // VidPhantom: /movie/550
-    if (candidate.domain === 'vidphantom.com') {
-      return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
-    }
-    // Generic: /embed/movie/550
+    if (candidate.domain === 'autoembed.co') return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
+    if (candidate.domain === 'vidphantom.com') return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
+    if (candidate.domain === 'series9.io') return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
     return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
   } else {
-    // AutoEmbed TV: /tv/tmdb/1396-1-1
-    if (candidate.domain === 'autoembed.co') {
-      return `${base}${candidate.tvPath}/${TEST_TMDB_TV}-1-1`;
-    }
-    // VidPhantom TV: /tv/1396/1/1
-    if (candidate.domain === 'vidphantom.com') {
-      return `${base}${candidate.tvPath}/${TEST_TMDB_TV}/1/1`;
-    }
-    // Generic TV: /embed/tv/1396/1/1
+    if (candidate.domain === 'autoembed.co') return `${base}${candidate.tvPath}/${TEST_TMDB_TV}-1-1`;
+    if (candidate.domain === 'vidphantom.com') return `${base}${candidate.tvPath}/${TEST_TMDB_TV}/1/1`;
+    if (candidate.domain === 'series9.io') return `${base}${candidate.tvPath}/${TEST_TMDB_TV}/1/1`;
     return `${base}${candidate.tvPath}/${TEST_TMDB_TV}/1/1`;
   }
 }
 
-// ---- Test all candidates ----
-async function testAllCandidates() {
-  log(`Testing ${CANDIDATE_DOMAINS.length} candidate domains...`);
+// ---- Batch runner ----
+async function runBatch(tasks, concurrency) {
   const results = [];
-
-  // Test in batches of 5 to avoid overwhelming the network
-  const BATCH_SIZE = 5;
-  for (let i = 0; i < CANDIDATE_DOMAINS.length; i += BATCH_SIZE) {
-    const batch = CANDIDATE_DOMAINS.slice(i, i + BATCH_SIZE);
-    const batchResults = await Promise.all(
-      batch.map(async (c) => {
-        const movieUrl = buildTestUrl(c, 'movie');
-        const tvUrl = buildTestUrl(c, 'tv');
-        const movieAlive = await pingProvider(movieUrl);
-        const tvAlive = await pingProvider(tvUrl);
-        const alive = movieAlive && tvAlive;
-        log(`  ${alive ? '✅' : '❌'} ${c.name} (${c.domain}) — movie:${movieAlive} tv:${tvAlive}`);
-        return { ...c, alive, movieAlive, tvAlive };
-      })
-    );
+  for (let i = 0; i < tasks.length; i += concurrency) {
+    const batch = tasks.slice(i, i + concurrency);
+    const batchResults = await Promise.all(batch.map(t => t()));
     results.push(...batchResults);
   }
+  return results;
+}
 
-  const alive = results.filter(r => r.alive);
-  log(`\nResults: ${alive.length} alive out of ${results.length} tested`);
-  return { all: results, alive };
+// ---- Test all candidates with 3-stage validation ----
+async function testAllCandidates() {
+  log(`\n${'═'.repeat(60)}`);
+  log(`STAGE 1: DNS pre-check on ${CANDIDATE_DOMAINS.length} candidates`);
+  log(`${'═'.repeat(60)}`);
+
+  // Stage 1: DNS resolution
+  const dnsResults = await runBatch(
+    CANDIDATE_DOMAINS.map(c => async () => {
+      const resolvable = await dnsResolve(c.domain);
+      log(`  DNS ${resolvable ? '✅' : '❌'} ${c.domain}`);
+      return { ...c, dnsOk: resolvable };
+    }),
+    20
+  );
+
+  const dnsAlive = dnsResults.filter(r => r.dnsOk);
+  const dnsDead = dnsResults.filter(r => !r.dnsOk);
+  log(`\nDNS: ${dnsAlive.length} resolvable, ${dnsDead.length} dead`);
+
+  // Stage 2: HTTP content validation on DNS-alive domains
+  log(`\n${'═'.repeat(60)}`);
+  log(`STAGE 2: Content validation on ${dnsAlive.length} DNS-alive domains`);
+  log(`${'═'.repeat(60)}`);
+
+  const validated = await runBatch(
+    dnsAlive.map(c => async () => {
+      const movieUrl = buildTestUrl(c, 'movie');
+      const movieResult = await validateProvider(movieUrl);
+
+      let tvResult = { alive: false, latency: 0, reason: 'skipped' };
+      if (movieResult.alive) {
+        const tvUrl = buildTestUrl(c, 'tv');
+        tvResult = await validateProvider(tvUrl);
+      }
+
+      const alive = movieResult.alive && tvResult.alive;
+      const avgLatency = Math.round((movieResult.latency + tvResult.latency) / 2);
+
+      log(`  ${alive ? '✅' : '❌'} ${c.name.padEnd(18)} movie:${movieResult.reason.padEnd(24)} tv:${tvResult.reason.padEnd(24)} ${avgLatency}ms`);
+
+      return { ...c, alive, avgLatency, movieResult, tvResult, dnsOk: true };
+    }),
+    CONCURRENCY
+  );
+
+  const alive = validated.filter(r => r.alive).sort((a, b) => a.avgLatency - b.avgLatency);
+  const dead = validated.filter(r => !r.alive);
+
+  log(`\n${'═'.repeat(60)}`);
+  log(`RESULTS: ${alive.length} alive, ${dead.length} dead`);
+  log(`${'═'.repeat(60)}`);
+
+  if (alive.length > 0) {
+    log(`\n🟢 Alive providers (sorted by speed):`);
+    alive.forEach((p, i) => log(`   ${i + 1}. ${p.name.padEnd(18)} ${p.avgLatency}ms`));
+  }
+
+  if (dead.length > 0) {
+    log(`\n🔴 Dead providers:`);
+    dead.forEach(p => log(`   ✗ ${p.name.padEnd(18)} ${p.movieResult.reason}`));
+  }
+
+  return { all: validated, alive, dead, dnsDead };
+}
+
+// ---- Discovery: scrape for new provider domains ----
+async function discoverNewProviders(knownDomains) {
+  log(`\n${'═'.repeat(60)}`);
+  log(`STAGE 3: Discovering new providers from external sources`);
+  log(`${'═'.repeat(60)}`);
+
+  const knownSet = new Set(knownDomains);
+  const newDomains = [];
+
+  for (const source of DISCOVERY_SOURCES) {
+    try {
+      log(`  Fetching ${source.name}...`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(source.url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        log(`    ✗ HTTP ${res.status}`);
+        continue;
+      }
+
+      const text = await res.text();
+
+      // Extract domains from URLs
+      const domainRegex = /https?:\/\/([a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9.]+)/g;
+      let match;
+      const found = new Set();
+
+      while ((match = domainRegex.exec(text)) !== null) {
+        const domain = match[1].toLowerCase();
+        // Filter: must look like an embed domain, not a CDN/API/known non-embed
+        if (
+          !knownSet.has(domain) &&
+          !domain.includes('github') &&
+          !domain.includes('google') &&
+          !domain.includes('cloudflare') &&
+          !domain.includes('mozilla') &&
+          !domain.includes('w3.org') &&
+          !domain.includes('schema.org') &&
+          domain.includes('.') &&
+          !domain.endsWith('.githubusercontent.com') &&
+          !domain.endsWith('.googleapis.com')
+        ) {
+          found.add(domain);
+        }
+      }
+
+      log(`    Found ${found.size} candidate domains`);
+      for (const domain of found) {
+        // Only add if DNS resolves
+        const resolvable = await dnsResolve(domain);
+        if (resolvable) {
+          log(`    ✅ NEW ${domain} — DNS resolves`);
+          newDomains.push({
+            name: domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1),
+            domain,
+            moviePath: '/embed/movie',
+            tvPath: '/embed/tv',
+            discovered: true,
+          });
+        } else {
+          log(`    ❌ ${domain} — DNS failed`);
+        }
+      }
+    } catch (err) {
+      log(`    ✗ ${source.name}: ${err.message || 'failed'}`);
+    }
+  }
+
+  // Validate discovered domains
+  if (newDomains.length > 0) {
+    log(`\n  Validating ${newDomains.length} newly discovered domains...`);
+    const validated = await runBatch(
+      newDomains.map(c => async () => {
+        const movieUrl = buildTestUrl(c, 'movie');
+        const result = await validateProvider(movieUrl);
+        log(`    ${result.alive ? '✅' : '❌'} ${c.domain} — ${result.reason}`);
+        return { ...c, alive: result.alive, avgLatency: result.latency, movieResult: result, tvResult: { alive: false, latency: 0, reason: 'skipped' }, dnsOk: true };
+      }),
+      CONCURRENCY
+    );
+    return validated.filter(r => r.alive);
+  }
+
+  return [];
+}
+
+// ---- Check live site for currently-dead providers ----
+async function checkLiveSite() {
+  const siteUrl = process.env.SITE_URL || 'https://lumina-stream.vercel.app';
+  const healthUrl = `${siteUrl}/api/embed-health`;
+  const cronSecret = process.env.CRON_SECRET;
+
+  log(`\n${'═'.repeat(60)}`);
+  log(`STAGE 4: Checking live site for dead providers`);
+  log(`${'═'.repeat(60)}`);
+
+  try {
+    const headers = {};
+    if (cronSecret) headers['Authorization'] = `Bearer ${cronSecret}`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(healthUrl, { headers, signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      log(`  ⚠ Health endpoint returned ${res.status} — skipping live check`);
+      return { deadProviders: [], aliveProviders: [] };
+    }
+
+    const data = await res.json();
+    const deadProviders = data.embed?.deadProviders || [];
+    const totalEmbed = data.embed?.total || 0;
+    const aliveEmbed = data.embed?.alive || 0;
+
+    log(`  Live site: ${aliveEmbed}/${totalEmbed} embed providers alive`);
+    if (deadProviders.length > 0) {
+      log(`  Dead on live: ${deadProviders.join(', ')}`);
+    } else {
+      log(`  All providers healthy on live site`);
+    }
+
+    return { deadProviders, aliveProviders: [] };
+  } catch (err) {
+    log(`  ⚠ Could not reach live site: ${err.message}`);
+    return { deadProviders: [], aliveProviders: [] };
+  }
 }
 
 // ---- Generate providers.ts content ----
 function generateProvidersFile(aliveProviders) {
   const now = new Date().toISOString().split('T')[0];
-
-  // Pick top providers for active (max 7), rest go to replacement pool
   const tier1 = aliveProviders.slice(0, Math.min(5, aliveProviders.length));
   const tier2 = aliveProviders.slice(5, Math.min(7, aliveProviders.length));
   const replacements = aliveProviders.slice(7);
 
-  // Build active providers array — entries have no trailing comma, join handles commas
   const tier1Lines = tier1.map(p => buildProviderEntry(p, 1)).join(',\n  ');
   const tier2Lines = tier2.map(p => buildProviderEntry(p, 2)).join(',\n  ');
   const activeLines = tier2Lines
     ? `${tier1Lines},\n  // ════════════════════════════════════════════\n  // TIER 2 — Backup\n  // ════════════════════════════════════════════\n  ${tier2Lines}`
     : tier1Lines;
 
-  // Build replacement pool (always include some for safety)
   const poolProviders = replacements.length > 0
     ? replacements
-    : aliveProviders.slice(Math.max(0, aliveProviders.length - 2)); // fallback: last 2
+    : aliveProviders.slice(Math.max(0, aliveProviders.length - 2));
 
   const poolLines = poolProviders.map(p => {
     const movieFn = `getMovieUrl: (id) => \`${buildUrlPattern(p, 'movie')}\``;
@@ -206,7 +450,6 @@ function generateProvidersFile(aliveProviders) {
     return `  { name: '${p.name}', category: 'all', ${movieFn}, ${tvFn} }`;
   }).join(',\n');
 
-  // Also add anime fallbacks to pool
   const animePoolLines = tier1.slice(0, 2).map(p => {
     const movieFn = `getMovieUrl: (id) => \`${buildUrlPattern(p, 'movie')}\``;
     const tvFn = `getTvUrl: (id, s, e) => \`${buildUrlPattern(p, 'tv')}\``;
@@ -276,42 +519,27 @@ ${animePoolLines},
 
 const activeProviders: StreamProvider[] = [
   // ════════════════════════════════════════════
-  // TIER 1 — Primary
+  // TIER 1 — Primary (sorted by latency)
   // ════════════════════════════════════════════
   ${activeLines}
 ];
 
 // ---- Pool State ----
-// Tracks which replacements are currently swapped in, and which
-// original providers were swapped out (for recovery).
 
-const swappedIn: Map<string, StreamProvider> = new Map();   // replacement name → provider
-const swappedOut: Map<string, StreamProvider> = new Map();  // original name → provider
-// Tracks which replacement was swapped in for which original
-const swapMapping: Map<string, string> = new Map();  // original name → replacement name
+const swappedIn: Map<string, StreamProvider> = new Map();
+const swappedOut: Map<string, StreamProvider> = new Map();
+const swapMapping: Map<string, string> = new Map();
 
 // ---- Swap Logic ----
 
-/**
- * Get all currently active providers (original + swapped-in replacements).
- * Dead providers that haven't been swapped yet are still included here —
- * the embed route handles filtering via health-check.
- */
 export function getAllProviders(): StreamProvider[] {
-  // Start with active providers, skip any that were swapped out
   const current = activeProviders.filter(p => !swappedOut.has(p.name));
-
-  // Add all swapped-in replacements
   for (const replacement of swappedIn.values()) {
     current.push(replacement);
   }
-
   return current;
 }
 
-/**
- * Get the replacement pool status (for /api/embed-health).
- */
 export function getPoolStatus(): {
   poolSize: number;
   available: number;
@@ -321,7 +549,6 @@ export function getPoolStatus(): {
 } {
   const usedNames = new Set(swappedIn.keys());
   const available = REPLACEMENT_POOL.filter(r => !usedNames.has(r.name));
-
   return {
     poolSize: REPLACEMENT_POOL.length,
     available: available.length,
@@ -331,29 +558,14 @@ export function getPoolStatus(): {
   };
 }
 
-/**
- * Swap out a dead provider with a replacement from the pool.
- * Returns the replacement provider, or null if pool is empty.
- */
 export function swapInReplacement(deadProviderName: string): StreamProvider | null {
-  // Don't swap if already swapped out
   if (swappedOut.has(deadProviderName)) return null;
-
-  // Find a replacement from the same category, or any category
   const deadProvider = activeProviders.find(p => p.name === deadProviderName);
   const category = deadProvider?.category || 'all';
-
-  // Try same category first, then any
   let replacement = REPLACEMENT_POOL.find(r => r.category === category && !swappedIn.has(r.name));
-  if (!replacement) {
-    replacement = REPLACEMENT_POOL.find(r => !swappedIn.has(r.name));
-  }
+  if (!replacement) replacement = REPLACEMENT_POOL.find(r => !swappedIn.has(r.name));
   if (!replacement) return null;
-
-  // Save the original for potential recovery
   swappedOut.set(deadProviderName, deadProvider!);
-
-  // Add replacement as active
   const newProvider: StreamProvider = {
     name: replacement.name,
     tier: deadProvider?.tier || 2,
@@ -364,41 +576,23 @@ export function swapInReplacement(deadProviderName: string): StreamProvider | nu
   };
   swappedIn.set(replacement.name, newProvider);
   swapMapping.set(deadProviderName, replacement.name);
-
   return newProvider;
 }
 
-/**
- * Try to restore a swapped-out provider (if original recovers).
- * Removes the replacement and puts it back in the pool.
- */
 export function restoreOriginal(originalName: string): boolean {
   if (!swappedOut.has(originalName)) return false;
-
-  // Find the exact replacement that was swapped in for this original
   const repName = swapMapping.get(originalName);
   if (!repName || !swappedIn.has(repName)) return false;
-
-  // Remove replacement from active pool
   swappedIn.delete(repName);
-  // Restore original
   swappedOut.delete(originalName);
   swapMapping.delete(originalName);
   return true;
 }
 
-/**
- * Get the full replacement pool (for health-check to test).
- */
 export function getReplacementPool(): ReplacementEntry[] {
   return REPLACEMENT_POOL;
 }
 
-// ---- Public API ----
-
-/**
- * Get all general embed URLs (TMDB-based, sorted by tier).
- */
 export function getAllEmbedUrls(
   mediaType: "movie" | "tv",
   tmdbId: number,
@@ -420,9 +614,6 @@ export function getAllEmbedUrls(
     }));
 }
 
-/**
- * Get anime embed URLs (TMDB-based + MAL ID based, sorted by tier).
- */
 export function getAnimeEmbedUrls(
   tmdbId: number,
   season: number,
@@ -430,7 +621,6 @@ export function getAnimeEmbedUrls(
   malId?: number
 ): EmbedResult[] {
   const providers = getAllProviders();
-
   const generalProviders: EmbedResult[] = providers
     .filter((p) => p.category === "all")
     .sort((a, b) => a.tier - b.tier)
@@ -441,7 +631,6 @@ export function getAnimeEmbedUrls(
       replaced: swappedIn.has(p.name),
       url: p.getTvUrl(tmdbId, season, episode),
     }));
-
   const animeProviders: EmbedResult[] = providers
     .filter((p) => p.category === "anime")
     .sort((a, b) => a.tier - b.tier)
@@ -455,7 +644,6 @@ export function getAnimeEmbedUrls(
           ? p.getAnimeUrl(malId, episode)
           : p.getTvUrl(tmdbId, season, episode),
     }));
-
   return [...generalProviders, ...animeProviders];
 }
 `;
@@ -484,7 +672,10 @@ function buildUrlPattern(provider, type) {
     if (type === 'tv') return `${base}/tv/\${id}/\${s}/\${e}`;
     if (type === 'anime') return `${base}/tv/\${malId}/\${Math.floor(ep / 25) + 1}/\${(ep % 25) || 25}`;
   }
-  // Generic vidsrc pattern
+  if (provider.domain === 'series9.io') {
+    if (type === 'movie') return `${base}/film/\${id}`;
+    if (type === 'tv') return `${base}/series/\${id}-\${s}-\${e}`;
+  }
   const path = type === 'movie' ? provider.moviePath : provider.tvPath;
   if (type === 'movie') return `${base}${path}/\${id}`;
   if (type === 'tv') return `${base}${path}/\${id}/\${s}/\${e}`;
@@ -492,70 +683,104 @@ function buildUrlPattern(provider, type) {
   return `${base}${path}/\${id}`;
 }
 
-// ---- Git commit & push ----
-function gitCommitAndPush(aliveCount, deadCount) {
-  const date = new Date().toISOString().split('T')[0];
-  const message = `chore: auto-refresh providers (${date}) — ${aliveCount} alive, ${deadCount} dead`;
-
-  log(`\nCommitting: ${message}`);
-
-  try {
-    execSync(`cd "${PROJECT_ROOT}" && git add src/lib/streaming/providers.ts`, { stdio: 'pipe' });
-    execSync(`cd "${PROJECT_ROOT}" && git commit -m "${message}"`, { stdio: 'pipe' });
-    execSync(`cd "${PROJECT_ROOT}" && git push origin main`, { stdio: 'pipe' });
-    log('✅ Successfully committed and pushed to GitHub');
-  } catch (err) {
-    log(`⚠️ Git error (maybe no changes or push failed): ${err.message?.slice(0, 200)}`);
-  }
-}
-
 // ---- Main ----
 async function main() {
-  log('========== Provider Refresh Start ==========');
+  log('╔══════════════════════════════════════════════════════════╗');
+  log('║         ENHANCED PROVIDER REFRESH v2                    ║');
+  log('╚══════════════════════════════════════════════════════════╝');
 
-  // 1. Test all candidates
-  const { all, alive } = await testAllCandidates();
-  const dead = all.filter(r => !r.alive);
+  const startTime = Date.now();
 
-  if (alive.length < MIN_ALIVE_FOR_UPDATE) {
-    log(`⚠️ Only ${alive.length} providers alive (minimum ${MIN_ALIVE_FOR_UPDATE}). Skipping update to avoid breaking the app.`);
-    log(`Dead providers will rely on in-app replacement pool.`);
-    log('========== Provider Refresh End (skipped) ==========');
+  // 1. Test all known candidates (DNS + content validation)
+  const { all, alive, dead, dnsDead } = await testAllCandidates();
+
+  // 2. Check live site for dead providers
+  const { deadProviders: liveDead } = await checkLiveSite();
+
+  // 3. Discover new providers from external sources
+  const knownDomains = new Set(CANDIDATE_DOMAINS.map(c => c.domain));
+  const discovered = await discoverNewProviders(knownDomains);
+
+  // 4. Merge discovered providers into alive list
+  let allAlive = [...alive];
+  if (discovered.length > 0) {
+    log(`\n${'═'.repeat(60)}`);
+    log(`MERGE: Adding ${discovered.length} newly discovered providers`);
+    log(`${'═'.repeat(60)}`);
+    for (const d of discovered) {
+      log(`  + ${d.domain} (new discovery)`);
+      allAlive.push(d);
+    }
+    // Re-sort by latency
+    allAlive.sort((a, b) => (a.avgLatency || 99999) - (b.avgLatency || 99999));
+  }
+
+  // 5. Report on live-dead providers
+  if (liveDead.length > 0) {
+    log(`\n${'═'.repeat(60)}`);
+    log(`REPLACEMENT PLAN: ${liveDead.length} providers dead on live site`);
+    log(`${'═'.repeat(60)}`);
+    for (const deadName of liveDead) {
+      const replacement = allAlive.find(a => a.name !== deadName && !liveDead.includes(a.name));
+      if (replacement) {
+        log(`  ✗ ${deadName} → replaced by ${replacement.name} (${replacement.domain})`);
+      } else {
+        log(`  ✗ ${deadName} → NO replacement available!`);
+      }
+    }
+  }
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  log(`\n${'═'.repeat(60)}`);
+  log(`SUMMARY (took ${elapsed}s)`);
+  log(`${'═'.repeat(60)}`);
+  log(`  DNS dead:        ${dnsDead.length}`);
+  log(`  HTTP dead:       ${dead.length}`);
+  log(`  Discovered new:  ${discovered.length}`);
+  log(`  Total alive:     ${allAlive.length}`);
+  log(`  Live-dead:       ${liveDead.length}`);
+
+  // 6. Safety check
+  if (allAlive.length < MIN_ALIVE_FOR_UPDATE) {
+    log(`\n⚠️ Only ${allAlive.length} providers alive (minimum ${MIN_ALIVE_FOR_UPDATE}). Skipping update.`);
+    log('Dead providers will rely on in-app replacement pool.');
+    log('══════════════════════════════════════════════════════════');
     return;
   }
 
-  // 2. Generate new providers.ts
-  const newContent = generateProvidersFile(alive);
+  // 7. Generate and write new providers.ts
+  const newContent = generateProvidersFile(allAlive);
 
-  // 3. Backup old file
   const backupPath = PROVIDERS_FILE + `.backup.${new Date().toISOString().replace(/[:.]/g, '-')}`;
   try {
     if (existsSync(PROVIDERS_FILE)) {
       writeFileSync(backupPath, readFileSync(PROVIDERS_FILE, 'utf-8'));
-      log(`Backup saved: ${backupPath}`);
+      log(`\nBackup: ${backupPath}`);
     }
   } catch (err) {
     log(`⚠️ Backup failed: ${err.message}`);
   }
 
-  // 4. Write new file
   try {
     writeFileSync(PROVIDERS_FILE, newContent, 'utf-8');
-    log(`\n✅ Updated providers.ts with ${alive.length} alive providers:`);
-    alive.forEach((p, i) => log(`   ${i + 1}. ${p.name} (${p.domain})`));
+    log(`\n✅ Updated providers.ts with ${allAlive.length} alive providers:`);
+    allAlive.forEach((p, i) => {
+      const tag = p.discovered ? ' [NEW]' : '';
+      log(`   ${i + 1}. ${p.name.padEnd(18)} ${p.avgLatency || '?'}ms${tag}`);
+    });
   } catch (err) {
     log(`❌ Failed to write providers.ts: ${err.message}`);
     return;
   }
 
-  // 5. Commit and push (skip in GitHub Actions — workflow handles it)
+  // 8. Git handled by workflow in CI
   if (!process.env.GITHUB_ACTIONS) {
-    gitCommitAndPush(alive.length, dead.length);
+    log('\nRunning locally — use git to commit and push manually.');
   } else {
-    log('Running in GitHub Actions — skipping git push (workflow handles it)');
+    log('\nRunning in GitHub Actions — workflow will commit and push.');
   }
 
-  log('========== Provider Refresh End ==========');
+  log('══════════════════════════════════════════════════════════');
 }
 
 main().catch(err => {

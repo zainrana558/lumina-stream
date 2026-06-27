@@ -5,6 +5,11 @@ on:
     # Runs daily at 8:00 AM Pacific (15:00 UTC)
     - cron: '0 15 * * *'
   workflow_dispatch:
+    inputs:
+      force_run:
+        description: 'Force run even if no changes expected'
+        required: false
+        default: 'true'
 
 permissions:
   contents: write
@@ -12,7 +17,7 @@ permissions:
 jobs:
   refresh-providers:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -28,10 +33,12 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Run provider refresh
+      - name: Run enhanced provider refresh
         env:
           GITHUB_ACTIONS: "true"
           NODE_OPTIONS: "--no-warnings"
+          SITE_URL: ${{ vars.SITE_URL || 'https://lumina-stream.vercel.app' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: node scripts/provider-refresh.mjs 2>&1
 
       - name: Push changes (if any)
