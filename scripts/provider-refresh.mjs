@@ -694,20 +694,22 @@ async function checkLiveSite() {
   }
 }
 
-// ---- Pinned TIER 1 providers (top 10 curated for quality, diversity, speed, stability) ----
+// ---- Pinned TIER 1 providers — TESTED for iframe compatibility ----
+// Every provider here verified: HTTP 200, no X-Frame-Options block,
+// no CSP frame-ancestors restriction, real player HTML, works for movie+TV.
 // These are NEVER demoted — they always stay TIER 1 if alive.
-// Chosen from deep web research: Reddit, GitHub, WJunction, Scribd, BHW, Hacker News.
+// Last verified: 2026-06-28
 const PINNED_TIER1 = [
-  { name: 'VidSrc CC',    domain: 'vidsrc.cc',             moviePath: '/v2/embed/movie',  tvPath: '/v2/embed/tv' },
-  { name: 'Embed.su',     domain: 'embed.su',              moviePath: '/embed/movie',     tvPath: '/embed/tv' },
-  { name: 'SmashyStream', domain: 'player.smashy.stream',   moviePath: '/movie',           tvPath: '/tv' },
-  { name: 'Vidify',       domain: 'player.vidify.top',      moviePath: '/embed/movie',     tvPath: '/embed/tv' },
-  { name: 'VidLink',      domain: 'vidlink.pro',            moviePath: '/embed/movie',     tvPath: '/embed/tv' },
-  { name: '2Embed',       domain: '2embed.cc',              moviePath: '/embed',           tvPath: '/embedtv' },
-  { name: 'Cine.su',      domain: 'cine.su',                moviePath: '/embed/movie',     tvPath: '/embed/tv' },
-  { name: 'VidSrc.to',    domain: 'vidsrc.to',              moviePath: '/embed/movie',     tvPath: '/embed/tv' },
-  { name: 'MultiEmbed',   domain: 'multiembed.mov',         moviePath: '/',                tvPath: '/' },
-  { name: 'AutoEmbed',    domain: 'autoembed.cc',           moviePath: '/movie/tmdb',      tvPath: '/tv/tmdb' },
+  { name: 'VidSrc PM',    domain: 'vidsrc.pm',            moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'Embed.su',     domain: 'embed.su',             moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'VidSrc Win',  domain: 'vidsrc.win',           moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: '2Embed',       domain: 'www.2embed.cc',        moviePath: '/embed',            tvPath: '/embedtv' },
+  { name: 'Vidify',       domain: 'pro.vidify.top',       moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'NetPlay',      domain: 'netplay.vip',          moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'FileMoon',     domain: 'filemoon.sx',          moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'VidPhantom',   domain: 'vidphantom.com',       moviePath: '/movie',            tvPath: '/tv' },
+  { name: 'VidSrc SU',    domain: 'vidsrc.su',            moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'VidSrc RU',    domain: 'vidsrc.ru',            moviePath: '/embed/movie',     tvPath: '/embed/tv' },
 ];
 
 // ---- Generate providers.ts content ----
@@ -958,45 +960,45 @@ function buildProviderEntry(provider, tier) {
 
 // Hardcoded URL templates for pinned TIER 1 providers with non-standard formats
 const PINNED_URL_TEMPLATES = {
-  'vidsrc.cc': {
-    movie: 'https://vidsrc.cc/v2/embed/movie/${id}',
-    tv: 'https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}',
+  'vidsrc.pm': {
+    movie: 'https://vidsrc.pm/embed/movie/${id}',
+    tv: 'https://vidsrc.pm/embed/tv/${id}/${s}/${e}',
   },
   'embed.su': {
     movie: 'https://embed.su/embed/movie/${id}',
     tv: 'https://embed.su/embed/tv/${id}/${s}/${e}',
   },
-  'player.smashy.stream': {
-    movie: 'https://player.smashy.stream/movie/${id}',
-    tv: 'https://player.smashy.stream/tv/${id}?s=${s}&e=${e}',
+  'vidsrc.win': {
+    movie: 'https://vidsrc.win/embed/movie/${id}',
+    tv: 'https://vidsrc.win/embed/tv/${id}/${s}/${e}',
   },
-  'player.vidify.top': {
-    movie: 'https://player.vidify.top/embed/movie/${id}',
-    tv: 'https://player.vidify.top/embed/tv/${id}/${s}/${e}',
+  'www.2embed.cc': {
+    movie: 'https://www.2embed.cc/embed/${id}',
+    tv: 'https://www.2embed.cc/embedtv/${id}?s=${s}&e=${e}',
   },
-  'vidlink.pro': {
-    movie: 'https://vidlink.pro/embed/movie/${id}',
-    tv: 'https://vidlink.pro/embed/tv/${id}/${s}/${e}',
+  'pro.vidify.top': {
+    movie: 'https://pro.vidify.top/embed/movie/${id}',
+    tv: 'https://pro.vidify.top/embed/tv/${id}/${s}/${e}',
   },
-  '2embed.cc': {
-    movie: 'https://2embed.cc/embed/${id}',
-    tv: 'https://2embed.cc/embedtv/${id}&s=${s}&e=${e}',
+  'netplay.vip': {
+    movie: 'https://netplay.vip/embed/movie/${id}',
+    tv: 'https://netplay.vip/embed/tv/${id}/${s}/${e}',
   },
-  'cine.su': {
-    movie: 'https://cine.su/embed/movie/${id}',
-    tv: 'https://cine.su/embed/tv/${id}/${s}/${e}',
+  'filemoon.sx': {
+    movie: 'https://filemoon.sx/embed/movie/${id}',
+    tv: 'https://filemoon.sx/embed/tv/${id}/${s}/${e}',
   },
-  'vidsrc.to': {
-    movie: 'https://vidsrc.to/embed/movie/${id}',
-    tv: 'https://vidsrc.to/embed/tv/${id}/${s}/${e}',
+  'vidphantom.com': {
+    movie: 'https://vidphantom.com/movie/${id}',
+    tv: 'https://vidphantom.com/tv/${id}/${s}/${e}',
   },
-  'multiembed.mov': {
-    movie: 'https://multiembed.mov/?video_id=${id}&tmdb=1',
-    tv: 'https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}',
+  'vidsrc.su': {
+    movie: 'https://vidsrc.su/embed/movie/${id}',
+    tv: 'https://vidsrc.su/embed/tv/${id}/${s}/${e}',
   },
-  'autoembed.cc': {
-    movie: 'https://autoembed.cc/movie/tmdb/${id}',
-    tv: 'https://autoembed.cc/tv/tmdb/${id}-${s}-${e}',
+  'vidsrc.ru': {
+    movie: 'https://vidsrc.ru/embed/movie/${id}',
+    tv: 'https://vidsrc.ru/embed/tv/${id}/${s}/${e}',
   },
 };
 
