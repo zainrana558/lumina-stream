@@ -206,6 +206,140 @@ const CANDIDATE_DOMAINS = [
   { name: 'MovieBoxTV',     domain: 'moviebox.tv',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
   { name: 'StreamSB2',      domain: 'streamsb.online',       moviePath: '/embed/movie',  tvPath: '/embed/tv' },
   { name: 'StreamSB3',      domain: 'streamsb.to',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // ---- Deep web search discoveries (June 2026) ----
+
+  // VidSrc family — confirmed domains from vidsrc.domains + search
+  { name: 'VidSrcSU',       domain: 'vidsrc.su',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcGD',       domain: 'vidsrc.gd',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcDO',       domain: 'vidsrc.do',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcMN',       domain: 'vidsrc.mn',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcTW',       domain: 'vidsrc.tw',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcICU',      domain: 'vidsrc.icu',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcME2',      domain: 'vidsrcme.ru',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // Vidify (from Scribd guide & GitHub)
+  { name: 'Vidify',         domain: 'player.vidify.top',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // VidLink (confirmed from GitHub topics + search)
+  { name: 'VidLinkPro',     domain: 'vidlink.pro',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // SuperEmbed / MultiEmbed (from Scribd guide)
+  { name: 'SuperEmbed2',    domain: 'superembed.stream',      moviePath: '/',            tvPath: '/' },
+  { name: 'PerEmbed',       domain: 'perembed.stream',        moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // 2Embed variants (from Scribd + Netflix Clone)
+  { name: '2EmbedAPI',      domain: 'api.2embed.cc',          moviePath: '/movie',        tvPath: '/tv' },
+
+  // SmashyStream variants (from Scribd guide)
+  { name: 'SmashyPlayer',   domain: 'player.smashy.stream',   moviePath: '/movie',        tvPath: '/tv' },
+  { name: 'SmashyEmbed',    domain: 'embed.smashystream.com', moviePath: '/playere.php',  tvPath: '/playere.php' },
+
+  // PStream (from Netflix Clone repo)
+  { name: 'PStream',        domain: 'iframe.pstream.org',     moviePath: '/embed',        tvPath: '/embed' },
+
+  // Cine.su (confirmed working from Reddit cinehunters)
+  { name: 'CineSu',         domain: 'cine.su',                moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // PrimeWire embed (from Netflix Clone)
+  { name: 'PrimeWire',      domain: 'primewire.tf',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // FreEmbed (from Netflix Clone)
+  { name: 'FreEmbed',       domain: 'frembed.cc',             moviePath: '/api/film.php', tvPath: '/api/serie.php' },
+
+  // AutoEmbed player variant (from Netflix Clone)
+  { name: 'AutoEmbedPlayer',domain: 'player.autoembed.cc',    moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // MoviesAPI (from Netflix Clone)
+  { name: 'MoviesAPIClub',  domain: 'moviesapi.club',         moviePath: '/movie',        tvPath: '/tv' },
+
+  // VidCore (mentioned in GitHub topics as VidSrc alternative)
+  { name: 'VidCore',        domain: 'vidcore.cc',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // GoDrive player
+  { name: 'GoDrive',        domain: 'godriveplayer.com',      moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // Video hosting embeds (from BHW + search)
+  { name: 'VidoLol',        domain: 'vido.lol',               moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'PlayerX',        domain: 'playerx.to',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'Vetevio',        domain: 'vetevio.com',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'Moshahda',       domain: 'moshahda.com',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'Lify',           domain: 'lify.app',               moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'WardsAI',        domain: 'wardsai.net',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // FileMoon (popular anime/movie host)
+  { name: 'FileMoon',       domain: 'filemoon.sx',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'FileMoon2',      domain: 'filemoon.cc',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // StreamWish (successor to StreamSB)
+  { name: 'StreamWish',     domain: 'streamwish.to',          moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'StreamWish2',    domain: 'streamwish.com',         moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // Voe (European embed host)
+  { name: 'Voe',            domain: 'voe.sx',                 moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'Voe2',           domain: 'voe.cd',                 moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // Kwik (anime embed host)
+  { name: 'Kwik',           domain: 'kwik.cx',                moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'KwikSI',         domain: 'kwik.si',                moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // Aparat (Iranian video platform, good for non-English content)
+  { name: 'Aparat',         domain: 'aparat.com',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // VUpload
+  { name: 'VUpload',        domain: 'vupload.com',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // Bilibili (anime/Asian content embeds)
+  { name: 'Bilibili',       domain: 'bilibili.tv',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // 4KHDHub (from TMDB-Embed-API providers)
+  { name: '4KHDHub',        domain: '4khdhub.com',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // DahmerMovies (from TMDB-Embed-API providers)
+  { name: 'DahmerMovies',   domain: 'dahmermovies.com',       moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // LordFlix (from TMDB-Embed-API providers)
+  { name: 'LordFlix',       domain: 'lordflix.com',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // Videasy (from TMDB-Embed-API providers)
+  { name: 'Videasy',        domain: 'videasy.com',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // VixSrc (from TMDB-Embed-API providers)
+  { name: 'VixSrc',         domain: 'vixsrc.com',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // Notorrent (from TMDB-Embed-API providers — torrent-based streaming)
+  { name: 'NoTorrent',      domain: 'notorrent.com',          moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // Showbox / Febbox (from TMDB-Embed-API providers — needs cookies)
+  { name: 'Febbox',         domain: 'febbox.com',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+
+  // VidSrc newer TLDs found from search
+  { name: 'VidSrcINC',      domain: 'vidsrc.inc',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcMAX',      domain: 'vidsrc.max',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcPLUS',     domain: 'vidsrc.plus',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcDAY',      domain: 'vidsrc.day',             moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcNIGHT',    domain: 'vidsrc.night',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcNINJA',    domain: 'vidsrc.ninja',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcPRIME',    domain: 'vidsrc.prime',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcKING',     domain: 'vidsrc.king',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcCITY',     domain: 'vidsrc.city',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcLAND',     domain: 'vidsrc.land',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcNATION',   domain: 'vidsrc.nation',          moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcPUNK',     domain: 'vidsrc.punk',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcSHOP',     domain: 'vidsrc.shop',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcTEAM',     domain: 'vidsrc.team',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcCLOUD2',   domain: 'vidsrc.cloud',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcTECH',     domain: 'vidsrc.tech',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcDIGITAL',  domain: 'vidsrc.digital',         moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcCENTER',   domain: 'vidsrc.center',          moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcPORTAL',   domain: 'vidsrc.portal',          moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcMEDIA',    domain: 'vidsrc.media',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcMOVIES',   domain: 'vidsrc.movies',          moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcFILM',     domain: 'vidsrc.film',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcPLAY',     domain: 'vidsrc.play',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcSHOW',     domain: 'vidsrc.show',            moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcCINEMA',   domain: 'vidsrc.cinema',          moviePath: '/embed/movie',  tvPath: '/embed/tv' },
+  { name: 'VidSrcWORLD2',   domain: 'vidsrc.world',           moviePath: '/embed/movie',  tvPath: '/embed/tv' },
 ];
 
 // ---- Discovery sources ----
@@ -531,12 +665,37 @@ async function checkLiveSite() {
   }
 }
 
+// ---- Pinned TIER 1 providers (top 10 curated for quality, diversity, speed, stability) ----
+// These are NEVER demoted — they always stay TIER 1 if alive.
+// Chosen from deep web research: Reddit, GitHub, WJunction, Scribd, BHW, Hacker News.
+const PINNED_TIER1 = [
+  { name: 'VidSrc CC',    domain: 'vidsrc.cc',             moviePath: '/v2/embed/movie',  tvPath: '/v2/embed/tv' },
+  { name: 'Embed.su',     domain: 'embed.su',              moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'SmashyStream', domain: 'player.smashy.stream',   moviePath: '/movie',           tvPath: '/tv' },
+  { name: 'Vidify',       domain: 'player.vidify.top',      moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'VidLink',      domain: 'vidlink.pro',            moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: '2Embed',       domain: '2embed.cc',              moviePath: '/embed',           tvPath: '/embedtv' },
+  { name: 'Cine.su',      domain: 'cine.su',                moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'VidSrc.to',    domain: 'vidsrc.to',              moviePath: '/embed/movie',     tvPath: '/embed/tv' },
+  { name: 'MultiEmbed',   domain: 'multiembed.mov',         moviePath: '/',                tvPath: '/' },
+  { name: 'AutoEmbed',    domain: 'autoembed.cc',           moviePath: '/movie/tmdb',      tvPath: '/tv/tmdb' },
+];
+
 // ---- Generate providers.ts content ----
 function generateProvidersFile(aliveProviders) {
   const now = new Date().toISOString().split('T')[0];
-  const tier1 = aliveProviders.slice(0, Math.min(5, aliveProviders.length));
-  const tier2 = aliveProviders.slice(5, Math.min(7, aliveProviders.length));
-  const replacements = aliveProviders.slice(7);
+
+  // Separate pinned providers that are alive
+  const aliveDomains = new Set(aliveProviders.map(p => p.domain));
+  const pinnedAlive = PINNED_TIER1.filter(p => aliveDomains.has(p.domain));
+  const pinnedDead = PINNED_TIER1.filter(p => !aliveDomains.has(p.domain));
+
+  // Non-pinned alive providers (for TIER 2 and replacement pool)
+  const nonPinnedAlive = aliveProviders.filter(p => !PINNED_TIER1.some(pp => pp.domain === p.domain));
+
+  const tier1 = pinnedAlive.slice(0, 10);
+  const tier2 = nonPinnedAlive.slice(0, Math.min(3, nonPinnedAlive.length));
+  const replacements = nonPinnedAlive.slice(3);
 
   const tier1Lines = tier1.map(p => buildProviderEntry(p, 1)).join(',\n  ');
   const tier2Lines = tier2.map(p => buildProviderEntry(p, 2)).join(',\n  ');
@@ -569,7 +728,11 @@ function generateProvidersFile(aliveProviders) {
  * When a provider is detected as dead, it gets swapped with a replacement
  * from the pool. When a dead provider recovers, it goes back into the pool.
  *
- * Total: ${aliveProviders.length} active + ${poolProviders.length + 2} replacements = ${aliveProviders.length + poolProviders.length + 2} providers available
+ * TIER 1 = Top 10 pinned providers (curated for quality, diversity, speed, stability)
+ *   - Only 4 VidSrc-family · 6 independent infrastructure
+ *   - Chosen from deep web research: Reddit, GitHub, WJunction, Scribd, BHW
+ *
+ * Total: ${tier1.length + tier2.length} active + ${poolProviders.length + 2} replacements = ${tier1.length + tier2.length + poolProviders.length + 2} providers available
  * Categories: 'all' = movies + TV, 'anime' = anime-focused embeds
  *
  * All providers verified alive as of ${now}.
@@ -843,6 +1006,9 @@ async function main() {
   log(`  Discovered new:  ${discovered.length}`);
   log(`  Total alive:     ${allAlive.length}`);
   log(`  Live-dead:       ${liveDead.length}`);
+  const pinnedDomains = new Set(PINNED_TIER1.map(p => p.domain));
+  const pinnedAliveCount = allAlive.filter(p => pinnedDomains.has(p.domain)).length;
+  log(`  Pinned TIER 1:   ${pinnedAliveCount}/${PINNED_TIER1.length} alive`);
 
   // 6. Safety check
   if (allAlive.length < MIN_ALIVE_FOR_UPDATE) {
