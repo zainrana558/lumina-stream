@@ -1,0 +1,319 @@
+# Instincts generated from https://github.com/zainrana558/lumina-stream
+# Generated: 2026-06-28T15:45:58.317Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: lumina-stream-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/zainrana558/lumina-stream
+---
+
+# Lumina Stream Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, chore, fix
+
+## Evidence
+
+- 3 commits analyzed
+- Detected conventional commit pattern
+- Examples: feat: set top 10 curated providers as permanent TIER 1 in live website, chore: update provider-refresh script with all 235 candidates
+
+---
+id: lumina-stream-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/zainrana558/lumina-stream
+---
+
+# Lumina Stream Commit Length
+
+## Action
+
+Write moderate-length commit messages (~65 characters)
+
+## Evidence
+
+- Average commit message length: 65 chars
+- Based on 3 commits
+
+---
+id: lumina-stream-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/zainrana558/lumina-stream
+---
+
+# Lumina Stream Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: lumina-stream-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/zainrana558/lumina-stream
+---
+
+# Lumina Stream Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: lumina-stream-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/zainrana558/lumina-stream
+---
+
+# Lumina Stream Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: lib
+
+---
+id: lumina-stream-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/zainrana558/lumina-stream
+---
+
+# Lumina Stream Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: lumina-stream-instinct-file-naming
+trigger: "When creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct File Naming
+
+## Action
+
+Name the file using camelCase
+
+## Evidence
+
+- Pattern in namingConventions.files
+
+---
+id: lumina-stream-instinct-function-naming
+trigger: "When defining a function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct Function Naming
+
+## Action
+
+Name the function using camelCase
+
+## Evidence
+
+- Pattern in namingConventions.functions
+
+---
+id: lumina-stream-instinct-class-naming
+trigger: "When defining a class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Pattern in namingConventions.classes
+
+---
+id: lumina-stream-instinct-constant-naming
+trigger: "When defining a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct Constant Naming
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE
+
+## Evidence
+
+- Pattern in namingConventions.constants
+
+---
+id: lumina-stream-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct Import Style
+
+## Action
+
+Use absolute import paths
+
+## Evidence
+
+- Pattern in importStyle
+
+---
+id: lumina-stream-instinct-export-style
+trigger: "When exporting modules or functions"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in exportStyle
+
+---
+id: lumina-stream-instinct-commit-format
+trigger: "When making a git commit"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct Commit Format
+
+## Action
+
+Format the commit message using the conventional commit style: <type>: <description> (where type is feat, fix, or chore)
+
+## Evidence
+
+- Seen in commit: feat: set top 10 curated providers as permanent TIER 1 in live website
+- Seen in commit: chore: update provider-refresh script with all 235 candidates
+- Seen in commit: fix: unblock provider iframes — allow all HTTPS in frame-src CSP
+
+---
+id: lumina-stream-instinct-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct Commit Length
+
+## Action
+
+Keep the commit message concise, around 65 characters
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: lumina-stream-instinct-test-location
+trigger: "When adding or updating tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct Test Location
+
+## Action
+
+Place test files in a separate folder from the source code
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation
+
+---
+id: lumina-stream-instinct-error-handling
+trigger: "When handling errors in code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: zainrana558/lumina-stream
+---
+
+# Lumina Stream Instinct Error Handling
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Pattern in errorHandling.style
+
