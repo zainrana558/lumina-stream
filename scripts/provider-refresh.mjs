@@ -345,8 +345,8 @@ const CANDIDATE_DOMAINS = [
 // ---- Discovery sources ----
 // Provider listing repos
 const DISCOVERY_SOURCES = [
-  { name: 'MovieWeb', url: 'https://raw.githubusercontent.com/ghoshRitesh12/robo-watch/refs/heads/main/src/providers/index.ts', type: 'code' },
-  { name: 'AnimeApi', url: 'https://raw.githubusercontent.com/ghoshRitesh12/aniwatch/refs/heads/main/src/providers/index.ts', type: 'code' },
+  { name: 'NetflixClone', url: 'https://raw.githubusercontent.com/salmanshahriar/Netflix-Clone/refs/heads/main/src/lib/sources.ts', type: 'code' },
+  { name: 'TMDB-Embed-API', url: 'https://raw.githubusercontent.com/Inside4ndroid/TMDB-Embed-API/refs/heads/main/providers/registry.js', type: 'code' },
 ];
 
 // ---- Logging ----
@@ -444,17 +444,46 @@ async function validateProvider(url) {
 // ---- Build test URL ----
 function buildTestUrl(candidate, type = 'movie') {
   const base = `https://${candidate.domain}`;
-  if (type === 'movie') {
-    if (candidate.domain === 'autoembed.co') return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
-    if (candidate.domain === 'vidphantom.com') return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
-    if (candidate.domain === 'series9.io') return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
-    return `${base}${candidate.moviePath}/${TEST_TMDB_MOVIE}`;
-  } else {
-    if (candidate.domain === 'autoembed.co') return `${base}${candidate.tvPath}/${TEST_TMDB_TV}-1-1`;
-    if (candidate.domain === 'vidphantom.com') return `${base}${candidate.tvPath}/${TEST_TMDB_TV}/1/1`;
-    if (candidate.domain === 'series9.io') return `${base}${candidate.tvPath}/${TEST_TMDB_TV}/1/1`;
-    return `${base}${candidate.tvPath}/${TEST_TMDB_TV}/1/1`;
+  // Special URL formats for providers that don't follow /path/{id} pattern
+  if (candidate.domain === 'autoembed.co' || candidate.domain === 'autoembed.cc' || candidate.domain === 'autoembed.net' || candidate.domain === 'autoembed.io' || candidate.domain === 'autoembed.vip') {
+    return type === 'movie' ? `${base}/movie/tmdb/${TEST_TMDB_MOVIE}` : `${base}/tv/tmdb/${TEST_TMDB_TV}-1-1`;
   }
+  if (candidate.domain === 'vidphantom.com' || candidate.domain === 'vidphantom.co' || candidate.domain === 'vidphantom.vip') {
+    return type === 'movie' ? `${base}/movie/${TEST_TMDB_MOVIE}` : `${base}/tv/${TEST_TMDB_TV}/1/1`;
+  }
+  if (candidate.domain === 'series9.io' || candidate.domain === 'series9.tv' || candidate.domain === 'api.series9.io') {
+    return type === 'movie' ? `${base}/film/${TEST_TMDB_MOVIE}` : `${base}/series/${TEST_TMDB_TV}-1-1`;
+  }
+  if (candidate.domain === 'multiembed.mov' || candidate.domain === 'multiembed.movie' || candidate.domain === 'multiembed.cc' || candidate.domain === 'superembed.stream') {
+    return type === 'movie' ? `${base}/?video_id=${TEST_TMDB_MOVIE}&tmdb=1` : `${base}/?video_id=${TEST_TMDB_TV}&tmdb=1&s=1&e=1`;
+  }
+  if (candidate.domain === 'player.smashy.stream' || candidate.domain === 'smashystream.com' || candidate.domain === 'smashystream.to' || candidate.domain === 'smashystream.org' || candidate.domain === 'smashystream.cc') {
+    return type === 'movie' ? `${base}/movie/${TEST_TMDB_MOVIE}` : `${base}/tv/${TEST_TMDB_TV}?s=1&e=1`;
+  }
+  if (candidate.domain === '2embed.cc' || candidate.domain === 'api.2embed.cc') {
+    return type === 'movie' ? `${base}/embed/${TEST_TMDB_MOVIE}` : `${base}/embedtv/${TEST_TMDB_TV}&s=1&e=1`;
+  }
+  if (candidate.domain === 'primewire.tf') {
+    return type === 'movie' ? `${base}/embed/movie?tmdb=${TEST_TMDB_MOVIE}` : `${base}/embed/tv?tmdb=${TEST_TMDB_TV}&season=1&episode=1`;
+  }
+  if (candidate.domain === 'frembed.cc') {
+    return type === 'movie' ? `${base}/api/film.php?id=${TEST_TMDB_MOVIE}` : `${base}/api/serie.php?id=${TEST_TMDB_TV}&sa=1&epi=1`;
+  }
+  if (candidate.domain === 'iframe.pstream.org') {
+    return type === 'movie' ? `${base}/embed/tmdb-movie-${TEST_TMDB_MOVIE}` : `${base}/embed/tmdb-tv-${TEST_TMDB_TV}/1/1`;
+  }
+  if (candidate.domain === 'moviesapi.club') {
+    return type === 'movie' ? `${base}/movie/${TEST_TMDB_MOVIE}` : `${base}/tv/${TEST_TMDB_TV}-1-1`;
+  }
+  if (candidate.domain === 'embed.smashystream.com') {
+    return type === 'movie' ? `${base}/playere.php?tmdb=${TEST_TMDB_MOVIE}` : `${base}/playere.php?tmdb=${TEST_TMDB_TV}&season=1&episode=1`;
+  }
+  if (candidate.domain === 'player.autoembed.cc') {
+    return type === 'movie' ? `${base}/embed/movie/${TEST_TMDB_MOVIE}` : `${base}/embed/tv/${TEST_TMDB_TV}/1/1`;
+  }
+  // Default: /path/{id} pattern
+  const path = type === 'movie' ? candidate.moviePath : candidate.tvPath;
+  return `${base}${path}/${TEST_TMDB_MOVIE}`;
 }
 
 // ---- Batch runner ----
@@ -927,22 +956,123 @@ function buildProviderEntry(provider, tier) {
   }`;
 }
 
+// Hardcoded URL templates for pinned TIER 1 providers with non-standard formats
+const PINNED_URL_TEMPLATES = {
+  'vidsrc.cc': {
+    movie: 'https://vidsrc.cc/v2/embed/movie/${id}',
+    tv: 'https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}',
+  },
+  'embed.su': {
+    movie: 'https://embed.su/embed/movie/${id}',
+    tv: 'https://embed.su/embed/tv/${id}/${s}/${e}',
+  },
+  'player.smashy.stream': {
+    movie: 'https://player.smashy.stream/movie/${id}',
+    tv: 'https://player.smashy.stream/tv/${id}?s=${s}&e=${e}',
+  },
+  'player.vidify.top': {
+    movie: 'https://player.vidify.top/embed/movie/${id}',
+    tv: 'https://player.vidify.top/embed/tv/${id}/${s}/${e}',
+  },
+  'vidlink.pro': {
+    movie: 'https://vidlink.pro/embed/movie/${id}',
+    tv: 'https://vidlink.pro/embed/tv/${id}/${s}/${e}',
+  },
+  '2embed.cc': {
+    movie: 'https://2embed.cc/embed/${id}',
+    tv: 'https://2embed.cc/embedtv/${id}&s=${s}&e=${e}',
+  },
+  'cine.su': {
+    movie: 'https://cine.su/embed/movie/${id}',
+    tv: 'https://cine.su/embed/tv/${id}/${s}/${e}',
+  },
+  'vidsrc.to': {
+    movie: 'https://vidsrc.to/embed/movie/${id}',
+    tv: 'https://vidsrc.to/embed/tv/${id}/${s}/${e}',
+  },
+  'multiembed.mov': {
+    movie: 'https://multiembed.mov/?video_id=${id}&tmdb=1',
+    tv: 'https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}',
+  },
+  'autoembed.cc': {
+    movie: 'https://autoembed.cc/movie/tmdb/${id}',
+    tv: 'https://autoembed.cc/tv/tmdb/${id}-${s}-${e}',
+  },
+};
+
+function buildProviderEntry(provider, tier) {
+  // Use hardcoded template for pinned providers
+  const templates = PINNED_URL_TEMPLATES[provider.domain];
+  if (templates) {
+    const movieFn = `getMovieUrl: (id) => \`${templates.movie}\``;
+    const tvFn = `getTvUrl: (id, s, e) => \`${templates.tv}\``;
+    return `{
+    name: "${provider.name}",
+    tier: ${tier}, category: "all",
+    ${movieFn},
+    ${tvFn},
+  }`;
+  }
+  const movieFn = `getMovieUrl: (id) => \`${buildUrlPattern(provider, 'movie')}\``;
+  const tvFn = `getTvUrl: (id, s, e) => \`${buildUrlPattern(provider, 'tv')}\``;
+  return `{
+    name: "${provider.name}",
+    tier: ${tier}, category: "all",
+    ${movieFn},
+    ${tvFn},
+  }`;
+}
+
 function buildUrlPattern(provider, type) {
   const base = `https://${provider.domain}`;
-  if (provider.domain === 'autoembed.co') {
+  // Special URL patterns for non-standard providers
+  if (provider.domain === 'autoembed.co' || provider.domain === 'autoembed.cc' || provider.domain === 'autoembed.net' || provider.domain === 'autoembed.io' || provider.domain === 'autoembed.vip') {
     if (type === 'movie') return `${base}/movie/tmdb/\${id}`;
     if (type === 'tv') return `${base}/tv/tmdb/\${id}-\${s}-\${e}`;
     if (type === 'anime') return `${base}/tv/tmdb/\${malId}-\${Math.floor(ep / 25) + 1}-\${(ep % 25) || 25}`;
   }
-  if (provider.domain === 'vidphantom.com') {
+  if (provider.domain === 'vidphantom.com' || provider.domain === 'vidphantom.co' || provider.domain === 'vidphantom.vip') {
     if (type === 'movie') return `${base}/movie/\${id}`;
     if (type === 'tv') return `${base}/tv/\${id}/\${s}/\${e}`;
     if (type === 'anime') return `${base}/tv/\${malId}/\${Math.floor(ep / 25) + 1}/\${(ep % 25) || 25}`;
   }
-  if (provider.domain === 'series9.io') {
+  if (provider.domain === 'series9.io' || provider.domain === 'series9.tv' || provider.domain === 'api.series9.io') {
     if (type === 'movie') return `${base}/film/\${id}`;
     if (type === 'tv') return `${base}/series/\${id}-\${s}-\${e}`;
   }
+  if (provider.domain === 'multiembed.mov' || provider.domain === 'multiembed.movie' || provider.domain === 'multiembed.cc') {
+    if (type === 'movie') return `${base}/?video_id=\${id}&tmdb=1`;
+    if (type === 'tv') return `${base}/?video_id=\${id}&tmdb=1&s=\${s}&e=\${e}`;
+  }
+  if (provider.domain === 'player.smashy.stream' || provider.domain === 'smashystream.com' || provider.domain === 'smashystream.to' || provider.domain === 'smashystream.org' || provider.domain === 'smashystream.cc') {
+    if (type === 'movie') return `${base}/movie/\${id}`;
+    if (type === 'tv') return `${base}/tv/\${id}?s=\${s}&e=\${e}`;
+  }
+  if (provider.domain === 'primewire.tf') {
+    if (type === 'movie') return `${base}/embed/movie?tmdb=\${id}`;
+    if (type === 'tv') return `${base}/embed/tv?tmdb=\${id}&season=\${s}&episode=\${e}`;
+  }
+  if (provider.domain === 'frembed.cc') {
+    if (type === 'movie') return `${base}/api/film.php?id=\${id}`;
+    if (type === 'tv') return `${base}/api/serie.php?id=\${id}&sa=\${s}&epi=\${e}`;
+  }
+  if (provider.domain === 'iframe.pstream.org') {
+    if (type === 'movie') return `${base}/embed/tmdb-movie-\${id}`;
+    if (type === 'tv') return `${base}/embed/tmdb-tv-\${id}/\${s}/\${e}`;
+  }
+  if (provider.domain === 'moviesapi.club') {
+    if (type === 'movie') return `${base}/movie/\${id}`;
+    if (type === 'tv') return `${base}/tv/\${id}-\${s}-\${e}`;
+  }
+  if (provider.domain === 'embed.smashystream.com') {
+    if (type === 'movie') return `${base}/playere.php?tmdb=\${id}`;
+    if (type === 'tv') return `${base}/playere.php?tmdb=\${id}&season=\${s}&episode=\${e}`;
+  }
+  if (provider.domain === 'player.autoembed.cc') {
+    if (type === 'movie') return `${base}/embed/movie/\${id}`;
+    if (type === 'tv') return `${base}/embed/tv/\${id}/\${s}/\${e}`;
+  }
+  // Default: standard /embed/movie/{id} and /embed/tv/{id}/{s}/{e}
   const path = type === 'movie' ? provider.moviePath : provider.tvPath;
   if (type === 'movie') return `${base}${path}/\${id}`;
   if (type === 'tv') return `${base}${path}/\${id}/\${s}/\${e}`;
