@@ -57,7 +57,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'AutoEmbed', category: 'all', getMovieUrl: (id) => `https://autoembed.co/movie/tmdb/${id}`, getTvUrl: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}` },
   { name: 'TVPizza', category: 'all', getMovieUrl: (id) => `https://tvpizza.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://tvpizza.com/embed/tv/${id}/${s}/${e}` },
   { name: 'VidSrc PM', category: 'all', getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}` },
-  { name: 'MovieBox', category: 'all', getMovieUrl: (id) => `https://moviebox.pro/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://moviebox.pro/embed/tv/${id}/${s}/${e}` },
+  // MovieBox removed — standalone app, not an embed provider
   { name: 'StreamSilk', category: 'all', getMovieUrl: (id) => `https://streamsilk.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsilk.com/embed/tv/${id}/${s}/${e}` },
   { name: 'Series9', category: 'all', getMovieUrl: (id) => `https://series9.io/film/${id}`, getTvUrl: (id, s, e) => `https://series9.io/series/${id}-${s}-${e}` },
   { name: 'HDStream', category: 'all', getMovieUrl: (id) => `https://hdstream.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://hdstream.to/embed/tv/${id}/${s}/${e}` },
@@ -75,22 +75,22 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'StreamSB', category: 'all', getMovieUrl: (id) => `https://streamsb.net/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsb.net/embed/tv/${id}/${s}/${e}` },
   { name: 'SuperEmbed', category: 'all', getMovieUrl: (id) => `https://superembed.stream/?video_id=${id}&tmdb=1`, getTvUrl: (id, s, e) => `https://superembed.stream/?video_id=${id}&tmdb=1&s=${s}&e=${e}` },
   { name: 'PerEmbed', category: 'all', getMovieUrl: (id) => `https://perembed.stream/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://perembed.stream/embed/tv/${id}/${s}/${e}` },
-  { name: 'PrimeWire', category: 'all', getMovieUrl: (id) => `https://primewire.tf/embed/movie?tmdb=${id}`, getTvUrl: (id, s, e) => `https://primewire.tf/embed/tv?tmdb=${id}&season=${s}&episode=${e}` },
-  { name: 'FreEmbed', category: 'all', getMovieUrl: (id) => `https://frembed.cc/api/film.php?id=${id}`, getTvUrl: (id, s, e) => `https://frembed.cc/api/serie.php?id=${id}&sa=${s}&epi=${e}` },
+  // PrimeWire removed — defunct due to legal action
+  // FreEmbed removed — confirmed dead (unreachable)
+  // VidCore removed — confirmed dead (unreachable)
   { name: 'MoviesAPI', category: 'all', getMovieUrl: (id) => `https://moviesapi.club/movie/${id}`, getTvUrl: (id, s, e) => `https://moviesapi.club/tv/${id}-${s}-${e}` },
-  { name: 'VidCore', category: 'all', getMovieUrl: (id) => `https://vidcore.cc/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidcore.cc/embed/tv/${id}/${s}/${e}` },
-  { name: 'GoDrive', category: 'all', getMovieUrl: (id) => `https://godriveplayer.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://godriveplayer.com/embed/tv/${id}/${s}/${e}` },
+  // GoDrive removed — Google Drive embed tool, not a streaming provider
   { name: 'VidoLol', category: 'all', getMovieUrl: (id) => `https://vido.lol/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vido.lol/embed/tv/${id}/${s}/${e}` },
-  { name: '4KHDHub', category: 'all', getMovieUrl: (id) => `https://4khdhub.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://4khdhub.com/embed/tv/${id}/${s}/${e}` },
-  { name: 'DahmerMovies', category: 'all', getMovieUrl: (id) => `https://dahmermovies.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://dahmermovies.com/embed/tv/${id}/${s}/${e}` },
+  // 4KHDHub removed — confirmed dead (unreachable)
+  // DahmerMovies removed — confirmed dead (unreachable)
   { name: 'LordFlix', category: 'all', getMovieUrl: (id) => `https://lordflix.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://lordflix.com/embed/tv/${id}/${s}/${e}` },
   { name: 'Videasy', category: 'all', getMovieUrl: (id) => `https://videasy.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://videasy.com/embed/tv/${id}/${s}/${e}` },
-  { name: 'VixSrc', category: 'all', getMovieUrl: (id) => `https://vixsrc.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vixsrc.com/embed/tv/${id}/${s}/${e}` },
-  { name: 'NoTorrent', category: 'all', getMovieUrl: (id) => `https://notorrent.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://notorrent.com/embed/tv/${id}/${s}/${e}` },
+  // VixSrc removed — confirmed dead (unreachable)
+  // NoTorrent removed — decentralized torrent client, not an embed provider
   { name: 'VidSrc SU', category: 'all', getMovieUrl: (id) => `https://vidsrc.su/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.su/embed/tv/${id}/${s}/${e}` },
   { name: 'VidSrc RU', category: 'all', getMovieUrl: (id) => `https://vidsrc.ru/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.ru/embed/tv/${id}/${s}/${e}` },
   { name: 'VidSrc PRO', category: 'all', getMovieUrl: (id) => `https://vidsrc.pro/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc RIP', category: 'all', getMovieUrl: (id) => `https://vidsrc.rip/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.rip/embed/tv/${id}/${s}/${e}` },
+  // VidSrc RIP removed — confirmed dead (unreachable)
   { name: 'VidSrc VIP', category: 'all', getMovieUrl: (id) => `https://vidsrc.vip/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.vip/embed/tv/${id}/${s}/${e}` },
   { name: 'VidSrc BZ', category: 'all', getMovieUrl: (id) => `https://vidsrc.bz/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.bz/embed/tv/${id}/${s}/${e}` },
   { name: 'VidSrc DEV', category: 'all', getMovieUrl: (id) => `https://vidsrc.dev/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}` },
@@ -101,7 +101,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'VidSrc MN', category: 'all', getMovieUrl: (id) => `https://vidsrc.mn/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.mn/embed/tv/${id}/${s}/${e}` },
   // Anime replacements
   { name: 'VidSrc WIN Anime', category: 'anime', getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://vidsrc.win/embed/tv/${malId}/${Math.floor(ep / 25) + 1}/${(ep % 25) || 25}` },
-  { name: 'NetPlay Anime', category: 'anime', getMovieUrl: (id) => `https://netplay.vip/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://netplay.vip/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://netplay.vip/embed/tv/${malId}/${Math.floor(ep / 25) + 1}/${(ep % 25) || 25}` },
+  // NetPlay Anime removed — Thai IPTV service, not an embed provider
   { name: 'Kwik Anime', category: 'anime', getMovieUrl: (id) => `https://kwik.cx/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://kwik.cx/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://kwik.cx/e/${malId}-${ep}` },
   { name: 'FileMoon Anime', category: 'anime', getMovieUrl: (id) => `https://filemoon.cc/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://filemoon.cc/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://filemoon.cc/e/${malId}-${ep}` },
 ];
@@ -110,8 +110,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
 
 const activeProviders: StreamProvider[] = [
   // ══════════════════════════════════════════════════════════════════
-  // TIER 1 — Top 10 (curated for quality, diversity, speed, stability)
-  // Only 4 VidSrc-family · 6 independent infrastructure
+  // TIER 1 — Top providers (curated for quality, diversity, speed, stability)
   // ══════════════════════════════════════════════════════════════════
 
   // 1. VidSrc.cc — Most referenced overall, v2 API, poster, 1080p
@@ -130,47 +129,15 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
   },
 
-  // 3. SmashyStream — Multi-server (D/SU/F/FMD/J), subtitles, start time
-  {
-    name: "SmashyStream",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://player.smashy.stream/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://player.smashy.stream/tv/${id}?s=${s}&e=${e}`,
-  },
+  // SmashyStream removed — confirmed dead (unreachable)
 
-  // 4. Vidify — Customizable colors, server selection, poster, 1080p
-  {
-    name: "Vidify",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://player.vidify.top/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://player.vidify.top/embed/tv/${id}/${s}/${e}`,
-  },
+  // Vidify removed — music player app, not an embed provider
+  // VidLink removed — YouTube card tool, not an embed provider
+  // 2Embed removed — shut down by anti-piracy coalition, domain flagged for phishing
+  // Cine.su removed — brand new domain with very low trust score
+  // AutoEmbed removed — confirmed dead (autoembed.cc unreachable)
 
-  // 5. VidLink.pro — Independent infra, fast, Hacker News mentioned
-  {
-    name: "VidLink",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidlink.pro/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidlink.pro/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // 6. 2Embed — Full JSON REST API + embed, search/trending/similar
-  {
-    name: "2Embed",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://2embed.cc/embed/${id}`,
-    getTvUrl: (id, s, e) => `https://2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
-  },
-
-  // 7. Cine.su — Reddit praised "no server lag", unique non-vidsrc infra
-  {
-    name: "Cine.su",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://cine.su/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://cine.su/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // 8. VidSrc.to — The OG, 5+ years running, custom domain support
+  // 2. VidSrc.to — The OG, 5+ years running, custom domain support
   {
     name: "VidSrc.to",
     tier: 1, category: "all",
@@ -178,20 +145,12 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
   },
 
-  // 9. MultiEmbed — Aggregator pulling multiple upstreams, IMDB+TMDB
+  // 3. MultiEmbed — Aggregator pulling multiple upstreams, IMDB+TMDB
   {
     name: "MultiEmbed",
     tier: 1, category: "all",
     getMovieUrl: (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
     getTvUrl: (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
-  },
-
-  // 10. AutoEmbed — Separate infra, 5 TLD variants for extreme redundancy
-  {
-    name: "AutoEmbed",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://autoembed.cc/movie/tmdb/${id}`,
-    getTvUrl: (id, s, e) => `https://autoembed.cc/tv/tmdb/${id}-${s}-${e}`,
   },
 
   // ════════════════════════════════════════════
@@ -203,11 +162,18 @@ const activeProviders: StreamProvider[] = [
     getMovieUrl: (id) => `https://vidsrc.me/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}`,
   },
+  // VidSrc.rip removed — confirmed dead (unreachable)
   {
-    name: "VidSrc.rip",
+    name: "Nontongo",
     tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.rip/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.rip/embed/tv/${id}/${s}/${e}`,
+    getMovieUrl: (id) => `https://nontongo.win/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://nontongo.win/embed/tv/${id}/${s}/${e}`,
+  },
+  {
+    name: "MoviesApi.to",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://moviesapi.to/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://moviesapi.to/tv/${id}-${s}-${e}`,
   },
   {
     name: "VidSrc.vip",
