@@ -82,12 +82,16 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [loadingSeason, setLoadingSeason] = useState(false);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [hasMoreSimilar, setHasMoreSimilar] = useState(true);
-  const [providers, setProviders] = useState<{ name: string; url: string; tier?: number; category?: string }[]>([]);
+  const [providers, setProviders] = useState<Array<{ name: string; url: string; tier?: number; category?: string; score?: number }>>([]);
   const [selectedProvider, setSelectedProvider] = useState(0);
   const [failoverMsg, setFailoverMsg] = useState('');
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const triedProviders = useRef<Set<number>>(new Set());
   const playerRef = useRef<HTMLDivElement>(null);
+  // Smart failover chain state (pre-fetched top-3 from scoring engine)
+  const [failoverChain, setFailoverChain] = useState<Array<{ provider: string; url: string; score: number; tier: number }>>([]);
+  const [chainIndex, setChainIndex] = useState(0);
+  const [chainExhausted, setChainExhausted] = useState(false);
 
   // Wake Lock - keep screen awake during video playback
   useWakeLock(playing);
@@ -109,7 +113,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     onNextEpisode: () => { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); },
     onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); syncEpisodeUrl(season, n); } },
     onToggleSubtitles: () => {},
-    onSwitchProvider: () => { if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
+    onSwitchProvider: () => { if (failoverChain.length > 1 && chainIndex < failoverChain.length - 1) { const next = chainIndex + 1; setChainIndex(next); setFailoverMsg(`Switching to ${failoverChain[next]?.provider}...`); setTimeout(() => setFailoverMsg(''), 3000); } else if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
     onPopOutPip: () => { if (show && activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: CS[show.cs].bg, acc: CS[show.cs].acc }, show.id); } },
     onNextSeason: () => { const maxSeason = show?.media_type === 'tv' ? Math.ceil((show?.eps || 12) / 12) : 1; if (season < maxSeason) { const ns = season + 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
     onPreviousSeason: () => { if (season > 1) { const ns = season - 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
@@ -194,7 +198,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     load();
     return () => { cancelled = true; controller.abort(); };
   }, [show?.id, season, show?._isAnilist]);
-  // Fetch embed providers
+  // Fetch embed providers — smart mode (returns chain for auto-failover)
   useEffect(() => {
     if (!playing || !show) return;
     const mediaType = show.media_type || 'tv';
@@ -203,16 +207,34 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     // For TMDB lookup, use original ID (not namespaced AniList ID)
     const tmdbLookupId = show._isAnilist ? 0 : showId;
     const params = new URLSearchParams({
-      tmdb: String(tmdbLookupId),      type: mediaType,
+      tmdb: String(tmdbLookupId),
+      type: mediaType,
       season: String(season),
       episode: String(epIdx),
+      mode: 'smart',
     });
     if (malId) params.set('mal', String(malId));
     if (isAnime) params.set('isAnime', 'true');
     fetch(`/api/embed?${params}`)
       .then(r => r.json())
-      .then(data => { setProviders(data.providers || []); setSelectedProvider(0); })
-      .catch(() => setProviders([]));
+      .then(data => {
+        // Smart mode: use chain for failover, populate providers for dropdown
+        if (data.chain && data.chain.length > 0) {
+          setFailoverChain(data.chain);
+          setChainIndex(0);
+          setChainExhausted(false);
+          // Also populate providers dropdown from chain
+          setProviders(data.chain.map((c: { provider: string; url: string; score: number; tier: number }) => ({ name: c.provider, url: c.url, tier: c.tier, score: c.score })));
+          setSelectedProvider(0);
+        } else if (data.providers) {
+          // Legacy mode fallback
+          setProviders(data.providers);
+          setFailoverChain([]);
+          setChainIndex(0);
+          setSelectedProvider(0);
+        }
+      })
+      .catch(() => { setProviders([]); setFailoverChain([]); });
   }, [playing, showId, season, epIdx, show]);
 
   // Fetch comments
@@ -269,40 +291,90 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     setLoadingSimilar(false);
   }, [show?.id, show?.media_type, show?._isAnilist, loadingSimilar, hasMoreSimilar, fullDetails?.similar?.results]);
 
-  // Auto-failover: if provider fails, try the next one automatically
+  // Computed active provider (must be before handleProviderFail which references these)
+  const activeProviderUrl = failoverChain.length > 0
+    ? (failoverChain[chainIndex]?.url || '')
+    : (providers[selectedProvider]?.url || '');
+  const activeProviderName = failoverChain.length > 0
+    ? (failoverChain[chainIndex]?.provider || '')
+    : (providers[selectedProvider]?.name || '');
+
+  // Auto-failover: try next in chain (smart mode) or next provider (legacy mode)
   const handleProviderFail = useCallback(() => {
-    if (!show || providers.length <= 1) return;
-    triedProviders.current.add(selectedProvider);
-    let nextIdx = -1;
-    for (let i = 1; i < providers.length; i++) {
-      const candidate = (selectedProvider + i) % providers.length;
-      if (!triedProviders.current.has(candidate)) {
-        nextIdx = candidate;
-        break;
+    if (!show) return;
+
+    // Report client-side failure to server for health tracking
+    if (activeProviderName) {
+      fetch('/api/embed-health-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: activeProviderName, alive: false }),
+      }).catch(() => {});
+    }
+
+    // Smart mode: advance along the pre-fetched failover chain
+    if (failoverChain.length > 0 && !chainExhausted) {
+      const nextIdx = chainIndex + 1;
+      if (nextIdx < failoverChain.length) {
+        setChainIndex(nextIdx);
+        setSelectedProvider(nextIdx);
+        const oldName = failoverChain[chainIndex]?.provider;
+        const newName = failoverChain[nextIdx]?.provider;
+        setFailoverMsg(`Switching from ${oldName} to ${newName}...`);
+        setTimeout(() => setFailoverMsg(''), 3000);
+        // Emit failover metric
+        if (oldName && newName) {
+          fetch('/api/embed-health-client', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: newName, alive: true }),
+          }).catch(() => {});
+        }
+      } else {
+        // Chain exhausted
+        setChainExhausted(true);
+        setFailoverMsg('All optimized providers unavailable. Trying fallback...');
+        setTimeout(() => setFailoverMsg(''), 4000);
+      }
+      return;
+    }
+
+    // Legacy mode: try next provider in list
+    if (providers.length > 1) {
+      triedProviders.current.add(selectedProvider);
+      let nextIdx = -1;
+      for (let i = 1; i < providers.length; i++) {
+        const candidate = (selectedProvider + i) % providers.length;
+        if (!triedProviders.current.has(candidate)) {
+          nextIdx = candidate;
+          break;
+        }
+      }
+      if (nextIdx >= 0) {
+        const oldName = providers[selectedProvider]?.name;
+        const newName = providers[nextIdx]?.name;
+        setSelectedProvider(nextIdx);
+        triedProviders.current.add(nextIdx);
+        setFailoverMsg(`Switching from ${oldName} to ${newName}...`);
+        setTimeout(() => setFailoverMsg(''), 3000);
+      } else {
+        setFailoverMsg('All providers unavailable. Try again later.');
+        setTimeout(() => setFailoverMsg(''), 4000);
       }
     }
-    if (nextIdx >= 0) {
-      const oldName = providers[selectedProvider]?.name;
-      const newName = providers[nextIdx]?.name;
-      setSelectedProvider(nextIdx);
-      triedProviders.current.add(nextIdx);
-      setFailoverMsg(`Switching from ${oldName} to ${newName}...`);
-      setTimeout(() => setFailoverMsg(''), 3000);
-    } else {
-      setFailoverMsg('All providers unavailable. Try again later.');
-      setTimeout(() => setFailoverMsg(''), 4000);
-    }
-  }, [show?.id, providers, selectedProvider]);
+  }, [show?.id, providers, selectedProvider, failoverChain, chainIndex, chainExhausted, activeProviderName]);
 
-  // Reset tried providers when episode/season changes
+  // Reset tried providers and chain when episode/season changes
   useEffect(() => {
     triedProviders.current.clear();
     triedProviders.current.add(selectedProvider);
+    setChainIndex(0);
+    setChainExhausted(false);
   }, [epIdx, season, providers]);
 
   // Timeout failover: if iframe doesn't fire onLoad within 15s, auto-switch
   useEffect(() => {
-    const url = providers[selectedProvider]?.url || '';
+    const url = activeProviderUrl;
     if (!playing || !url) return;
     if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
     const timer = setTimeout(() => {
@@ -310,7 +382,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     }, 15000);
     iframeLoadTimer.current = timer;
     return () => { clearTimeout(timer); };
-  }, [playing, providers, selectedProvider, handleProviderFail]);
+  }, [playing, activeProviderUrl, handleProviderFail]);
 
   if (!show) {
     return (
@@ -393,7 +465,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     } catch { }
   };
 
-  const activeProviderUrl = providers[selectedProvider]?.url || '';
+
 
   const toggleWatchlist = async () => {
     if (!user || !profile) { router.push('/login'); return; }
@@ -721,7 +793,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           {activeProviderUrl ? (
             <>
               <div style={{ position: 'relative', width: 'min(100vw, calc(100vh * 16 / 9))', height: 'min(100vh, calc(100vw * 9 / 16))', flexShrink: 0, overflow: 'hidden' }}>
-                <iframe key={`provider-${selectedProvider}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" />
+                <iframe key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" />
               </div>
               {/* Failover toast */}
               {failoverMsg && (
@@ -731,9 +803,18 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               )}
               {providers.length > 1 && (
                 <div style={{ position: 'fixed', top: 60, right: 16, zIndex: 10001 }}>
-                  <select className="f-cinzel" value={selectedProvider} onChange={(e) => { setSelectedProvider(Number(e.target.value)); triedProviders.current.add(Number(e.target.value)); }} style={{ padding: '8px 14px', background: 'rgba(0,0,0,.8)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 10, color: '#FFF5E8', fontSize: '.72rem', cursor: 'pointer', outline: 'none' }}>
+                  <select className="f-cinzel" value={failoverChain.length > 0 ? chainIndex : selectedProvider} onChange={(e) => {
+                    const idx = Number(e.target.value);
+                    if (failoverChain.length > 0) {
+                      setChainIndex(idx); setSelectedProvider(idx);
+                    } else {
+                      setSelectedProvider(idx); triedProviders.current.add(idx);
+                    }
+                  }} style={{ padding: '8px 14px', background: 'rgba(0,0,0,.8)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 10, color: '#FFF5E8', fontSize: '.72rem', cursor: 'pointer', outline: 'none' }}>
                     {providers.map((p, i) => (
-                      <option key={i} value={i} style={{ background: '#0C091A' }}>{p.name}{p.tier === 2 ? ' (Backup)' : ''}{p.category === 'anime' ? ' (Anime)' : ''}</option>
+                      <option key={i} value={i} style={{ background: '#0C091A' }}>
+                        {p.name}{p.tier === 1 ? ' (T1)' : p.tier === 2 ? ' (T2)' : p.tier === 3 ? ' (T3)' : ''}{p.category === 'anime' ? ' Anime' : ''}{failoverChain.length > 0 && p.score != null ? ` [${(p.score * 100).toFixed(0)}%]` : ''}{failoverChain.length > 0 && i === chainIndex ? ' ✓' : ''}
+                      </option>
                     ))}
                   </select>
                 </div>

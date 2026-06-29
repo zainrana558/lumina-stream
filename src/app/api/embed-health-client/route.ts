@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
-import { getRedis } from '@/lib/redis';
+import { reportClientHealth } from '@/lib/streaming/health-check';
 import { embedHealthReportSchema } from '@/lib/schemas';
-
-const HEALTH_PREFIX = 'lumina:provider:health:';
-const PREV_HEALTH_PREFIX = 'lumina:provider:prev_health:';
-const FAIL_COUNT_PREFIX = 'lumina:provider:fail_count:';
-const HEALTH_TTL = 5 * 60;
 
 /**
  * POST /api/embed-health-client
  *
- * Client-side health check reporter.
+ * Client-side health check reporter — UNIFIED with server-side health system.
+ *
  * The browser pings embed providers directly (no server IP exposure),
- * then reports results here. The server only reads/writes Redis state
- * and manages the replacement pool swap logic.
+ * then reports results here. Results now flow into the SAME Redis keys
+ * used by the server-side health checker (health:provider:{name} hashes
+ * and health:alive ZSET), ending the previous dual-system problem.
+ *
+ * Client reports are flagged with `clientReported: true` so the scoring
+ * engine (Phase 2) can weight them at 0.5x vs server-side checks.
  *
  * Body: { provider: string, alive: boolean }
  */
@@ -31,49 +31,27 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = embedHealthReportSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid request: " + parsed.error.issues.map(i => i.message).join(', ') }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid request: ' + parsed.error.issues.map(i => i.message).join(', ') },
+        { status: 400 }
+      );
     }
     const { provider, alive } = parsed.data;
 
-    const client = getRedis();
+    // Write to the UNIFIED health system (Redis + in-memory fallback)
+    const record = await reportClientHealth(provider, alive);
 
-    // Get previous health state
-    let prevAlive: boolean | null = null;
-    if (client) {
-      try {
-        const val = await client.get<string>(`${PREV_HEALTH_PREFIX}${provider}`);
-        if (val !== null) prevAlive = val === '1';
-      } catch { /* ok */ }
-    }
-
-    // Save current health
-    if (client) {
-      try {
-        await client.set(`${HEALTH_PREFIX}${provider}`, alive ? '1' : '0', { ex: HEALTH_TTL });
-        await client.set(`${PREV_HEALTH_PREFIX}${provider}`, alive ? '1' : '0', { ex: HEALTH_TTL });
-      } catch { /* ok */ }
-    }
-
-    // Handle fail count
-    if (!alive && prevAlive === true) {
-      // Provider just died
-      if (client) {
-        try {
-          const val = await client.get<string>(`${FAIL_COUNT_PREFIX}${provider}`);
-          const failCount = val ? parseInt(val, 10) : 0;
-          await client.set(`${FAIL_COUNT_PREFIX}${provider}`, String(failCount + 1), { ex: HEALTH_TTL });
-        } catch { /* ok */ }
-      }
-    } else if (alive) {
-      // Provider recovered — reset fail count
-      if (client) {
-        try {
-          await client.del(`${FAIL_COUNT_PREFIX}${provider}`);
-        } catch { /* ok */ }
-      }
-    }
-
-    return NextResponse.json({ ok: true, provider, alive, prevAlive }, { headers: rateLimitHeaders(rl) });
+    return NextResponse.json(
+      {
+        ok: true,
+        provider,
+        alive,
+        status: record.status,
+        failCount: record.failCount,
+        clientReported: true,
+      },
+      { headers: rateLimitHeaders(rl) }
+    );
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: msg }, { status: 500 });

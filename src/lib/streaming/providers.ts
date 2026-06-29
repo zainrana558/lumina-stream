@@ -18,7 +18,7 @@
 
 // ---- Types ----
 
-export type ProviderTier = 1 | 2;
+export type ProviderTier = 1 | 2 | 3;
 export type ProviderCategory = 'all' | 'anime';
 
 export interface StreamProvider {
