@@ -88,6 +88,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [failoverMsg, setFailoverMsg] = useState('');
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const triedProviders = useRef<Set<number>>(new Set());
   const playerRef = useRef<HTMLDivElement>(null);
@@ -108,16 +109,16 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     router.replace(epUrl, { scroll: false });
   }, [showId, router]);
 
-  useKeyboardShortcuts(playing, {
-    onTogglePlayPause: () => setPlaying(p => !p),
-    onToggleFullscreen: () => { playerRef.current?.requestFullscreen?.(); },
-    onExit: () => setPlaying(false),
-    onPreviousEpisode: () => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } },
+  useKeyboardShortcuts(true, {
+    onTogglePlayPause: () => { if (playing) setPlaying(p => !p); else { vibrateLong(); setPlaying(true); } },
+    onToggleFullscreen: () => { if (playing) playerRef.current?.requestFullscreen?.(); },
+    onExit: () => { if (playing) setPlaying(false); },
+    onPreviousEpisode: () => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
     onNextEpisode: () => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : show.eps; if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
     onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); syncEpisodeUrl(season, n); } },
     onToggleSubtitles: () => {},
-    onSwitchProvider: () => { if (failoverChain.length > 1 && chainIndex < failoverChain.length - 1) { const next = chainIndex + 1; setChainIndex(next); setSelectedProvider(next); setFailoverMsg(`Switching to ${failoverChain[next]?.provider}...`); setTimeout(() => setFailoverMsg(''), 3000); } else if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
-    onPopOutPip: () => { if (show && activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: CS[show.cs].bg, acc: CS[show.cs].acc }, show.id); } },
+    onSwitchProvider: () => { if (!playing) return; if (failoverChain.length > 1 && chainIndex < failoverChain.length - 1) { const next = chainIndex + 1; setChainIndex(next); setSelectedProvider(next); setFailoverMsg(`Switching to ${failoverChain[next]?.provider}...`); setTimeout(() => setFailoverMsg(''), 3000); } else if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
+    onPopOutPip: () => { if (playing && show && activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: CS[show.cs].bg, acc: CS[show.cs].acc }, show.id); } },
     onNextSeason: () => { const maxSeason = show?.media_type === 'tv' ? Math.ceil((show?.eps || 12) / 12) : 1; if (season < maxSeason) { const ns = season + 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
     onPreviousSeason: () => { if (season > 1) { const ns = season - 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
     onToggleWatchlist: () => toggleWatchlist(),
@@ -375,6 +376,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     triedProviders.current.add(selectedProvider);
     setChainIndex(0);
     setChainExhausted(false);
+    setIframeLoaded(false);
   }, [epIdx, season, providers]);
 
   // Timeout failover: if iframe doesn't fire onLoad within 15s, auto-switch
@@ -823,12 +825,14 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           {activeProviderUrl ? (
             <>
               <div style={{ position: 'relative', width: 'min(100vw, calc(100vh * 16 / 9))', height: 'min(100vh, calc(100vw * 9 / 16))', flexShrink: 0, overflow: 'hidden' }}>
-                <iframe key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={(e) => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); const overlay = document.getElementById('iframe-loading-overlay'); if (overlay) overlay.style.display = 'none'; }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); const overlay = document.getElementById('iframe-loading-overlay'); if (overlay) overlay.style.display = 'none'; handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" />
+                <iframe key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); setIframeLoaded(true); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); setIframeLoaded(true); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" />
                 {/* Loading overlay while iframe loads */}
-                <div id="iframe-loading-overlay" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.85)', zIndex: 5, pointerEvents: 'none', animation: 'fi .3s ease both' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
-                  <div className="f-cinzel" style={{ marginTop: 14, fontSize: '.72rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Loading {activeProviderName}...</div>
-                </div>
+                {!iframeLoaded && (
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.85)', zIndex: 5, pointerEvents: 'none', animation: 'fi .3s ease both' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
+                    <div className="f-cinzel" style={{ marginTop: 14, fontSize: '.72rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Loading {activeProviderName}...</div>
+                  </div>
+                )}
               </div>
               {/* Failover toast */}
               {failoverMsg && (

@@ -42,8 +42,8 @@ export async function selectProviders(options: SelectionOptions): Promise<EmbedR
   return result.chain.map(item => ({
     name: item.provider,
     url: item.url,
-    tier: item.tier as 1 | 2,
-    category: (item.category === 'anime' ? 'anime' : 'all') as 'all' | 'anime',
+    tier: item.tier as EmbedResult['tier'],
+    category: (item.category === 'anime' ? 'anime' : 'all') as EmbedResult['category'],
   }));
 }
 
@@ -67,8 +67,8 @@ export async function selectProvidersWithScores(options: SelectionOptions): Prom
   return result.chain.map(item => ({
     name: item.provider,
     url: item.url,
-    tier: item.tier as 1 | 2,
-    category: (item.category === 'anime' ? 'anime' : 'all') as 'all' | 'anime',
+    tier: item.tier as EmbedResult['tier'],
+    category: (item.category === 'anime' ? 'anime' : 'all') as EmbedResult['category'],
     score: item.score,
     signals: {
       availability: 0,

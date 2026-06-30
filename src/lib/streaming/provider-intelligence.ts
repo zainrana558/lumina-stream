@@ -406,6 +406,11 @@ export async function selectWithIntelligence(options: {
   let allProviders: EmbedResult[];
   if (useAnimePool) {
     allProviders = getAnimeEmbedUrls(tmdbId, season, episode, options.malId);
+    // When tmdbId is 0 (AniList-only items), general providers get invalid URLs
+    // like tv/0/1/1. Keep only anime-specific providers that use malId.
+    if (!tmdbId && options.malId) {
+      allProviders = allProviders.filter(p => p.category === 'anime');
+    }
   } else {
     const type = contentType.type === 'movie' ? 'movie' : 'tv';
     allProviders = getAllEmbedUrls(type, tmdbId, season, episode);
