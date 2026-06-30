@@ -28,9 +28,11 @@ export default async function HealthDashboardPage() {
   }
 
   // Fetch all data in parallel
-  const [fullStatus, healthRecords, selMetrics, hMetrics, failovers] = await Promise.all([
+  let healthRecords = new Map<string, HealthRecord>();
+  try { healthRecords = getAllHealthRecords(); } catch { /* non-critical */ }
+
+  const [fullStatus, selMetrics, hMetrics, failovers] = await Promise.all([
     getFullStatus().catch(() => null),
-    getAllHealthRecords().catch(() => new Map<string, HealthRecord>()),
     getSelectionMetrics(),
     getHealthMetrics(),
     getRecentFailovers(20),

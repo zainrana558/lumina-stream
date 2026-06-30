@@ -111,8 +111,10 @@ function computeSuccessRate(providerName: string): number {
   return 0.4;
 }
 
-function computeTierBonus(tier: 1 | 2): number {
-  return tier === 1 ? 1.0 : 0.5;
+function computeTierBonus(tier: number): number {
+  if (tier === 1) return 1.0;
+  if (tier === 2) return 0.5;
+  return 0.25; // Tier 3 and below
 }
 
 function computeRecencyBonus(providerName: string): number {

@@ -17,7 +17,7 @@ interface CardProps {
 }
 
 const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: CardProps) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLAnchorElement>(null);
   const raf = useRef<number | undefined>(undefined);
   const s = CS[show.cs];
   const h = { sm: 200, md: 296, lg: 370 }[sz];
@@ -78,7 +78,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
   return (
     <Link
       href={onClick ? '#' : href}
-      ref={ref as React.Ref<HTMLAnchorElement>}
+      ref={ref}
       className="card"
       style={{ height: h, textDecoration: 'none', color: 'inherit' }}
       onMouseMove={onMove}
