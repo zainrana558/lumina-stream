@@ -32,25 +32,14 @@ const nextConfig: NextConfig = {
         // Public HTML pages: CDN/browser cache with stale-while-revalidate.
         // ISR revalidate controls Next.js edge cache; this header tells
         // Cloudflare/proxy and browsers to also cache the response.
+        // Note: CSP is set by middleware (src/middleware.ts) — do NOT duplicate here.
+        // Having CSP in both places causes the browser to intersect both policies,
+        // which can break scripts, iframes, and ad network integrations.
         source: '/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap).*)',
         headers: [
           {
             key: 'Cache-Control',
             value: 'public, s-maxage=300, stale-while-revalidate=600, max-age=60',
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.symivbxtgw.com https://www.ofcgcdcvk.com https://popads.net https://cdn.popads.net https://go.propellerads.com https://www.highperformancedformats.com https://www.highperformancecpm.com https://propellerads.com https://www.propellerads.com",
-              "style-src 'self' 'unsafe-inline'",
-              "font-src 'self' data:",
-              "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
-              "media-src 'self' https: blob:",
-              "frame-src 'self' https: https://popads.net https://www.highperformancedformats.com https://www.propellerads.com",
-              "connect-src 'self' https: https://*.supabase.co https://*.supabase.com https://*.popads.net https://*.propellerads.com https://*.highperformancedformats.com",
-              "worker-src 'self' blob:",
-            ].join('; '),
           },
         ],
       },

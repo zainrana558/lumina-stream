@@ -1,5 +1,5 @@
-const CACHE_NAME = 'lumina-v2';
-const STATIC_ASSETS = ['/', '/logo.svg'];
+const CACHE_NAME = 'lumina-v3';
+const STATIC_ASSETS = ['/logo.svg'];
 
 // API routes that must NEVER be served from cache (auth/user-specific)
 const NO_CACHE_PREFIXES = [
@@ -26,7 +26,17 @@ function isNeverCache(url) {
   return NO_CACHE_PREFIXES.some(p => pathname.startsWith(p));
 }
 
-// Install — cache static shell
+function isNavigation(request) {
+  // HTML page requests (Accept: text/html) or same-origin GET with no extension
+  const url = new URL(request.url);
+  if (request.mode === 'navigate') return true;
+  if (url.origin !== self.location.origin) return false;
+  const pathname = url.pathname;
+  // No file extension = likely a page route
+  return !pathname.includes('.') || pathname === '/' || pathname.endsWith('/');
+}
+
+// Install — cache only truly static assets (NOT HTML pages)
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
@@ -68,6 +78,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Navigation requests (HTML pages): NETWORK-FIRST
+  // This ensures users always get fresh server-rendered content,
+  // not a stale cached version from a previous deploy or error.
+  if (isNavigation(request)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
   // Public API routes (TMDB, search, embed-health): network-first, short cache
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -84,7 +112,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: cache-first
+  // Static assets (_next, images, fonts, etc.): cache-first
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
