@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' data:",
               "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
               "media-src 'self' https: blob:",
-              "frame-src 'self' https://vidsrc.fyi https://vidsrc.pm https://vidsrc.in https://vidsrc.io https://autoembed.co https://vidphantom.com https://api.codespecters.com https://popads.net https://www.highperformancedformats.com https://www.propellerads.com",
+              "frame-src 'self' https: https://popads.net https://www.highperformancedformats.com https://www.propellerads.com",
               "connect-src 'self' https: https://*.supabase.co https://*.supabase.com https://*.popads.net https://*.propellerads.com https://*.highperformancedformats.com",
               "worker-src 'self' blob:",
             ].join('; '),
