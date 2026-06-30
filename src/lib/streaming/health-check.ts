@@ -200,3 +200,79 @@ export async function getFullStatus() {
 
   return { dead: Array.from(dead), pool, health: healthResults };
 }
+
+// ---- Types for admin dashboard ----
+
+export interface HealthRecord {
+  status: 'alive' | 'dead' | 'unknown';
+  latencyMs: number;
+  failCount: number;
+  consecutiveSuccesses: number;
+  lastCheck: number;
+  lastError: string | null;
+  clientReported: boolean;
+}
+
+/**
+ * Get all health records as a Map for the admin dashboard.
+ */
+export function getAllHealthRecords(): Map<string, HealthRecord> {
+  const records = new Map<string, HealthRecord>();
+
+  for (const [name, entry] of healthStore) {
+    const failCount = failCountStore.get(name) || 0;
+    records.set(name, {
+      status: entry.alive ? 'alive' : 'dead',
+      latencyMs: 0,
+      failCount,
+      consecutiveSuccesses: entry.alive ? Math.max(0, 3 - failCount) : 0,
+      lastCheck: entry.checkedAt,
+      lastError: entry.alive ? null : 'Connection failed',
+      clientReported: false,
+    });
+  }
+
+  return records;
+}
+
+/**
+ * Report client-side health check result.
+ * Used by /api/embed-health-client to feed browser ping results
+ * into the unified health system.
+ */
+export async function reportClientHealth(
+  provider: string,
+  alive: boolean,
+): Promise<{ status: string; failCount: number }> {
+  const now = Date.now();
+
+  if (alive) {
+    setHealth(provider, true);
+    setPrevHealth(provider, true);
+    const prevFailCount = getFailCount(provider);
+    // If client reports alive and we had failures, reset
+    if (prevFailCount > 0) {
+      resetFailCount(provider);
+    }
+
+    // If provider was dead and client says alive, try restoring
+    const wasDead = getPrevHealth(provider) === false;
+    if (wasDead) {
+      restoreOriginal(provider);
+    }
+
+    return { status: 'alive', failCount: 0 };
+  } else {
+    setHealth(provider, false);
+    setPrevHealth(provider, false);
+    incrementFailCount(provider);
+    const failCount = getFailCount(provider);
+
+    // Swap after 2+ failures
+    if (failCount >= 2) {
+      swapInReplacement(provider);
+    }
+
+    return { status: 'dead', failCount };
+  }
+}
