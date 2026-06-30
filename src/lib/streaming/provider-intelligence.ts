@@ -93,13 +93,13 @@ const MOVIE_POOL: ProviderPool = {
   name: 'movies',
   category: 'movie',
   providers: [
-    'VidSrc CC', 'Embed.su', 'VidSrc.to', 'MultiEmbed',
-    'VidSrc.me', 'Nontongo', 'MoviesApi.to', 'VidSrc.vip',
-    'VidSrc PM', 'StreamWish', 'AutoEmbed', 'TVPizza',
-    'SuperEmbed', 'VidSrc FYI', 'Videasy', 'LordFlix',
+    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'MultiEmbed',
+    'VidSrc.me', 'Nontongo', 'MoviesApi.to',
+    'VidSrc PM', 'StreamWish', 'AutoEmbed',
+    'SuperEmbed', 'VidSrc FYI', 'Videasy',
     'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
     '2Embed', 'VidSrc MOV', 'VidNest', '111Movies', 'VidFast',
-    'Vyla API',
+    'HDStream', 'VidSrc PRO', 'VidSrc DEV',
   ],
 };
 
@@ -107,14 +107,14 @@ const ANIME_POOL: ProviderPool = {
   name: 'anime',
   category: 'anime',
   providers: [
-    'VidSrc CC', 'Embed.su', 'VidSrc.to', 'MultiEmbed',
+    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'MultiEmbed',
     'VidSrc.me', 'Nontongo', 'MoviesApi.to',
-    'VidSrc WIN Anime', 'Kwik Anime', 'FileMoon Anime',
+    'VidSrc WIN Anime',
     'VidSrc PM', 'StreamWish', 'AutoEmbed',
     'VidSrc FYI', 'SuperEmbed',
     'VidLink', 'AnyEmbed', 'VaPlayer',
     '2Embed', 'VidSrc MOV', 'VidNest', 'VidFast',
-    'Vyla API',
+    'HDStream',
   ],
 };
 
@@ -122,13 +122,13 @@ const TV_POOL: ProviderPool = {
   name: 'tv',
   category: 'tv',
   providers: [
-    'VidSrc CC', 'Embed.su', 'VidSrc.to', 'MultiEmbed',
-    'VidSrc.me', 'Nontongo', 'MoviesApi.to', 'VidSrc.vip',
-    'VidSrc PM', 'StreamWish', 'AutoEmbed', 'TVPizza',
-    'SuperEmbed', 'VidSrc FYI', 'Videasy', 'LordFlix',
+    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'MultiEmbed',
+    'VidSrc.me', 'Nontongo', 'MoviesApi.to',
+    'VidSrc PM', 'StreamWish', 'AutoEmbed',
+    'SuperEmbed', 'VidSrc FYI', 'Videasy',
     'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
     '2Embed', 'VidSrc MOV', 'VidNest', '111Movies', 'VidFast',
-    'Vyla API',
+    'HDStream', 'VidSrc PRO', 'VidSrc DEV',
   ],
 };
 
@@ -140,26 +140,16 @@ const PROVIDER_CAPABILITIES: Record<string, {
   quality: number;
   avgSpeed: number;  // 0–1 estimated, updated by health monitor
 }> = {
-  'VidSrc CC':        { subtitleSupport: 0.9, quality: 0.9, avgSpeed: 0.7 },
+  'VidSrc SU':        { subtitleSupport: 0.8, quality: 0.85, avgSpeed: 0.7 },
   'Embed.su':         { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.8 },
-  'VidSrc.to':        { subtitleSupport: 0.8, quality: 0.85, avgSpeed: 0.7 },
+  'VidSrc RU':        { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.7 },
   'MultiEmbed':       { subtitleSupport: 0.6, quality: 0.8, avgSpeed: 0.6 },
   'VidSrc.me':        { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.6 },
   'Nontongo':         { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
   'MoviesApi.to':     { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.6 },
-  'VidSrc.vip':       { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
-  'VidSrc PM':        { subtitleSupport: 0.4, quality: 0.65, avgSpeed: 0.5 },
-  'StreamWish':       { subtitleSupport: 0.3, quality: 0.7, avgSpeed: 0.5 },
-  'AutoEmbed':        { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
-  'TVPizza':          { subtitleSupport: 0.4, quality: 0.65, avgSpeed: 0.4 },
-  'SuperEmbed':       { subtitleSupport: 0.6, quality: 0.75, avgSpeed: 0.6 },
-  'VidSrc FYI':       { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
-  'Videasy':          { subtitleSupport: 0.3, quality: 0.6, avgSpeed: 0.4 },
-  'LordFlix':         { subtitleSupport: 0.3, quality: 0.6, avgSpeed: 0.4 },
-  'Vyla API':         { subtitleSupport: 0.8, quality: 0.85, avgSpeed: 0.7 },
-  'VidSrc WIN Anime': { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
-  'Kwik Anime':       { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.4 },
-  'FileMoon Anime':   { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.4 },
+  'HDStream':        { subtitleSupport: 0.4, quality: 0.75, avgSpeed: 0.6 },
+  'VidSrc PRO':       { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.7 },
+  'VidSrc DEV':       { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
   // StreamX-Omega providers
   'VidLink':          { subtitleSupport: 0.7, quality: 0.8, avgSpeed: 0.7 },
   'AnyEmbed':         { subtitleSupport: 0.6, quality: 0.8, avgSpeed: 0.7 },
@@ -170,6 +160,14 @@ const PROVIDER_CAPABILITIES: Record<string, {
   'VidNest':          { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
   '111Movies':        { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.5 },
   'VidFast':          { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.7 },
+  // Non-vidsrc diversity providers
+  'VidSrc PM':        { subtitleSupport: 0.4, quality: 0.65, avgSpeed: 0.5 },
+  'StreamWish':       { subtitleSupport: 0.3, quality: 0.7, avgSpeed: 0.5 },
+  'AutoEmbed':        { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
+  'SuperEmbed':       { subtitleSupport: 0.6, quality: 0.75, avgSpeed: 0.6 },
+  'VidSrc FYI':       { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
+  'Videasy':          { subtitleSupport: 0.3, quality: 0.6, avgSpeed: 0.4 },
+  'VidSrc WIN Anime': { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
 };
 
 // ── Dynamic speed cache (updated by health monitor) ──

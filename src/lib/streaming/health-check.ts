@@ -7,6 +7,11 @@
  *   2. The replacement takes its place in the active lineup
  *   3. When the original recovers, it swaps back in
  *
+ * Frame-blocking detection:
+ *   Checks both X-Frame-Options AND CSP frame-ancestors headers.
+ *   Providers that block framing are treated as dead for selection purposes,
+ *   since they can't be embedded in iframes.
+ *
  * - Health TTL: 5 minutes (in-memory, per-serverless-instance)
  * - Ping timeout: 6 seconds
  * - Economy: checks 1 provider per request (round-robin)
@@ -22,6 +27,7 @@ const CHECK_INTERVAL = 5 * 60 * 1000; // Check one provider every 5 min
 // ── In-memory state (no Redis) ──
 interface HealthEntry {
   alive: boolean;
+  framesBlocked: boolean;
   checkedAt: number;
 }
 
@@ -46,37 +52,72 @@ if (typeof globalThis !== 'undefined') {
 }
 
 /**
- * Check if a single provider is reachable.
+ * Check if a single provider is reachable AND allows iframe embedding.
+ * Uses GET (not HEAD) because some providers return 405 for HEAD.
+ * Checks both X-Frame-Options and CSP frame-ancestors headers.
  */
-async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: number }> {
+async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: number; framesBlocked: boolean }> {
   const start = Date.now();
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CHECK_TIMEOUT);
     const res = await fetch(url, {
-      method: 'HEAD',
-      mode: 'no-cors',
+      method: 'GET',
+      redirect: 'manual',
       signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
     });
     clearTimeout(timeout);
     const latencyMs = Date.now() - start;
-    return { alive: true, latencyMs };
+
+    // Check X-Frame-Options header
+    const xfo = res.headers.get('x-frame-options') || res.headers.get('X-Frame-Options') || '';
+    const xfoBlocked = xfo.includes('DENY') || xfo.includes('SAMEORIGIN');
+
+    // Check CSP frame-ancestors directive
+    const csp = res.headers.get('content-security-policy') || '';
+    const faMatch = csp.match(/frame-ancestors\s+([^;]+)/i);
+    const frameAncestors = faMatch ? faMatch[1].trim() : '';
+    // Blocked if frame-ancestors is 'none' or doesn't include * or our origin
+    const faBlocked = frameAncestors === "'none'" || (frameAncestors !== '' && !frameAncestors.includes('*'));
+
+    const framesBlocked = xfoBlocked || faBlocked;
+
+    return { alive: true, latencyMs, framesBlocked };
   } catch {
     const latencyMs = Date.now() - start;
-    return { alive: false, latencyMs };
+    return { alive: false, latencyMs, framesBlocked: false };
   }
 }
 
-function setHealth(name: string, alive: boolean): void {
-  healthStore.set(name, { alive, checkedAt: Date.now() });
+function setHealth(name: string, alive: boolean, framesBlocked: boolean = false): void {
+  healthStore.set(name, { alive, framesBlocked, checkedAt: Date.now() });
 }
 
+/**
+ * Get whether a provider is effectively usable.
+ * Returns false if the provider blocks iframe embedding (framesBlocked),
+ * even if the server itself is reachable.
+ */
 export function getHealth(name: string): boolean | null {
   const entry = healthStore.get(name);
   if (entry && Date.now() - entry.checkedAt < HEALTH_TTL) {
-    return entry.alive;
+    // A provider that blocks framing is effectively dead for our use case
+    return entry.alive && !entry.framesBlocked;
   }
   return null;
+}
+
+/**
+ * Check if a provider blocks iframe embedding via X-Frame-Options or
+ * CSP frame-ancestors. For admin/debug display.
+ */
+export function isFramesBlocked(name: string): boolean {
+  const entry = healthStore.get(name);
+  if (entry && Date.now() - entry.checkedAt < HEALTH_TTL) {
+    return entry.framesBlocked;
+  }
+  return false;
 }
 
 function getPrevHealth(name: string): boolean | null {
@@ -118,21 +159,24 @@ export async function maybeCheckOneProvider(): Promise<void> {
 
   const sampleUrl = provider.getMovieUrl(550); // Fight Club always exists
   const prevAlive = getPrevHealth(provider.name);
-  const { alive, latencyMs } = await pingProvider(sampleUrl);
+  const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
+
+  // Effective alive = reachable AND doesn't block framing
+  const effectiveAlive = alive && !framesBlocked;
 
   // Feed latency to Provider Intelligence speed cache
   try {
     const { updateSpeedCache, updateHistoricalCache } = await import('@/lib/streaming/provider-intelligence');
     updateSpeedCache(provider.name, latencyMs);
-    updateHistoricalCache(provider.name, alive);
+    updateHistoricalCache(provider.name, effectiveAlive);
   } catch { /* non-critical */ }
 
   // Save current health
-  setHealth(provider.name, alive);
-  setPrevHealth(provider.name, alive);
+  setHealth(provider.name, alive, framesBlocked);
+  setPrevHealth(provider.name, effectiveAlive);
 
-  // Provider just died? (was alive, now dead)
-  if (prevAlive !== null && prevAlive && !alive) {
+  // Provider just died? (was alive, now dead or frame-blocked)
+  if (prevAlive !== null && prevAlive && !effectiveAlive) {
     incrementFailCount(provider.name);
     const failCount = getFailCount(provider.name);
 
@@ -141,23 +185,22 @@ export async function maybeCheckOneProvider(): Promise<void> {
       const replacement = swapInReplacement(provider.name);
       if (replacement) {
         // Also pre-health-check the replacement
-        const { alive: repAlive } = await pingProvider(replacement.getMovieUrl(550));
-        setHealth(replacement.name, repAlive);
+        const { alive: repAlive, framesBlocked: repBlocked } = await pingProvider(replacement.getMovieUrl(550));
+        setHealth(replacement.name, repAlive, repBlocked);
       }
     }
   }
 
-  // Provider just recovered? (was dead, now alive)
-  if (prevAlive !== null && !prevAlive && alive) {
+  // Provider just recovered? (was dead, now alive and not frame-blocked)
+  if (prevAlive !== null && !prevAlive && effectiveAlive) {
     resetFailCount(provider.name);
     restoreOriginal(provider.name);
   }
 }
 
 /**
- * Get names of providers that are currently marked as dead.
- * Dead providers that have been swapped out are NOT included (they're
- * already replaced). Only unswapped dead providers are here.
+ * Get names of providers that are currently marked as dead
+ * (unreachable OR blocking iframe embedding).
  */
 export async function getDeadProviders(): Promise<Set<string>> {
   const allProviders = getAllProviders();
@@ -187,14 +230,15 @@ export async function checkAllProviders(): Promise<Record<string, boolean>> {
     all.map(async (p) => {
       const url = p.getMovieUrl ? p.getMovieUrl(550) : '';
       if (!url) return;
-      const { alive, latencyMs } = await pingProvider(url);
-      results[p.name] = alive;
-      setHealth(p.name, alive);
+      const { alive, latencyMs, framesBlocked } = await pingProvider(url);
+      const effectiveAlive = alive && !framesBlocked;
+      results[p.name] = effectiveAlive;
+      setHealth(p.name, alive, framesBlocked);
       // Feed speed cache
       try {
         const { updateSpeedCache, updateHistoricalCache } = await import('@/lib/streaming/provider-intelligence');
         updateSpeedCache(p.name, latencyMs);
-        updateHistoricalCache(p.name, alive);
+        updateHistoricalCache(p.name, effectiveAlive);
       } catch { /* non-critical */ }
     })
   );
@@ -238,12 +282,12 @@ export function getAllHealthRecords(): Map<string, HealthRecord> {
   for (const [name, entry] of healthStore) {
     const failCount = failCountStore.get(name) || 0;
     records.set(name, {
-      status: entry.alive ? 'alive' : 'dead',
+      status: entry.alive && !entry.framesBlocked ? 'alive' : 'dead',
       latencyMs: 0,
       failCount,
-      consecutiveSuccesses: entry.alive ? Math.max(0, 3 - failCount) : 0,
+      consecutiveSuccesses: entry.alive && !entry.framesBlocked ? Math.max(0, 3 - failCount) : 0,
       lastCheck: entry.checkedAt,
-      lastError: entry.alive ? null : 'Connection failed',
+      lastError: !entry.alive ? 'Connection failed' : entry.framesBlocked ? 'Blocks iframe (X-Frame-Options or CSP frame-ancestors)' : null,
       clientReported: false,
     });
   }

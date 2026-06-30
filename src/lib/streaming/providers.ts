@@ -55,7 +55,10 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // StreamWish — promoted to active TIER 2 (removed from pool)
   { name: 'VidSrcTW', category: 'all', getMovieUrl: (id) => `https://vidsrc.tw/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.tw/embed/tv/${id}/${s}/${e}` },
   { name: 'AutoEmbed', category: 'all', getMovieUrl: (id) => `https://autoembed.co/movie/tmdb/${id}`, getTvUrl: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}` },
-  { name: 'TVPizza', category: 'all', getMovieUrl: (id) => `https://tvpizza.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://tvpizza.com/embed/tv/${id}/${s}/${e}` },
+  // TVPizza removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
+  // LordFlix removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
+  // VidoLol removed — unreachable (fetch failed)
+  // MoviesAPI removed — unreachable (fetch failed)
   { name: 'VidSrc PM', category: 'all', getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}` },
   // MovieBox removed — standalone app, not an embed provider
   { name: 'StreamSilk', category: 'all', getMovieUrl: (id) => `https://streamsilk.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsilk.com/embed/tv/${id}/${s}/${e}` },
@@ -91,8 +94,10 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // VidSrc RU — promoted to active TIER 1 (removed from pool)
   { name: 'VidSrc PRO', category: 'all', getMovieUrl: (id) => `https://vidsrc.pro/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}/${e}` },
   // VidSrc RIP removed — confirmed dead (unreachable)
-  { name: 'VidSrc VIP', category: 'all', getMovieUrl: (id) => `https://vidsrc.vip/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.vip/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc BZ', category: 'all', getMovieUrl: (id) => `https://vidsrc.bz/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.bz/embed/tv/${id}/${s}/${e}` },
+  // VidSrc VIP removed — unreachable (fetch failed)
+  // VidSrc BZ removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
+  // VidSrc GD removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
+  // VidSrc DO removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
   { name: 'VidSrc DEV', category: 'all', getMovieUrl: (id) => `https://vidsrc.dev/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}` },
   // VidSrc XYZ removed — unreachable (fetch failed)
   // VidSrc NET removed — unreachable (fetch failed)
@@ -100,8 +105,8 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // Anime replacements
   { name: 'VidSrc WIN Anime', category: 'anime', getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://vidsrc.win/embed/tv/${malId}/${Math.floor(ep / 25) + 1}/${(ep % 25) || 25}` },
   // NetPlay Anime removed — Thai IPTV service, not an embed provider
-  { name: 'Kwik Anime', category: 'anime', getMovieUrl: (id) => `https://kwik.cx/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://kwik.cx/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://kwik.cx/e/${malId}-${ep}` },
-  { name: 'FileMoon Anime', category: 'anime', getMovieUrl: (id) => `https://filemoon.cc/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://filemoon.cc/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://filemoon.cc/e/${malId}-${ep}` },
+  // Kwik Anime removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
+  // FileMoon Anime removed — unreachable (fetch failed)
 ];
 
 // ---- Active Providers ----

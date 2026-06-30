@@ -18,22 +18,15 @@ const PING_TIMEOUT_MS = 3000; // 3 seconds
 // Provider sample URLs for health pinging — aligned with Intelligence Layer pools
 const PROVIDER_PING_URLS: { name: string; url: string }[] = [
   // T1 active providers
-  { name: 'VidSrc CC',  url: 'https://vidsrc.cc/v2/embed/movie/550' },
-  { name: 'Embed.su',   url: 'https://embed.su/embed/movie/550' },
-  { name: 'VidSrc.to',  url: 'https://vidsrc.to/embed/movie/550' },
-  { name: 'MultiEmbed', url: 'https://multiembed.mov/?video_id=550&tmdb=1' },
-  // T2 active + pool members
-  { name: 'VidSrc.me',    url: 'https://vidsrc.me/embed/movie/550' },
-  { name: 'Nontongo',     url: 'https://nontongo.win/embed/movie/550' },
-  { name: 'MoviesApi.to', url: 'https://moviesapi.to/movie/550' },
-  { name: 'VidSrc.vip',   url: 'https://vidsrc.vip/embed/movie/550' },
-  // Aggregator
-  { name: 'Vyla API',     url: 'https://vyla.vidsrc.icu/embed/movie/550' },
-  // Pool members (check less frequently via round-robin)
-  { name: 'VidSrc PM',    url: 'https://vidsrc.pm/embed/movie/550' },
-  { name: 'StreamWish',   url: 'https://streamwish.to/embed/movie/550' },
-  { name: 'AutoEmbed',    url: 'https://autoembed.co/movie/tmdb/550' },
-  { name: 'SuperEmbed',   url: 'https://superembed.stream/?video_id=550&tmdb=1' },
+  { name: 'VidSrc SU',    url: 'https://vidsrc.su/embed/movie/550' },
+  { name: 'Embed.su',     url: 'https://embed.su/embed/movie/550' },
+  { name: 'VidSrc RU',    url: 'https://vidsrc.ru/embed/movie/550' },
+  { name: 'MultiEmbed',   url: 'https://multiembed.mov/?video_id=550&tmdb=1' },
+  // T2 active providers
+  { name: 'VidSrc.me',      url: 'https://vidsrc.me/embed/movie/550' },
+  { name: 'Nontongo',       url: 'https://nontongo.win/embed/movie/550' },
+  { name: 'MoviesApi.to',   url: 'https://moviesapi.to/movie/550' },
+  { name: 'StreamWish',     url: 'https://streamwish.to/embed/movie/550' },
   // StreamX-Omega providers
   { name: 'VidLink',        url: 'https://vidlink.pro/movie/550' },
   { name: 'AnyEmbed',       url: 'https://anyembed.xyz/embed/tmdb-movie-550' },
@@ -44,6 +37,11 @@ const PROVIDER_PING_URLS: { name: string; url: string }[] = [
   { name: 'VidNest',        url: 'https://vidnest.fun/embed/movie/550' },
   { name: '111Movies',      url: 'https://www.111movies.net/movie/550' },
   { name: 'VidFast',        url: 'https://www.vidfast.net/embed/movie/550' },
+  { name: 'HDStream',       url: 'https://hdstream.to/embed/movie/550' },
+  // Pool members (check less frequently via round-robin)
+  { name: 'VidSrc PM',      url: 'https://vidsrc.pm/embed/movie/550' },
+  { name: 'AutoEmbed',      url: 'https://autoembed.co/movie/tmdb/550' },
+  { name: 'SuperEmbed',     url: 'https://superembed.stream/?video_id=550&tmdb=1' },
 ];
 
 async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: number }> {
