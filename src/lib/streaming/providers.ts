@@ -181,6 +181,19 @@ const activeProviders: StreamProvider[] = [
     getMovieUrl: (id) => `https://vidsrc.vip/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.vip/embed/tv/${id}/${s}/${e}`,
   },
+
+  // ══════════════════════════════════════════════════════════════════
+  // AGGREGATOR — Vyla API
+  // Acts as a provider aggregator, returning unified responses from
+  // multiple upstream sources. Effective as a meta-provider that
+  // reduces single-point-of-failure risk.
+  // ══════════════════════════════════════════════════════════════════
+  {
+    name: "Vyla API",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vyla.vidsrc.icu/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vyla.vidsrc.icu/embed/tv/${id}/${s}/${e}`,
+  },
 ];
 
 // ---- Pool State ----

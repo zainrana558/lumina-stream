@@ -160,6 +160,7 @@ export const watchPartySyncSchema = z.object({
 export const embedHealthReportSchema = z.object({
   provider: z.string().min(1),
   alive: z.boolean(),
+  latencyMs: z.number().min(0).optional(),
 });
 
 // ---- Reminders ----

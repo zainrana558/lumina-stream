@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllEmbedUrls, getAnimeEmbedUrls } from '@/lib/streaming/providers';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
-import { maybeCheckOneProvider, getDeadProviders } from '@/lib/streaming/health-check';
+import { maybeCheckOneProvider } from '@/lib/streaming/health-check';
+import { selectWithIntelligence, recordProviderResult } from '@/lib/streaming/provider-intelligence';
+import { getAllEmbedUrls, getAnimeEmbedUrls } from '@/lib/streaming/providers';
 import { resolveContentType } from '@/lib/content/content-intelligence';
+import { getDeadProviders } from '@/lib/streaming/health-check';
 
 /**
  * GET /api/embed
+ *
+ * Provider Intelligence Layer endpoint.
  *
  * Query params:
  *   tmdb    — TMDB ID (required for non-anime)
@@ -14,9 +18,16 @@ import { resolveContentType } from '@/lib/content/content-intelligence';
  *   season  — Season number for TV (default: 1)
  *   episode — Episode number for TV (default: 1)
  *   isAnime — "true" to use anime provider mix
+ *   mode    — "smart" (default) returns scored chain; "legacy" returns tier-sorted list
  *
- * Returns providers sorted by tier, with dead providers filtered out.
- * Replaced providers (from the pool) are flagged with "replaced": true.
+ * Smart mode (default):
+ *   Returns { chain: [{ provider, url, score, tier, category }], ... }
+ *   The chain is pre-scored and ordered by the Provider Intelligence Layer.
+ *   Client uses chain[0] as primary, advances on failover.
+ *
+ * Legacy mode:
+ *   Returns { providers: [{ name, url, tier, category }], total }
+ *   Simple tier-sorted list (original behavior).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +35,7 @@ export async function GET(request: NextRequest) {
     const rl = await checkRateLimit(request, 'embed');
     if (!rl.success) {
       return NextResponse.json(
-        { error: 'Too many requests. Please slow down.', providers: [] },
+        { error: 'Too many requests. Please slow down.', providers: [], chain: [] },
         { status: 429, headers: rateLimitHeaders(rl) }
       );
     }
@@ -40,14 +51,42 @@ export async function GET(request: NextRequest) {
     const season = parseInt(searchParams.get('season') || '1');
     const episode = parseInt(searchParams.get('episode') || '1');
     const isAnime = searchParams.get('isAnime') === 'true';
+    const mode = searchParams.get('mode') || 'smart';
 
     if (!tmdbId && !malId) {
       return NextResponse.json({ error: 'Missing tmdb or mal parameter' }, { status: 400 });
     }
 
-    // Get providers based on content type
-    // Use L3 Content Intelligence for automatic anime detection
-    let providers;
+    // ── Smart Mode: Provider Intelligence Layer ──
+    if (mode === 'smart') {
+      try {
+        const result = await selectWithIntelligence({
+          tmdbId: tmdbId || undefined,
+          malId,
+          mediaType: type,
+          season,
+          episode,
+          isAnime: isAnime || undefined,
+          fastMode: false, // Enable parallel probing for best results
+        });
+
+        // NexStream proxy rewriting
+        if (process.env.NEXSTREAM_API_KEY) {
+          for (const item of result.chain) {
+            if (item.url.includes('codespecters.com')) {
+              item.url = `/api/embed-proxy?url=${encodeURIComponent(item.url)}`;
+            }
+          }
+        }
+
+        return NextResponse.json(result, { headers: rateLimitHeaders(rl) });
+      } catch (intelligenceError) {
+        // Intelligence layer failed — fall through to legacy mode
+        console.error('[Embed] Intelligence layer failed, falling back to legacy:', intelligenceError);
+      }
+    }
+
+    // ── Legacy Mode: Tier-sorted provider list ──
     const contentType = resolveContentType({
       id: tmdbId || undefined,
       mediaType: type,
@@ -56,6 +95,7 @@ export async function GET(request: NextRequest) {
     });
     const useAnimePool = contentType.type === 'anime' || !!malId;
 
+    let providers;
     if (useAnimePool) {
       const effectiveTmdbId = tmdbId || 0;
       providers = getAnimeEmbedUrls(effectiveTmdbId, season, episode, malId);
@@ -63,8 +103,7 @@ export async function GET(request: NextRequest) {
       providers = getAllEmbedUrls(type, tmdbId, season, episode);
     }
 
-    // NexStream requires an API key — route through server-side proxy.
-    // The key is read from env inside embed-proxy; never passed in the URL.
+    // NexStream proxy rewriting
     if (process.env.NEXSTREAM_API_KEY) {
       for (const p of providers) {
         if (p.url.includes('codespecters.com')) {
@@ -99,8 +138,31 @@ export async function GET(request: NextRequest) {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: msg, providers: [] },
+      { error: msg, providers: [], chain: [] },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * POST /api/embed
+ *
+ * Record a provider playback result for the learning system.
+ * Body: { provider: string, success: boolean }
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { provider, success } = body as { provider?: string; success?: boolean };
+
+    if (!provider || typeof success !== 'boolean') {
+      return NextResponse.json({ error: 'Missing provider or success field' }, { status: 400 });
+    }
+
+    recordProviderResult(provider, success);
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }

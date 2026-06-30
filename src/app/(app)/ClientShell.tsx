@@ -20,6 +20,7 @@ import { ToastProvider } from '@/components/common/ToastProvider';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 const CookieConsent = lazy(() => import('@/components/layout/CookieConsent'));
 const Footer = lazy(() => import('@/components/layout/Footer'));
+const ClientHealthMonitor = lazy(() => import('@/components/common/ClientHealthMonitor'));
 
 function NotificationBanner() {
   const {
@@ -309,6 +310,11 @@ function AppShell({ children }: { children: ReactNode }) {
 
       {/* Site footer */}
       <Footer />
+
+      {/* Background provider health monitoring (feeds Intelligence Layer) */}
+      <Suspense fallback={null}>
+        <ClientHealthMonitor />
+      </Suspense>
     </div>
   );
 }

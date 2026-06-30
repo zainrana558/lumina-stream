@@ -48,7 +48,8 @@ if (typeof globalThis !== 'undefined') {
 /**
  * Check if a single provider is reachable.
  */
-async function pingProvider(url: string): Promise<boolean> {
+async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: number }> {
+  const start = Date.now();
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CHECK_TIMEOUT);
@@ -58,9 +59,11 @@ async function pingProvider(url: string): Promise<boolean> {
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    return true;
+    const latencyMs = Date.now() - start;
+    return { alive: true, latencyMs };
   } catch {
-    return false;
+    const latencyMs = Date.now() - start;
+    return { alive: false, latencyMs };
   }
 }
 
@@ -115,7 +118,14 @@ export async function maybeCheckOneProvider(): Promise<void> {
 
   const sampleUrl = provider.getMovieUrl(550); // Fight Club always exists
   const prevAlive = getPrevHealth(provider.name);
-  const alive = await pingProvider(sampleUrl);
+  const { alive, latencyMs } = await pingProvider(sampleUrl);
+
+  // Feed latency to Provider Intelligence speed cache
+  try {
+    const { updateSpeedCache, updateHistoricalCache } = await import('@/lib/streaming/provider-intelligence');
+    updateSpeedCache(provider.name, latencyMs);
+    updateHistoricalCache(provider.name, alive);
+  } catch { /* non-critical */ }
 
   // Save current health
   setHealth(provider.name, alive);
@@ -131,7 +141,7 @@ export async function maybeCheckOneProvider(): Promise<void> {
       const replacement = swapInReplacement(provider.name);
       if (replacement) {
         // Also pre-health-check the replacement
-        const repAlive = await pingProvider(replacement.getMovieUrl(550));
+        const { alive: repAlive } = await pingProvider(replacement.getMovieUrl(550));
         setHealth(replacement.name, repAlive);
       }
     }
@@ -177,9 +187,15 @@ export async function checkAllProviders(): Promise<Record<string, boolean>> {
     all.map(async (p) => {
       const url = p.getMovieUrl ? p.getMovieUrl(550) : '';
       if (!url) return;
-      const alive = await pingProvider(url);
+      const { alive, latencyMs } = await pingProvider(url);
       results[p.name] = alive;
       setHealth(p.name, alive);
+      // Feed speed cache
+      try {
+        const { updateSpeedCache, updateHistoricalCache } = await import('@/lib/streaming/provider-intelligence');
+        updateSpeedCache(p.name, latencyMs);
+        updateHistoricalCache(p.name, alive);
+      } catch { /* non-critical */ }
     })
   );
 

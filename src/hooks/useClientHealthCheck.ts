@@ -5,27 +5,39 @@
  * so the Vercel server IP is NEVER exposed to embed providers.
  * Reports results to /api/embed-health-client for server-side state management.
  *
- * Strategy: Check 1 provider every 2 minutes (round-robin).
+ * Strategy: Check 1 provider every 10 minutes (round-robin).
  * Each user's browser does its own checks, creating distributed monitoring.
+ * Provider list now aligned with the Provider Intelligence Layer pools.
  */
 
 import { useCallback, useEffect, useRef } from 'react';
 
-const CHECK_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes (was 2 min)
-const PING_TIMEOUT_MS = 3000; // 3 seconds (was 6s)
+const CHECK_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+const PING_TIMEOUT_MS = 3000; // 3 seconds
 
-// Provider sample URLs for health pinging
+// Provider sample URLs for health pinging — aligned with Intelligence Layer pools
 const PROVIDER_PING_URLS: { name: string; url: string }[] = [
-  { name: 'AutoEmbed',  url: 'https://autoembed.co/movie/tmdb/550' },
-  { name: 'VidPhantom', url: 'https://vidphantom.com/movie/550' },
-  { name: 'VidSrc',     url: 'https://vidsrc.fyi/embed/movie/550' },
-  { name: 'NexStream',   url: 'https://api.codespecters.com/embed/movie/550' },
-  { name: 'VidSrc PM',  url: 'https://vidsrc.pm/embed/movie/550' },
-  { name: 'VidSrc IN',  url: 'https://vidsrc.in/embed/movie/550' },
-  { name: 'VidSrc IO',  url: 'https://vidsrc.io/embed/movie/550' },
+  // T1 active providers
+  { name: 'VidSrc CC',  url: 'https://vidsrc.cc/v2/embed/movie/550' },
+  { name: 'Embed.su',   url: 'https://embed.su/embed/movie/550' },
+  { name: 'VidSrc.to',  url: 'https://vidsrc.to/embed/movie/550' },
+  { name: 'MultiEmbed', url: 'https://multiembed.mov/?video_id=550&tmdb=1' },
+  // T2 active + pool members
+  { name: 'VidSrc.me',    url: 'https://vidsrc.me/embed/movie/550' },
+  { name: 'Nontongo',     url: 'https://nontongo.win/embed/movie/550' },
+  { name: 'MoviesApi.to', url: 'https://moviesapi.to/movie/550' },
+  { name: 'VidSrc.vip',   url: 'https://vidsrc.vip/embed/movie/550' },
+  // Aggregator
+  { name: 'Vyla API',     url: 'https://vyla.vidsrc.icu/embed/movie/550' },
+  // Pool members (check less frequently via round-robin)
+  { name: 'VidSrc PM',    url: 'https://vidsrc.pm/embed/movie/550' },
+  { name: 'StreamWish',   url: 'https://streamwish.to/embed/movie/550' },
+  { name: 'AutoEmbed',    url: 'https://autoembed.co/movie/tmdb/550' },
+  { name: 'SuperEmbed',   url: 'https://superembed.stream/?video_id=550&tmdb=1' },
 ];
 
-async function pingProvider(url: string): Promise<boolean> {
+async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: number }> {
+  const start = Date.now();
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PING_TIMEOUT_MS);
@@ -35,18 +47,18 @@ async function pingProvider(url: string): Promise<boolean> {
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    return true;
+    return { alive: true, latencyMs: Date.now() - start };
   } catch {
-    return false;
+    return { alive: false, latencyMs: Date.now() - start };
   }
 }
 
-async function reportToServer(provider: string, alive: boolean): Promise<void> {
+async function reportToServer(provider: string, alive: boolean, latencyMs: number): Promise<void> {
   try {
     await fetch('/api/embed-health-client', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider, alive }),
+      body: JSON.stringify({ provider, alive, latencyMs }),
     });
   } catch {
     // Silent fail — health reporting is non-critical
@@ -60,17 +72,17 @@ export function useClientHealthCheck() {
     const provider = PROVIDER_PING_URLS[checkIndexRef.current % PROVIDER_PING_URLS.length];
     checkIndexRef.current++;
 
-    const alive = await pingProvider(provider.url);
-    await reportToServer(provider.name, alive);
+    const result = await pingProvider(provider.url);
+    await reportToServer(provider.name, result.alive, result.latencyMs);
   }, []);
 
   useEffect(() => {
-    // Run first check after a short random delay (1-5 min) to stagger across users
-    const initialDelay = 2 * 60 * 1000 + Math.random() * 5 * 60 * 1000;
+    // Run first check after a short random delay (2-5 min) to stagger across users
+    const initialDelay = 2 * 60 * 1000 + Math.random() * 3 * 60 * 1000;
     let intervalId: ReturnType<typeof setInterval> | null = null;
     const initialTimer = setTimeout(() => {
       runCheck();
-      // Then check every 2 minutes
+      // Then check every 10 minutes
       intervalId = setInterval(runCheck, CHECK_INTERVAL_MS);
     }, initialDelay);
 

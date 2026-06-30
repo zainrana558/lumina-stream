@@ -1,13 +1,11 @@
 /**
  * L3 — Content-Type-Aware Provider Selection
  *
- * Uses Content Intelligence (L3) to determine the content type
- * and selects the appropriate provider pool before scoring.
+ * Now delegates to the Provider Intelligence Layer for scoring and routing.
+ * Maintains backward compatibility with the selectProviders() API.
  */
 
-import { getContentForSelection } from '@/lib/content/content-intelligence';
-import { getAllEmbedUrls, getAnimeEmbedUrls } from '@/lib/streaming/providers';
-import { scoreAndSortProviders } from '@/lib/streaming/scoring';
+import { selectWithIntelligence, type ScoredProvider } from '@/lib/streaming/provider-intelligence';
 import type { EmbedResult } from '@/lib/streaming/providers';
 import type { MediaType } from '@/types';
 
@@ -25,31 +23,60 @@ export interface SelectionOptions {
 
 /**
  * Select the best providers for a given content item.
- * Uses content intelligence for pool routing, then scores within the pool.
+ * Delegates to the Provider Intelligence Layer for intelligent scoring.
+ * Returns providers ordered by intelligence score (highest first).
  */
 export async function selectProviders(options: SelectionOptions): Promise<EmbedResult[]> {
-  const { contentType, poolHint } = getContentForSelection(options);
+  const result = await selectWithIntelligence({
+    tmdbId: options.id,
+    malId: options.malId,
+    mediaType: (options.mediaType as 'movie' | 'tv') || undefined,
+    season: options.season,
+    episode: options.episode,
+    isAnime: options.isAnime,
+    genres: options.genres,
+    genreIds: options.genreIds,
+  });
 
-  let providers: EmbedResult[];
+  // Convert chain back to EmbedResult format
+  return result.chain.map(item => ({
+    name: item.provider,
+    url: item.url,
+    tier: item.tier as 1 | 2,
+    category: (item.category === 'anime' ? 'anime' : 'all') as 'all' | 'anime',
+  }));
+}
 
-  if (poolHint.pool === 'anime') {
-    const effectiveTmdbId = options.id || 0;
-    providers = getAnimeEmbedUrls(
-      effectiveTmdbId,
-      options.season || 1,
-      options.episode || 1,
-      options.malId,
-    );
-  } else {
-    const type = contentType.type === 'movie' ? 'movie' : 'tv';
-    providers = getAllEmbedUrls(
-      type,
-      options.id || 0,
-      options.season,
-      options.episode,
-    );
-  }
+/**
+ * Select providers and return full scoring details.
+ * Used by admin/debug endpoints.
+ */
+export async function selectProvidersWithScores(options: SelectionOptions): Promise<ScoredProvider[]> {
+  const result = await selectWithIntelligence({
+    tmdbId: options.id,
+    malId: options.malId,
+    mediaType: (options.mediaType as 'movie' | 'tv') || undefined,
+    season: options.season,
+    episode: options.episode,
+    isAnime: options.isAnime,
+    genres: options.genres,
+    genreIds: options.genreIds,
+  });
 
-  // Score and sort providers
-  return scoreAndSortProviders(providers);
+  // The chain doesn't include full signals — return lightweight version
+  return result.chain.map(item => ({
+    name: item.provider,
+    url: item.url,
+    tier: item.tier as 1 | 2,
+    category: (item.category === 'anime' ? 'anime' : 'all') as 'all' | 'anime',
+    score: item.score,
+    signals: {
+      availability: 0,
+      responseSpeed: 0,
+      subtitleSupport: 0,
+      quality: 0,
+      historicalSuccess: 0,
+      learnedBonus: 0,
+    },
+  }));
 }

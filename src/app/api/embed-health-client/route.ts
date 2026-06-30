@@ -6,17 +6,15 @@ import { embedHealthReportSchema } from '@/lib/schemas';
 /**
  * POST /api/embed-health-client
  *
- * Client-side health check reporter — UNIFIED with server-side health system.
+ * Client-side health check reporter — feeds the Provider Intelligence Layer.
  *
  * The browser pings embed providers directly (no server IP exposure),
- * then reports results here. Results now flow into the SAME Redis keys
- * used by the server-side health checker (health:provider:{name} hashes
- * and health:alive ZSET), ending the previous dual-system problem.
+ * then reports results here. Results flow into:
+ *   1. The unified health system (health-check.ts)
+ *   2. The Provider Intelligence speed cache (provider-intelligence.ts)
+ *   3. The historical success cache (for scoring)
  *
- * Client reports are flagged with `clientReported: true` so the scoring
- * engine (Phase 2) can weight them at 0.5x vs server-side checks.
- *
- * Body: { provider: string, alive: boolean }
+ * Body: { provider: string, alive: boolean, latencyMs?: number }
  */
 export async function POST(request: Request) {
   try {
@@ -36,9 +34,18 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const { provider, alive } = parsed.data;
+    const { provider, alive, latencyMs } = parsed.data;
 
-    // Write to the UNIFIED health system (Redis + in-memory fallback)
+    // Feed the Provider Intelligence Layer caches
+    try {
+      const { updateSpeedCache, updateHistoricalCache } = await import('@/lib/streaming/provider-intelligence');
+      if (latencyMs) updateSpeedCache(provider, latencyMs);
+      updateHistoricalCache(provider, alive);
+    } catch {
+      // Non-critical
+    }
+
+    // Write to the UNIFIED health system (in-memory)
     const record = await reportClientHealth(provider, alive);
 
     return NextResponse.json(
