@@ -793,7 +793,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           {activeProviderUrl ? (
             <>
               <div style={{ position: 'relative', width: 'min(100vw, calc(100vh * 16 / 9))', height: 'min(100vh, calc(100vw * 9 / 16))', flexShrink: 0, overflow: 'hidden' }}>
-                <iframe key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" />
+                <iframe key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" />
               </div>
               {/* Failover toast */}
               {failoverMsg && (
@@ -813,7 +813,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   }} style={{ padding: '8px 14px', background: 'rgba(0,0,0,.8)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 10, color: '#FFF5E8', fontSize: '.72rem', cursor: 'pointer', outline: 'none' }}>
                     {providers.map((p, i) => (
                       <option key={i} value={i} style={{ background: '#0C091A' }}>
-                        {p.name}{p.tier === 1 ? ' (T1)' : p.tier === 2 ? ' (T2)' : p.tier === 3 ? ' (T3)' : ''}{p.category === 'anime' ? ' Anime' : ''}{failoverChain.length > 0 && p.score != null ? ` [${(p.score * 100).toFixed(0)}%]` : ''}{failoverChain.length > 0 && i === chainIndex ? ' ✓' : ''}
+                        {p.name}{p.tier === 1 ? ' (T1)' : p.tier === 2 ? ' (T2)' : p.tier === 3 ? ' (T3)' : ''}{p.category === 'anime' ? ' Anime' : ''}{failoverChain.length > 0 && p.score != null ? ` [${p.score.toFixed(0)}%]` : ''}{failoverChain.length > 0 && i === chainIndex ? ' ✓' : ''}
                       </option>
                     ))}
                   </select>

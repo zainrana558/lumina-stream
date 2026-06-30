@@ -34,6 +34,16 @@ const PROVIDER_PING_URLS: { name: string; url: string }[] = [
   { name: 'StreamWish',   url: 'https://streamwish.to/embed/movie/550' },
   { name: 'AutoEmbed',    url: 'https://autoembed.co/movie/tmdb/550' },
   { name: 'SuperEmbed',   url: 'https://superembed.stream/?video_id=550&tmdb=1' },
+  // StreamX-Omega providers
+  { name: 'VidLink',        url: 'https://vidlink.pro/movie/550' },
+  { name: 'AnyEmbed',       url: 'https://anyembed.xyz/embed/tmdb-movie-550' },
+  { name: 'Videasy Player', url: 'https://player.videasy.net/movie/550' },
+  { name: 'VaPlayer',       url: 'https://vaplayer.ru/embed/movie/550' },
+  { name: '2Embed',         url: 'https://www.2embed.cc/embed/movie/550' },
+  { name: 'VidSrc MOV',     url: 'https://vidsrc.mov/embed/movie/550' },
+  { name: 'VidNest',        url: 'https://vidnest.fun/embed/movie/550' },
+  { name: '111Movies',      url: 'https://www.111movies.net/movie/550' },
+  { name: 'VidFast',        url: 'https://www.vidfast.net/embed/movie/550' },
 ];
 
 async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: number }> {

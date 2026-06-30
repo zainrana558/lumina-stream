@@ -132,8 +132,6 @@ const activeProviders: StreamProvider[] = [
   // SmashyStream removed — confirmed dead (unreachable)
 
   // Vidify removed — music player app, not an embed provider
-  // VidLink removed — YouTube card tool, not an embed provider
-  // 2Embed removed — shut down by anti-piracy coalition, domain flagged for phishing
   // Cine.su removed — brand new domain with very low trust score
   // AutoEmbed removed — confirmed dead (autoembed.cc unreachable)
 
@@ -180,6 +178,82 @@ const activeProviders: StreamProvider[] = [
     tier: 2, category: "all",
     getMovieUrl: (id) => `https://vidsrc.vip/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.vip/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // ══════════════════════════════════════════════════════════════════
+  // TIER 2 — StreamX-Omega providers (verified working on production site)
+  // ══════════════════════════════════════════════════════════════════
+
+  // VidLink — Used by StreamX-Omega, supports primaryColor param
+  {
+    name: "VidLink",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidlink.pro/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
+  },
+
+  // AnyEmbed — TMDB-native embed, clean player
+  {
+    name: "AnyEmbed",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://anyembed.xyz/embed/tmdb-movie-${id}`,
+    getTvUrl: (id, s, e) => `https://anyembed.xyz/embed/tmdb-tv-${id}-${s}-${e}`,
+  },
+
+  // Videasy Player — Different domain from Videasy in replacement pool
+  {
+    name: "Videasy Player",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://player.videasy.net/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.videasy.net/tv/${id}/${s}/${e}`,
+  },
+
+  // VaPlayer — Russian embed provider, reliable
+  {
+    name: "VaPlayer",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vaplayer.ru/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vaplayer.ru/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // 2Embed — Re-enabled, confirmed working on StreamX-Omega
+  {
+    name: "2Embed",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://www.2embed.cc/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://www.2embed.cc/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // VidSrc MOV — Distinct from vidsrc.to, separate infrastructure
+  {
+    name: "VidSrc MOV",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrc.mov/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.mov/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // VidNest — Fun-domain embed provider
+  {
+    name: "VidNest",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidnest.fun/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidnest.fun/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // 111Movies — Numbered domain, TMDB-based
+  {
+    name: "111Movies",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://www.111movies.net/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://www.111movies.net/tv/${id}/${s}/${e}`,
+  },
+
+  // VidFast — Fast embed provider with CDN
+  {
+    name: "VidFast",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://www.vidfast.net/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://www.vidfast.net/embed/tv/${id}/${s}/${e}`,
   },
 
   // ══════════════════════════════════════════════════════════════════

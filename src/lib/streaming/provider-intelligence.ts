@@ -97,6 +97,8 @@ const MOVIE_POOL: ProviderPool = {
     'VidSrc.me', 'Nontongo', 'MoviesApi.to', 'VidSrc.vip',
     'VidSrc PM', 'StreamWish', 'AutoEmbed', 'TVPizza',
     'SuperEmbed', 'VidSrc FYI', 'Videasy', 'LordFlix',
+    'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
+    '2Embed', 'VidSrc MOV', 'VidNest', '111Movies', 'VidFast',
     'Vyla API',
   ],
 };
@@ -109,7 +111,10 @@ const ANIME_POOL: ProviderPool = {
     'VidSrc.me', 'Nontongo', 'MoviesApi.to',
     'VidSrc WIN Anime', 'Kwik Anime', 'FileMoon Anime',
     'VidSrc PM', 'StreamWish', 'AutoEmbed',
-    'VidSrc FYI', 'SuperEmbed', 'Vyla API',
+    'VidSrc FYI', 'SuperEmbed',
+    'VidLink', 'AnyEmbed', 'VaPlayer',
+    '2Embed', 'VidSrc MOV', 'VidNest', 'VidFast',
+    'Vyla API',
   ],
 };
 
@@ -121,6 +126,8 @@ const TV_POOL: ProviderPool = {
     'VidSrc.me', 'Nontongo', 'MoviesApi.to', 'VidSrc.vip',
     'VidSrc PM', 'StreamWish', 'AutoEmbed', 'TVPizza',
     'SuperEmbed', 'VidSrc FYI', 'Videasy', 'LordFlix',
+    'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
+    '2Embed', 'VidSrc MOV', 'VidNest', '111Movies', 'VidFast',
     'Vyla API',
   ],
 };
@@ -153,6 +160,16 @@ const PROVIDER_CAPABILITIES: Record<string, {
   'VidSrc WIN Anime': { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
   'Kwik Anime':       { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.4 },
   'FileMoon Anime':   { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.4 },
+  // StreamX-Omega providers
+  'VidLink':          { subtitleSupport: 0.7, quality: 0.8, avgSpeed: 0.7 },
+  'AnyEmbed':         { subtitleSupport: 0.6, quality: 0.8, avgSpeed: 0.7 },
+  'Videasy Player':   { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.6 },
+  'VaPlayer':         { subtitleSupport: 0.3, quality: 0.7, avgSpeed: 0.5 },
+  '2Embed':           { subtitleSupport: 0.5, quality: 0.75, avgSpeed: 0.6 },
+  'VidSrc MOV':       { subtitleSupport: 0.5, quality: 0.75, avgSpeed: 0.6 },
+  'VidNest':          { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
+  '111Movies':        { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.5 },
+  'VidFast':          { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.7 },
 };
 
 // ── Dynamic speed cache (updated by health monitor) ──
