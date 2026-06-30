@@ -454,17 +454,22 @@ export async function selectWithIntelligence(options: {
       signalsUsed = true;
 
       // Re-score with updated caches (probes updated speed + historical)
+      const probedSet = new Set(aliveFromProbe);  // providers confirmed alive
+      const deadSet = candidates.slice(0, probeCount).filter(p => !aliveFromProbe.has(p.name)).map(p => p.name);
+      const knownDead = new Set(deadSet);
+
       scored = candidates.map(p => {
-        // If probe says dead, zero out availability
-        if (probeCount > 0 && !aliveFromProbe.has(p.name)) {
-          const bonus = learnedBonuses.get(p.name) ?? 0;
-          const result = scoreProviderIntelligent(p, bonus);
-          result.signals.availability = 0;
-          result.score = Math.round((result.score - result.signals.availability * 50) * 10) / 10;
-          return result;
-        }
         const bonus = learnedBonuses.get(p.name) ?? 0;
-        return scoreProviderIntelligent(p, bonus);
+        const result = scoreProviderIntelligent(p, bonus);
+
+        // Only penalize providers that were actually probed AND confirmed dead
+        // (don't penalize providers that weren't probed at all)
+        if (knownDead.has(p.name)) {
+          result.signals.availability = 0;
+          result.score = Math.round((result.signals.subtitleSupport * 10 + result.signals.responseSpeed * 20 + result.signals.quality * 10 + result.signals.historicalSuccess * 10) * 10) / 10;
+        }
+
+        return result;
       });
     } catch {
       // Probing failed — use cached scores only

@@ -13,7 +13,8 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useApp } from '@/contexts/AppContext';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { vibrateMedium, vibrateLong } from '@/lib/haptics';
-import { getTmdbImageUrl, getBackdropUrl } from '@/lib/images';
+import { getTmdbImageUrl, getBackdropUrl, getYoutubeThumbnail } from '@/lib/images';
+import TrailerModal from '@/components/common/TrailerModal';
 
 interface TMDBSeasonEpisode {
   id: number;
@@ -86,6 +87,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [selectedProvider, setSelectedProvider] = useState(0);
   const [failoverMsg, setFailoverMsg] = useState('');
   const [loadingProviders, setLoadingProviders] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const triedProviders = useRef<Set<number>>(new Set());
   const playerRef = useRef<HTMLDivElement>(null);
@@ -410,6 +412,22 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         dur: `${22 + (i * 5) % 8}m`, done: i < epIdx - 1,
       }));
 
+  // Unified trailer list — works for both TMDB and AniList items
+  const trailerList: Array<{ key: string; name: string; site: string; type: string }> = (() => {
+    const tmdbTrailers = (fullDetails?.videos?.results || [])
+      .filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
+      .map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type }));
+
+    if (tmdbTrailers.length > 0) return tmdbTrailers;
+
+    // AniList fallback: use the _anilistTrailer field if present
+    if (show._isAnilist && show._anilistTrailer) {
+      return [{ key: show._anilistTrailer.id, name: `${show.title} — Trailer`, site: 'YouTube', type: 'Trailer' }];
+    }
+
+    return [];
+  })();
+
   const similar: MediaItem[] = fullDetails?.similar?.results && fullDetails.similar.results.length > 0
     ? fullDetails.similar.results.slice(0, 6).map((r) => tmdbToMedia(r))
     : initialSimilar.length > 0
@@ -539,6 +557,11 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       <div style={{ padding: '1.2rem clamp(1rem,5vw,2.5rem)', position: 'relative', zIndex: 3, maxWidth: 1040, margin: '0 auto' }}>
         <div style={{ display: 'flex', gap: '.85rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           <button className="btn-p" onClick={() => { vibrateLong(); setPlaying(true); }}>▶ Play {show.media_type === 'tv' ? `Episode ${epIdx}` : 'Now'}</button>
+          {trailerList.length > 0 && (
+            <button className="btn-g" onClick={() => setShowTrailer(true)} style={{ opacity: 0.9 }}>
+              ▶ Trailer
+            </button>
+          )}
           <button className="btn-g" onClick={toggleWatchlist} style={{ opacity: inWatchlist ? 1 : 0.85 }}>
             {inWatchlist ? '✓ In My List' : '+ My List'}
           </button>
@@ -655,32 +678,27 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           <section aria-label="Trailers">
             <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '1rem' }}>TRAILERS</h2>
           <div>
-            {fullDetails?.videos?.results?.length ? (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1rem' }}>
-                  {fullDetails.videos.results
-                    .filter((v: { type: string; site: string }) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
-                    .slice(0, 8)
-                    .map((v: { id: string; key: string; name: string; type: string }, i: number) => (
-                      <div key={v.id} style={{ animation: `card-in .42s ${i * 0.06}s both` }}>
-                        <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
-                          <iframe
-                            src={`https://www.youtube.com/embed/${v.key}?rel=0`}
-                            title={v.name}
-                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            loading="lazy"
-                          />
-                        </div>
-                        <div style={{ padding: '.6rem 0' }}>
-                          <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
-                          <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)', }}>{v.type}</span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </>
+            {trailerList.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1rem' }}>
+                {trailerList.slice(0, 8).map((v, i) => (
+                  <div key={v.key} style={{ animation: `card-in .42s ${i * 0.06}s both` }}>
+                    <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
+                      <iframe
+                        src={`https://www.youtube-nocookie.com/embed/${v.key}?rel=0`}
+                        title={v.name}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        loading="lazy"
+                      />
+                    </div>
+                    <div style={{ padding: '.6rem 0' }}>
+                      <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
+                      <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)', }}>{v.type}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '.8rem', opacity: .4 }}>🎬</div>
@@ -787,6 +805,15 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         <div style={{ height: 64 }} />
       </div>
 
+      {/* Trailer modal */}
+      {showTrailer && trailerList.length > 0 && (
+        <TrailerModal
+          trailers={trailerList}
+          showTitle={show.title}
+          onClose={() => setShowTrailer(false)}
+        />
+      )}
+
       {/* Player overlay */}
 {/* Player overlay — responsive 16:9 */}
       {playing && (
@@ -876,12 +903,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>No sources found</div>
                 <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '10px 28px', fontSize: '.82rem' }}>Go Back</button>
               </div>
-              <div style={{ position: 'fixed', botto<div style={ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }>
-  <div style={ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }>
-    <div className="f-cinzel" style={ fontSize: '.82rem', color: '#FFF5E8' }>No sources found</div>
-    <button className="btn-g" onClick={() => setPlaying(false)} style={ padding: '8px 18px', fontSize: '.78rem' }>Exit</button>
-  </div>
-</div>              </div>
+              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>No sources found</div>
+                  <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>Exit</button>
+                </div>
+              </div>
             </>
           )}
         </div>

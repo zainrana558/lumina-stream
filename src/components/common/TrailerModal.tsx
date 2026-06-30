@@ -51,7 +51,7 @@ export default function TrailerModal({ trailers, showTitle, onClose }: {
         {/* YouTube embed */}
         <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
           <iframe
-            src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1&rel=0`}
+            src={`https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0`}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
             allowFullScreen allow="autoplay; encrypted-media"
           />
