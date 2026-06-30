@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-// ── Next.js 16 "proxy" convention (renamed from middleware.ts) ───────────────
+// ── Proxy (Next.js 16 middleware convention) ─────────────────────────────
+// Auth, security headers, rate limiting. Next.js 16 renamed middleware.ts
+// to proxy.ts — do NOT rename this file back to middleware.ts or both
+// will be detected and the build will fail.
 
 // ── Public paths — no auth required ────────────────────────────────────────
 // ONLY truly public pages. Protected pages (/watchlist, /settings, /stats,
@@ -68,14 +71,14 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
       "Content-Security-Policy",
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://popads.net https://cdn.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com",
         "style-src 'self' 'unsafe-inline'",
         "font-src 'self' data:",
         "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
         "media-src 'self' https: blob:",
         // Allow any HTTPS iframe — embed providers rotate via replacement pool
         "frame-src 'self' https:",
-        "connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.themoviedb.org https://*.upstash.io https://graphql.anilist.co https://accounts.google.com https://github.com",
+        "connect-src 'self' https: https://*.supabase.co https://*.supabase.com https://*.popads.net https://*.propellerads.com https://*.highperformancedformats.com",
         "worker-src 'self' blob:",
       ].join("; ")
     );
