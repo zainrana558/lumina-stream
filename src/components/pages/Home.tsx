@@ -311,7 +311,7 @@ function GenrePortalCard({
       <div
         className="portal-backdrop"
         role="img"
-        aria-label={`${g.label} genre portal backdrop`}
+        aria-label={`${g.name} genre portal backdrop`}
         style={{
           backgroundImage: backdropUrl
             ? undefined
@@ -322,7 +322,7 @@ function GenrePortalCard({
         {backdropUrl && (
           <Image
             src={backdropUrl}
-            alt={`${g.label} genre portal`}
+            alt={`${g.name} genre portal`}
             fill
             loading="lazy"
             sizes="(max-width: 768px) 100vw, 33vw"
