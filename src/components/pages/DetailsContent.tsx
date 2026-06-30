@@ -13,8 +13,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useApp } from '@/contexts/AppContext';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { vibrateMedium, vibrateLong } from '@/lib/haptics';
-import { getTmdbImageUrl, getBackdropUrl, getYoutubeThumbnail } from '@/lib/images';
-import TrailerModal from '@/components/common/TrailerModal';
+import { getTmdbImageUrl, getBackdropUrl } from '@/lib/images';
 
 interface TMDBSeasonEpisode {
   id: number;
@@ -83,19 +82,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [loadingSeason, setLoadingSeason] = useState(false);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [hasMoreSimilar, setHasMoreSimilar] = useState(true);
-  const [providers, setProviders] = useState<Array<{ name: string; url: string; tier?: number; category?: string; score?: number }>>([]);
+  const [providers, setProviders] = useState<{ name: string; url: string; tier?: number; category?: string }[]>([]);
   const [selectedProvider, setSelectedProvider] = useState(0);
   const [failoverMsg, setFailoverMsg] = useState('');
-  const [loadingProviders, setLoadingProviders] = useState(false);
-  const [showTrailer, setShowTrailer] = useState(false);
-  const [iframeLoaded, setIframeLoaded] = useState(false);
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const triedProviders = useRef<Set<number>>(new Set());
   const playerRef = useRef<HTMLDivElement>(null);
-  // Smart failover chain state (pre-fetched top-3 from scoring engine)
-  const [failoverChain, setFailoverChain] = useState<Array<{ provider: string; url: string; score: number; tier: number }>>([]);
-  const [chainIndex, setChainIndex] = useState(0);
-  const [chainExhausted, setChainExhausted] = useState(false);
 
   // Wake Lock - keep screen awake during video playback
   useWakeLock(playing);
@@ -109,16 +101,16 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     router.replace(epUrl, { scroll: false });
   }, [showId, router]);
 
-  useKeyboardShortcuts(true, {
-    onTogglePlayPause: () => { if (playing) setPlaying(p => !p); else { vibrateLong(); setPlaying(true); } },
-    onToggleFullscreen: () => { if (playing) playerRef.current?.requestFullscreen?.(); },
-    onExit: () => { if (playing) setPlaying(false); },
-    onPreviousEpisode: () => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
-    onNextEpisode: () => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : show.eps; if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
+  useKeyboardShortcuts(playing, {
+    onTogglePlayPause: () => setPlaying(p => !p),
+    onToggleFullscreen: () => { playerRef.current?.requestFullscreen?.(); },
+    onExit: () => setPlaying(false),
+    onPreviousEpisode: () => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } },
+    onNextEpisode: () => { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); },
     onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); syncEpisodeUrl(season, n); } },
     onToggleSubtitles: () => {},
-    onSwitchProvider: () => { if (!playing) return; if (failoverChain.length > 1 && chainIndex < failoverChain.length - 1) { const next = chainIndex + 1; setChainIndex(next); setSelectedProvider(next); setFailoverMsg(`Switching to ${failoverChain[next]?.provider}...`); setTimeout(() => setFailoverMsg(''), 3000); } else if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
-    onPopOutPip: () => { if (playing && show && activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: CS[show.cs].bg, acc: CS[show.cs].acc }, show.id); } },
+    onSwitchProvider: () => { if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
+    onPopOutPip: () => { if (show && activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: CS[show.cs].bg, acc: CS[show.cs].acc }, show.id); } },
     onNextSeason: () => { const maxSeason = show?.media_type === 'tv' ? Math.ceil((show?.eps || 12) / 12) : 1; if (season < maxSeason) { const ns = season + 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
     onPreviousSeason: () => { if (season > 1) { const ns = season - 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
     onToggleWatchlist: () => toggleWatchlist(),
@@ -202,45 +194,25 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     load();
     return () => { cancelled = true; controller.abort(); };
   }, [show?.id, season, show?._isAnilist]);
-  // Fetch embed providers — smart mode (returns chain for auto-failover)
+  // Fetch embed providers
   useEffect(() => {
     if (!playing || !show) return;
-    setLoadingProviders(true);
     const mediaType = show.media_type || 'tv';
     const malId = show._malId;
     const isAnime = !!show._isAnilist || !!malId || show.genre.some(g => g.toLowerCase() === 'anime');
     // For TMDB lookup, use original ID (not namespaced AniList ID)
     const tmdbLookupId = show._isAnilist ? 0 : showId;
     const params = new URLSearchParams({
-      tmdb: String(tmdbLookupId),
-      type: mediaType,
+      tmdb: String(tmdbLookupId),      type: mediaType,
       season: String(season),
       episode: String(epIdx),
-      mode: 'smart',
     });
     if (malId) params.set('mal', String(malId));
     if (isAnime) params.set('isAnime', 'true');
     fetch(`/api/embed?${params}`)
       .then(r => r.json())
-      .then(data => {
-        setLoadingProviders(false);
-        // Smart mode: use chain for failover, populate providers for dropdown
-        if (data.chain && data.chain.length > 0) {
-          setFailoverChain(data.chain);
-          setChainIndex(0);
-          setChainExhausted(false);
-          // Also populate providers dropdown from chain
-          setProviders(data.chain.map((c: { provider: string; url: string; score: number; tier: number }) => ({ name: c.provider, url: c.url, tier: c.tier, score: c.score })));
-          setSelectedProvider(0);
-        } else if (data.providers) {
-          // Legacy mode fallback
-          setProviders(data.providers);
-          setFailoverChain([]);
-          setChainIndex(0);
-          setSelectedProvider(0);
-        }
-      })
-      .catch(() => { setLoadingProviders(false); setProviders([]); setFailoverChain([]); });
+      .then(data => { setProviders(data.providers || []); setSelectedProvider(0); })
+      .catch(() => setProviders([]));
   }, [playing, showId, season, epIdx, show]);
 
   // Fetch comments
@@ -297,99 +269,48 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     setLoadingSimilar(false);
   }, [show?.id, show?.media_type, show?._isAnilist, loadingSimilar, hasMoreSimilar, fullDetails?.similar?.results]);
 
-  // Computed active provider (must be before handleProviderFail which references these)
-  const activeProviderUrl = failoverChain.length > 0
-    ? (failoverChain[chainIndex]?.url || '')
-    : (providers[selectedProvider]?.url || '');
-  const activeProviderName = failoverChain.length > 0
-    ? (failoverChain[chainIndex]?.provider || '')
-    : (providers[selectedProvider]?.name || '');
-
-  // Auto-failover: try next in chain (smart mode) or next provider (legacy mode)
+  // Auto-failover: if provider fails, try the next one automatically
   const handleProviderFail = useCallback(() => {
-    if (!show) return;
-
-    // Report client-side failure to server for health tracking
-    if (activeProviderName) {
-      fetch('/api/embed-health-client', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: activeProviderName, alive: false }),
-      }).catch(() => {});
-    }
-
-    // Smart mode: advance along the pre-fetched failover chain
-    if (failoverChain.length > 0 && !chainExhausted) {
-      const nextIdx = chainIndex + 1;
-      if (nextIdx < failoverChain.length) {
-        setChainIndex(nextIdx);
-        setSelectedProvider(nextIdx);
-        const oldName = failoverChain[chainIndex]?.provider;
-        const newName = failoverChain[nextIdx]?.provider;
-        setFailoverMsg(`Switching from ${oldName} to ${newName}...`);
-        setTimeout(() => setFailoverMsg(''), 3000);
-        // Emit failover metric
-        if (oldName && newName) {
-          fetch('/api/embed-health-client', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider: newName, alive: true }),
-          }).catch(() => {});
-        }
-      } else {
-        // Chain exhausted
-        setChainExhausted(true);
-        setFailoverMsg('All optimized providers unavailable. Trying fallback...');
-        setTimeout(() => setFailoverMsg(''), 4000);
-      }
-      return;
-    }
-
-    // Legacy mode: try next provider in list
-    if (providers.length > 1) {
-      triedProviders.current.add(selectedProvider);
-      let nextIdx = -1;
-      for (let i = 1; i < providers.length; i++) {
-        const candidate = (selectedProvider + i) % providers.length;
-        if (!triedProviders.current.has(candidate)) {
-          nextIdx = candidate;
-          break;
-        }
-      }
-      if (nextIdx >= 0) {
-        const oldName = providers[selectedProvider]?.name;
-        const newName = providers[nextIdx]?.name;
-        setSelectedProvider(nextIdx);
-        triedProviders.current.add(nextIdx);
-        setFailoverMsg(`Switching from ${oldName} to ${newName}...`);
-        setTimeout(() => setFailoverMsg(''), 3000);
-      } else {
-        setFailoverMsg('All providers unavailable. Try again later.');
-        setTimeout(() => setFailoverMsg(''), 4000);
+    if (!show || providers.length <= 1) return;
+    triedProviders.current.add(selectedProvider);
+    let nextIdx = -1;
+    for (let i = 1; i < providers.length; i++) {
+      const candidate = (selectedProvider + i) % providers.length;
+      if (!triedProviders.current.has(candidate)) {
+        nextIdx = candidate;
+        break;
       }
     }
-  }, [show?.id, providers, selectedProvider, failoverChain, chainIndex, chainExhausted, activeProviderName]);
+    if (nextIdx >= 0) {
+      const oldName = providers[selectedProvider]?.name;
+      const newName = providers[nextIdx]?.name;
+      setSelectedProvider(nextIdx);
+      triedProviders.current.add(nextIdx);
+      setFailoverMsg(`Switching from ${oldName} to ${newName}...`);
+      setTimeout(() => setFailoverMsg(''), 3000);
+    } else {
+      setFailoverMsg('All providers unavailable. Try again later.');
+      setTimeout(() => setFailoverMsg(''), 4000);
+    }
+  }, [show?.id, providers, selectedProvider]);
 
-  // Reset tried providers and chain when episode/season changes
+  // Reset tried providers when episode/season changes
   useEffect(() => {
     triedProviders.current.clear();
     triedProviders.current.add(selectedProvider);
-    setChainIndex(0);
-    setChainExhausted(false);
-    setIframeLoaded(false);
   }, [epIdx, season, providers]);
 
   // Timeout failover: if iframe doesn't fire onLoad within 15s, auto-switch
   useEffect(() => {
-    const url = activeProviderUrl;
+    const url = providers[selectedProvider]?.url || '';
     if (!playing || !url) return;
     if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
     const timer = setTimeout(() => {
       handleProviderFail();
-    }, 25000);
+    }, 15000);
     iframeLoadTimer.current = timer;
     return () => { clearTimeout(timer); };
-  }, [playing, activeProviderUrl, handleProviderFail]);
+  }, [playing, providers, selectedProvider, handleProviderFail]);
 
   if (!show) {
     return (
@@ -413,22 +334,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         ep: i + 1, title: `Ep ${i + 1}: ${['Awakening', 'Hidden Path', 'The First Step', 'Into the Deep', 'Revelations', 'The Turn', 'Convergence', 'New Dawn', 'Eclipse', 'Final Light'][i] || 'Journey'}`,
         dur: `${22 + (i * 5) % 8}m`, done: i < epIdx - 1,
       }));
-
-  // Unified trailer list — works for both TMDB and AniList items
-  const trailerList: Array<{ key: string; name: string; site: string; type: string }> = (() => {
-    const tmdbTrailers = (fullDetails?.videos?.results || [])
-      .filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
-      .map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type }));
-
-    if (tmdbTrailers.length > 0) return tmdbTrailers;
-
-    // AniList fallback: use the _anilistTrailer field if present
-    if (show._isAnilist && show._anilistTrailer) {
-      return [{ key: show._anilistTrailer.id, name: `${show.title} — Trailer`, site: 'YouTube', type: 'Trailer' }];
-    }
-
-    return [];
-  })();
 
   const similar: MediaItem[] = fullDetails?.similar?.results && fullDetails.similar.results.length > 0
     ? fullDetails.similar.results.slice(0, 6).map((r) => tmdbToMedia(r))
@@ -488,7 +393,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     } catch { }
   };
 
-
+  const activeProviderUrl = providers[selectedProvider]?.url || '';
 
   const toggleWatchlist = async () => {
     if (!user || !profile) { router.push('/login'); return; }
@@ -559,11 +464,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       <div style={{ padding: '1.2rem clamp(1rem,5vw,2.5rem)', position: 'relative', zIndex: 3, maxWidth: 1040, margin: '0 auto' }}>
         <div style={{ display: 'flex', gap: '.85rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           <button className="btn-p" onClick={() => { vibrateLong(); setPlaying(true); }}>▶ Play {show.media_type === 'tv' ? `Episode ${epIdx}` : 'Now'}</button>
-          {trailerList.length > 0 && (
-            <button className="btn-g" onClick={() => setShowTrailer(true)} style={{ opacity: 0.9 }}>
-              ▶ Trailer
-            </button>
-          )}
           <button className="btn-g" onClick={toggleWatchlist} style={{ opacity: inWatchlist ? 1 : 0.85 }}>
             {inWatchlist ? '✓ In My List' : '+ My List'}
           </button>
@@ -611,7 +511,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   const ac = epIdx === e.ep;
                   const epStill = seasonEpisodes.find(se => se.episode_number === e.ep)?.still_path;
                   return (
-                    <button key={e.ep} type="button" role="button" aria-label={`Episode ${e.ep}: ${e.title}`} tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); vibrateMedium(); setEpIdx(e.ep); setPlaying(true); syncEpisodeUrl(season, e.ep); } }} className={`ep-row${ac ? ' playing' : ''}`} onClick={() => { vibrateMedium(); setEpIdx(e.ep); setPlaying(true); syncEpisodeUrl(season, e.ep); }} style={{ padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `el .4s ease ${i * 0.038}s both` }}>
+                    <button key={e.ep} type="button" role="button" aria-label={`Episode ${e.ep}: ${e.title}`} tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); vibrateMedium(); setEpIdx(e.ep); syncEpisodeUrl(season, e.ep); } }} className={`ep-row${ac ? ' playing' : ''}`} onClick={() => { vibrateMedium(); setEpIdx(e.ep); syncEpisodeUrl(season, e.ep); }} style={{ padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `el .4s ease ${i * 0.038}s both` }}>
                       <div style={{ width: 100, height: 60, borderRadius: 9, flexShrink: 0, background: s.bg, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2)' }}>
                         {epStill && (
                           <Image src={getTmdbImageUrl(epStill, 'w300')!} alt={`${show.title} — Episode ${e.ep}${e.title ? `: ${e.title}` : ''} still`} fill style={{ objectFit: 'cover', zIndex: 0 }} sizes="100px" loading="lazy" />
@@ -680,27 +580,32 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           <section aria-label="Trailers">
             <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '1rem' }}>TRAILERS</h2>
           <div>
-            {trailerList.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1rem' }}>
-                {trailerList.slice(0, 8).map((v, i) => (
-                  <div key={v.key} style={{ animation: `card-in .42s ${i * 0.06}s both` }}>
-                    <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
-                      <iframe
-                        src={`https://www.youtube-nocookie.com/embed/${v.key}?rel=0`}
-                        title={v.name}
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        loading="lazy"
-                      />
-                    </div>
-                    <div style={{ padding: '.6rem 0' }}>
-                      <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
-                      <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)', }}>{v.type}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {fullDetails?.videos?.results?.length ? (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1rem' }}>
+                  {fullDetails.videos.results
+                    .filter((v: { type: string; site: string }) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
+                    .slice(0, 8)
+                    .map((v: { id: string; key: string; name: string; type: string }, i: number) => (
+                      <div key={v.id} style={{ animation: `card-in .42s ${i * 0.06}s both` }}>
+                        <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
+                          <iframe
+                            src={`https://www.youtube.com/embed/${v.key}?rel=0`}
+                            title={v.name}
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            loading="lazy"
+                          />
+                        </div>
+                        <div style={{ padding: '.6rem 0' }}>
+                          <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</div>
+                          <span className="f-cinzel" style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.3)', }}>{v.type}</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </>
             ) : (
               <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '.8rem', opacity: .4 }}>🎬</div>
@@ -807,113 +712,102 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         <div style={{ height: 64 }} />
       </div>
 
-      {/* Trailer modal */}
-      {showTrailer && trailerList.length > 0 && (
-        <TrailerModal
-          trailers={trailerList}
-          showTitle={show.title}
-          onClose={() => setShowTrailer(false)}
-        />
-      )}
-
-      {/* Player overlay */}
-{/* Player overlay — responsive 16:9 */}
+      {/* Player overlay — StreamX-style minimal clean layout */}
       {playing && (
-        <div ref={playerRef} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fi .28s ease both' }}>
-          <div style={{ position: 'absolute', inset: 0, background: s.bg, opacity: .12 }} />
+        <div ref={playerRef} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', animation: 'fi .28s ease both' }}>
 
           {activeProviderUrl ? (
             <>
-              <div style={{ position: 'relative', width: 'min(100vw, calc(100vh * 16 / 9))', height: 'min(100vh, calc(100vw * 9 / 16))', flexShrink: 0, overflow: 'hidden' }}>
-                <iframe key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); setIframeLoaded(true); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); setIframeLoaded(true); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" />
-                {/* Loading overlay while iframe loads */}
-                {!iframeLoaded && (
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.85)', zIndex: 5, pointerEvents: 'none', animation: 'fi .3s ease both' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
-                    <div className="f-cinzel" style={{ marginTop: 14, fontSize: '.72rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Loading {activeProviderName}...</div>
-                  </div>
-                )}
+              {/* ── Top bar: back · title · server dropdown · PiP ── */}
+              <div style={{ width: '100%', maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px clamp(1rem,4vw,2rem)', gap: 12, flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+                  {/* Back button */}
+                  <button onClick={() => setPlaying(false)} title="Go back" style={{
+                    width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                    background: 'rgba(255,255,255,.1)', border: 'none',
+                    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#FFF5E8', cursor: 'pointer', transition: 'background .2s',
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                  </button>
+                  {/* Title */}
+                  <h2 className="f-cinzel" style={{ fontSize: 'clamp(.88rem,1.4vw,1.1rem)', fontWeight: 700, color: '#FFF5E8', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                    {show.title}{show.media_type === 'tv' ? ` · S{season} E{epIdx}` : ''}
+                  </h2>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  {/* PiP button */}
+                  <button onClick={() => { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S{season} E{epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); }} title="Pop-out to mini player" style={{
+                    height: 40, padding: '0 14px', borderRadius: 10,
+                    background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.1)',
+                    color: '#FFF5E8', cursor: 'pointer', transition: 'all .2s',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }} className="f-cinzel">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg>
+                    <span style={{ fontSize: '.72rem' }}>PiP</span>
+                  </button>
+
+                  {/* Server selector */}
+                  {providers.length > 1 && (
+                    <div style={{ position: 'relative', height: 40, display: 'flex', alignItems: 'center' }}>
+                      <div style={{
+                        height: 40, padding: '0 14px', borderRadius: 10, pointerEvents: 'none',
+                        background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.1)',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                      }} className="f-cinzel">
+                        <span style={{ color: 'rgba(255,245,232,.45)', fontSize: '.72rem' }}>Server:</span>
+                        <span style={{ color: s.acc, fontSize: '.78rem' }}>{providers[selectedProvider]?.name}</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: .6 }}><path d="m6 9 6 6 6-6"/></svg>
+                      </div>
+                      <select value={selectedProvider} onChange={(e) => { setSelectedProvider(Number(e.target.value)); triedProviders.current.add(Number(e.target.value)); }} style={{
+                        position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', fontSize: 0, border: 'none', background: 'transparent',
+                      }} aria-label="Select server">
+                        {providers.map((p, i) => (
+                          <option key={i} value={i} style={{ background: '#0C091A' }}>{p.name}{p.tier === 2 ? ' (Backup)' : ''}{p.category === 'anime' ? ' (Anime)' : ''}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
-              {/* Failover toast */}
+
+              {/* ── Info banner ── */}
+              <div style={{ width: '100%', maxWidth: 1280, margin: '0 auto', padding: '0 clamp(1rem,4vw,2rem) 10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 10, background: `${s.acc}10`, border: `1px solid ${s.acc}20` }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={s.acc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: .75 }}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  <p className="f-crimson" style={{ fontSize: '.8rem', color: `${s.acc}bb`, margin: 0, lineHeight: 1.4 }}>
+                    If the video fails to play or loads infinitely, select a different server from the dropdown above.
+                  </p>
+                </div>
+              </div>
+
+              {/* ── Player iframe ── */}
+              <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 clamp(4px,1.5vw,16px)', minHeight: 0 }}>
+                <div style={{ width: '100%', maxWidth: 1400, height: '100%', position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#000', boxShadow: '0 0 0 1px rgba(255,255,255,.06), 0 25px 80px rgba(0,0,0,.7)' }}>
+                  <iframe key={`provider-${selectedProvider}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" title={`${show.title} player`} />
+                </div>
+              </div>
+
+              {/* ── Failover toast ── */}
               {failoverMsg && (
-                <div className="f-cinzel" style={{ position: 'fixed', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 10001, padding: '8px 20px', borderRadius: 10, background: 'rgba(255,107,138,.18)', border: '1px solid rgba(255,107,138,.4)', color: '#FF6B8A',  fontSize: '.72rem', fontWeight: 600, letterSpacing: '.04em', animation: 'fi .3s ease both', whiteSpace: 'nowrap', boxShadow: '0 0 20px rgba(255,107,138,.15)' }}>
+                <div className="f-cinzel" style={{ position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 10001, padding: '10px 24px', borderRadius: 10, background: 'rgba(255,107,138,.15)', border: '1px solid rgba(255,107,138,.35)', color: '#FF6B8A', fontSize: '.75rem', fontWeight: 600, letterSpacing: '.04em', animation: 'fi .3s ease both', whiteSpace: 'nowrap', boxShadow: '0 0 24px rgba(255,107,138,.12)' }}>
                   {failoverMsg}
                 </div>
               )}
-              {providers.length > 1 && (
-                <div style={{ position: 'fixed', top: 60, right: 16, zIndex: 10001 }}>
-                  <select className="f-cinzel" value={failoverChain.length > 0 ? chainIndex : selectedProvider} onChange={(e) => {
-                    const idx = Number(e.target.value);
-                    if (failoverChain.length > 0) {
-                      setChainIndex(idx); setSelectedProvider(idx);
-                    } else {
-                      setSelectedProvider(idx); triedProviders.current.add(idx);
-                    }
-                  }} style={{ padding: '8px 14px', background: 'rgba(0,0,0,.8)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 10, color: '#FFF5E8', fontSize: '.72rem', cursor: 'pointer', outline: 'none' }}>
-                    {providers.map((p, i) => (
-                      <option key={i} value={i} style={{ background: '#0C091A' }}>
-                        {p.name}{p.tier === 1 ? ' (T1)' : p.tier === 2 ? ' (T2)' : p.tier === 3 ? ' (T3)' : ''}{p.category === 'anime' ? ' Anime' : ''}{failoverChain.length > 0 && p.score != null ? ` [${p.score.toFixed(0)}%]` : ''}{failoverChain.length > 0 && i === chainIndex ? ' ✓' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '16px 24px calc(16px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1 }}>{show.title} {show.media_type === 'tv' ? `· S${season} E${epIdx}` : ''}</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                    {show.media_type === 'tv' && (
-                      <>
-                        <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }} onClick={() => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }} title="Previous Episode">⏮</button>
-                        <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }} onClick={() => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : show.eps; if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }} title="Next Episode">⏭</button>
-                      </>
-                    )}
-                    <button className="btn-g" onClick={() => { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); }} style={{ padding: '8px 14px', fontSize: '.72rem' }} title="Picture in Picture">PiP</button>
-                    <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 14px', fontSize: '.72rem' }}>✕ Exit</button>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : loadingProviders ? (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
-                <div className="f-cinzel" style={{ fontSize: '.82rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Finding best provider...</div>
-              </div>
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Loading'}</div>
-                  <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
-                </div>
-              </div>
-            </>
-          ) : chainExhausted ? (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,107,138,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>!</div>
-                <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.7)', letterSpacing: '.06em', textAlign: 'center', maxWidth: 300 }}>All providers unavailable</div>
-                <button className="btn-p" onClick={() => { setChainExhausted(false); setChainIndex(0); triedProviders.current.clear(); setProviders([]); setFailoverChain([]); }} style={{ padding: '10px 28px', fontSize: '.82rem', marginTop: 8 }}>Retry</button>
-              </div>
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Error'}</div>
-                  <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
-                </div>
-              </div>
             </>
           ) : (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>No sources found</div>
-                <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '10px 28px', fontSize: '.82rem' }}>Go Back</button>
+            /* Loading state — no provider URL yet */
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, zIndex: 2 }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', border: `2px solid ${s.acc}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'breathe 2.4s ease-in-out infinite' }}>
+                <div style={{ width: 0, height: 0, borderLeft: '18px solid #FFF5E8', borderTop: '10px solid transparent', borderBottom: '10px solid transparent', marginLeft: 4 }} />
               </div>
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>No sources found</div>
-                  <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>Exit</button>
-                </div>
-              </div>
-            </>
+              <p className="f-cinzel" style={{ fontSize: '.82rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em' }}>Loading source…</p>
+              <button className="f-cinzel" onClick={() => setPlaying(false)} style={{ marginTop: 8, padding: '10px 28px', borderRadius: 50, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.1)', color: '#FFF5E8', cursor: 'pointer', fontSize: '.78rem', letterSpacing: '.06em', transition: 'all .2s' }}>
+                ← Back to Details
+              </button>
+            </div>
           )}
         </div>
       )}
