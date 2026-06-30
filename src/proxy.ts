@@ -51,15 +51,19 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
   const isStatic = pathname.startsWith("/_next") || /\.(svg|png|jpg|jpeg|gif|webp|ico|woff2?)$/.test(pathname);
 
   if (!isStatic) {
-    response.headers.set("X-Frame-Options",          "DENY");
+    // X-Frame-Options: NOT set here. This is a streaming site that embeds
+    // third-party video providers via iframes. Setting DENY/SAMEORIGIN
+    // would block all embed players. The page itself doesn't need framing
+    // protection since it's a standalone app.
     response.headers.set("X-Content-Type-Options",   "nosniff");
     response.headers.set("X-XSS-Protection",          "1; mode=block");
     response.headers.set("Referrer-Policy",           "strict-origin-when-cross-origin");
     response.headers.set("Permissions-Policy",        "camera=(), microphone=(), geolocation=()");
     response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
 
-    // CSP — restrictive but permits all whitelisted embed providers.
-    // Fonts are self-hosted via next/font/google (no external font domains needed).
+    // CSP — allows any HTTPS iframe (streaming site loads 45+ embed providers
+    // that rotate frequently; a static whitelist would break on every pool change).
+    // Script/img/connect are locked down for XSS protection.
     response.headers.set(
       "Content-Security-Policy",
       [
@@ -69,8 +73,8 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
         "font-src 'self' data:",
         "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
         "media-src 'self' https: blob:",
-        // frame-src whitelist — keep in sync with embed-proxy allowedHosts
-        "frame-src 'self' https://vidsrc.fyi https://vidsrc.pm https://vidsrc.in https://vidsrc.io https://autoembed.co https://vidphantom.com https://api.codespecters.com",
+        // Allow any HTTPS iframe — embed providers rotate via replacement pool
+        "frame-src 'self' https:",
         "connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.themoviedb.org https://*.upstash.io https://graphql.anilist.co https://accounts.google.com https://github.com",
         "worker-src 'self' blob:",
       ].join("; ")
