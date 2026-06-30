@@ -85,6 +85,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [providers, setProviders] = useState<Array<{ name: string; url: string; tier?: number; category?: string; score?: number }>>([]);
   const [selectedProvider, setSelectedProvider] = useState(0);
   const [failoverMsg, setFailoverMsg] = useState('');
+  const [loadingProviders, setLoadingProviders] = useState(false);
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const triedProviders = useRef<Set<number>>(new Set());
   const playerRef = useRef<HTMLDivElement>(null);
@@ -110,10 +111,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     onToggleFullscreen: () => { playerRef.current?.requestFullscreen?.(); },
     onExit: () => setPlaying(false),
     onPreviousEpisode: () => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } },
-    onNextEpisode: () => { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); },
+    onNextEpisode: () => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : show.eps; if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
     onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); syncEpisodeUrl(season, n); } },
     onToggleSubtitles: () => {},
-    onSwitchProvider: () => { if (failoverChain.length > 1 && chainIndex < failoverChain.length - 1) { const next = chainIndex + 1; setChainIndex(next); setFailoverMsg(`Switching to ${failoverChain[next]?.provider}...`); setTimeout(() => setFailoverMsg(''), 3000); } else if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
+    onSwitchProvider: () => { if (failoverChain.length > 1 && chainIndex < failoverChain.length - 1) { const next = chainIndex + 1; setChainIndex(next); setSelectedProvider(next); setFailoverMsg(`Switching to ${failoverChain[next]?.provider}...`); setTimeout(() => setFailoverMsg(''), 3000); } else if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },
     onPopOutPip: () => { if (show && activeProviderUrl) { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: CS[show.cs].bg, acc: CS[show.cs].acc }, show.id); } },
     onNextSeason: () => { const maxSeason = show?.media_type === 'tv' ? Math.ceil((show?.eps || 12) / 12) : 1; if (season < maxSeason) { const ns = season + 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
     onPreviousSeason: () => { if (season > 1) { const ns = season - 1; setSeason(ns); setEpIdx(1); syncEpisodeUrl(ns, 1); } },
@@ -201,6 +202,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   // Fetch embed providers — smart mode (returns chain for auto-failover)
   useEffect(() => {
     if (!playing || !show) return;
+    setLoadingProviders(true);
     const mediaType = show.media_type || 'tv';
     const malId = show._malId;
     const isAnime = !!show._isAnilist || !!malId || show.genre.some(g => g.toLowerCase() === 'anime');
@@ -218,6 +220,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     fetch(`/api/embed?${params}`)
       .then(r => r.json())
       .then(data => {
+        setLoadingProviders(false);
         // Smart mode: use chain for failover, populate providers for dropdown
         if (data.chain && data.chain.length > 0) {
           setFailoverChain(data.chain);
@@ -234,7 +237,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           setSelectedProvider(0);
         }
       })
-      .catch(() => { setProviders([]); setFailoverChain([]); });
+      .catch(() => { setLoadingProviders(false); setProviders([]); setFailoverChain([]); });
   }, [playing, showId, season, epIdx, show]);
 
   // Fetch comments
@@ -379,7 +382,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
     const timer = setTimeout(() => {
       handleProviderFail();
-    }, 15000);
+    }, 25000);
     iframeLoadTimer.current = timer;
     return () => { clearTimeout(timer); };
   }, [playing, activeProviderUrl, handleProviderFail]);
@@ -583,7 +586,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   const ac = epIdx === e.ep;
                   const epStill = seasonEpisodes.find(se => se.episode_number === e.ep)?.still_path;
                   return (
-                    <button key={e.ep} type="button" role="button" aria-label={`Episode ${e.ep}: ${e.title}`} tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); vibrateMedium(); setEpIdx(e.ep); syncEpisodeUrl(season, e.ep); } }} className={`ep-row${ac ? ' playing' : ''}`} onClick={() => { vibrateMedium(); setEpIdx(e.ep); syncEpisodeUrl(season, e.ep); }} style={{ padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `el .4s ease ${i * 0.038}s both` }}>
+                    <button key={e.ep} type="button" role="button" aria-label={`Episode ${e.ep}: ${e.title}`} tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); vibrateMedium(); setEpIdx(e.ep); setPlaying(true); syncEpisodeUrl(season, e.ep); } }} className={`ep-row${ac ? ' playing' : ''}`} onClick={() => { vibrateMedium(); setEpIdx(e.ep); setPlaying(true); syncEpisodeUrl(season, e.ep); }} style={{ padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `el .4s ease ${i * 0.038}s both` }}>
                       <div style={{ width: 100, height: 60, borderRadius: 9, flexShrink: 0, background: s.bg, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2)' }}>
                         {epStill && (
                           <Image src={getTmdbImageUrl(epStill, 'w300')!} alt={`${show.title} — Episode ${e.ep}${e.title ? `: ${e.title}` : ''} still`} fill style={{ objectFit: 'cover', zIndex: 0 }} sizes="100px" loading="lazy" />
@@ -793,7 +796,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           {activeProviderUrl ? (
             <>
               <div style={{ position: 'relative', width: 'min(100vw, calc(100vh * 16 / 9))', height: 'min(100vh, calc(100vw * 9 / 16))', flexShrink: 0, overflow: 'hidden' }}>
-                <iframe key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" />
+                <iframe key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={(e) => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); const overlay = document.getElementById('iframe-loading-overlay'); if (overlay) overlay.style.display = 'none'; }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); const overlay = document.getElementById('iframe-loading-overlay'); if (overlay) overlay.style.display = 'none'; handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" />
+                {/* Loading overlay while iframe loads */}
+                <div id="iframe-loading-overlay" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.85)', zIndex: 5, pointerEvents: 'none', animation: 'fi .3s ease both' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
+                  <div className="f-cinzel" style={{ marginTop: 14, fontSize: '.72rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Loading {activeProviderName}...</div>
+                </div>
               </div>
               {/* Failover toast */}
               {failoverMsg && (
@@ -819,32 +827,61 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   </select>
                 </div>
               )}
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '16px 24px 20px', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
+              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '16px 24px calc(16px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} {show.media_type === 'tv' ? `· S${season} E${epIdx}` : ''}</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button className="btn-g" onClick={() => { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); }} style={{ padding: '8px 18px', fontSize: '.78rem' }} title="Pop-out to mini player">⟶ PiP</button>
-                    <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
+                  <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1 }}>{show.title} {show.media_type === 'tv' ? `· S${season} E${epIdx}` : ''}</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                    {show.media_type === 'tv' && (
+                      <>
+                        <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }} onClick={() => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }} title="Previous Episode">⏮</button>
+                        <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }} onClick={() => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : show.eps; if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }} title="Next Episode">⏭</button>
+                      </>
+                    )}
+                    <button className="btn-g" onClick={() => { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); }} style={{ padding: '8px 14px', fontSize: '.72rem' }} title="Picture in Picture">PiP</button>
+                    <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 14px', fontSize: '.72rem' }}>✕ Exit</button>
                   </div>
+                </div>
+              </div>
+            </>
+          ) : loadingProviders ? (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
+                <div className="f-cinzel" style={{ fontSize: '.82rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Finding best provider...</div>
+              </div>
+              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Loading'}</div>
+                  <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
+                </div>
+              </div>
+            </>
+          ) : chainExhausted ? (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,107,138,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>!</div>
+                <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.7)', letterSpacing: '.06em', textAlign: 'center', maxWidth: 300 }}>All providers unavailable</div>
+                <button className="btn-p" onClick={() => { setChainExhausted(false); setChainIndex(0); triedProviders.current.clear(); setProviders([]); setFailoverChain([]); }} style={{ padding: '10px 28px', fontSize: '.82rem', marginTop: 8 }}>Retry</button>
+              </div>
+              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Error'}</div>
+                  <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
                 </div>
               </div>
             </>
           ) : (
             <>
-              <div style={{ width: 90, height: 90, borderRadius: '50%', background: 'radial-gradient(circle,rgba(255,160,180,.92) 0%,rgba(255,107,138,.85) 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, color: '#05020A', zIndex: 2, boxShadow: '0 0 70px rgba(255,133,161,.65),8px 8px 20px rgba(0,0,0,.7),inset 0 3px 6px rgba(255,255,255,.35)', animation: 'breathe 2.4s ease-in-out infinite', cursor: 'pointer' }} onClick={() => setPlaying(false)}>▶</div>
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '24px 36px 32px', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{  fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Playing'}</div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }}>⏮</button>
-                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => setPlaying(false)}>▶</button>
-                    <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13 }} onClick={() => { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); }}>⏭</button>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
-                  </div>
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+                <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>No sources found</div>
+                <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '10px 28px', fontSize: '.82rem' }}>Go Back</button>
               </div>
+              <div style={{ position: 'fixed', botto<div style={ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }>
+  <div style={ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }>
+    <div className="f-cinzel" style={ fontSize: '.82rem', color: '#FFF5E8' }>No sources found</div>
+    <button className="btn-g" onClick={() => setPlaying(false)} style={ padding: '8px 18px', fontSize: '.78rem' }>Exit</button>
+  </div>
+</div>              </div>
             </>
           )}
         </div>
