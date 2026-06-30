@@ -52,7 +52,7 @@ interface ReplacementEntry {
 
 const REPLACEMENT_POOL: ReplacementEntry[] = [
   // General (TMDB) replacements — verified alive
-  { name: 'StreamWish', category: 'all', getMovieUrl: (id) => `https://streamwish.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamwish.to/embed/tv/${id}/${s}/${e}` },
+  // StreamWish — promoted to active TIER 2 (removed from pool)
   { name: 'VidSrcTW', category: 'all', getMovieUrl: (id) => `https://vidsrc.tw/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.tw/embed/tv/${id}/${s}/${e}` },
   { name: 'AutoEmbed', category: 'all', getMovieUrl: (id) => `https://autoembed.co/movie/tmdb/${id}`, getTvUrl: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}` },
   { name: 'TVPizza', category: 'all', getMovieUrl: (id) => `https://tvpizza.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://tvpizza.com/embed/tv/${id}/${s}/${e}` },
@@ -60,7 +60,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // MovieBox removed — standalone app, not an embed provider
   { name: 'StreamSilk', category: 'all', getMovieUrl: (id) => `https://streamsilk.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsilk.com/embed/tv/${id}/${s}/${e}` },
   { name: 'Series9', category: 'all', getMovieUrl: (id) => `https://series9.io/film/${id}`, getTvUrl: (id, s, e) => `https://series9.io/series/${id}-${s}-${e}` },
-  { name: 'HDStream', category: 'all', getMovieUrl: (id) => `https://hdstream.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://hdstream.to/embed/tv/${id}/${s}/${e}` },
+  // HDStream — promoted to active TIER 2 (removed from pool)
   { name: 'StreamHide', category: 'all', getMovieUrl: (id) => `https://streamhide.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamhide.to/embed/tv/${id}/${s}/${e}` },
   { name: 'MixDrop', category: 'all', getMovieUrl: (id) => `https://mixdrop.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://mixdrop.to/embed/tv/${id}/${s}/${e}` },
   { name: 'VUpload', category: 'all', getMovieUrl: (id) => `https://vupload.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vupload.com/embed/tv/${id}/${s}/${e}` },
@@ -74,7 +74,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'VidSrc IN', category: 'all', getMovieUrl: (id) => `https://vidsrc.in/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.in/embed/tv/${id}/${s}/${e}` },
   { name: 'StreamSB', category: 'all', getMovieUrl: (id) => `https://streamsb.net/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsb.net/embed/tv/${id}/${s}/${e}` },
   { name: 'SuperEmbed', category: 'all', getMovieUrl: (id) => `https://superembed.stream/?video_id=${id}&tmdb=1`, getTvUrl: (id, s, e) => `https://superembed.stream/?video_id=${id}&tmdb=1&s=${s}&e=${e}` },
-  { name: 'PerEmbed', category: 'all', getMovieUrl: (id) => `https://perembed.stream/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://perembed.stream/embed/tv/${id}/${s}/${e}` },
+  // PerEmbed removed — unreachable (fetch failed)
   // PrimeWire removed — defunct due to legal action
   // FreEmbed removed — confirmed dead (unreachable)
   // VidCore removed — confirmed dead (unreachable)
@@ -87,18 +87,16 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'Videasy', category: 'all', getMovieUrl: (id) => `https://videasy.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://videasy.com/embed/tv/${id}/${s}/${e}` },
   // VixSrc removed — confirmed dead (unreachable)
   // NoTorrent removed — decentralized torrent client, not an embed provider
-  { name: 'VidSrc SU', category: 'all', getMovieUrl: (id) => `https://vidsrc.su/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.su/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc RU', category: 'all', getMovieUrl: (id) => `https://vidsrc.ru/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.ru/embed/tv/${id}/${s}/${e}` },
+  // VidSrc SU — promoted to active TIER 1 (removed from pool)
+  // VidSrc RU — promoted to active TIER 1 (removed from pool)
   { name: 'VidSrc PRO', category: 'all', getMovieUrl: (id) => `https://vidsrc.pro/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}/${e}` },
   // VidSrc RIP removed — confirmed dead (unreachable)
   { name: 'VidSrc VIP', category: 'all', getMovieUrl: (id) => `https://vidsrc.vip/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.vip/embed/tv/${id}/${s}/${e}` },
   { name: 'VidSrc BZ', category: 'all', getMovieUrl: (id) => `https://vidsrc.bz/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.bz/embed/tv/${id}/${s}/${e}` },
   { name: 'VidSrc DEV', category: 'all', getMovieUrl: (id) => `https://vidsrc.dev/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc XYZ', category: 'all', getMovieUrl: (id) => `https://vidsrc.xyz/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.xyz/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc NET', category: 'all', getMovieUrl: (id) => `https://vidsrc.net/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.net/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc GD', category: 'all', getMovieUrl: (id) => `https://vidsrc.gd/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.gd/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc DO', category: 'all', getMovieUrl: (id) => `https://vidsrc.do/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.do/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc MN', category: 'all', getMovieUrl: (id) => `https://vidsrc.mn/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.mn/embed/tv/${id}/${s}/${e}` },
+  // VidSrc XYZ removed — unreachable (fetch failed)
+  // VidSrc NET removed — unreachable (fetch failed)
+  // VidSrc MN removed — unreachable (fetch failed)
   // Anime replacements
   { name: 'VidSrc WIN Anime', category: 'anime', getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://vidsrc.win/embed/tv/${malId}/${Math.floor(ep / 25) + 1}/${(ep % 25) || 25}` },
   // NetPlay Anime removed — Thai IPTV service, not an embed provider
@@ -113,12 +111,16 @@ const activeProviders: StreamProvider[] = [
   // TIER 1 — Top providers (curated for quality, diversity, speed, stability)
   // ══════════════════════════════════════════════════════════════════
 
-  // 1. VidSrc.cc — Most referenced overall, v2 API, poster, 1080p
+  // VidSrc CC — REMOVED: sets X-Frame-Options: SAMEORIGIN (403), blocks iframe embed
+  // VidSrc.to — REMOVED: sets X-Frame-Options: SAMEORIGIN (403), blocks iframe embed
+  // Replaced with VidSrc SU + VidSrc RU (both confirmed 200, no XFO)
+
+  // 1. VidSrc SU — Replacement for blocked VidSrc CC, confirmed working
   {
-    name: "VidSrc CC",
+    name: "VidSrc SU",
     tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
+    getMovieUrl: (id) => `https://vidsrc.su/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.su/embed/tv/${id}/${s}/${e}`,
   },
 
   // 2. Embed.su — Clean player, minimal ads, fast CDN, non-vidsrc
@@ -135,12 +137,12 @@ const activeProviders: StreamProvider[] = [
   // Cine.su removed — brand new domain with very low trust score
   // AutoEmbed removed — confirmed dead (autoembed.cc unreachable)
 
-  // 2. VidSrc.to — The OG, 5+ years running, custom domain support
+  // 2. VidSrc RU — Replacement for blocked VidSrc.to, confirmed working
   {
-    name: "VidSrc.to",
+    name: "VidSrc RU",
     tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.to/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+    getMovieUrl: (id) => `https://vidsrc.ru/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.ru/embed/tv/${id}/${s}/${e}`,
   },
 
   // 3. MultiEmbed — Aggregator pulling multiple upstreams, IMDB+TMDB
@@ -173,11 +175,13 @@ const activeProviders: StreamProvider[] = [
     getMovieUrl: (id) => `https://moviesapi.to/movie/${id}`,
     getTvUrl: (id, s, e) => `https://moviesapi.to/tv/${id}-${s}-${e}`,
   },
+  // VidSrc.vip — REMOVED: unreachable (fetch failed)
+  // Replaced with StreamWish (confirmed 200, no XFO)
   {
-    name: "VidSrc.vip",
+    name: "StreamWish",
     tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.vip/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.vip/embed/tv/${id}/${s}/${e}`,
+    getMovieUrl: (id) => `https://streamwish.to/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://streamwish.to/embed/tv/${id}/${s}/${e}`,
   },
 
   // ══════════════════════════════════════════════════════════════════
@@ -256,17 +260,13 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://www.vidfast.net/embed/tv/${id}/${s}/${e}`,
   },
 
-  // ══════════════════════════════════════════════════════════════════
-  // AGGREGATOR — Vyla API
-  // Acts as a provider aggregator, returning unified responses from
-  // multiple upstream sources. Effective as a meta-provider that
-  // reduces single-point-of-failure risk.
-  // ══════════════════════════════════════════════════════════════════
+  // Vyla API — REMOVED: unreachable (fetch failed)
+  // Replaced with HDStream (confirmed 200, no XFO)
   {
-    name: "Vyla API",
+    name: "HDStream",
     tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vyla.vidsrc.icu/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vyla.vidsrc.icu/embed/tv/${id}/${s}/${e}`,
+    getMovieUrl: (id) => `https://hdstream.to/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://hdstream.to/embed/tv/${id}/${s}/${e}`,
   },
 ];
 

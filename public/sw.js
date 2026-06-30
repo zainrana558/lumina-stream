@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lumina-v3';
+const CACHE_NAME = 'lumina-v4';
 const STATIC_ASSETS = ['/logo.svg'];
 
 // API routes that must NEVER be served from cache (auth/user-specific)
@@ -81,6 +81,16 @@ self.addEventListener('fetch', (event) => {
   // Navigation requests (HTML pages): NETWORK-FIRST
   // This ensures users always get fresh server-rendered content,
   // not a stale cached version from a previous deploy or error.
+  const OFFLINE_FALLBACK = new Response(
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Offline</title></head>' +
+    '<body style="display:flex;align-items:center;justify-content:center;height:100vh;' +
+    'margin:0;background:#07040F;color:#FFF5E8;font-family:serif;flex-direction:column;gap:12px">' +
+    '<div style="font-size:2rem;opacity:.4">✦</div>' +
+    '<div>You are offline. Please check your connection.</div>' +
+    '</body></html>',
+    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  );
+
   if (isNavigation(request)) {
     event.respondWith(
       fetch(request)
@@ -91,7 +101,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match(request).then((cached) => cached || OFFLINE_FALLBACK))
     );
     return;
   }
@@ -107,7 +117,9 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match(request).then((cached) => cached || new Response(JSON.stringify({ error: 'Offline' }), {
+          status: 503, headers: { 'Content-Type': 'application/json' },
+        })))
     );
     return;
   }
