@@ -53,13 +53,13 @@ interface ReplacementEntry {
 const REPLACEMENT_POOL: ReplacementEntry[] = [
   // General (TMDB) replacements — verified alive
   // StreamWish — promoted to active TIER 2 (removed from pool)
-  { name: 'VidSrcTW', category: 'all', getMovieUrl: (id) => `https://vidsrc.tw/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.tw/embed/tv/${id}/${s}/${e}` },
+  // VidSrc TW removed — old domain, replaced by new vidsrc-me.ru/su family
   { name: 'AutoEmbed', category: 'all', getMovieUrl: (id) => `https://autoembed.co/movie/tmdb/${id}`, getTvUrl: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}` },
   // TVPizza removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
   // LordFlix removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
   // VidoLol removed — unreachable (fetch failed)
   // MoviesAPI removed — unreachable (fetch failed)
-  { name: 'VidSrc PM', category: 'all', getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}` },
+  // VidSrc PM removed — dead
   // MovieBox removed — standalone app, not an embed provider
   { name: 'StreamSilk', category: 'all', getMovieUrl: (id) => `https://streamsilk.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsilk.com/embed/tv/${id}/${s}/${e}` },
   { name: 'Series9', category: 'all', getMovieUrl: (id) => `https://series9.io/film/${id}`, getTvUrl: (id, s, e) => `https://series9.io/series/${id}-${s}-${e}` },
@@ -73,8 +73,8 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'PStream', category: 'all', getMovieUrl: (id) => `https://iframe.pstream.org/embed/tmdb-movie-${id}`, getTvUrl: (id, s, e) => `https://iframe.pstream.org/embed/tmdb-tv-${id}/${s}/${e}` },
   { name: 'VidPhantom', category: 'all', getMovieUrl: (id) => `https://vidphantom.com/movie/${id}`, getTvUrl: (id, s, e) => `https://vidphantom.com/tv/${id}/${s}/${e}` },
   { name: 'FileMoon', category: 'all', getMovieUrl: (id) => `https://filemoon.sx/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://filemoon.sx/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc IO', category: 'all', getMovieUrl: (id) => `https://vidsrc.io/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.io/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc IN', category: 'all', getMovieUrl: (id) => `https://vidsrc.in/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.in/embed/tv/${id}/${s}/${e}` },
+  // VidSrc IO removed — old domain, replaced by new vidsrcme.ru/su family
+  // VidSrc IN removed — dead
   { name: 'StreamSB', category: 'all', getMovieUrl: (id) => `https://streamsb.net/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsb.net/embed/tv/${id}/${s}/${e}` },
   { name: 'SuperEmbed', category: 'all', getMovieUrl: (id) => `https://superembed.stream/?video_id=${id}&tmdb=1`, getTvUrl: (id, s, e) => `https://superembed.stream/?video_id=${id}&tmdb=1&s=${s}&e=${e}` },
   // PerEmbed removed — unreachable (fetch failed)
@@ -95,9 +95,9 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'VidSrc PRO', category: 'all', getMovieUrl: (id) => `https://vidsrc.pro/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}/${e}` },
   // VidSrc RIP removed — confirmed dead (unreachable)
   // VidSrc VIP removed — unreachable (fetch failed)
-  // VidSrc BZ removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
-  // VidSrc GD removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
-  // VidSrc DO removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
+  // VidSrc BZ removed — old domain, replaced by new family
+  // VidSrc GD removed — old domain, replaced by new family
+  // VidSrc DO removed — old domain, replaced by new family
   { name: 'VidSrc DEV', category: 'all', getMovieUrl: (id) => `https://vidsrc.dev/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}` },
   // VidSrc XYZ removed — unreachable (fetch failed)
   // VidSrc NET removed — unreachable (fetch failed)
@@ -158,6 +158,54 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc-embed.ru/embed/tv?tmdb=${id}&season=${s}&episode=${e}&autonext=1`,
   },
 
+  // VidSrc Embed SU — .su variant of embed family
+  {
+    name: "VidSrc Embed SU",
+    tier: 1, category: "all",
+    getMovieUrl: (id) => `https://vidsrc-embed.su/embed/movie?tmdb=${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc-embed.su/embed/tv?tmdb=${id}&season=${s}&episode=${e}&autonext=1`,
+  },
+
+  // VSrc SU — short domain variant
+  {
+    name: "VSrc SU",
+    tier: 1, category: "all",
+    getMovieUrl: (id) => `https://vsrc.su/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vsrc.su/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // VidSrcMe RU — new vidsrcme family
+  {
+    name: "VidSrcMe RU",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrcme.ru/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrcme.ru/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // VidSrcMe SU — .su variant
+  {
+    name: "VidSrcMe SU",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrcme.su/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrcme.su/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // VidSrc-Me RU — hyphenated variant
+  {
+    name: "VidSrc-Me RU",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrc-me.ru/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc-me.ru/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // VidSrc-Me SU — hyphenated .su variant
+  {
+    name: "VidSrc-Me SU",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrc-me.su/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc-me.su/embed/tv/${id}/${s}/${e}`,
+  },
+
   // 3. MultiEmbed — Aggregator pulling multiple upstreams, IMDB+TMDB
   {
     name: "MultiEmbed",
@@ -169,12 +217,7 @@ const activeProviders: StreamProvider[] = [
   // ════════════════════════════════════════════
   // TIER 2 — Backup (promoted from pool if TIER 1 dies)
   // ════════════════════════════════════════════
-  {
-    name: "VidSrc.me",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.me/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}`,
-  },
+  // VidSrc.me removed — old domain, replaced by new vidsrcme.ru/su family
   // VidSrc.rip removed — confirmed dead (unreachable)
   {
     name: "Nontongo",
