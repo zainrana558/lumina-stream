@@ -91,6 +91,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [showTrailer, setShowTrailer] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const iframeLoadedRef = useRef(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const triedProviders = useRef<Set<number>>(new Set());
   const playerRef = useRef<HTMLDivElement>(null);
@@ -396,9 +397,15 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   useEffect(() => {
     const url = activeProviderUrl;
     if (!playing || !url) return;
+    // Reset loaded state for new URL (provider switch)
+    iframeLoadedRef.current = false;
+    setIframeLoaded(false);
     if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
     const timer = setTimeout(() => {
-      handleProviderFailRef.current();
+      // Only failover if iframe hasn't reported a successful load yet
+      if (!iframeLoadedRef.current) {
+        handleProviderFailRef.current();
+      }
     }, 25000);
     iframeLoadTimer.current = timer;
     return () => { clearTimeout(timer); };
@@ -849,11 +856,15 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   title={show.title}
                   isAuthenticated={!!user}
                   profileId={profile?.id}
-                  onError={(providerName, error) => {
-                    console.warn(`[Player] ${providerName} error: ${error}`);
-                    if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
+                  onIframeLoad={() => {
+                    // Iframe loaded successfully — clear the failover timer so it doesn't
+                    // auto-switch providers while the movie is playing fine
+                    iframeLoadedRef.current = true;
+                    if (iframeLoadTimer.current) {
+                      clearTimeout(iframeLoadTimer.current);
+                      iframeLoadTimer.current = undefined;
+                    }
                     setIframeLoaded(true);
-                    handleProviderFailRef.current();
                   }}
                 />
               </div>

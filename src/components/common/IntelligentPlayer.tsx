@@ -35,6 +35,8 @@ interface IntelligentPlayerProps {
   profileId?: string;
   /** Callback when provider is switched */
   onProviderSwitch?: (provider: string) => void;
+  /** Callback when the iframe loads successfully (clears failover timer) */
+  onIframeLoad?: () => void;
   /** Callback when an error occurs */
   onError?: (provider: string, error: string) => void;
 }
@@ -54,6 +56,7 @@ export default function IntelligentPlayer({
   isAuthenticated = false,
   profileId,
   onProviderSwitch,
+  onIframeLoad,
   onError,
 }: IntelligentPlayerProps) {
   // ---- State ----
@@ -279,9 +282,9 @@ export default function IntelligentPlayer({
         style={{ width: '100%', height: '100%', border: 'none', position: 'absolute', top: 0, left: 0 }}
         allowFullScreen
         allow="autoplay; encrypted-media; picture-in-picture"
-        onError={() => {
-          setIframeError(true);
-          onError?.(currentProvider.name, 'Failed to load provider');
+        onLoad={() => {
+          // Iframe content loaded — notify parent to clear the failover timer
+          onIframeLoad?.();
         }}
       />
 
