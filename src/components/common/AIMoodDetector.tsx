@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 const MOOD_MAP: Record<string, { name: string; col: string }> = {
   Pumped:     { name: 'Pumped',     col: '#FFB347' },
@@ -25,6 +26,7 @@ interface AIMoodDetectorProps {
 }
 
 export default function AIMoodDetector({ onMoodDetected }: AIMoodDetectorProps) {
+  const router = useRouter();
   const [status, setStatus] = useState<'idle' | 'scanning' | 'result' | 'error'>('idle');
   const [detectedMood, setDetectedMood] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -164,15 +166,24 @@ export default function AIMoodDetector({ onMoodDetected }: AIMoodDetectorProps) 
             letterSpacing: '.14em', color: 'rgba(78,208,196,.6)',
             textTransform: 'uppercase', fontWeight: 600,
           }}>
-            {status === 'scanning' ? 'Scanning...' : status === 'result' && mood ? `Your vibe: ${mood.name}` : status === 'error' ? 'Camera unavailable' : 'AI Mood'}
+            {status === 'scanning' ? 'Scanning...' : status === 'result' && mood ? (
+              <span
+                style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: 2 }}
+                onClick={(e) => { e.stopPropagation(); router.push(`/browse?mood=${mood.name.toLowerCase()}`); }}
+                title={`Browse ${mood.name} content`}
+              >Your vibe: {mood.name}</span>
+            ) : status === 'error' ? 'Camera unavailable' : 'AI Mood'}
           </span>
           {status === 'result' && mood && (
             <span className="f-crimson" style={{
                fontSize: '.66rem',
               color: `${mood.col}80`, fontStyle: 'italic',
               animation: 'fi .3s ease both',
-            }}>
-              Based on your ambient lighting
+              cursor: 'pointer',
+            }}
+            onClick={(e) => { e.stopPropagation(); router.push(`/browse?mood=${mood.name.toLowerCase()}`); }}
+            >
+              Tap to browse {mood.name} content
             </span>
           )}
         </div>

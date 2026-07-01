@@ -760,7 +760,7 @@ export default function Home({
               mood={m}
               index={i}
               isHighlighted={m.name === highlightedMood}
-              onClick={() => router.push('/browse')}
+              onClick={() => router.push(`/browse?mood=${m.name.toLowerCase()}`)}
             />
           ))}
         </div>
