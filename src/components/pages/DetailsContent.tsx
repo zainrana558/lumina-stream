@@ -825,7 +825,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
           {activeProviderUrl ? (
             <>
-              <div style={{ position: 'relative', width: 'min(100vw, calc(100vh * 16 / 9))', height: 'min(100vh, calc(100vw * 9 / 16))', flexShrink: 0, overflow: 'hidden' }}>
+              <div style={{ position: 'relative', width: '100vw', height: '100vh', flexShrink: 0, overflow: 'hidden' }}>
                 <iframe ref={iframeRef} key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => {
                 // Detect frame-blocking: XFO/CSP-blocked iframes load about:blank (same-origin accessible)
                 try {
