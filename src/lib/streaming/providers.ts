@@ -150,6 +150,14 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc.ru/embed/tv/${id}/${s}/${e}`,
   },
 
+  // VidSrc Embed RU — vidsrc-embed.ru (distinct from vidsrc.ru, supports query params & autonext)
+  {
+    name: "VidSrc Embed RU",
+    tier: 1, category: "all",
+    getMovieUrl: (id) => `https://vidsrc-embed.ru/embed/movie?tmdb=${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc-embed.ru/embed/tv?tmdb=${id}&season=${s}&episode=${e}&autonext=1`,
+  },
+
   // 3. MultiEmbed — Aggregator pulling multiple upstreams, IMDB+TMDB
   {
     name: "MultiEmbed",
