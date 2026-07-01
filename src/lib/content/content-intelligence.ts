@@ -40,11 +40,14 @@ export interface ContentEnrichment {
 
 // ---- TMDB Anime Genre IDs ----
 // These genre IDs from TMDB are strong anime indicators
-const TMDB_ANIME_GENRE_IDS = new Set([16]); // 16 = Animation
-
-// Genre names that strongly suggest anime
+// NOTE: 'Animation' (TMDB ID 16) is NOT included — it matches Pixar/Disney/etc.
 const ANIME_GENRE_NAMES = new Set([
-  'Animation', 'Anime', 'Sci-Fi & Anime',
+  'Anime', 'Sci-Fi & Anime',
+]);
+
+// TMDB genre IDs that strongly suggest anime (used by isAnimeByGenreIds)
+const TMDB_ANIME_GENRE_IDS = new Set([
+  210783, // (no official anime genre ID in TMDB; reserved for future use)
 ]);
 
 /**
@@ -113,17 +116,13 @@ export function isAnimeByGenres(
   genres: string[],
   genreIds?: number[],
 ): boolean {
-  // Check genre names
+  // Check genre names — 'Anime' is a strong signal
   if (genres.some(g => ANIME_GENRE_NAMES.has(g))) {
     return true;
   }
 
-  // Check TMDB genre IDs (Animation alone isn't enough for anime,
-  // but it's a signal when combined with other heuristics)
-  if (genreIds?.some(id => TMDB_ANIME_GENRE_IDS.has(id))) {
-    return true;
-  }
-
+  // TMDB genre ID 16 (Animation) alone is too broad — includes Pixar, Disney, etc.
+  // Only consider it a weak signal; don't trigger anime routing from genre ID alone.
   return false;
 }
 

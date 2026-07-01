@@ -117,21 +117,39 @@ export async function invalidateProviderStreams(providerId: string): Promise<num
   if (!client) return 0;
 
   try {
-    // Scan for keys matching resolve:*:*:*:*:providerId
     let cursor = 0;
     let deleted = 0;
-    const pattern = `resolve:*:*:*:*:${providerId}`;
+
+    // If providerId is undefined/empty, scan all resolve:* keys with wildcard last segment
+    // Otherwise, scan for keys matching the specific provider name
+    const pattern = providerId
+      ? `resolve:*:*:*:*:${providerId}`
+      : 'resolve:*:*:*:*:_';
 
     do {
       const [nextCursor, keys] = await client.scan(cursor, {
         match: pattern,
-        count: 20,
+        count: 50,
       });
       cursor = Number(nextCursor);
 
       if (keys.length > 0) {
-        await client.del(...keys);
-        deleted += keys.length;
+        // Only delete keys whose last segment matches the provider (or '_' for unset)
+        const validKeys = keys.filter(k => {
+          try {
+            const parts = k.split(':');
+            const lastPart = parts[parts.length - 1];
+            if (providerId) {
+              return lastPart === providerId;
+            }
+            // No providerId: match only keys with unset provider ('_')
+            return lastPart === '_';
+          } catch { return false; }
+        });
+        if (validKeys.length > 0) {
+          await client.del(...validKeys);
+          deleted += validKeys.length;
+        }
       }
     } while (cursor > 0);
 

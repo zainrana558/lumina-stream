@@ -272,10 +272,10 @@ function computeBonus(row: Record<string, unknown>): number {
   const avgBufferTime = (row.avg_buffer_time as number) || 0;
   const errorRate = ((row.error_count as number) || 0) / totalPlays;
 
-  // Rebalanced: symmetric range, positive rewards good providers
-  let bonus = (successRate - 0.5) * 0.3;  // -0.15 to +0.15
-  bonus -= Math.min(avgBufferTime / 10000, 1) * 0.025;  // -0.025 for buffering
-  bonus -= errorRate * 0.05;  // -0.05 for errors
+  // Rebalanced: +0.2 reachable with perfect stats (100% success, 0 buffer, 0 errors)
+  let bonus = (successRate - 0.5) * 0.4;  // -0.2 to +0.2
+  bonus -= Math.min(avgBufferTime / 10000, 1) * 0.05;  // -0.05 for buffering
+  bonus -= errorRate * 0.1;  // -0.1 for errors
 
   return Math.max(-0.2, Math.min(0.2, bonus));
 }

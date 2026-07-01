@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
           season,
           episode,
           isAnime: isAnime || undefined,
-          fastMode: false, // Enable parallel probing for best results
+          fastMode: true, // Skip per-request probing (health-check handles it)
         });
 
         // NexStream proxy rewriting

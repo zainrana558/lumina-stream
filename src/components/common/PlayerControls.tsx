@@ -19,7 +19,10 @@ interface PlayerControlsProps {
   onPlayPause: () => void;
   onPrevEpisode: () => void;
   onNextEpisode: () => void;
+  /** Seek backward 30 seconds (replay) */
   onReplay: () => void;
+  /** Seek forward 30 seconds */
+  onForward?: () => void;
   onExit: () => void;
   onPip: () => void;
 }
@@ -29,12 +32,12 @@ export default function PlayerControls({
   speed, muted, volume, subtitlesOn,
   showTitle, showEpInfo,
   onSetSpeed, onToggleMute, onSetVolume, onToggleSubtitles,
-  onPlayPause, onPrevEpisode, onNextEpisode, onReplay, onExit, onPip,
+  onPlayPause, onPrevEpisode, onNextEpisode, onReplay, onForward, onExit, onPip,
 }: PlayerControlsProps) {
   const [speedOpen, setSpeedOpen] = useState(false);
   const speedRef = useRef<HTMLDivElement>(null);
 
-  // Close speed dropdown on outside click (#21)
+  // Close speed dropdown on outside click
   useEffect(() => {
     if (!speedOpen) return;
     function handleClick(e: MouseEvent) {
@@ -45,6 +48,12 @@ export default function PlayerControls({
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [speedOpen]);
+
+  const handleForward = () => {
+    if (onForward) {
+      onForward();
+    }
+  };
 
   return (
     <div style={{
@@ -95,7 +104,7 @@ export default function PlayerControls({
             fontSize: '1rem', color: '#FFF5E8', transition: 'all .2s',
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <span style={{ transform: 'scaleX(-1)' }}>▶</span><span className="f-mono" style={{ fontSize: '.55rem',  marginLeft: 1 }}>30</span>
+              <span style={{ transform: 'scaleX(-1)' }}>▶</span><span className="f-mono" style={{ fontSize: '.55rem', marginLeft: 1 }}>30</span>
             </span>
           </button>
           {/* Play/Pause */}
@@ -106,20 +115,15 @@ export default function PlayerControls({
             fontSize: '1.3rem', color: '#FFF5E8', transition: 'all .2s',
             boxShadow: '0 0 16px rgba(255,179,71,.2)',
           }}>{isPlaying ? '⏸' : '▶'}</button>
-          {/* Forward 30s */
-          <button onClick={() => {
-            // Forward via postMessage to iframe
-            try {
-              window.parent.postMessage({ type: 'lumina:seekRelative', seconds: 30 }, '*');
-            } catch {}
-          }} title="Forward 30 seconds" style={{
+          {/* Forward 30s — uses onForward prop (sends postMessage to iframe from parent) */}
+          <button onClick={handleForward} title="Forward 30 seconds" style={{
             width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,.1)',
             border: '1px solid rgba(255,255,255,.12)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '1rem', color: '#FFF5E8', transition: 'all .2s',
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <span className="f-mono" style={{ fontSize: '.55rem',  marginRight: 1 }}>30</span><span>▶</span>
+              <span className="f-mono" style={{ fontSize: '.55rem', marginRight: 1 }}>30</span><span>▶</span>
             </span>
           </button>
           {/* Next Episode */}
@@ -138,7 +142,6 @@ export default function PlayerControls({
               onClick={() => setSpeedOpen(!speedOpen)}
               style={{
                 padding: '6px 12px', borderRadius: 8, fontSize: '.65rem',
-                
                 background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.1)',
                 color: '#FFF5E8', cursor: 'pointer',
               }}
@@ -173,7 +176,6 @@ export default function PlayerControls({
             background: subtitlesOn ? 'rgba(255,179,71,.15)' : 'rgba(255,255,255,.08)',
             border: `1px solid ${subtitlesOn ? 'rgba(255,179,71,.4)' : 'rgba(255,255,255,.1)'}`,
             color: subtitlesOn ? 'rgba(255,179,71,.9)' : '#FFF5E8', cursor: 'pointer',
-            
           }}>CC</button>
           {/* PiP */}
           <button onClick={onPip} title="Picture in Picture" className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem' }}>⟶ PiP</button>

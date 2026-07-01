@@ -15,6 +15,8 @@ import { useWakeLock } from '@/hooks/useWakeLock';
 import { vibrateMedium, vibrateLong } from '@/lib/haptics';
 import { getTmdbImageUrl, getBackdropUrl, getYoutubeThumbnail } from '@/lib/images';
 import TrailerModal from '@/components/common/TrailerModal';
+import IntelligentPlayer from '@/components/common/IntelligentPlayer';
+import PlayerControls from '@/components/common/PlayerControls';
 
 interface TMDBSeasonEpisode {
   id: number;
@@ -98,6 +100,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [chainIndex, setChainIndex] = useState(0);
   const [chainExhausted, setChainExhausted] = useState(false);
 
+  // Player controls state (for PlayerControls component)
+  const [playerSpeed, setPlayerSpeed] = useState(1);
+  const [playerMuted, setPlayerMuted] = useState(false);
+  const [playerVolume, setPlayerVolume] = useState(80);
+  const [subtitlesOn, setSubtitlesOn] = useState(false);
+
   // Wake Lock - keep screen awake during video playback
   useWakeLock(playing);
 
@@ -111,7 +119,13 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   }, [showId, router]);
 
   useKeyboardShortcuts(true, {
-    onTogglePlayPause: () => { if (playing) setPlaying(p => !p); else { vibrateLong(); setPlaying(true); } },
+    onTogglePlayPause: () => { if (playing) {
+      // Bug #17: Space/K should send play/pause to iframe, not close the player
+      const iframe = document.querySelector('.intelligent-player-iframe') as HTMLIFrameElement | null;
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'lumina:togglePlayPause' }, '*');
+      }
+    } else { vibrateLong(); setPlaying(true); } },
     onToggleFullscreen: () => { if (playing) playerRef.current?.requestFullscreen?.(); },
     onExit: () => { if (playing) setPlaying(false); },
     onPreviousEpisode: () => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
@@ -176,7 +190,8 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     let cancelled = false;
     const controller = new AbortController();
     const load = async () => {
-      setSeason(1); setEpIdx(1); setLoadingDetails(true);
+      // Bug #29: Respect URL-driven defaults instead of always resetting to S1E1
+      setSeason(defaultSeason || 1); setEpIdx(defaultEpisode || 1); setLoadingDetails(true);
       try {
         const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${id}&append_to_response=credits,similar,videos,content_ratings`, { signal: controller.signal });
         const data = await res.json();
@@ -306,6 +321,14 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     ? (failoverChain[chainIndex]?.provider || '')
     : (providers[selectedProvider]?.name || '');
 
+  // Helper: send postMessage to the IntelligentPlayer iframe for playback control
+  const postToPlayerIframe = useCallback((msg: Record<string, unknown>) => {
+    const iframe = document.querySelector('.intelligent-player-iframe') as HTMLIFrameElement | null;
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage(msg, '*');
+    }
+  }, []);
+
   // Auto-failover: try next in chain (smart mode) or next provider (legacy mode)
   const handleProviderFail = useCallback(() => {
     if (!show) return;
@@ -329,14 +352,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         const newName = failoverChain[nextIdx]?.provider;
         setFailoverMsg(`Switching from ${oldName} to ${newName}...`);
         setTimeout(() => setFailoverMsg(''), 3000);
-        // Emit failover metric
-        if (oldName && newName) {
-          fetch('/api/embed-health-client', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider: newName, alive: true }),
-          }).catch(() => {});
-        }
       } else {
         // Chain exhausted
         setChainExhausted(true);
@@ -371,6 +386,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     }
   }, [show?.id, providers, selectedProvider, failoverChain, chainIndex, chainExhausted, activeProviderName]);
 
+  // Bug #13: Keep a ref to handleProviderFail so the timeout always calls the latest version
+  const handleProviderFailRef = useRef(handleProviderFail);
+  handleProviderFailRef.current = handleProviderFail;
+
   // Reset tried providers and chain when episode/season changes
   useEffect(() => {
     triedProviders.current.clear();
@@ -386,11 +405,11 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     if (!playing || !url) return;
     if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
     const timer = setTimeout(() => {
-      handleProviderFail();
+      handleProviderFailRef.current();
     }, 25000);
     iframeLoadTimer.current = timer;
     return () => { clearTimeout(timer); };
-  }, [playing, activeProviderUrl, handleProviderFail]);
+  }, [playing, activeProviderUrl]);
 
   if (!show) {
     return (
@@ -405,8 +424,8 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
   const s = CS[show.cs];
   const seasons = show.media_type === 'tv'
-    ? (fullDetails?.number_of_seasons || Math.ceil(show.eps / 12))
-    : 1;
+    ? (fullDetails?.number_of_seasons || (show._isAnilist ? 1 : 0))
+    : 0;
 
   const epData = seasonEpisodes.length > 0
     ? seasonEpisodes.map(e => ({ ep: e.episode_number, title: e.name, dur: e.runtime ? `${e.runtime}m` : '23m', done: false }))
@@ -646,7 +665,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               ['Status', show.st],
               ['Rating', `${show.r} / 10`],
               ['Genres', show.genre.join(', ')],
-              ['Seasons', show.media_type === 'tv' ? (fullDetails?.number_of_seasons || Math.ceil(show.eps / 12)) : 'N/A'],
+              ['Seasons', show.media_type === 'tv' ? (fullDetails?.number_of_seasons || (show._isAnilist ? '1' : '...')) : 'N/A'],
               ['Runtime', show.media_type === 'movie' ? `${show.eps} min` : `${epData[0]?.dur || '23m'} / ep`],
             ] as const).map(([k, v], i) => (
               <div key={k} className="neo-card" style={{ padding: '14px 16px', borderRadius: 12, animation: `card-in .4s ${i * 0.045}s both` }}>
@@ -819,8 +838,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         />
       )}
 
-      {/* Player overlay */}
-{/* Player overlay — responsive 16:9 */}
+      {/* Player overlay — IntelligentPlayer + PlayerControls */}
       {playing && (
         <div ref={playerRef} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fi .28s ease both' }}>
           <div style={{ position: 'absolute', inset: 0, background: s.bg, opacity: .12 }} />
@@ -828,28 +846,23 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           {activeProviderUrl ? (
             <>
               <div style={{ position: 'relative', width: '100vw', height: '100vh', flexShrink: 0, overflow: 'hidden' }}>
-                <iframe ref={iframeRef} key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => {
-                // Detect frame-blocking: XFO/CSP-blocked iframes load about:blank (same-origin accessible)
-                try {
-                  const doc = iframeRef.current?.contentDocument;
-                  if (doc) {
-                    // contentDocument accessible → same-origin → about:blank → BLOCKED
+                {/* IntelligentPlayer: handles iframe, XFO detection, skip intro/credits, resume watching, error overlay */}
+                <IntelligentPlayer
+                  key={`player-${activeProviderName}-${epIdx}`}
+                  providers={[{ name: activeProviderName, url: activeProviderUrl, tier: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.tier as 1 | 2 | 3) || 2, category: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.category as 'all' | 'anime') || 'all' }]}
+                  mediaId={show.id}
+                  season={season}
+                  episode={epIdx}
+                  title={show.title}
+                  isAuthenticated={!!user}
+                  profileId={profile?.id}
+                  onError={(providerName, error) => {
+                    console.warn(`[Player] ${providerName} error: ${error}`);
                     if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
                     setIframeLoaded(true);
-                    handleProviderFail();
-                    return;
-                  }
-                } catch { /* cross-origin → real content loaded → success */ }
-                if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
-                setIframeLoaded(true);
-              }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); setIframeLoaded(true); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" />
-                {/* Loading overlay while iframe loads */}
-                {!iframeLoaded && (
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.85)', zIndex: 5, pointerEvents: 'none', animation: 'fi .3s ease both' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
-                    <div className="f-cinzel" style={{ marginTop: 14, fontSize: '.72rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Loading {activeProviderName}...</div>
-                  </div>
-                )}
+                    handleProviderFailRef.current();
+                  }}
+                />
               </div>
               {/* Failover toast */}
               {failoverMsg && (
@@ -875,21 +888,27 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   </select>
                 </div>
               )}
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '16px 24px calc(16px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1 }}>{show.title} {show.media_type === 'tv' ? `· S${season} E${epIdx}` : ''}</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                    {show.media_type === 'tv' && (
-                      <>
-                        <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }} onClick={() => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }} title="Previous Episode">⏮</button>
-                        <button className="btn-icon" style={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }} onClick={() => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : show.eps; if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }} title="Next Episode">⏭</button>
-                      </>
-                    )}
-                    <button className="btn-g" onClick={() => { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); }} style={{ padding: '8px 14px', fontSize: '.72rem' }} title="Picture in Picture">PiP</button>
-                    <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 14px', fontSize: '.72rem' }}>✕ Exit</button>
-                  </div>
-                </div>
-              </div>
+              {/* PlayerControls: full playback controls overlay */}
+              <PlayerControls
+                isPlaying={true}
+                speed={playerSpeed}
+                muted={playerMuted}
+                volume={playerVolume}
+                subtitlesOn={subtitlesOn}
+                showTitle={show.title}
+                showEpInfo={show.media_type === 'tv' ? `Season ${season} · Episode ${epIdx}` : ''}
+                onSetSpeed={(sp) => { setPlayerSpeed(sp); postToPlayerIframe({ type: 'lumina:setSpeed', speed: sp }); }}
+                onToggleMute={() => { setPlayerMuted(m => !m); postToPlayerIframe({ type: 'lumina:toggleMute' }); }}
+                onSetVolume={(vol) => { setPlayerVolume(vol); postToPlayerIframe({ type: 'lumina:setVolume', volume: vol }); }}
+                onToggleSubtitles={() => setSubtitlesOn(v => !v)}
+                onPlayPause={() => postToPlayerIframe({ type: 'lumina:togglePlayPause' })}
+                onPrevEpisode={() => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }}
+                onNextEpisode={() => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : show.eps; if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }}
+                onReplay={() => postToPlayerIframe({ type: 'lumina:seekRelative', seconds: -30 })}
+                onForward={() => postToPlayerIframe({ type: 'lumina:seekRelative', seconds: 30 })}
+                onExit={() => setPlaying(false)}
+                onPip={() => { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); }}
+              />
             </>
           ) : loadingProviders ? (
             <>

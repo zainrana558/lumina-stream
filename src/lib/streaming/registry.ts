@@ -49,6 +49,9 @@ function buildFallbackRecords(): Map<string, ProviderRecord> {
   const records = new Map<string, ProviderRecord>();
 
   for (const p of providers) {
+    // Bug #24: Build URL patterns from both path-based and query-param providers
+    const sampleMovie = p.getMovieUrl(0);
+    const sampleTv = p.getTvUrl(0, 1, 1);
     records.set(p.name, {
       name: p.name,
       tier: p.tier,
@@ -56,20 +59,23 @@ function buildFallbackRecords(): Map<string, ProviderRecord> {
       isActive: true,
       updatedAt: new Date().toISOString(),
       replaced: false,
-      // Store sample URLs as patterns for introspection
-      movieUrlPattern: p.getMovieUrl(0)
-        .replace(/([?&]video_id=)0/, '$1{id}')
-        .replace(/([?&]tmdb=)0/, '$1{id}')
-        .replace(/\/0(\/|$|\?)/, '/{id}$1')
-        .replace(/\/0$/, '/{id}'),
-      tvUrlPattern: p.getTvUrl(0, 1, 1)
-        .replace(/([?&]video_id=)0/, '$1{id}')
-        .replace(/([?&]tmdb=)0/, '$1{id}')
-        .replace(/\/0\//, '/{id}/')
-        .replace(/\/1\/1$/, '/{s}/{e}')
-        .replace(/season=1/, 'season={s}')
-        .replace(/episode=1/, 'episode={e}'),
-      animeUrlPattern: p.getAnimeUrl ? p.getAnimeUrl(0, 1).replace(/\/0\//, '/{id}/').replace(/\/1$/, '/{ep}') : undefined,
+      movieUrlPattern: sampleMovie
+      .replace(/([?&]video_id=)0/, '$1{id}')
+      .replace(/([?&]tmdb=)0/, '$1{id}')
+      .replace(/\/0(\/|$|\?)/, '/{id}$1')
+      .replace(/\/0$/, '/{id}'),
+    tvUrlPattern: sampleTv
+      .replace(/([?&]video_id=)0/, '$1{id}')
+      .replace(/([?&]tmdb=)0/, '$1{id}')
+      .replace(/\/0\//, '/{id}/')
+      .replace(/\/0\//, '/{id}/')
+      .replace(/\/1\/1$/, '/{s}/{e}')
+      .replace(/season=1/, 'season={s}')
+      .replace(/episode=1/, 'episode={e}')
+      .replace(/[&?]s=1(&|$)/, '$1s={s}$2')
+      .replace(/[&?]e=1(&|$)/, '$1e={e}$2')
+      .replace(/autonext=1/, 'autonext={autonext}'),
+    animeUrlPattern: p.getAnimeUrl ? p.getAnimeUrl(0, 1).replace(/\/0\//, '/{id}/').replace(/\/1$/, '/{ep}') : undefined,
     });
   }
 

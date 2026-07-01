@@ -134,9 +134,11 @@ export default function IntelligentPlayer({
   );
 
   // ---- Report playback event (L12) ----
-  // Use ref for currentTime to avoid recreating callback on every tick
+  // Use refs for currentTime and duration to avoid recreating callback on every tick
   const currentTimeRef = useRef(0);
   currentTimeRef.current = currentTime;
+  const durationRef = useRef(0);
+  durationRef.current = duration;
 
   const reportEvent = useCallback(
     (eventType: string, metadata?: Record<string, unknown>) => {
@@ -157,14 +159,14 @@ export default function IntelligentPlayer({
           provider: currentProvider.name,
           eventType,
           position: currentTimeRef.current,
-          duration,
+          duration: durationRef.current,
           metadata,
         }),
       }).catch(() => {
         // Event reporting failed — non-critical
       });
     },
-    [isAuthenticated, currentProvider, mediaId, duration],
+    [isAuthenticated, currentProvider, mediaId],
   );
 
   // ---- Save resume position (debounced) ----
@@ -268,7 +270,7 @@ export default function IntelligentPlayer({
   }
 
   return (
-    <div className="intelligent-player" style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 8, overflow: 'hidden' }}>
+    <div className="intelligent-player" style={{ position: 'relative', width: '100%', height: '100%', background: '#000', overflow: 'hidden' }}>
       {/* Iframe */}
       <iframe
         ref={iframeRef}
@@ -277,6 +279,21 @@ export default function IntelligentPlayer({
         style={{ width: '100%', height: '100%', border: 'none', position: 'absolute', top: 0, left: 0 }}
         allowFullScreen
         allow="autoplay; encrypted-media; picture-in-picture"
+        onLoad={() => {
+          // Bug #4: Detect XFO/CSP frame-blocking — if contentDocument is accessible,
+          // the iframe loaded about:blank (same-origin), meaning the real URL was blocked
+          try {
+            const doc = iframeRef.current?.contentDocument;
+            if (doc) {
+              // Same-origin accessible → about:blank → frame-blocked
+              setIframeError(true);
+              onError?.(currentProvider.name, 'Frame blocked by XFO/CSP');
+              return;
+            }
+          } catch {
+            // cross-origin → real content loaded → success
+          }
+        }}
         onError={() => {
           setIframeError(true);
           onError?.(currentProvider.name, 'Failed to load provider');
@@ -321,6 +338,24 @@ export default function IntelligentPlayer({
           }}
         >
           Skip Intro
+        </button>
+      )}
+
+      {/* Skip credits button */}
+      {showSkipCredits && skipMarkers.length > 0 && (
+        <button
+          className="intelligent-player-skip-credits"
+          style={{
+            position: 'absolute', bottom: 80, right: 24,
+            background: 'rgba(0,0,0,0.8)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)',
+            padding: '8px 20px', borderRadius: 6, fontSize: 13, cursor: 'pointer', zIndex: 10,
+          }}
+          onClick={() => {
+            const credits = skipMarkers.find(m => m.type === 'credits');
+            if (credits) skipTo(credits);
+          }}
+        >
+          Skip Credits
         </button>
       )}
 

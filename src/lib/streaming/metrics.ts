@@ -163,53 +163,76 @@ export async function aggregateMetrics(): Promise<HourlyRollup | null> {
     // Scan selection metrics
     const selectionRollup: Record<string, { count: number; totalLatency: number; totalScore: number }> = {};
     let selectionCursor = 0;
+    let selIterations = 0;
 
     do {
       const [nextCursor, keys] = await client.scan(selectionCursor, {
         match: 'metric:selection:*',
-        count: 50,
+        count: 200,
       });
       selectionCursor = Number(nextCursor);
 
-      for (const key of keys) {
-        const data = await client.hgetall(key) as Record<string, string> | null;
-        if (!data || !data.count) continue;
+      // Batch HGETALL via pipeline for performance
+      if (keys.length > 0) {
+        const pipeline = client.pipeline();
+        for (const key of keys) {
+          pipeline.hgetall(key);
+        }
+        const results = await pipeline.exec();
 
-        const providerName = key.replace('metric:selection:', '');
-        const count = parseInt(data.count, 10) || 0;
-        const totalLatency = parseFloat(data.totalLatency) || 0;
-        const totalScore = parseFloat(data.totalScore) || 0;
+        for (let i = 0; i < keys.length; i++) {
+          const data = results?.[i]?.[1] as Record<string, string> | null;
+          if (!data || !data.count) continue;
 
-        selectionRollup[providerName] = {
-          count,
-          totalLatency,
-          totalScore,
-        };
+          const providerName = keys[i].replace('metric:selection:', '');
+          const count = parseInt(data.count, 10) || 0;
+          const totalLatency = parseFloat(data.totalLatency) || 0;
+          const totalScore = parseFloat(data.totalScore) || 0;
+
+          selectionRollup[providerName] = {
+            count,
+            totalLatency,
+            totalScore,
+          };
+        }
       }
+      selIterations++;
+      if (selIterations >= 50) break; // Safety guard
     } while (selectionCursor > 0);
 
     // Scan health metrics
     const healthRollup: Record<string, { total: number; passes: number; fails: number }> = {};
     let healthCursor = 0;
+    let healthIterations = 0;
 
     do {
       const [nextCursor, keys] = await client.scan(healthCursor, {
         match: 'metric:health:*',
-        count: 50,
+        count: 200,
       });
       healthCursor = Number(nextCursor);
 
-      for (const key of keys) {
-        const data = await client.hgetall(key) as Record<string, string> | null;
-        if (!data || !data.checks) continue;
+      if (keys.length > 0) {
+        const pipeline = client.pipeline();
+        for (const key of keys) {
+          pipeline.hgetall(key);
+        }
+        const results = await pipeline.exec();
 
-        const providerName = key.replace('metric:health:', '');
-        healthRollup[providerName] = {
-          total: parseInt(data.checks, 10) || 0,
-          passes: parseInt(data.passes, 10) || 0,
-          fails: parseInt(data.fails, 10) || 0,
-        };
+        for (let i = 0; i < keys.length; i++) {
+          const data = results?.[i]?.[1] as Record<string, string> | null;
+          if (!data || !data.checks) continue;
+
+          const providerName = keys[i].replace('metric:health:', '');
+          healthRollup[providerName] = {
+            total: parseInt(data.checks, 10) || 0,
+            passes: parseInt(data.passes, 10) || 0,
+            fails: parseInt(data.fails, 10) || 0,
+          };
+        }
       }
+      healthIterations++;
+      if (healthIterations >= 50) break;
     } while (healthCursor > 0);
 
     // Get recent failovers

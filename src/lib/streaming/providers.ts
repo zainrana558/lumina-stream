@@ -422,33 +422,46 @@ export function getAnimeEmbedUrls(
   season: number,
   episode: number,
   malId?: number,
-  mediaType: 'movie' | 'tv' = 'tv',
+  mediaType?: 'movie' | 'tv',
 ): EmbedResult[] {
+  // Default to 'tv' when mediaType not provided (backward compatible)
+  const effectiveMediaType = mediaType || 'tv';
   const providers = getAllProviders();
   const generalProviders: EmbedResult[] = providers
     .filter((p) => p.category === "all")
     .sort((a, b) => a.tier - b.tier)
+    // Skip general providers when tmdbId is 0 (AniList-only) — they'd produce /tv/0/1/1
+    .filter((p) => !!tmdbId)
     .map((p) => ({
       name: p.name,
       tier: p.tier,
       category: "all" as ProviderCategory,
       replaced: swappedIn.has(p.name),
-      url: mediaType === 'movie'
+      url: effectiveMediaType === 'movie'
         ? p.getMovieUrl(tmdbId)
         : p.getTvUrl(tmdbId, season, episode),
     }));
   const animeProviders: EmbedResult[] = providers
     .filter((p) => p.category === "anime")
     .sort((a, b) => a.tier - b.tier)
-    .map((p) => ({
-      name: p.name,
-      tier: p.tier,
-      category: "anime" as ProviderCategory,
-      replaced: swappedIn.has(p.name),
-      url:
-        malId && p.getAnimeUrl
-          ? p.getAnimeUrl(malId, episode)
-          : p.getTvUrl(tmdbId, season, episode),
-    }));
+    .map((p) => {
+      // Anime-specific URL: prefer getAnimeUrl (uses MAL ID), fall back to TMDB URL
+      let url: string;
+      if (malId && p.getAnimeUrl) {
+        url = p.getAnimeUrl(malId, episode);
+      } else if (mediaType === 'movie') {
+        url = tmdbId ? p.getMovieUrl(tmdbId) : '';
+      } else {
+        url = tmdbId ? p.getTvUrl(tmdbId, season, episode) : '';
+      }
+      return {
+        name: p.name,
+        tier: p.tier,
+        category: "anime" as ProviderCategory,
+        replaced: swappedIn.has(p.name),
+        url,
+      };
+    })
+    .filter((p) => p.url !== ''); // Remove entries with empty URLs
   return [...generalProviders, ...animeProviders];
 }

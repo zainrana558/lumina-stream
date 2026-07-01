@@ -35,7 +35,12 @@ const healthStore = new Map<string, HealthEntry>();
 const prevHealthStore = new Map<string, boolean>();
 const failCountStore = new Map<string, number>();
 let lastCheckTime = 0;
-let checkIndex = 0;
+// Time-based offset so different serverless instances check different providers
+function getNextCheckIndex(total: number): number {
+  const now = Date.now();
+  const slot = Math.floor(now / CHECK_INTERVAL);
+  return slot % total;
+}
 
 // Cleanup stale entries every 60s to prevent memory leak
 if (typeof globalThis !== 'undefined') {
@@ -152,9 +157,9 @@ export async function maybeCheckOneProvider(): Promise<void> {
   const allProviders = getAllProviders();
   if (allProviders.length === 0) return;
 
-  // Round-robin: check the next provider in line
-  const provider = allProviders[checkIndex % allProviders.length];
-  checkIndex++;
+  // Time-based rotation: spreads checks across serverless instances
+  const idx = getNextCheckIndex(allProviders.length);
+  const provider = allProviders[idx];
   lastCheckTime = now;
 
   const sampleUrl = provider.getMovieUrl(550); // Fight Club always exists

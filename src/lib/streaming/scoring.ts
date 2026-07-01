@@ -33,8 +33,17 @@ interface HealthSignal {
 }
 
 // In-memory signal tracking (per serverless instance)
+// NOTE: This is per-instance and NOT shared across serverless invocations.
+// In a multi-instance deployment, each cold start gets an empty store.
+// The provider-intelligence.ts layer (health-check + speed cache) handles
+// cross-instance state via time-based rotation. This store serves as a
+// supplemental signal for single-instance or warm-instance scenarios.
 const signalStore = new Map<string, HealthSignal>();
 const SIGNAL_STORE_MAX = 100;
+
+// Track when signals were last updated (for recency)
+const signalUpdatedAt = new Map<string, number>();
+const RECENCY_WINDOW_MS = 15 * 60 * 1000; // 15 min
 
 function pruneSignalStore(): void {
   if (signalStore.size <= SIGNAL_STORE_MAX) return;
@@ -100,10 +109,19 @@ export async function scoreProvider(provider: EmbedResult): Promise<ProviderScor
 // ---- Signal computation ----
 
 function computeLatency(providerName: string): number {
-  // Health-based latency proxy: alive=1.0, dead/unknown=0.0
+  // Use shared speed data from provider-intelligence when available
+  try {
+    const { getSpeedScore } = require('@/lib/streaming/provider-intelligence') as { getSpeedScore: (name: string) => number };
+    const speed = getSpeedScore(providerName);
+    if (speed !== 0.5) return speed; // 0.5 is the default — only use if different
+  } catch { /* fallback to health */ }
+
+  // Fallback: health-based continuous proxy
+  // Returns continuous values instead of binary 0/1 to avoid
+  // large score jumps between "unknown" (0.5) and "alive" (1.0)
   const health = getHealth(providerName);
-  if (health === true) return 1.0;
-  if (health === false) return 0.0;
+  if (health === true) return 0.85; // Healthy but not perfect (probes have latency)
+  if (health === false) return 0.1;  // Dead but not zero (could recover)
   return 0.5; // Unknown — neutral
 }
 
@@ -128,10 +146,13 @@ function computeTierBonus(tier: number): number {
 }
 
 function computeRecencyBonus(providerName: string): number {
-  const signal = signalStore.get(providerName);
-  if (!signal) return 0.5;
-  // Higher bonus for recently active providers
-  return Math.min(1.0, signal.consecutiveSuccesses * 0.2);
+  const updatedAt = signalUpdatedAt.get(providerName);
+  if (!updatedAt) return 0.5; // No recent data — neutral (was 0.3, caused score dip)
+  const age = Date.now() - updatedAt;
+  if (age < 5 * 60 * 1000) return 1.0;       // < 5 min ago
+  if (age < 15 * 60 * 1000) return 0.7;      // < 15 min ago
+  if (age < RECENCY_WINDOW_MS) return 0.4;   // < 30 min ago
+  return 0.2; // Stale data
 }
 
 function computeClientReportBonus(providerName: string): number {
@@ -166,4 +187,6 @@ export function updateProviderSignal(
   }
 
   signalStore.set(providerName, existing);
+  signalUpdatedAt.set(providerName, Date.now());
   pruneSignalStore();
+}

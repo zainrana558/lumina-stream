@@ -93,13 +93,16 @@ const MOVIE_POOL: ProviderPool = {
   name: 'movies',
   category: 'movie',
   providers: [
-    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'MultiEmbed',
-    'VidSrc.me', 'Nontongo', 'MoviesApi.to',
-    'VidSrc PM', 'StreamWish', 'AutoEmbed',
-    'SuperEmbed', 'VidSrc FYI', 'Videasy',
+    // Tier 1
+    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc Embed RU', 'VidSrc Embed SU',
+    'VSrc SU', 'MultiEmbed',
+    // Tier 2
+    'Nontongo', 'MoviesApi.to',
+    'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
+    'StreamWish',
     'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
     '2Embed', 'VidSrc MOV', 'VidNest', '111Movies', 'VidFast',
-    'HDStream', 'VidSrc PRO', 'VidSrc DEV',
+    'HDStream',
   ],
 };
 
@@ -107,11 +110,14 @@ const ANIME_POOL: ProviderPool = {
   name: 'anime',
   category: 'anime',
   providers: [
-    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'MultiEmbed',
-    'VidSrc.me', 'Nontongo', 'MoviesApi.to',
+    // Tier 1
+    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc Embed RU', 'VidSrc Embed SU',
+    'VSrc SU', 'MultiEmbed',
+    // Tier 2
+    'Nontongo', 'MoviesApi.to',
     'VidSrc WIN Anime',
-    'VidSrc PM', 'StreamWish', 'AutoEmbed',
-    'VidSrc FYI', 'SuperEmbed',
+    'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
+    'StreamWish',
     'VidLink', 'AnyEmbed', 'VaPlayer',
     '2Embed', 'VidSrc MOV', 'VidNest', 'VidFast',
     'HDStream',
@@ -122,13 +128,16 @@ const TV_POOL: ProviderPool = {
   name: 'tv',
   category: 'tv',
   providers: [
-    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'MultiEmbed',
-    'VidSrc.me', 'Nontongo', 'MoviesApi.to',
-    'VidSrc PM', 'StreamWish', 'AutoEmbed',
-    'SuperEmbed', 'VidSrc FYI', 'Videasy',
+    // Tier 1
+    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc Embed RU', 'VidSrc Embed SU',
+    'VSrc SU', 'MultiEmbed',
+    // Tier 2
+    'Nontongo', 'MoviesApi.to',
+    'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
+    'StreamWish',
     'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
     '2Embed', 'VidSrc MOV', 'VidNest', '111Movies', 'VidFast',
-    'HDStream', 'VidSrc PRO', 'VidSrc DEV',
+    'HDStream',
   ],
 };
 
@@ -189,14 +198,12 @@ export function updateSpeedCache(name: string, latencyMs: number): void {
 
 function getSpeedScore(name: string): number {
   const cached = speedCache.get(name);
-  // Evict expired entries
-  if (cached !== undefined && speedCache.has(name)) {
-    // Speed cache entries are overwritten on update; just return cached value
+  if (cached !== undefined) {
+    // Check if entry is still fresh (speed cache entries are overwritten on update)
+    return cached;
   }
   const caps = PROVIDER_CAPABILITIES[name];
-  if (cached !== undefined) return cached;
-  if (caps) return caps.avgSpeed;
-  return 0.5; // Unknown — neutral
+  return caps?.avgSpeed ?? 0.5; // Unknown — neutral
 }
 
 // Periodic cache cleanup (every 10 minutes)
@@ -215,9 +222,9 @@ function cleanupCaches(): void {
     }
   }
 
-  // Evict stale speed cache entries (use SPEED_CACHE_TTL indirectly via update timestamp)
-  // Speed cache doesn't have per-entry timestamps, so we clear it entirely if stale
-  // (it gets repopulated on next probe)
+  // Clear entire speed cache periodically — it gets repopulated on next probe
+  // Speed cache entries don't have individual timestamps
+  speedCache.clear();
 }
 
 // ── Historical success cache (updated by health monitor & playback events) ──
@@ -289,7 +296,7 @@ function scoreProviderIntelligent(
   const health = getHealth(provider.name);
   const availability: number = health === true ? 1.0
     : health === false ? 0.0
-    : 0.3; // Unknown — penalize unverified providers
+    : 0.5; // Unknown — neutral (aligned with scoring.ts default)
 
   // Signal 2: Response Speed (20 pts) — from dynamic speed cache
   const responseSpeed = getSpeedScore(provider.name);
@@ -454,7 +461,9 @@ export async function selectWithIntelligence(options: {
 
   let allProviders: EmbedResult[];
   if (useAnimePool) {
-    allProviders = getAnimeEmbedUrls(tmdbId, season, episode, options.malId);
+    // Pass mediaType so anime movies get movie URLs, not TV URLs
+    const animeMediaType = contentType.type === 'movie' ? 'movie' : 'tv';
+    allProviders = getAnimeEmbedUrls(tmdbId, season, episode, options.malId, animeMediaType);
     // When tmdbId is 0 (AniList-only items), general providers get invalid URLs
     // like tv/0/1/1. Keep only anime-specific providers that use malId.
     if (!tmdbId && options.malId) {
@@ -507,31 +516,43 @@ export async function selectWithIntelligence(options: {
   if (!options.fastMode && scored.length > 1) {
     try {
       const probeCount = Math.min(MAX_PARALLEL_PROBES, scored.length);
-      const topCandidates = scored.slice(0, probeCount).map(s => ({
-        name: s.name, url: s.url,
-        tier: s.tier, category: s.category,
-        replaced: s.replaced,
-      }));
-      const aliveFromProbe = await parallelProbe(topCandidates, probeCount);
-      signalsUsed = true;
+      // Skip providers that already have fresh speed cache entries (< 3 min old)
+      // to avoid redundant probing (health-check already pings periodically)
+      const PROBE_FRESHNESS_MS = 3 * 60 * 1000;
+      const topCandidates = scored
+        .slice(0, probeCount)
+        .filter(s => {
+          const cached = speedCache.get(s.name);
+          return !cached; // Only probe if no cached speed data
+        })
+        .map(s => ({
+          name: s.name, url: s.url,
+          tier: s.tier, category: s.category,
+          replaced: s.replaced,
+        }));
 
-      // Re-score with updated caches (probes updated speed + historical)
-      const probedSet = new Set(aliveFromProbe);  // providers confirmed alive
-      const knownDead = new Set(topCandidates.filter(p => !aliveFromProbe.has(p.name)).map(p => p.name));
+      if (topCandidates.length > 0) {
+        const aliveFromProbe = await parallelProbe(topCandidates, topCandidates.length);
+        signalsUsed = true;
 
-      scored = candidates.map(p => {
-        const bonus = learnedBonuses.get(p.name) ?? 0;
-        const result = scoreProviderIntelligent(p, bonus);
+        // Re-score with updated caches (probes updated speed + historical)
+        const probedSet = new Set(aliveFromProbe);  // providers confirmed alive
+        const knownDead = new Set(topCandidates.filter(p => !aliveFromProbe.has(p.name)).map(p => p.name));
 
-        // Only penalize providers that were actually probed AND confirmed dead
-        // (don't penalize providers that weren't probed at all)
-        if (knownDead.has(p.name)) {
-          result.signals.availability = 0;
-          result.score = Math.round((result.signals.subtitleSupport * 10 + result.signals.responseSpeed * 20 + result.signals.quality * 10 + result.signals.historicalSuccess * 10) * 10) / 10;
-        }
+        scored = candidates.map(p => {
+          const bonus = learnedBonuses.get(p.name) ?? 0;
+          const result = scoreProviderIntelligent(p, bonus);
 
-        return result;
-      });
+          // Only penalize providers that were actually probed AND confirmed dead
+          // (don't penalize providers that weren't probed at all)
+          if (knownDead.has(p.name)) {
+            result.signals.availability = 0;
+            result.score = Math.round((result.signals.subtitleSupport * 10 + result.signals.responseSpeed * 20 + result.signals.quality * 10 + result.signals.historicalSuccess * 10) * 10) / 10;
+          }
+
+          return result;
+        });
+      } // end if (topCandidates.length > 0)
     } catch {
       // Probing failed — use cached scores only
     }
