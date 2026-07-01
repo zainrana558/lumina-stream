@@ -279,21 +279,6 @@ export default function IntelligentPlayer({
         style={{ width: '100%', height: '100%', border: 'none', position: 'absolute', top: 0, left: 0 }}
         allowFullScreen
         allow="autoplay; encrypted-media; picture-in-picture"
-        onLoad={() => {
-          // Bug #4: Detect XFO/CSP frame-blocking — if contentDocument is accessible,
-          // the iframe loaded about:blank (same-origin), meaning the real URL was blocked
-          try {
-            const doc = iframeRef.current?.contentDocument;
-            if (doc) {
-              // Same-origin accessible → about:blank → frame-blocked
-              setIframeError(true);
-              onError?.(currentProvider.name, 'Frame blocked by XFO/CSP');
-              return;
-            }
-          } catch {
-            // cross-origin → real content loaded → success
-          }
-        }}
         onError={() => {
           setIframeError(true);
           onError?.(currentProvider.name, 'Failed to load provider');
