@@ -307,16 +307,15 @@ export async function reportClientHealth(
   const now = Date.now();
 
   if (alive) {
+    // Check wasDead BEFORE updating health (ordering bug fix)
+    const wasDead = getPrevHealth(provider) === false;
     setHealth(provider, true);
     setPrevHealth(provider, true);
     const prevFailCount = getFailCount(provider);
-    // If client reports alive and we had failures, reset
     if (prevFailCount > 0) {
       resetFailCount(provider);
     }
 
-    // If provider was dead and client says alive, try restoring
-    const wasDead = getPrevHealth(provider) === false;
     if (wasDead) {
       restoreOriginal(provider);
     }

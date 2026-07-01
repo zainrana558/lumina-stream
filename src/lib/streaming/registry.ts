@@ -57,8 +57,18 @@ function buildFallbackRecords(): Map<string, ProviderRecord> {
       updatedAt: new Date().toISOString(),
       replaced: false,
       // Store sample URLs as patterns for introspection
-      movieUrlPattern: p.getMovieUrl(0).replace(/\/0$/, '/{id}'),
-      tvUrlPattern: p.getTvUrl(0, 1, 1).replace(/\/0\//, '/{id}/').replace(/\/1\/1$/, '/{s}/{e}'),
+      movieUrlPattern: p.getMovieUrl(0)
+        .replace(/([?&]video_id=)0/, '$1{id}')
+        .replace(/([?&]tmdb=)0/, '$1{id}')
+        .replace(/\/0(\/|$|\?)/, '/{id}$1')
+        .replace(/\/0$/, '/{id}'),
+      tvUrlPattern: p.getTvUrl(0, 1, 1)
+        .replace(/([?&]video_id=)0/, '$1{id}')
+        .replace(/([?&]tmdb=)0/, '$1{id}')
+        .replace(/\/0\//, '/{id}/')
+        .replace(/\/1\/1$/, '/{s}/{e}')
+        .replace(/season=1/, 'season={s}')
+        .replace(/episode=1/, 'episode={e}'),
       animeUrlPattern: p.getAnimeUrl ? p.getAnimeUrl(0, 1).replace(/\/0\//, '/{id}/').replace(/\/1$/, '/{ep}') : undefined,
     });
   }

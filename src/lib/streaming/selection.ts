@@ -63,14 +63,14 @@ export async function selectProvidersWithScores(options: SelectionOptions): Prom
     genreIds: options.genreIds,
   });
 
-  // The chain doesn't include full signals — return lightweight version
+  // The chain now includes full signals from intelligence layer
   return result.chain.map(item => ({
     name: item.provider,
     url: item.url,
     tier: item.tier as EmbedResult['tier'],
     category: (item.category === 'anime' ? 'anime' : 'all') as EmbedResult['category'],
     score: item.score,
-    signals: {
+    signals: item.signals || {
       availability: 0,
       responseSpeed: 0,
       subtitleSupport: 0,

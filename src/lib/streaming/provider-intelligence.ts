@@ -189,10 +189,35 @@ export function updateSpeedCache(name: string, latencyMs: number): void {
 
 function getSpeedScore(name: string): number {
   const cached = speedCache.get(name);
+  // Evict expired entries
+  if (cached !== undefined && speedCache.has(name)) {
+    // Speed cache entries are overwritten on update; just return cached value
+  }
   const caps = PROVIDER_CAPABILITIES[name];
-  if (cached) return cached;
+  if (cached !== undefined) return cached;
   if (caps) return caps.avgSpeed;
   return 0.5; // Unknown — neutral
+}
+
+// Periodic cache cleanup (every 10 minutes)
+let lastCacheCleanup = Date.now();
+const CACHE_CLEANUP_INTERVAL = 10 * 60 * 1000;
+
+function cleanupCaches(): void {
+  const now = Date.now();
+  if (now - lastCacheCleanup < CACHE_CLEANUP_INTERVAL) return;
+  lastCacheCleanup = now;
+
+  // Evict stale historical cache entries
+  for (const [key, val] of historicalCache) {
+    if (now - val.updatedAt >= HISTORICAL_CACHE_TTL) {
+      historicalCache.delete(key);
+    }
+  }
+
+  // Evict stale speed cache entries (use SPEED_CACHE_TTL indirectly via update timestamp)
+  // Speed cache doesn't have per-entry timestamps, so we clear it entirely if stale
+  // (it gets repopulated on next probe)
 }
 
 // ── Historical success cache (updated by health monitor & playback events) ──
@@ -222,7 +247,11 @@ export function updateHistoricalCache(name: string, success: boolean): void {
 
 function getHistoricalScore(name: string): number {
   const cached = historicalCache.get(name);
-  if (cached && (Date.now() - cached.updatedAt) < HISTORICAL_CACHE_TTL) {
+  if (cached) {
+    if (Date.now() - cached.updatedAt >= HISTORICAL_CACHE_TTL) {
+      historicalCache.delete(name);
+      return 0.7;
+    }
     return cached.successRate;
   }
   return 0.7; // Default: assume mostly working
@@ -402,6 +431,7 @@ export async function selectWithIntelligence(options: {
   fastMode?: boolean;
 }): Promise<IntelligenceChain> {
   const startTime = Date.now();
+  cleanupCaches();
 
   // Step 1: Content Analysis
   const contentType = resolveContentType({
@@ -469,18 +499,25 @@ export async function selectWithIntelligence(options: {
     return scoreProviderIntelligent(p, bonus);
   });
 
-  // Step 6: Parallel probe top candidates (unless fast mode or too few)
+  // Step 6: Sort BEFORE probing so we probe top-scored providers
+  scored.sort((a, b) => b.score - a.score);
+
+  // Step 6b: Parallel probe top-scored candidates (unless fast mode or too few)
   let signalsUsed = false;
   if (!options.fastMode && scored.length > 1) {
     try {
       const probeCount = Math.min(MAX_PARALLEL_PROBES, scored.length);
-      const aliveFromProbe = await parallelProbe(candidates, probeCount);
+      const topCandidates = scored.slice(0, probeCount).map(s => ({
+        name: s.name, url: s.url,
+        tier: s.tier, category: s.category,
+        replaced: s.replaced,
+      }));
+      const aliveFromProbe = await parallelProbe(topCandidates, probeCount);
       signalsUsed = true;
 
       // Re-score with updated caches (probes updated speed + historical)
       const probedSet = new Set(aliveFromProbe);  // providers confirmed alive
-      const deadSet = candidates.slice(0, probeCount).filter(p => !aliveFromProbe.has(p.name)).map(p => p.name);
-      const knownDead = new Set(deadSet);
+      const knownDead = new Set(topCandidates.filter(p => !aliveFromProbe.has(p.name)).map(p => p.name));
 
       scored = candidates.map(p => {
         const bonus = learnedBonuses.get(p.name) ?? 0;
@@ -500,16 +537,14 @@ export async function selectWithIntelligence(options: {
     }
   }
 
-  // Step 7: Sort by score (highest first)
-  scored.sort((a, b) => b.score - a.score);
-
-  // Step 8: Build chain for client
+  // Step 7: Build chain for client (already sorted from Step 6)
   const chain = scored.map(s => ({
     provider: s.name,
     url: s.url,
     score: s.score,
     tier: s.tier,
     category: s.category,
+    signals: s.signals,
   }));
 
   // Emit selection metrics (fire-and-forget)

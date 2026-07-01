@@ -103,7 +103,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // VidSrc NET removed — unreachable (fetch failed)
   // VidSrc MN removed — unreachable (fetch failed)
   // Anime replacements
-  { name: 'VidSrc WIN Anime', category: 'anime', getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => `https://vidsrc.win/embed/tv/${malId}/${Math.floor(ep / 25) + 1}/${(ep % 25) || 25}` },
+  { name: 'VidSrc WIN Anime', category: 'anime', getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => { const s = Math.floor((ep - 1) / 25) + 1; const e = ((ep - 1) % 25) + 1; return `https://vidsrc.win/embed/tv/${malId}/${s}/${e}`; } },
   // NetPlay Anime removed — Thai IPTV service, not an embed provider
   // Kwik Anime removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
   // FileMoon Anime removed — unreachable (fetch failed)
@@ -367,10 +367,11 @@ export function swapInReplacement(deadProviderName: string): StreamProvider | nu
   let replacement = REPLACEMENT_POOL.find(r => r.category === category && !swappedIn.has(r.name));
   if (!replacement) replacement = REPLACEMENT_POOL.find(r => !swappedIn.has(r.name));
   if (!replacement) return null;
-  swappedOut.set(deadProviderName, deadProvider!);
+  if (!deadProvider) return null;
+  swappedOut.set(deadProviderName, deadProvider);
   const newProvider: StreamProvider = {
     name: replacement.name,
-    tier: deadProvider?.tier || 2,
+    tier: deadProvider.tier || 2,
     category: replacement.category,
     getMovieUrl: replacement.getMovieUrl,
     getTvUrl: replacement.getTvUrl,
@@ -420,7 +421,8 @@ export function getAnimeEmbedUrls(
   tmdbId: number,
   season: number,
   episode: number,
-  malId?: number
+  malId?: number,
+  mediaType: 'movie' | 'tv' = 'tv',
 ): EmbedResult[] {
   const providers = getAllProviders();
   const generalProviders: EmbedResult[] = providers
@@ -431,7 +433,9 @@ export function getAnimeEmbedUrls(
       tier: p.tier,
       category: "all" as ProviderCategory,
       replaced: swappedIn.has(p.name),
-      url: p.getTvUrl(tmdbId, season, episode),
+      url: mediaType === 'movie'
+        ? p.getMovieUrl(tmdbId)
+        : p.getTvUrl(tmdbId, season, episode),
     }));
   const animeProviders: EmbedResult[] = providers
     .filter((p) => p.category === "anime")

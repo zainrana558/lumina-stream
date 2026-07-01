@@ -380,7 +380,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     setIframeLoaded(false);
   }, [epIdx, season, providers]);
 
-  // Timeout failover: if iframe doesn't fire onLoad within 15s, auto-switch
+  // Timeout failover: if iframe doesn't fire onLoad within 25s, auto-switch
   useEffect(() => {
     const url = activeProviderUrl;
     if (!playing || !url) return;
@@ -404,7 +404,9 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   }
 
   const s = CS[show.cs];
-  const seasons = show.media_type === 'tv' ? Math.ceil(show.eps / 12) : 1;
+  const seasons = show.media_type === 'tv'
+    ? (fullDetails?.number_of_seasons || Math.ceil(show.eps / 12))
+    : 1;
 
   const epData = seasonEpisodes.length > 0
     ? seasonEpisodes.map(e => ({ ep: e.episode_number, title: e.name, dur: e.runtime ? `${e.runtime}m` : '23m', done: false }))
@@ -907,7 +909,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
                 <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,107,138,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>!</div>
                 <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.7)', letterSpacing: '.06em', textAlign: 'center', maxWidth: 300 }}>All providers unavailable</div>
-                <button className="btn-p" onClick={() => { setChainExhausted(false); setChainIndex(0); triedProviders.current.clear(); setProviders([]); setFailoverChain([]); }} style={{ padding: '10px 28px', fontSize: '.82rem', marginTop: 8 }}>Retry</button>
+                <button className="btn-p" onClick={() => { setChainExhausted(false); setChainIndex(0); triedProviders.current.clear(); setProviders([]); setFailoverChain([]); setLoadingProviders(true); setPlaying(false); setTimeout(() => setPlaying(true), 50); }} style={{ padding: '10px 28px', fontSize: '.82rem', marginTop: 8 }}>Retry</button>
               </div>
               <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

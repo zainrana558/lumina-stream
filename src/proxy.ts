@@ -69,7 +69,7 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
       "Content-Security-Policy",
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://popads.net https://cdn.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://www.wvxhxwntulsdrt.com https://www.wtumqlwqhw.com https://vidsrc-embed.ru https://vidsrc-embed.su https://vsrc.su https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su",
+        "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://popads.net https://cdn.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://www.wvxhxwntulsdrt.com https://www.wtumqlwqhw.com https://vidsrc-embed.ru https://vidsrc-embed.su https://vsrc.su https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su",
         "style-src 'self' 'unsafe-inline'",
         "font-src 'self' data: https://fonts.gstatic.com",
         "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
@@ -88,7 +88,7 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
     // (e.g. https://cache-proxy.zainrana553.workers.dev or custom domain).
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lumina-stream-omega.vercel.app";
     const origin  = request.headers.get("Origin") || "";
-    const vercelUrl = "https://lumina-stream-omega.vercel.app";
+    const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL || "https://lumina-stream-omega.vercel.app";
     const allowedOrigins = new Set([siteUrl, vercelUrl]);
     const reflected = origin && allowedOrigins.has(origin) ? origin : siteUrl;
     response.headers.set("Access-Control-Allow-Origin",  reflected);

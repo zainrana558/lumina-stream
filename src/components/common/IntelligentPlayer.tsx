@@ -134,6 +134,10 @@ export default function IntelligentPlayer({
   );
 
   // ---- Report playback event (L12) ----
+  // Use ref for currentTime to avoid recreating callback on every tick
+  const currentTimeRef = useRef(0);
+  currentTimeRef.current = currentTime;
+
   const reportEvent = useCallback(
     (eventType: string, metadata?: Record<string, unknown>) => {
       if (!isAuthenticated || !currentProvider) return;
@@ -152,7 +156,7 @@ export default function IntelligentPlayer({
           mediaId,
           provider: currentProvider.name,
           eventType,
-          position: currentTime,
+          position: currentTimeRef.current,
           duration,
           metadata,
         }),
@@ -160,7 +164,7 @@ export default function IntelligentPlayer({
         // Event reporting failed — non-critical
       });
     },
-    [isAuthenticated, currentProvider, mediaId, currentTime, duration],
+    [isAuthenticated, currentProvider, mediaId, duration],
   );
 
   // ---- Save resume position (debounced) ----
@@ -211,6 +215,40 @@ export default function IntelligentPlayer({
     [],
   );
 
+  // ---- Listen for timeUpdate from iframe & check skip markers ----
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === 'lumina:timeUpdate') {
+        const time = typeof e.data.time === 'number' ? e.data.time : 0;
+        setCurrentTime(time);
+        if (e.data.duration) setDuration(e.data.duration);
+        setIsPlaying(e.data.playing !== false);
+      }
+    }
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  // Check skip markers against current time
+  useEffect(() => {
+    if (skipMarkers.length === 0) return;
+
+    const check = () => {
+      const t = currentTimeRef.current;
+      const intro = skipMarkers.find(m => m.type === 'intro' && t >= m.startTime && t <= m.endTime);
+      const credits = skipMarkers.find(m => m.type === 'credits' && t >= m.startTime && t <= m.endTime);
+      setShowSkipIntro(!!intro);
+      setShowSkipCredits(!!credits);
+    };
+
+    // Check immediately, then every 2s
+    check();
+    skipCheckInterval.current = setInterval(check, 2000);
+    return () => {
+      if (skipCheckInterval.current) clearInterval(skipCheckInterval.current);
+    };
+  }, [skipMarkers, currentTime]);
+
   // ---- Cleanup on unmount ----
   useEffect(() => {
     return () => {
@@ -254,7 +292,15 @@ export default function IntelligentPlayer({
             background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '12px 24px',
             borderRadius: 8, fontSize: 14, zIndex: 10, cursor: 'pointer',
           }}
-          onClick={() => setResumePosition(null)}
+          onClick={() => {
+            // Send seek command to iframe before dismissing
+            if (iframeRef.current?.contentWindow && resumePosition) {
+              iframeRef.current.contentWindow.postMessage(
+                { type: 'lumina:seek', time: resumePosition }, '*'
+              );
+            }
+            setResumePosition(null);
+          }}
         >
           Resume from {Math.floor(resumePosition / 60)}:{String(Math.floor(resumePosition % 60)).padStart(2, '0')}
         </div>

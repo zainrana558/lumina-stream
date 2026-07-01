@@ -251,6 +251,15 @@ export async function aggregateMetrics(): Promise<HourlyRollup | null> {
     // Store rollup with 7-day TTL
     await client.set(rollupKey, JSON.stringify(rollup), { ex: 7 * 86400 });
 
+    // Delete raw metrics to prevent double-counting on next aggregation
+    for (const key of Object.keys(selectionRollup)) {
+      await client.del(`metric:selection:${key}`).catch(() => {});
+    }
+    for (const key of Object.keys(healthRollup)) {
+      await client.del(`metric:health:${key}`).catch(() => {});
+    }
+    try { await client.del('metric:failover'); } catch {}
+
     return rollup;
   } catch {
     return null;
@@ -388,13 +397,16 @@ export async function getHourlyRollups(hours: number = 24): Promise<HourlyRollup
 
   try {
     const rollups: HourlyRollup[] = [];
+    const keys: string[] = [];
     const now = new Date();
-
     for (let h = 0; h < hours; h++) {
       const hourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() - h, 0, 0);
-      const key = `metric:rollup:${hourStart.toISOString()}`;
-      const data = await client.get<string>(key);
+      keys.push(`metric:rollup:${hourStart.toISOString()}`);
+    }
 
+    const values = await client.mget<string[]>(...keys);
+
+    for (const data of values) {
       if (data) {
         try {
           rollups.push(JSON.parse(data) as HourlyRollup);

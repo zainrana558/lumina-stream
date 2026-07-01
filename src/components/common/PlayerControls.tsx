@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 interface PlayerControlsProps {
+  isPlaying?: boolean;
   speed: number;
   muted: boolean;
   volume: number;
@@ -24,12 +25,26 @@ interface PlayerControlsProps {
 }
 
 export default function PlayerControls({
+  isPlaying = true,
   speed, muted, volume, subtitlesOn,
   showTitle, showEpInfo,
   onSetSpeed, onToggleMute, onSetVolume, onToggleSubtitles,
   onPlayPause, onPrevEpisode, onNextEpisode, onReplay, onExit, onPip,
 }: PlayerControlsProps) {
   const [speedOpen, setSpeedOpen] = useState(false);
+  const speedRef = useRef<HTMLDivElement>(null);
+
+  // Close speed dropdown on outside click (#21)
+  useEffect(() => {
+    if (!speedOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (speedRef.current && !speedRef.current.contains(e.target as Node)) {
+        setSpeedOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [speedOpen]);
 
   return (
     <div style={{
@@ -90,9 +105,14 @@ export default function PlayerControls({
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '1.3rem', color: '#FFF5E8', transition: 'all .2s',
             boxShadow: '0 0 16px rgba(255,179,71,.2)',
-          }}>▶</button>
-          {/* Forward 30s */}
-          <button onClick={() => {}} title="Forward 30 seconds" style={{
+          }}>{isPlaying ? '⏸' : '▶'}</button>
+          {/* Forward 30s */
+          <button onClick={() => {
+            // Forward via postMessage to iframe
+            try {
+              window.parent.postMessage({ type: 'lumina:seekRelative', seconds: 30 }, '*');
+            } catch {}
+          }} title="Forward 30 seconds" style={{
             width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,.1)',
             border: '1px solid rgba(255,255,255,.12)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -113,7 +133,7 @@ export default function PlayerControls({
 
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {/* Speed dropdown */}
-          <div style={{ position: 'relative' }}>
+          <div ref={speedRef} style={{ position: 'relative' }}>
             <button className="f-mono"
               onClick={() => setSpeedOpen(!speedOpen)}
               style={{

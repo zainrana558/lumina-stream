@@ -34,6 +34,16 @@ interface HealthSignal {
 
 // In-memory signal tracking (per serverless instance)
 const signalStore = new Map<string, HealthSignal>();
+const SIGNAL_STORE_MAX = 100;
+
+function pruneSignalStore(): void {
+  if (signalStore.size <= SIGNAL_STORE_MAX) return;
+  const entries = Array.from(signalStore.entries());
+  // Keep most recent entries (last half)
+  for (const [key] of entries.slice(0, Math.floor(entries.length / 2))) {
+    signalStore.delete(key);
+  }
+}
 
 // ---- Public API ----
 
@@ -75,7 +85,7 @@ export async function scoreProvider(provider: EmbedResult): Promise<ProviderScor
     signals.learnedBonus = 0;
   }
 
-  // Weighted combination
+  // Weighted combination (score may exceed 1.0 due to learnedBonus — used for sorting only)
   const score =
     0.30 * signals.latency +
     0.40 * signals.successRate +
@@ -127,7 +137,7 @@ function computeRecencyBonus(providerName: string): number {
 function computeClientReportBonus(providerName: string): number {
   const signal = signalStore.get(providerName);
   if (!signal?.clientReported) return 0.5;
-  return signal.clientReported ? 0.8 : 0.5;
+  return 0.8;
 }
 
 // ---- Signal update (called by playback events) ----
@@ -156,4 +166,4 @@ export function updateProviderSignal(
   }
 
   signalStore.set(providerName, existing);
-}
+  pruneSignalStore();
