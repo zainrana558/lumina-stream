@@ -3,7 +3,7 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { MediaItem, SortKey, TMDBShow } from '@/types';
-import { GENRES_ALL, PORTAL_NAME_SET } from '@/styles/themes';
+import { GENRES_ALL, PORTAL_NAME_SET, TMDB_GENRE_NAME_MAP } from '@/styles/themes';
 import { tmdbToMedia } from '@/types';
 import Card from '@/components/common/Card';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -212,6 +212,38 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     }
   }, [browseSource, isMoodMode]);
 
+  // ─── Genre URL param: fetch genre-specific data from TMDB ──────────────────
+  // When user navigates to /browse?genre=Action, fetch that genre from TMDB
+  // instead of only client-side filtering the initial ~80 trending shows.
+  const genreFetchInitRef = useRef(false);
+  const genreIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!genreParam || isMoodMode || genreFetchInitRef.current) return;
+    // Only fetch for non-portal genres (portal genres have their own /genre/[slug] pages)
+    if (PORTAL_NAME_SET.has(genreParam)) return;
+
+    const genreId = TMDB_GENRE_NAME_MAP[genreParam];
+    if (!genreId) return;
+
+    genreFetchInitRef.current = true;
+    genreIdRef.current = genreId;
+    setMoodLoading(true); // reuse loading state
+
+    fetch(`/api/browse?genre=${genreId}&page=1&sortBy=popularity.desc`)
+      .then(r => r.json())
+      .then(data => {
+        const items: TMDBShow[] = data.results || [];
+        const mapped = items
+          .filter((r: TMDBShow) => r.poster_path)
+          .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: r.media_type || 'movie' }));
+        if (mapped.length > 0) {
+          setAllShows(mapped);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setMoodLoading(false));
+  }, [genreParam, isMoodMode]);
+
   // Debounced search — hits both TMDB + AniList via /api/search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -326,12 +358,17 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
             setAnimeHasMore(false);
           }
         } else if (browseSource === 'all') {
-          // Load from both TMDB and AniList
+          // Load from both TMDB and AniList (or genre-specific TMDB if navigated via ?genre=)
           const tmdbNext = currentPageRef.current + 1;
           const animeNext = animePage + 1;
+          const genreId = genreIdRef.current;
+
+          const tmdbUrl = genreId
+            ? `/api/browse?genre=${genreId}&page=${tmdbNext}&sortBy=popularity.desc`
+            : `/api/tmdb?endpoint=/trending/all/week&page=${tmdbNext}`;
 
           const [tmdbData, animeData] = await Promise.all([
-            fetch(`/api/tmdb?endpoint=/trending/all/week&page=${tmdbNext}`).then(r => r.json()).catch(() => ({ results: [] })),
+            fetch(tmdbUrl).then(r => r.json()).catch(() => ({ results: [] })),
             fetch(`/api/anime?type=all&page=${animeNext}&perPage=25`).then(r => r.json()).catch(() => ({ results: [] })),
           ]);
 

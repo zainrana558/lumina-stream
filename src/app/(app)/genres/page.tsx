@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
-import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { CANONICAL_BASE, TMDB_IMAGE_BASE } from '@/lib/seo/constants';
 import Link from 'next/link';
+import Image from 'next/image';
+import { tmdbFetch } from '@/lib/tmdb/server';
+import { getPopularAnime } from '@/lib/anilist/client';
 import { PORTAL_GENRES, BROWSE_ONLY_GENRES, TMDB_GENRE_ID_MAP } from '@/config/genres';
+import { getBackdropUrl } from '@/lib/images';
 
-export const revalidate = 86400;
+export const revalidate = 3600; // 1 hour
 
 const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/genres`;
@@ -68,7 +72,55 @@ const ALL_GENRES = [
     })),
 ];
 
-export default function GenresPage() {
+// ─── Fetch a backdrop image for each portal genre ─────────────────────────
+
+async function fetchGenreBackdrops(): Promise<Record<string, string>> {
+  const backdrops: Record<string, string> = {};
+
+  await Promise.all(
+    PORTAL_GENRES.map(async (g) => {
+      try {
+        let backdrop: string | null = null;
+
+        if (g.source === 'anilist') {
+          // Use AniList banner for anime
+          const data = await getPopularAnime(1, 5);
+          const withBanner = data.media?.filter(m => m.bannerImage) || [];
+          if (withBanner.length > 0) {
+            backdrop = withBanner[Math.floor(Math.random() * withBanner.length)].bannerImage!;
+          }
+        } else {
+          // TMDB discover — grab a backdrop from the top result
+          const params: Record<string, string> = {
+            with_genres: String(g.genreId),
+            ...g.extraParams,
+          };
+          const data = await tmdbFetch<{ results?: { backdrop_path?: string }[] }>(
+            `/discover/${g.mediaType}`,
+            { ...params, page: '1' },
+          );
+          const pool = (data.results || []).filter(r => r.backdrop_path);
+          if (pool.length > 0) {
+            const pick = pool[Math.floor(Math.random() * pool.length)];
+            backdrop = `${TMDB_IMAGE_BASE}/w780${pick.backdrop_path}`;
+          }
+        }
+
+        if (backdrop) {
+          backdrops[g.key] = backdrop;
+        }
+      } catch {
+        // Non-critical — card will use gradient fallback
+      }
+    }),
+  );
+
+  return backdrops;
+}
+
+export default async function GenresPage() {
+  const genreBackdrops = await fetchGenreBackdrops();
+
   const collectionJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -92,12 +144,43 @@ export default function GenresPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       <style>{`
-        .genre-portal-link {
-          display: block; text-decoration: none; border-radius: 12px;
-          padding: 24px 20px; transition: transform .2s, border-color .2s;
+        .genre-portal-card {
+          position: relative;
+          display: block;
+          text-decoration: none;
+          border-radius: 14px;
+          overflow: hidden;
+          min-height: 220px;
+          transition: transform .25s ease, box-shadow .25s ease;
         }
-        .genre-portal-link:hover { transform: translateY(-2px); }
-        .genre-portal-link:hover .portal-border { border-color: var(--tc-60) !important; }
+        .genre-portal-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 40px rgba(0,0,0,.4);
+        }
+        .genre-portal-card:hover .portal-card-img {
+          transform: scale(1.08);
+        }
+        .genre-portal-card:hover .portal-card-overlay {
+          background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.3) 60%, rgba(0,0,0,.15) 100%);
+        }
+        .portal-card-img {
+          transition: transform .5s ease;
+        }
+        .portal-card-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.1) 100%);
+          z-index: 1;
+          transition: background .3s ease;
+        }
+        .portal-card-content {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 24px 20px;
+          z-index: 2;
+        }
         .genre-list-link {
           display: block; padding: 16px 20px; border-radius: 10px;
           text-decoration: none; transition: background .2s, border-color .2s;
@@ -141,49 +224,73 @@ export default function GenresPage() {
           gap: 16,
           marginBottom: 48,
         }}>
-          {PORTAL_GENRES.map(g => (
-            <Link
-              key={g.key}
-              href={`/genre/${g.key}`}
-              className="genre-portal-link"
-              style={{ '--tc-60': `${g.tc}60`, background: g.col } as React.CSSProperties}
-            >
-              <div className="portal-border" style={{ border: `1px solid ${g.tc}30`, borderRadius: 12, padding: '24px 20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <span style={{ fontSize: '1.3rem' }}>{g.em}</span>
-                <span className="f-cinzel-dec" style={{
-                  fontSize: '1.1rem',
-                  color: '#FFF5E8',
-                }}>{g.name}</span>
-              </div>
-              <p className="f-crimson" style={{
-                fontSize: '.8rem',
-                color: 'rgba(255,245,232,.6)',
-                lineHeight: 1.6,
-                margin: 0,
-              }}>
-                {g.description.slice(0, 120)}...
-              </p>
-              <div style={{
-                marginTop: 12,
-                display: 'flex',
-                gap: 6,
-                flexWrap: 'wrap',
-              }}>
-                {g.subGenres.slice(0, 4).map(sg => (
-                  <span key={sg} style={{
-                    fontSize: '.65rem',
-                    padding: '2px 8px',
-                    borderRadius: 20,
-                    background: `${g.tc}20`,
-                    color: g.tc,
-                    border: `1px solid ${g.tc}30`,
-                  }}>{sg}</span>
-                ))}
-              </div>
-              </div>
-            </Link>
-          ))}
+          {PORTAL_GENRES.map(g => {
+            const backdropUrl = genreBackdrops[g.key] || null;
+            return (
+              <Link
+                key={g.key}
+                href={`/genre/${g.key}`}
+                className="genre-portal-card"
+                style={{
+                  border: `1px solid ${g.tc}30`,
+                  background: g.col,
+                }}
+              >
+                {/* Backdrop image */}
+                {backdropUrl ? (
+                  <Image
+                    src={backdropUrl}
+                    alt={`${g.name} genre`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    loading="lazy"
+                    className="portal-card-img"
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : null}
+                {/* Dark overlay */}
+                <div className="portal-card-overlay" />
+                {/* Content */}
+                <div className="portal-card-content">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span style={{ fontSize: '1.3rem' }}>{g.em}</span>
+                    <span className="f-cinzel-dec" style={{
+                      fontSize: '1.1rem',
+                      color: '#FFF5E8',
+                      textShadow: '0 2px 8px rgba(0,0,0,.8)',
+                    }}>{g.name}</span>
+                  </div>
+                  <p className="f-crimson" style={{
+                    fontSize: '.8rem',
+                    color: 'rgba(255,245,232,.7)',
+                    lineHeight: 1.6,
+                    margin: 0,
+                    textShadow: '0 1px 4px rgba(0,0,0,.6)',
+                  }}>
+                    {g.description.slice(0, 120)}...
+                  </p>
+                  <div style={{
+                    marginTop: 12,
+                    display: 'flex',
+                    gap: 6,
+                    flexWrap: 'wrap',
+                  }}>
+                    {g.subGenres.slice(0, 4).map(sg => (
+                      <span key={sg} style={{
+                        fontSize: '.65rem',
+                        padding: '2px 8px',
+                        borderRadius: 20,
+                        background: `${g.tc}25`,
+                        color: g.tc,
+                        border: `1px solid ${g.tc}40`,
+                        textShadow: 'none',
+                      }}>{sg}</span>
+                    ))}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
         {/* All Genres */}
