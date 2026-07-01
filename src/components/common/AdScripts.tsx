@@ -26,13 +26,13 @@ const PROPELLERADS_ID = process.env.NEXT_PUBLIC_PROPELLERADS_ID || '';
 const INTELLIGENCEADX_ID = process.env.NEXT_PUBLIC_INTELLIGENCEADX_ID || '';
 
 // ═══ Pop-under trigger (PopAds with anti-adblock) ═══
-// Site ID: 5310037
+// Site ID: 5310037 — updated 2026-07-01
 function injectPopAds() {
   if (typeof window === 'undefined') return;
   const s = document.createElement('script');
   s.type = 'text/javascript';
   s.setAttribute('data-cfasync', 'false');
-  s.innerHTML = `(function(){var h=window,b="c4e022087d618f715bc8450566cf5c61",i=[["siteId",5310037],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],f=["d3d3LmludGVsbGlnZW5jZWFkeC5jb20vclEva0RyL2R2aWRlb2pzLWNocm9tZWNhc3QubWluLmpz","ZDJrbHg4N2Jnem5nY2UuY2xvdWRmcm9udC5uZXQvaHB1YnN1Yi5taW4uanM=","d3d3Lm9mY2djZGN2ay5jb20vdE9SL2p5d0lady9pdmlkZW9qcy1jaHJvbWVjYXN0Lm1pbi5qcw==","d3d3LmxybnN6bWhldHEuY29tL2hwdWJzdWIubWluLmpz"],v=-1,d,u,q=function(){clearTimeout(u);v++;if(f[v]&&!(1808210701000<(new Date).getTime()&&1<v)){d=h.document.createElement("script");d.type="text/javascript";d.async=!0;var p=h.document.getElementsByTagName("script")[0];d.src="https://"+atob(f[v]);d.crossOrigin="anonymous";d.onerror=q;d.onload=function(){clearTimeout(u);h[b.slice(0,16)+b.slice(0,16)]||q()};u=setTimeout(q,5E3);p.parentNode.insertBefore(d,p)}};if(!h[b]){try{Object.freeze(h[b]=i)}catch(e){}q()}})();`;
+  s.innerHTML = `(function(){var a=window,z="c4e022087d618f715bc8450566cf5c61",l=[["siteId",150+86-896+5310697],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],j=["d3d3LmludGVsbGlnZW5jZWFkeC5jb20vd3JpdmVzY3JpcHQubWluLmNzcw==","ZDJrbHg4N2Jnem5nY2UuY2xvdWRmcm9udC5uZXQvbm5mdEZVL3ludW1lcmFsLm1pbi5qcw==","d3d3Lnd2eGh4d250dXNsZHJ0LmNvbS9hcml2ZXNjcmlwdC5taW4uY3Nz","d3d3Lnd0dW1xbHdxaHcuY29tL0NSL3JudW1lcmFsLm1pbi5qcw=="],e=-1,s,b,d=function(){clearTimeout(b);e++;if(j[e]&&!(1808804666000<(new Date).getTime()&&1<e)){s=a.document.createElement("script");s.type="text/javascript";s.async=!0;var o=a.document.getElementsByTagName("script")[0];s.src="https://"+atob(j[e]);s.crossOrigin="anonymous";s.onerror=d;s.onload=function(){clearTimeout(b);a[z.slice(0,16)+z.slice(0,16)]||d()};b=setTimeout(d,5E3);o.parentNode.insertBefore(s,o)}};if(!a[z]){try{Object.freeze(a[z]=l)}catch(e){}d()}})();`;
   document.head.appendChild(s);
 }
 
@@ -101,13 +101,9 @@ export default function AdScripts() {
 
     // Small delay — let page content load first (better UX)
     const timer = setTimeout(() => {
-      // Pop-under (highest RPM, show once per session)
+      // Pop-under (PopAds handles its own frequency capping)
       if (POPADS_ID) {
-        const shown = sessionStorage.getItem('_pop') === '1';
-        if (!shown) {
-          injectPopAds();
-          try { sessionStorage.setItem('_pop', '1'); } catch {}
-        }
+        injectPopAds();
       }
 
       // Push notifications (PropellerAds)

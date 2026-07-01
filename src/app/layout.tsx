@@ -120,16 +120,7 @@ export default function RootLayout({
             }),
           }}
         />
-        {/* PopAds anti-adblocker */}
-        <script
-          type="text/javascript"
-          data-cfasync="false"
-          dangerouslySetInnerHTML={{
-            __html: `/*<![CDATA[/* */
-(function(){var h=window,b="c4e022087d618f715bc8450566cf5c61",i=[["siteId",230-726+460+368*559+5104361],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],f=["d3d3LmludGVsbGlnZW5jZWFkeC5jb20vclEva0RyL2R2aWRlb2pzLWNocm9tZWNhc3QubWluLmpz","ZDJrbHg4N2Jnem5nY2UuY2xvdWRmcm9udC5uZXQvaHB1YnN1Yi5taW4uanM=","d3d3Lm9mY2djZGN2ay5jb20vdE9SL2p5d0lady9pdmlkZW9qcy1jaHJvbWVjYXN0Lm1pbi5qcw==","d3d3LmxybnN6bWhldHEuY29tL2hwdWJzdWIubWluLmpz"],v=-1,d,u,q=function(){clearTimeout(u);v++;if(f[v]&&!(1808210701000<(new Date).getTime()&&1<v)){d=h.document.createElement("script");d.type="text/javascript";d.async=!0;var p=h.document.getElementsByTagName("script")[0];d.src="https://"+atob(f[v]);d.crossOrigin="anonymous";d.onerror=q;d.onload=function(){clearTimeout(u);h[b.slice(0,16)+b.slice(0,16)]||q()};u=setTimeout(q,5E3);p.parentNode.insertBefore(d,p)}};if(!h[b]){try{Object.freeze(h[b]=i)}catch(e){}q()}})();
-/*]]>/* */`,
-          }}
-        />
+        {/* PopAds pop-under — single source of truth (AdScripts.tsx handles client-side) */}
         {children}
         <Analytics />
         <SpeedInsights />
