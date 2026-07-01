@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
-import { CANONICAL_BASE, TMDB_IMAGE_BASE } from '@/lib/seo/constants';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 import Link from 'next/link';
-import Image from 'next/image';
-import { tmdbFetch } from '@/lib/tmdb/server';
-import { getPopularAnime } from '@/lib/anilist/client';
-import { PORTAL_GENRES, BROWSE_ONLY_GENRES, TMDB_GENRE_ID_MAP } from '@/config/genres';
-import { getBackdropUrl } from '@/lib/images';
+import { PORTAL_GENRES, BROWSE_ONLY_GENRES, TMDB_GENRE_ID_MAP, type PortalGenreConfig } from '@/config/genres';
 
 export const revalidate = 3600; // 1 hour
 
@@ -73,48 +69,201 @@ const ALL_GENRES = [
 ];
 
 // ─── Fetch a backdrop image for each portal genre ─────────────────────────
+//
+// Multi-strategy approach for maximum reliability:
+//   1. Direct TMDB discover (bypasses Redis + Cloudflare worker)
+//   2. AniList genre search (free, no auth, very reliable)
+//   3. Hardcoded fallback URLs from iconic genre titles
+//
+// All errors are logged so Vercel function logs show what's happening.
+
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const TMDB_IMG = 'https://image.tmdb.org/t/p/w780';
+
+/** AniList genre names that map to our portal genres */
+const ANILIST_GENRE_MAP: Record<string, string[]> = {
+  anime:    [],
+  cartoon:  ['Comedy'],
+  horror:   ['Horror', 'Thriller', 'Supernatural'],
+  romance:  ['Romance', 'Drama'],
+  mystery:  ['Mystery', 'Thriller', 'Suspense'],
+  fantasy:  ['Fantasy', 'Adventure', 'Action'],
+};
+
+/**
+ * Strategy 1: Direct TMDB discover (no Redis, no Cloudflare worker).
+ * Only needs TMDB_BEARER_TOKEN or TMDB_API_KEY env var.
+ */
+async function fetchTmdbDirect(g: PortalGenreConfig): Promise<string | null> {
+  const token = process.env.TMDB_BEARER_TOKEN;
+  const apiKey = process.env.TMDB_API_KEY;
+  if (!token && !apiKey) {
+    console.error('[genre-backdrop] No TMDB credentials configured');
+    return null;
+  }
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    headers['Accept'] = 'application/json';
+  }
+
+  const params = new URLSearchParams({
+    with_genres: String(g.genreId),
+    sort_by: 'popularity.desc',
+    language: 'en-US',
+    include_adult: 'false',
+    page: '1',
+    vote_count_gte: '10',
+    ...g.extraParams,
+  });
+  if (apiKey) params.set('api_key', apiKey);
+
+  const url = `${TMDB_BASE}/discover/${g.mediaType}?${params}`;
+  const res = await fetch(url, {
+    headers,
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    console.error(`[genre-backdrop] TMDB ${res.status} for ${g.key}: ${body.slice(0, 200)}`);
+    return null;
+  }
+
+  const data = await res.json();
+  const results: Array<{ backdrop_path?: string | null }> = data?.results;
+  if (!Array.isArray(results)) {
+    console.error(`[genre-backdrop] TMDB response missing results array for ${g.key}`);
+    return null;
+  }
+
+  const pool = results.filter(r => r.backdrop_path);
+  if (pool.length === 0) {
+    console.error(`[genre-backdrop] TMDB: 0 results with backdrop_path for ${g.key} (got ${results.length} total)`);
+    return null;
+  }
+
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  return `${TMDB_IMG}${pick.backdrop_path}`;
+}
+
+/**
+ * Strategy 2: AniList genre search (free, no auth required).
+ * Works even if TMDB is completely down.
+ */
+async function fetchAnilistFallback(g: PortalGenreConfig): Promise<string | null> {
+  // For anime source, use popular anime (has best banner coverage)
+  const genres = g.source === 'anilist'
+    ? ['Action']
+    : ANILIST_GENRE_MAP[g.key] || [g.name];
+
+  const query = `
+    query ($genres: [String], $page: Int, $perPage: Int) {
+      Page(page: $page, perPage: $perPage) {
+        media(type: ANIME, genre_in: $genres, sort: POPULARITY_DESC, isAdult: false) {
+          bannerImage
+          coverImage { extraLarge }
+        }
+      }
+    }
+  `;
+
+  try {
+    const res = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ query, variables: { genres, page: 1, perPage: 10 } }),
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      console.error(`[genre-backdrop] AniList ${res.status} for ${g.key}`);
+      return null;
+    }
+
+    const json = await res.json();
+    const media: Array<{ bannerImage?: string | null; coverImage?: { extraLarge?: string | null } | null }> =
+      json?.data?.Page?.media;
+    if (!Array.isArray(media) || media.length === 0) {
+      console.error(`[genre-backdrop] AniList: no media for ${g.key} genres=${genres.join(',')}`);
+      return null;
+    }
+
+    // Prefer banner images (wider, more cinematic for card backdrops)
+    const withBanner = media.filter(m => m.bannerImage);
+    const pool = withBanner.length > 0 ? withBanner : media.filter(m => m.coverImage?.extraLarge);
+    if (pool.length === 0) {
+      console.error(`[genre-backdrop] AniList: 0 media with images for ${g.key}`);
+      return null;
+    }
+
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    return pick.bannerImage || pick.coverImage?.extraLarge || null;
+  } catch (err) {
+    console.error(`[genre-backdrop] AniList fetch error for ${g.key}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Strategy 3: Hardcoded fallback URLs from AniList CDN.
+ * All verified 200 OK. AniList CDN is free, highly available, and
+ * these banner URLs are permanent (tied to media IDs that never change).
+ */
+const HARDCODED_BACKDROPS: Record<string, string> = {
+  // All verified 200 OK from AniList CDN (free, no auth, permanent URLs)
+  anime:    'https://s4.anilist.co/file/anilistcdn/media/anime/banner/16498-8jpFCOcDmneX.jpg',       // Attack on Titan
+  cartoon:  'https://s4.anilist.co/file/anilistcdn/media/anime/banner/21459-yeVkolGKdGUV.jpg',       // My Hero Academia
+  horror:   'https://s4.anilist.co/file/anilistcdn/media/anime/banner/101759-MhlCoeqnODso.jpg',     // The Promised Neverland
+  romance:  'https://s4.anilist.co/file/anilistcdn/media/anime/banner/21519-1ayMXgNlmByb.jpg',      // Your Name.
+  mystery:  'https://s4.anilist.co/file/anilistcdn/media/anime/banner/1535.jpg',                    // Death Note
+  fantasy:  'https://s4.anilist.co/file/anilistcdn/media/anime/banner/101922-33MtJGsUSxga.jpg',    // Demon Slayer
+};
 
 async function fetchGenreBackdrops(): Promise<Record<string, string>> {
   const backdrops: Record<string, string> = {};
 
-  await Promise.all(
+  const results = await Promise.allSettled(
     PORTAL_GENRES.map(async (g) => {
-      try {
-        let backdrop: string | null = null;
-
-        if (g.source === 'anilist') {
-          // Use AniList banner for anime
-          const data = await getPopularAnime(1, 5);
-          const withBanner = data.media?.filter(m => m.bannerImage) || [];
-          if (withBanner.length > 0) {
-            backdrop = withBanner[Math.floor(Math.random() * withBanner.length)].bannerImage!;
-          }
-        } else {
-          // TMDB discover — grab a backdrop from the top result
-          const params: Record<string, string> = {
-            with_genres: String(g.genreId),
-            ...g.extraParams,
-          };
-          const data = await tmdbFetch<{ results?: { backdrop_path?: string }[] }>(
-            `/discover/${g.mediaType}`,
-            { ...params, page: '1' },
-          );
-          const pool = (data.results || []).filter(r => r.backdrop_path);
-          if (pool.length > 0) {
-            const pick = pool[Math.floor(Math.random() * pool.length)];
-            backdrop = `${TMDB_IMAGE_BASE}/w780${pick.backdrop_path}`;
-          }
+      // Strategy 1: Direct TMDB (for TMDB-sourced genres)
+      if (g.source !== 'anilist') {
+        try {
+          const url = await fetchTmdbDirect(g);
+          if (url) return { key: g.key, url };
+        } catch (err) {
+          console.error(`[genre-backdrop] TMDB direct failed for ${g.key}:`, err);
         }
-
-        if (backdrop) {
-          backdrops[g.key] = backdrop;
-        }
-      } catch {
-        // Non-critical — card will use gradient fallback
       }
+
+      // Strategy 2: AniList fallback (works for all genres, no auth)
+      try {
+        const url = await fetchAnilistFallback(g);
+        if (url) return { key: g.key, url };
+      } catch (err) {
+        console.error(`[genre-backdrop] AniList fallback failed for ${g.key}:`, err);
+      }
+
+      // Strategy 3: Hardcoded fallback
+      const fallback = HARDCODED_BACKDROPS[g.key];
+      if (fallback) {
+        console.warn(`[genre-backdrop] Using hardcoded fallback for ${g.key}`);
+        return { key: g.key, url: fallback };
+      }
+
+      console.error(`[genre-backdrop] All strategies failed for ${g.key}`);
+      return null;
     }),
   );
 
+  for (const r of results) {
+    if (r.status === 'fulfilled' && r.value) {
+      backdrops[r.value.key] = r.value.url;
+    }
+  }
+
+  console.log(`[genre-backdrop] Fetched ${Object.keys(backdrops).length}/${PORTAL_GENRES.length} backdrops`);
   return backdrops;
 }
 
@@ -164,7 +313,14 @@ export default async function GenresPage() {
           background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.3) 60%, rgba(0,0,0,.15) 100%);
         }
         .portal-card-img {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
           transition: transform .5s ease;
+          z-index: 0;
         }
         .portal-card-overlay {
           position: absolute;
@@ -236,16 +392,19 @@ export default async function GenresPage() {
                   background: g.col,
                 }}
               >
-                {/* Backdrop image */}
+                {/* Backdrop image — uses plain <img> for reliability.
+                    These are decorative CDN-served images from TMDB/AniList that
+                    are already optimized at multiple sizes. No Next.js optimization
+                    needed, and plain <img> avoids potential fill/loader edge cases. */}
                 {backdropUrl ? (
-                  <Image
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
                     src={backdropUrl}
-                    alt={`${g.name} genre`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    loading="lazy"
+                    alt=""
+                    aria-hidden="true"
                     className="portal-card-img"
-                    style={{ objectFit: 'cover' }}
+                    loading="lazy"
+                    decoding="async"
                   />
                 ) : null}
                 {/* Dark overlay */}

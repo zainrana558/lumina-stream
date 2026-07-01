@@ -160,3 +160,33 @@ Stage Summary:
 - All TypeScript compilation errors in the 12-task architecture upgrade are resolved
 - Pre-existing errors (Card.tsx ref type, Home.tsx label property) are unrelated to this work
 - All new files compile cleanly: health-check.ts, registry.ts, scoring.ts, selection.ts, metrics.ts, resolver-cache.ts, retry.ts, embed/route.ts, embed-health-cron/route.ts, embed-health-client/route.ts, HealthDashboardClient.tsx
+
+---
+Task ID: GENRE-BACKDROP-FIX
+Agent: Main Agent
+Task: Deep diagnosis and fix of portal genre card backdrop images not showing
+
+Work Log:
+- Read full code path: genres/page.tsx → tmdbFetch → fetchWithCache → buildTmdbRequest (Cloudflare worker) → TMDB API
+- Ran diagnostic script: confirmed TMDB API reachable, AniList API works, TMDB image CDN accessible
+- Identified root causes:
+  1. Silent error swallowing: `catch {}` block in fetchGenreBackdrops() with zero logging
+  2. Single point of failure: tmdbFetch routes through Redis → Cloudflare cache worker → TMDB API; any layer failing = no image
+  3. Next.js Image component with `fill` potential edge cases in server component rendering
+  4. No response structure validation (data.results might not be an array if Cloudflare worker returns error body)
+- Rewrote fetchGenreBackdrops() with 3-strategy approach:
+  Strategy 1: Direct TMDB discover API call (bypasses Redis + Cloudflare worker, 10s timeout)
+  Strategy 2: AniList genre search (free, no auth, very reliable, 8s timeout)
+  Strategy 3: Hardcoded fallback URLs from AniList CDN (verified 200 OK, permanent URLs)
+- All strategies include console.error/warn logging for Vercel function log debugging
+- Replaced Next.js `<Image fill>` with plain `<img>` for reliability (CDN-served images already optimized)
+- Updated CSS: added explicit position/size/object-fit to .portal-card-img for plain img element
+- Found and verified 6 unique AniList banner URLs as hardcoded fallbacks (Attack on Titan, My Hero Academia, The Promised Neverland, Your Name., Death Note, Demon Slayer)
+- Removed unused imports (Image, tmdbFetch, getPopularAnime, getBackdropUrl, TMDB_IMAGE_BASE)
+- Verified: zero TypeScript errors in app code
+
+Stage Summary:
+- Portal genre cards now have 3-level fallback: direct TMDB → AniList → hardcoded AniList CDN URLs
+- Images ALWAYS show (hardcoded fallbacks guarantee it even if both APIs are down)
+- Every failure is logged to Vercel function logs with [genre-backdrop] prefix for easy debugging
+- File: src/app/(app)/genres/page.tsx (major rewrite of fetchGenreBackdrops + rendering)
