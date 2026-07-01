@@ -295,10 +295,12 @@ function AppShell({ children }: { children: ReactNode }) {
         <Confetti active={confettiActive} />
       </Suspense>
 
-      {/* Bottom sticky ad */}
-      <div style={{ position: 'fixed', bottom: 60, left: 0, right: 0, zIndex: 997 }}>
-        <AdBanner id="ad-banner-bottom" width={728} height={90} />
-      </div>
+      {/* Bottom sticky ad — hidden on details pages */}
+      {!pathname.startsWith('/details') && (
+        <div style={{ position: 'fixed', bottom: 60, left: 0, right: 0, zIndex: 997 }}>
+          <AdBanner id="ad-banner-bottom" width={728} height={90} />
+        </div>
+      )}
 
       {/* Notification permission prompt */}
       <NotificationBanner />
@@ -308,8 +310,8 @@ function AppShell({ children }: { children: ReactNode }) {
         <CookieConsent />
       </Suspense>
 
-      {/* Site footer */}
-      <Footer />
+      {/* Site footer — hidden on details pages */}
+      {!pathname.startsWith('/details') && <Footer />}
 
       {/* Background provider health monitoring (feeds Intelligence Layer) */}
       <Suspense fallback={null}>
