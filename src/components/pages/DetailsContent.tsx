@@ -16,7 +16,6 @@ import { vibrateMedium, vibrateLong } from '@/lib/haptics';
 import { getTmdbImageUrl, getBackdropUrl, getYoutubeThumbnail } from '@/lib/images';
 import TrailerModal from '@/components/common/TrailerModal';
 import IntelligentPlayer from '@/components/common/IntelligentPlayer';
-import PlayerControls from '@/components/common/PlayerControls';
 
 interface TMDBSeasonEpisode {
   id: number;
@@ -99,12 +98,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [failoverChain, setFailoverChain] = useState<Array<{ provider: string; url: string; score: number; tier: number }>>([]);
   const [chainIndex, setChainIndex] = useState(0);
   const [chainExhausted, setChainExhausted] = useState(false);
-
-  // Player controls state (for PlayerControls component)
-  const [playerSpeed, setPlayerSpeed] = useState(1);
-  const [playerMuted, setPlayerMuted] = useState(false);
-  const [playerVolume, setPlayerVolume] = useState(80);
-  const [subtitlesOn, setSubtitlesOn] = useState(false);
 
   // Wake Lock - keep screen awake during video playback
   useWakeLock(playing);
@@ -888,27 +881,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   </select>
                 </div>
               )}
-              {/* PlayerControls: full playback controls overlay */}
-              <PlayerControls
-                isPlaying={true}
-                speed={playerSpeed}
-                muted={playerMuted}
-                volume={playerVolume}
-                subtitlesOn={subtitlesOn}
-                showTitle={show.title}
-                showEpInfo={show.media_type === 'tv' ? `Season ${season} · Episode ${epIdx}` : ''}
-                onSetSpeed={(sp) => { setPlayerSpeed(sp); postToPlayerIframe({ type: 'lumina:setSpeed', speed: sp }); }}
-                onToggleMute={() => { setPlayerMuted(m => !m); postToPlayerIframe({ type: 'lumina:toggleMute' }); }}
-                onSetVolume={(vol) => { setPlayerVolume(vol); postToPlayerIframe({ type: 'lumina:setVolume', volume: vol }); }}
-                onToggleSubtitles={() => setSubtitlesOn(v => !v)}
-                onPlayPause={() => postToPlayerIframe({ type: 'lumina:togglePlayPause' })}
-                onPrevEpisode={() => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }}
-                onNextEpisode={() => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : show.eps; if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); syncEpisodeUrl(season, ne); } }}
-                onReplay={() => postToPlayerIframe({ type: 'lumina:seekRelative', seconds: -30 })}
-                onForward={() => postToPlayerIframe({ type: 'lumina:seekRelative', seconds: 30 })}
-                onExit={() => setPlaying(false)}
-                onPip={() => { setPlaying(false); openPip(activeProviderUrl, show.title, show.media_type === 'tv' ? `S${season} E${epIdx}` : '', { bg: s.bg, acc: s.acc }, show.id); }}
-              />
             </>
           ) : loadingProviders ? (
             <>
