@@ -90,6 +90,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [showTrailer, setShowTrailer] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const triedProviders = useRef<Set<number>>(new Set());
   const playerRef = useRef<HTMLDivElement>(null);
   // Smart failover chain state (pre-fetched top-3 from scoring engine)
@@ -825,7 +826,21 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           {activeProviderUrl ? (
             <>
               <div style={{ position: 'relative', width: 'min(100vw, calc(100vh * 16 / 9))', height: 'min(100vh, calc(100vw * 9 / 16))', flexShrink: 0, overflow: 'hidden' }}>
-                <iframe key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); setIframeLoaded(true); }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); setIframeLoaded(true); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" />
+                <iframe ref={iframeRef} key={`provider-${activeProviderName}-${epIdx}`} src={activeProviderUrl} onLoad={() => {
+                // Detect frame-blocking: XFO/CSP-blocked iframes load about:blank (same-origin accessible)
+                try {
+                  const doc = iframeRef.current?.contentDocument;
+                  if (doc) {
+                    // contentDocument accessible → same-origin → about:blank → BLOCKED
+                    if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
+                    setIframeLoaded(true);
+                    handleProviderFail();
+                    return;
+                  }
+                } catch { /* cross-origin → real content loaded → success */ }
+                if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
+                setIframeLoaded(true);
+              }} onError={() => { if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current); setIframeLoaded(true); handleProviderFail(); }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" />
                 {/* Loading overlay while iframe loads */}
                 {!iframeLoaded && (
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.85)', zIndex: 5, pointerEvents: 'none', animation: 'fi .3s ease both' }}>

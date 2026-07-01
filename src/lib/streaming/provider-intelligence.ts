@@ -260,7 +260,7 @@ function scoreProviderIntelligent(
   const health = getHealth(provider.name);
   const availability: number = health === true ? 1.0
     : health === false ? 0.0
-    : 0.5; // Unknown — neutral
+    : 0.3; // Unknown — penalize unverified providers
 
   // Signal 2: Response Speed (20 pts) — from dynamic speed cache
   const responseSpeed = getSpeedScore(provider.name);
@@ -319,9 +319,30 @@ async function probeProvider(url: string, name: string): Promise<ProbeResult> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT);
-    await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: controller.signal });
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'manual',
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    });
     clearTimeout(timeout);
     const latency = Date.now() - start;
+
+    // Detect frame-blocking headers (only readable with cors mode)
+    try {
+      const xfo = res.headers.get('x-frame-options') || '';
+      const csp = res.headers.get('content-security-policy') || '';
+      const faMatch = csp.match(/frame-ancestors\s+([^;]+)/i);
+      const fa = faMatch?.[1]?.trim() || '';
+      const isBlocked =
+        xfo.includes('DENY') || xfo.includes('SAMEORIGIN') ||
+        fa === "'none'" || (fa !== '' && !fa.includes('*'));
+      if (isBlocked) {
+        updateHistoricalCache(name, false);
+        return { name, alive: false, latencyMs: latency };
+      }
+    } catch { /* opaque response — headers unreadable, assume alive */ }
+
     updateSpeedCache(name, latency);
     updateHistoricalCache(name, true);
     return { name, alive: true, latencyMs: latency };
