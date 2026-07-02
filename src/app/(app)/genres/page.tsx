@@ -299,7 +299,7 @@ export default async function GenresPage() {
           text-decoration: none;
           border-radius: 14px;
           overflow: hidden;
-          min-height: 220px;
+          height: 220px;
           transition: transform .25s ease, box-shadow .25s ease;
         }
         .genre-portal-card:hover {

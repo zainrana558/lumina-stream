@@ -133,7 +133,7 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
   let shows: MediaItem[] = [];
 
   if (config.source === 'anilist') {
-    // ── Anime: AniList primary, TMDB fallback ──
+    // ── Anime: AniList primary, TMDB fallback (Japanese only) ──
     try {
       const [page1, page2, page3] = await Promise.all([
         getPopularAnime(1, 20).catch(() => ({ media: [], pageInfo: { hasNextPage: false } })),
@@ -146,13 +146,28 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
         .filter(m => m.coverImage?.large && !seen.has(m.id))
         .map(m => { seen.add(m.id); return anilistToMediaItem(m); });
     } catch {
+      // AniList threw an unexpected error — fall through to TMDB below
+    }
+
+    // If AniList returned nothing (all calls failed silently), fall back to TMDB.
+    // CRITICAL: Use with_original_language=ja so TMDB returns only Japanese anime,
+    // NOT western cartoons (genre 16 = "Animation" includes both).
+    if (shows.length === 0) {
       try {
         const paramsMap: Record<string, string> = {
           with_genres: config.genreId.toString(),
+          with_original_language: 'ja',
           ...config.extraParams,
         };
-        const results = await fetchTmdbPages(config.mediaType, paramsMap, 3);
-        shows = results.slice(0, 60).map(r => tmdbToMedia({ ...r, media_type: config.mediaType }));
+        const results = await fetchTmdbPages(config.mediaType, paramsMap, 5);
+        // Extra safety: filter out any non-Japanese-origin results
+        const japaneseOnly = results.filter(r => {
+          const oc = (r as unknown as Record<string, unknown>).origin_country;
+          return Array.isArray(oc) && (oc as string[]).includes('JP');
+        });
+        shows = (japaneseOnly.length > 0 ? japaneseOnly : results)
+          .slice(0, 60)
+          .map(r => tmdbToMedia({ ...r, media_type: config.mediaType }));
       } catch {
         shows = [];
       }

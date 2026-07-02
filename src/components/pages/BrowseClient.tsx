@@ -117,7 +117,9 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
 
   // Mood-specific state
   const [moodLoading, setMoodLoading] = useState(false);
-  const moodInitRef = useRef(false);
+  // Track WHICH mood was last initialized (not just boolean) so mood-switching works.
+  // Previous bug: boolean ref stayed true after first mood, blocking all subsequent moods.
+  const moodInitRef = useRef<string | null>(null);
 
   const activeQuery = q.trim();
   const isSearching = activeQuery.length > 0;
@@ -157,14 +159,15 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         setSearchTotalPages(0);
         setSearchTotalResults(0);
         setSuggestions([]);
-        moodInitRef.current = false;
+        moodInitRef.current = null;
       }
       return;
     }
 
-    // Avoid double-fire in StrictMode
-    if (moodInitRef.current) return;
-    moodInitRef.current = true;
+    // Skip if this exact mood was already initialized (avoids StrictMode double-fire
+    // AND allows switching to a different mood)
+    if (moodInitRef.current === moodParam) return;
+    moodInitRef.current = moodParam;
 
     setMoodLoading(true);
     setGenre('All');

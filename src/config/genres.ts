@@ -40,7 +40,7 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
     genreId: 16,
     mediaType: 'tv',
     source: 'anilist',
-    extraParams: { sort_by: 'popularity.desc' },
+    extraParams: { sort_by: 'popularity.desc', with_original_language: 'ja' },
     title: 'Anime',
     description: 'Discover popular and trending anime series. From action-packed shonen to heartwarming slice-of-life, explore the best anime curated for you.',
     subGenres: ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Sci-Fi', 'Thriller', 'Romance', 'Supernatural', 'Slice of Life', 'Sports'],
