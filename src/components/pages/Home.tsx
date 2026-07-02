@@ -316,17 +316,23 @@ function GenrePortalCard({
           backgroundImage: backdropUrl
             ? undefined
             : g.col,
-          position: 'relative',
         }}
       >
         {backdropUrl && (
-          <Image
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
             src={backdropUrl}
-            alt={`${g.name} genre portal`}
-            fill
+            alt=""
+            aria-hidden="true"
             loading="lazy"
-            sizes="(max-width: 768px) 100vw, 33vw"
-            style={{ objectFit: 'cover' }}
+            decoding="async"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
           />
         )}
       </div>
