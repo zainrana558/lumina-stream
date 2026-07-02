@@ -393,7 +393,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     setIframeLoaded(false);
   }, [epIdx, season, providers]);
 
-  // Timeout failover: if iframe doesn't fire onLoad within 25s, auto-switch
+  // Timeout failover: if iframe doesn't fire onLoad within 15s, auto-switch
+  // Reduced from 25s — most providers load in 3-5s; if they haven't
+  // loaded by 15s, they're likely dead/stuck and the user should see
+  // the next provider quickly rather than staring at a blank screen.
   useEffect(() => {
     const url = activeProviderUrl;
     if (!playing || !url) return;
@@ -406,7 +409,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       if (!iframeLoadedRef.current) {
         handleProviderFailRef.current();
       }
-    }, 25000);
+    }, 15000);
     iframeLoadTimer.current = timer;
     return () => { clearTimeout(timer); };
   }, [playing, activeProviderUrl]);

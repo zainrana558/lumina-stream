@@ -292,13 +292,7 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc.mov/embed/tv/${id}/${s}/${e}`,
   },
 
-  // VidNest — Fun-domain embed provider
-  {
-    name: "VidNest",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidnest.fun/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidnest.fun/embed/tv/${id}/${s}/${e}`,
-  },
+  // VidNest — REMOVED: confirmed 404
 
   // 111Movies — Numbered domain, TMDB-based
   {
@@ -308,13 +302,7 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://www.111movies.net/tv/${id}/${s}/${e}`,
   },
 
-  // VidFast — Fast embed provider with CDN
-  {
-    name: "VidFast",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://www.vidfast.net/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://www.vidfast.net/embed/tv/${id}/${s}/${e}`,
-  },
+  // VidFast — REMOVED: confirmed 404
 
   // Vyla API — REMOVED: unreachable (fetch failed)
   // Replaced with HDStream (confirmed 200, no XFO)

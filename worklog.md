@@ -190,3 +190,29 @@ Stage Summary:
 - Images ALWAYS show (hardcoded fallbacks guarantee it even if both APIs are down)
 - Every failure is logged to Vercel function logs with [genre-backdrop] prefix for easy debugging
 - File: src/app/(app)/genres/page.tsx (major rewrite of fetchGenreBackdrops + rendering)
+
+---
+Task ID: HOME-PORTAL-BACKDROP-FIX
+Agent: Main Agent
+Task: Deep diagnosis and fix of home page genre portal card backdrop images
+
+Work Log:
+- User reported portal card backdrop images "still not showing" after /genres page fix
+- Used agent-browser to open deployed site and take screenshots
+- VLM analysis confirmed /genres page images WERE showing (6/6 cards had images)
+- Pivoted to checking the HOME PAGE genre portal cards (the actual page user sees first)
+- Browser eval revealed all 6 home portal images: height: 0px, naturalWidth: 0, complete: false
+- Root cause: inline style `position: 'relative'` on `.portal-backdrop` div OVERRIDES the CSS
+  class rule `position: absolute; inset: 0;`
+- With position:relative + no content + only absolutely-positioned child → div collapses to 0 height
+- <Image fill> gets 0 height → never loads → invisible
+- Fix: removed `position: 'relative'` inline override, replaced <Image fill> with plain <img>
+  + explicit absolute positioning styles (position, inset, width, height, objectFit)
+- Verified: zero TypeScript errors in Home.tsx
+- Pushed to GitHub
+
+Stage Summary:
+- Previous fix was on /genres page (server component) — that page works correctly
+- User's actual complaint was about the HOME PAGE genre portal cards (client component in Home.tsx)
+- The root cause was a CSS specificity conflict: inline style overriding class-based position
+- Files: src/components/pages/Home.tsx (removed position:relative, replaced Image with img)

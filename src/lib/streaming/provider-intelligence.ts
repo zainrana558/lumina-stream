@@ -101,8 +101,7 @@ const MOVIE_POOL: ProviderPool = {
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'StreamWish',
     'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
-    '2Embed', 'VidSrc MOV', 'VidNest', '111Movies', 'VidFast',
-    'HDStream',
+    '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
   ],
 };
 
@@ -119,8 +118,7 @@ const ANIME_POOL: ProviderPool = {
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'StreamWish',
     'VidLink', 'AnyEmbed', 'VaPlayer',
-    '2Embed', 'VidSrc MOV', 'VidNest', 'VidFast',
-    'HDStream',
+    '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
   ],
 };
 
@@ -136,8 +134,7 @@ const TV_POOL: ProviderPool = {
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'StreamWish',
     'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
-    '2Embed', 'VidSrc MOV', 'VidNest', '111Movies', 'VidFast',
-    'HDStream',
+    '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
   ],
 };
 
