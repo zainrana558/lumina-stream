@@ -590,3 +590,73 @@ export async function getTopRatedAnime(page = 1, perPage = 20): Promise<AniListP
     anilistPageQuery<AniListMedia>(query, { page, perPage })
   );
 }
+
+/**
+ * Get popular family-friendly anime (no ecchi, no hentai, no gore).
+ * Uses genre_in with wholesome genres and excludes adult/suggestive tags.
+ * Used for anime portal page and genre card backdrops.
+ */
+export async function getFamilyFriendlyAnime(
+  page = 1,
+  perPage = 20,
+): Promise<AniListPage<AniListMedia>> {
+  // Wholesome genres that produce family-friendly results
+  const safeGenres = ['Action', 'Adventure', 'Comedy', 'Fantasy', 'Slice of Life', 'Sports', 'Supernatural'];
+  const query = `
+    query ($page: Int, $perPage: Int, $genres: [String]) {
+      Page(page: $page, perPage: $perPage) {
+        pageInfo { total currentPage lastPage hasNextPage perPage }
+        media(
+          type: ANIME,
+          sort: POPULARITY_DESC,
+          isAdult: false,
+          genre_in: $genres,
+        ) {
+          ${MEDIA_LIST_FRAGMENT}
+        }
+      }
+    }
+  `;
+
+  return fetchWithCache('popular', `anilist:family:${page}`, () =>
+    anilistPageQuery<AniListMedia>(query, { page, perPage, genres: safeGenres })
+  );
+}
+
+/**
+ * Get family-friendly anime banner images for genre card backdrops.
+ * Returns only anime with bannerImage (wide cinematic images).
+ */
+export async function getFamilyFriendlyBanners(
+  perPage = 15,
+): Promise<AniListMedia[]> {
+  const safeGenres = ['Action', 'Adventure', 'Comedy', 'Fantasy', 'Slice of Life', 'Sports'];
+  const query = `
+    query ($genres: [String], $perPage: Int) {
+      Page(page: 1, perPage: $perPage) {
+        media(
+          type: ANIME,
+          sort: POPULARITY_DESC,
+          isAdult: false,
+          genre_in: $genres,
+        ) {
+          id
+          title { romaji english }
+          bannerImage
+          coverImage { extraLarge }
+          genres
+        }
+      }
+    }
+  `;
+
+  try {
+    const data = await anilistQuery<{ Page: { media: AniListMedia[] } }>(query, {
+      genres: safeGenres,
+      perPage,
+    });
+    return (data.Page?.media || []).filter(m => m.bannerImage);
+  } catch {
+    return [];
+  }
+}

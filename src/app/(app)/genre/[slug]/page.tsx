@@ -1,6 +1,6 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
 import { CANONICAL_BASE, TMDB_IMAGE_BASE } from '@/lib/seo/constants';
-import { getPopularAnime, anilistToMediaItem } from '@/lib/anilist/client';
+import { getFamilyFriendlyAnime, anilistToMediaItem } from '@/lib/anilist/client';
 import type { Metadata } from 'next';
 import AnimeThemedPage from '@/components/pages/AnimePage';
 import CartoonThemedPage from '@/components/pages/CartoonPage';
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   let ogImageHeight = 768;
   try {
     if (genre.source === 'anilist') {
-      const data = await getPopularAnime(1, 1);
+      const data = await getFamilyFriendlyAnime(1, 1);
       const banner = data.media?.[0]?.bannerImage;
       if (banner) { ogImageUrl = banner; ogImageWidth = 1200; ogImageHeight = 630; }
     } else {
@@ -133,12 +133,13 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
   let shows: MediaItem[] = [];
 
   if (config.source === 'anilist') {
-    // ── Anime: AniList primary, TMDB fallback (Japanese only) ──
+    // ── Anime: AniList ONLY (no TMDB fallback — TMDB genre 16 = cartoons) ──
+    // Uses family-friendly genre filter to exclude ecchi/suggestive content.
     try {
       const [page1, page2, page3] = await Promise.all([
-        getPopularAnime(1, 20).catch(() => ({ media: [], pageInfo: { hasNextPage: false } })),
-        getPopularAnime(2, 20).catch(() => ({ media: [], pageInfo: { hasNextPage: false } })),
-        getPopularAnime(3, 20).catch(() => ({ media: [], pageInfo: { hasNextPage: false } })),
+        getFamilyFriendlyAnime(1, 20).catch(() => ({ media: [], pageInfo: { hasNextPage: false } })),
+        getFamilyFriendlyAnime(2, 20).catch(() => ({ media: [], pageInfo: { hasNextPage: false } })),
+        getFamilyFriendlyAnime(3, 20).catch(() => ({ media: [], pageInfo: { hasNextPage: false } })),
       ]);
       const allMedia = [...page1.media, ...page2.media, ...page3.media];
       const seen = new Set<number>();
@@ -146,31 +147,7 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
         .filter(m => m.coverImage?.large && !seen.has(m.id))
         .map(m => { seen.add(m.id); return anilistToMediaItem(m); });
     } catch {
-      // AniList threw an unexpected error — fall through to TMDB below
-    }
-
-    // If AniList returned nothing (all calls failed silently), fall back to TMDB.
-    // CRITICAL: Use with_original_language=ja so TMDB returns only Japanese anime,
-    // NOT western cartoons (genre 16 = "Animation" includes both).
-    if (shows.length === 0) {
-      try {
-        const paramsMap: Record<string, string> = {
-          with_genres: config.genreId.toString(),
-          with_original_language: 'ja',
-          ...config.extraParams,
-        };
-        const results = await fetchTmdbPages(config.mediaType, paramsMap, 5);
-        // Extra safety: filter out any non-Japanese-origin results
-        const japaneseOnly = results.filter(r => {
-          const oc = (r as unknown as Record<string, unknown>).origin_country;
-          return Array.isArray(oc) && (oc as string[]).includes('JP');
-        });
-        shows = (japaneseOnly.length > 0 ? japaneseOnly : results)
-          .slice(0, 60)
-          .map(r => tmdbToMedia({ ...r, media_type: config.mediaType }));
-      } catch {
-        shows = [];
-      }
+      shows = [];
     }
   } else if (slug === 'cartoon') {
     // ── Cartoon: dual fetch (genre + keyword), filter by origin_country ──

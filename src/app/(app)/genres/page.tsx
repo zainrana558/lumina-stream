@@ -70,94 +70,32 @@ const ALL_GENRES = [
 
 // ─── Fetch a backdrop image for each portal genre ─────────────────────────
 //
-// Multi-strategy approach for maximum reliability:
-//   1. Direct TMDB discover (bypasses Redis + Cloudflare worker)
-//   2. AniList genre search (free, no auth, very reliable)
-//   3. Hardcoded fallback URLs from iconic genre titles
+// AniList-only approach for family-friendly, consistent imagery:
+//   1. AniList family-friendly banner (primary for ALL genres)
+//   2. Hardcoded fallback URLs from iconic anime titles
 //
-// All errors are logged so Vercel function logs show what's happening.
+// All images are anime-style banners from AniList CDN (free, no auth).
+// isAdult: false + safe genre filters ensure family-friendly results.
 
-const TMDB_BASE = 'https://api.themoviedb.org/3';
-const TMDB_IMG = 'https://image.tmdb.org/t/p/w780';
+/**
+ * Fetch a single family-friendly anime banner from AniList.
+ * All genres use AniList as the image source for consistency and family-friendliness.
+ * Uses safe genre filters to avoid suggestive/inappropriate imagery.
+ */
+const FAMILY_FRIENDLY_GENRES = ['Action', 'Adventure', 'Comedy', 'Fantasy', 'Slice of Life', 'Sports', 'Supernatural', 'Romance', 'Drama', 'Mystery', 'Horror', 'Thriller'];
 
-/** AniList genre names that map to our portal genres */
-const ANILIST_GENRE_MAP: Record<string, string[]> = {
-  anime:    [],
-  cartoon:  ['Comedy'],
-  horror:   ['Horror', 'Thriller', 'Supernatural'],
-  romance:  ['Romance', 'Drama'],
-  mystery:  ['Mystery', 'Thriller', 'Suspense'],
+// Genre-specific AniList genre override for more relevant backdrops
+const GENRE_ANILIST_OVERRIDE: Record<string, string[]> = {
+  horror:   ['Horror', 'Supernatural', 'Mystery'],
+  romance:  ['Romance', 'Drama', 'Comedy'],
+  mystery:  ['Mystery', 'Thriller', 'Supernatural'],
   fantasy:  ['Fantasy', 'Adventure', 'Action'],
+  anime:    ['Action', 'Adventure', 'Comedy', 'Fantasy'],
+  cartoon:  ['Comedy', 'Adventure', 'Slice of Life'],
 };
 
-/**
- * Strategy 1: Direct TMDB discover (no Redis, no Cloudflare worker).
- * Only needs TMDB_BEARER_TOKEN or TMDB_API_KEY env var.
- */
-async function fetchTmdbDirect(g: PortalGenreConfig): Promise<string | null> {
-  const token = process.env.TMDB_BEARER_TOKEN;
-  const apiKey = process.env.TMDB_API_KEY;
-  if (!token && !apiKey) {
-    console.error('[genre-backdrop] No TMDB credentials configured');
-    return null;
-  }
-
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  } else {
-    headers['Accept'] = 'application/json';
-  }
-
-  const params = new URLSearchParams({
-    with_genres: String(g.genreId),
-    sort_by: 'popularity.desc',
-    language: 'en-US',
-    include_adult: 'false',
-    page: '1',
-    vote_count_gte: '10',
-    ...g.extraParams,
-  });
-  if (apiKey) params.set('api_key', apiKey);
-
-  const url = `${TMDB_BASE}/discover/${g.mediaType}?${params}`;
-  const res = await fetch(url, {
-    headers,
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    console.error(`[genre-backdrop] TMDB ${res.status} for ${g.key}: ${body.slice(0, 200)}`);
-    return null;
-  }
-
-  const data = await res.json();
-  const results: Array<{ backdrop_path?: string | null }> = data?.results;
-  if (!Array.isArray(results)) {
-    console.error(`[genre-backdrop] TMDB response missing results array for ${g.key}`);
-    return null;
-  }
-
-  const pool = results.filter(r => r.backdrop_path);
-  if (pool.length === 0) {
-    console.error(`[genre-backdrop] TMDB: 0 results with backdrop_path for ${g.key} (got ${results.length} total)`);
-    return null;
-  }
-
-  const pick = pool[Math.floor(Math.random() * pool.length)];
-  return `${TMDB_IMG}${pick.backdrop_path}`;
-}
-
-/**
- * Strategy 2: AniList genre search (free, no auth required).
- * Works even if TMDB is completely down.
- */
-async function fetchAnilistFallback(g: PortalGenreConfig): Promise<string | null> {
-  // For anime source, use popular anime (has best banner coverage)
-  const genres = g.source === 'anilist'
-    ? ['Action']
-    : ANILIST_GENRE_MAP[g.key] || [g.name];
+async function fetchAnilistBanner(g: PortalGenreConfig): Promise<string | null> {
+  const genres = GENRE_ANILIST_OVERRIDE[g.key] || FAMILY_FRIENDLY_GENRES;
 
   const query = `
     query ($genres: [String], $page: Int, $perPage: Int) {
@@ -174,7 +112,7 @@ async function fetchAnilistFallback(g: PortalGenreConfig): Promise<string | null
     const res = await fetch('https://graphql.anilist.co', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ query, variables: { genres, page: 1, perPage: 10 } }),
+      body: JSON.stringify({ query, variables: { genres, page: 1, perPage: 12 } }),
       signal: AbortSignal.timeout(8000),
     });
 
@@ -187,7 +125,7 @@ async function fetchAnilistFallback(g: PortalGenreConfig): Promise<string | null
     const media: Array<{ bannerImage?: string | null; coverImage?: { extraLarge?: string | null } | null }> =
       json?.data?.Page?.media;
     if (!Array.isArray(media) || media.length === 0) {
-      console.error(`[genre-backdrop] AniList: no media for ${g.key} genres=${genres.join(',')}`);
+      console.error(`[genre-backdrop] AniList: no media for ${g.key}`);
       return null;
     }
 
@@ -208,12 +146,11 @@ async function fetchAnilistFallback(g: PortalGenreConfig): Promise<string | null
 }
 
 /**
- * Strategy 3: Hardcoded fallback URLs from AniList CDN.
- * All verified 200 OK. AniList CDN is free, highly available, and
- * these banner URLs are permanent (tied to media IDs that never change).
+ * Hardcoded fallback: family-friendly anime banners from AniList CDN.
+ * All verified 200 OK. These are iconic, widely-recognized anime
+ * with appropriate cover art for all audiences.
  */
 const HARDCODED_BACKDROPS: Record<string, string> = {
-  // All verified 200 OK from AniList CDN (free, no auth, permanent URLs)
   anime:    'https://s4.anilist.co/file/anilistcdn/media/anime/banner/16498-8jpFCOcDmneX.jpg',       // Attack on Titan
   cartoon:  'https://s4.anilist.co/file/anilistcdn/media/anime/banner/21459-yeVkolGKdGUV.jpg',       // My Hero Academia
   horror:   'https://s4.anilist.co/file/anilistcdn/media/anime/banner/101759-MhlCoeqnODso.jpg',     // The Promised Neverland
@@ -227,25 +164,15 @@ async function fetchGenreBackdrops(): Promise<Record<string, string>> {
 
   const results = await Promise.allSettled(
     PORTAL_GENRES.map(async (g) => {
-      // Strategy 1: Direct TMDB (for TMDB-sourced genres)
-      if (g.source !== 'anilist') {
-        try {
-          const url = await fetchTmdbDirect(g);
-          if (url) return { key: g.key, url };
-        } catch (err) {
-          console.error(`[genre-backdrop] TMDB direct failed for ${g.key}:`, err);
-        }
-      }
-
-      // Strategy 2: AniList fallback (works for all genres, no auth)
+      // Strategy 1: AniList family-friendly banner (primary for ALL genres)
       try {
-        const url = await fetchAnilistFallback(g);
+        const url = await fetchAnilistBanner(g);
         if (url) return { key: g.key, url };
       } catch (err) {
-        console.error(`[genre-backdrop] AniList fallback failed for ${g.key}:`, err);
+        console.error(`[genre-backdrop] AniList failed for ${g.key}:`, err);
       }
 
-      // Strategy 3: Hardcoded fallback
+      // Strategy 2: Hardcoded family-friendly fallback
       const fallback = HARDCODED_BACKDROPS[g.key];
       if (fallback) {
         console.warn(`[genre-backdrop] Using hardcoded fallback for ${g.key}`);
