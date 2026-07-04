@@ -150,29 +150,9 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc.ru/embed/tv/${id}/${s}/${e}`,
   },
 
-  // VidSrc Embed RU — vidsrc-embed.ru (distinct from vidsrc.ru, supports query params & autonext)
-  {
-    name: "VidSrc Embed RU",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidsrc-embed.ru/embed/movie?tmdb=${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc-embed.ru/embed/tv?tmdb=${id}&season=${s}&episode=${e}&autonext=1`,
-  },
-
-  // VidSrc Embed SU — .su variant of embed family
-  {
-    name: "VidSrc Embed SU",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidsrc-embed.su/embed/movie?tmdb=${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc-embed.su/embed/tv?tmdb=${id}&season=${s}&episode=${e}&autonext=1`,
-  },
-
-  // VSrc SU — short domain variant
-  {
-    name: "VSrc SU",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vsrc.su/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vsrc.su/embed/tv/${id}/${s}/${e}`,
-  },
+  // VidSrc Embed RU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN (blocks iframe embed)
+  // VidSrc Embed SU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN (blocks iframe embed)
+  // VSrc SU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN (blocks iframe embed)
 
   // VidSrcMe RU — new vidsrcme family
   {
@@ -206,13 +186,7 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc-me.su/embed/tv/${id}/${s}/${e}`,
   },
 
-  // 3. MultiEmbed — Aggregator pulling multiple upstreams, IMDB+TMDB
-  {
-    name: "MultiEmbed",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    getTvUrl: (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
-  },
+  // MultiEmbed — REMOVED: redirects to streamingnow.mov → 403 SAMEORIGIN (blocks iframe embed)
 
   // ════════════════════════════════════════════
   // TIER 2 — Backup (promoted from pool if TIER 1 dies)
