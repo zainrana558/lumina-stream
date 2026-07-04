@@ -120,7 +120,6 @@ export default function RootLayout({
             }),
           }}
         />
-        {/* PopAds pop-under — single source of truth (AdScripts.tsx handles client-side) */}
         {children}
         <Analytics />
         <SpeedInsights />

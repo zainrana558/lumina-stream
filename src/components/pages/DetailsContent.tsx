@@ -871,6 +871,22 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   }}
                 />
               </div>
+
+              {/* Exit button — always visible during active playback */}
+              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10001, padding: '16px 20px calc(12px + env(safe-area-inset-top, 0px))', background: 'linear-gradient(to bottom,rgba(0,0,0,.72) 0%,transparent 100%)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                <div className="f-cinzel" style={{ fontSize: '.82rem', color: 'rgba(255,245,232,.85)', textShadow: '0 1px 6px rgba(0,0,0,.6)', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {show.title}{show.media_type === 'tv' ? ` · S${season} E${epIdx}` : ''}
+                </div>
+                <button
+                  onClick={() => setPlaying(false)}
+                  className="btn-g"
+                  style={{ padding: '8px 18px', fontSize: '.78rem', pointerEvents: 'auto', flexShrink: 0 }}
+                  aria-label="Exit player"
+                >
+                  ✕ Exit
+                </button>
+              </div>
+
               {/* Failover toast */}
               {failoverMsg && (
                 <div className="f-cinzel" style={{ position: 'fixed', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 10001, padding: '8px 20px', borderRadius: 10, background: 'rgba(255,107,138,.18)', border: '1px solid rgba(255,107,138,.4)', color: '#FF6B8A',  fontSize: '.72rem', fontWeight: 600, letterSpacing: '.04em', animation: 'fi .3s ease both', whiteSpace: 'nowrap', boxShadow: '0 0 20px rgba(255,107,138,.15)' }}>

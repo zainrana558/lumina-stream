@@ -25,15 +25,40 @@ const ADSTERRA_ID = process.env.NEXT_PUBLIC_ADSTERRA_ID || '';
 const PROPELLERADS_ID = process.env.NEXT_PUBLIC_PROPELLERADS_ID || '';
 const INTELLIGENCEADX_ID = process.env.NEXT_PUBLIC_INTELLIGENCEADX_ID || '';
 
-// ═══ Pop-under trigger (PopAds with anti-adblock) ═══
-// Site ID: 5310037 — updated 2026-07-01
-function injectPopAds() {
+// ═══ Pop-under trigger (PopAds) ═══
+// Loads the official PopAds pop.js with anti-adblock fallback to cdn2.
+function injectPopAds(apiKey: string) {
   if (typeof window === 'undefined') return;
-  const s = document.createElement('script');
-  s.type = 'text/javascript';
-  s.setAttribute('data-cfasync', 'false');
-  s.innerHTML = `(function(){var a=window,z="c4e022087d618f715bc8450566cf5c61",l=[["siteId",150+86-896+5310697],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],j=["d3d3LmludGVsbGlnZW5jZWFkeC5jb20vd3JpdmVzY3JpcHQubWluLmNzcw==","ZDJrbHg4N2Jnem5nY2UuY2xvdWRmcm9udC5uZXQvbm5mdEZVL3ludW1lcmFsLm1pbi5qcw==","d3d3Lnd2eGh4d250dXNsZHJ0LmNvbS9hcml2ZXNjcmlwdC5taW4uY3Nz","d3d3Lnd0dW1xbHdxaHcuY29tL0NSL3JudW1lcmFsLm1pbi5qcw=="],e=-1,s,b,d=function(){clearTimeout(b);e++;if(j[e]&&!(1808804666000<(new Date).getTime()&&1<e)){s=a.document.createElement("script");s.type="text/javascript";s.async=!0;var o=a.document.getElementsByTagName("script")[0];s.src="https://"+atob(j[e]);s.crossOrigin="anonymous";s.onerror=d;s.onload=function(){clearTimeout(b);a[z.slice(0,16)+z.slice(0,16)]||d()};b=setTimeout(d,5E3);o.parentNode.insertBefore(s,o)}};if(!a[z]){try{Object.freeze(a[z]=l)}catch(e){}d()}})();`;
-  document.head.appendChild(s);
+  // Prevent double-injection — if _pop already has a siteId, skip
+  const existing = (window as unknown as Record<string, unknown[]>)._pop;
+  if (existing && existing.some((v: unknown[]) => v[0] === 'siteId')) {
+    console.log('[Ads] PopAds already initialized, skipping duplicate');
+    return;
+  }
+  const _pop = existing || [];
+  _pop.push(['siteId', apiKey]);
+  _pop.push(['minBid', 0]);
+  _pop.push(['popundersPerIP', '0']);
+  _pop.push(['delayBetween', 0]);
+  _pop.push(['default', false]);
+  _pop.push(['defaultPerDay', 0]);
+  _pop.push(['topmostLayer', false]);
+  (window as unknown as Record<string, unknown[]>)._pop = _pop;
+
+  const first = document.getElementsByTagName('script')[0];
+  const pa = document.createElement('script');
+  pa.type = 'text/javascript';
+  pa.async = true;
+  pa.src = 'https://cdn.popads.net/pop.js';
+  // Fallback to cdn2 on error
+  pa.onerror = function () {
+    const sa = document.createElement('script');
+    sa.type = 'text/javascript';
+    sa.async = true;
+    sa.src = 'https://cdn2.popads.net/pop.js';
+    first.parentNode?.insertBefore(sa, first);
+  };
+  first.parentNode?.insertBefore(pa, first);
 }
 
 // ═══ Adsterra banner ═══
@@ -96,6 +121,7 @@ export default function AdScripts() {
   const fired = useRef(false);
 
   useEffect(() => {
+    console.log('[Ads] AdScripts mounted — ADS_ENABLED:', ADS_ENABLED, 'POPADS_ID:', POPADS_ID ? '***' + POPADS_ID.slice(-6) : 'not set');
     if (!ADS_ENABLED || fired.current) return;
     fired.current = true;
 
@@ -103,7 +129,8 @@ export default function AdScripts() {
     const timer = setTimeout(() => {
       // Pop-under (PopAds handles its own frequency capping)
       if (POPADS_ID) {
-        injectPopAds();
+        console.log('[Ads] Injecting PopAds — siteId:', POPADS_ID);
+        injectPopAds(POPADS_ID);
       }
 
       // Push notifications (PropellerAds)
@@ -140,7 +167,7 @@ export default function AdScripts() {
 // Only renders when a banner-capable ad network (Adsterra) is configured.
 // PopAds/Propeller are pop-under/push only — they don't fill banner containers.
 // Without a real ad network, this would just be an empty transparent block.
-const HAS_BANNER_NETWORK = !!ADSTERRA_ID || !!INTELLIGENCEADX_ID;
+export const HAS_BANNER_NETWORK = !!ADSTERRA_ID || !!INTELLIGENCEADX_ID;
 
 export function AdBanner({
   id,

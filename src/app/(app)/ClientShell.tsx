@@ -8,7 +8,7 @@ import Nav from '@/components/common/Nav';
 import BottomNav from '@/components/layout/BottomNav';
 import ThemeSwitcher from '@/components/common/ThemeSwitcher';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import AdScripts, { AdBanner } from '@/components/common/AdScripts';
+import AdScripts, { AdBanner, HAS_BANNER_NETWORK } from '@/components/common/AdScripts';
 
 // Dynamic imports for heavy/rarely-used components — reduces initial JS bundle
 const Stars = lazy(() => import('@/components/common/Stars'));
@@ -296,7 +296,7 @@ function AppShell({ children }: { children: ReactNode }) {
       </Suspense>
 
       {/* Bottom sticky ad banner — only rendered when a banner ad network is configured */}
-      {!pathname.startsWith('/details') && (
+      {!pathname.startsWith('/details') && HAS_BANNER_NETWORK && (
         <div style={{ position: 'fixed', bottom: 60, left: 0, right: 0, zIndex: 997 }}>
           <AdBanner id="ad-banner-bottom" width={728} height={90} />
         </div>
