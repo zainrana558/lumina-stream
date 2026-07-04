@@ -843,13 +843,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
       {/* Player overlay — IntelligentPlayer + PlayerControls */}
       {playing && (
-        <div ref={playerRef} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fi .28s ease both' }}>
-          <div style={{ position: 'absolute', inset: 0, background: s.bg, opacity: .12 }} />
-
+        <div ref={playerRef} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, animation: 'fi .28s ease both' }}>
           {activeProviderUrl ? (
             <>
-              <div style={{ position: 'relative', width: '100vw', height: '100vh', flexShrink: 0, overflow: 'hidden' }}>
-                {/* IntelligentPlayer: handles iframe, XFO detection, skip intro/credits, resume watching, error overlay */}
+              <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
                 <IntelligentPlayer
                   key={`player-${activeProviderName}-${epIdx}`}
                   providers={[{ name: activeProviderName, url: activeProviderUrl, tier: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.tier as 1 | 2 | 3) || 2, category: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.category as 'all' | 'anime') || 'all' }]}
@@ -913,45 +910,21 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               )}
             </>
           ) : loadingProviders ? (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
-                <div className="f-cinzel" style={{ fontSize: '.82rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Finding best provider...</div>
-              </div>
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Loading'}</div>
-                  <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
-                </div>
-              </div>
-            </>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
+              <div className="f-cinzel" style={{ fontSize: '.82rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Finding best provider...</div>
+            </div>
           ) : chainExhausted ? (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,107,138,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>!</div>
-                <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.7)', letterSpacing: '.06em', textAlign: 'center', maxWidth: 300 }}>All providers unavailable</div>
-                <button className="btn-p" onClick={() => { setChainExhausted(false); setChainIndex(0); triedProviders.current.clear(); setProviders([]); setFailoverChain([]); setLoadingProviders(true); setPlaying(false); setTimeout(() => setPlaying(true), 50); }} style={{ padding: '10px 28px', fontSize: '.82rem', marginTop: 8 }}>Retry</button>
-              </div>
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>{show.title} · {show.media_type === 'tv' ? `Ep ${epIdx}` : 'Error'}</div>
-                  <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>✕ Exit</button>
-                </div>
-              </div>
-            </>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,107,138,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>!</div>
+              <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.7)', letterSpacing: '.06em', textAlign: 'center', maxWidth: 300 }}>All providers unavailable</div>
+              <button className="btn-p" onClick={() => { setChainExhausted(false); setChainIndex(0); triedProviders.current.clear(); setProviders([]); setFailoverChain([]); setLoadingProviders(true); setPlaying(false); setTimeout(() => setPlaying(true), 50); }} style={{ padding: '10px 28px', fontSize: '.82rem', marginTop: 8 }}>Retry</button>
+            </div>
           ) : (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-                <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>No sources found</div>
-                <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '10px 28px', fontSize: '.82rem' }}>Go Back</button>
-              </div>
-              <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001, padding: '20px 24px calc(20px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top,rgba(0,0,0,.92) 0%,transparent 100%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>No sources found</div>
-                  <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '8px 18px', fontSize: '.78rem' }}>Exit</button>
-                </div>
-              </div>
-            </>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+              <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>No sources found</div>
+              <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '10px 28px', fontSize: '.82rem' }}>Go Back</button>
+            </div>
           )}
         </div>
       )}
