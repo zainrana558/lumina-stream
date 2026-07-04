@@ -89,6 +89,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [failoverMsg, setFailoverMsg] = useState('');
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [youtubeTrailers, setYoutubeTrailers] = useState<Array<{ key: string; name: string; site: string; type: string }>>([]);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const iframeLoadedRef = useRef(false);
@@ -178,7 +179,8 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   useEffect(() => {
     if (!show) return;
     // AniList items already have all data from SSR — skip TMDB fetch
-    if (show._isAnilist) return;    const mediaType = show.media_type || 'tv';
+    if (show._isAnilist) return;
+    const mediaType = show.media_type || 'tv';
     const id = show.id;
     if (fullDetails?.id === id) return;
     let cancelled = false;
@@ -189,12 +191,53 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       try {
         const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${id}&append_to_response=credits,similar,videos,content_ratings`, { signal: controller.signal });
         const data = await res.json();
-        if (!cancelled) { setFullDetails(data); setLoadingDetails(false); }
+        if (!cancelled) {
+          setFullDetails(data);
+          // Fallback: if append_to_response didn't return videos, fetch separately
+          if (!data.videos?.results?.length) {
+            fetch(`/api/tmdb?endpoint=/${mediaType}/${id}/videos`, { signal: controller.signal })
+              .then(r => r.json())
+              .then(vidData => {
+                if (!cancelled && vidData?.results?.length) {
+                  setFullDetails(prev => prev ? { ...prev, videos: vidData } : prev);
+                }
+              })
+              .catch(() => {});
+          }
+          setLoadingDetails(false);
+        }
       } catch { if (!cancelled) setLoadingDetails(false); }
     };
     load();
     return () => { cancelled = true; controller.abort(); };
   }, [show?.id, show?._isAnilist]);
+
+  // Fetch YouTube trailers for AniList items (TMDB fetch is skipped for them)
+  useEffect(() => {
+    if (!show) return;
+    if (!show._isAnilist) return;
+    // If AniList provided a trailer, use it directly — no fetch needed
+    if (show._anilistTrailer) return;
+    // Try TMDB videos endpoint using the show's TMDB ID if available
+    const tmdbId = show.id;
+    if (!tmdbId || tmdbId < 1) return;
+    const mediaType = show.media_type || 'tv';
+    let cancelled = false;
+    const controller = new AbortController();
+    fetch(`/api/tmdb?endpoint=/${mediaType}/${tmdbId}/videos`, { signal: controller.signal })
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled && data?.results?.length) {
+          setYoutubeTrailers(
+            data.results
+              .filter((v: { type: string; site: string }) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
+              .map((v: { key: string; name: string; site: string; type: string }) => ({ key: v.key, name: v.name, site: v.site, type: v.type }))
+          );
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; controller.abort(); };
+  }, [show?.id, show?._isAnilist, show?._anilistTrailer]);
 
   // Fetch season episodes (TMDB only — AniList items don't have TMDB season data)
   useEffect(() => {
@@ -441,19 +484,26 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
   // Unified trailer list — works for both TMDB and AniList items
   const trailerList: Array<{ key: string; name: string; site: string; type: string }> = (() => {
+    // Source 1: TMDB append_to_response or fallback video fetch
     const tmdbTrailers = (fullDetails?.videos?.results || [])
       .filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube')
       .map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type }));
 
     if (tmdbTrailers.length > 0) return tmdbTrailers;
 
-    // AniList fallback: use the _anilistTrailer field if present
+    // Source 2: AniList trailer field
     if (show._isAnilist && show._anilistTrailer) {
       return [{ key: show._anilistTrailer.id, name: `${show.title} — Trailer`, site: 'YouTube', type: 'Trailer' }];
     }
 
+    // Source 3: Fallback video fetch for AniList items with TMDB ID
+    if (youtubeTrailers.length > 0) return youtubeTrailers;
+
     return [];
   })();
+
+  // YouTube search URL for when no trailers are found
+  const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(show.title + ' official trailer')}`;
 
   const similar: MediaItem[] = fullDetails?.similar?.results && fullDetails.similar.results.length > 0
     ? fullDetails.similar.results.slice(0, 6).map((r) => tmdbToMedia(r))
@@ -730,6 +780,17 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '.8rem', opacity: .4 }}>🎬</div>
                 No trailers available
+                <div style={{ marginTop: '1rem' }}>
+                  <a
+                    href={youtubeSearchUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-g"
+                    style={{ display: 'inline-block', padding: '10px 24px', fontSize: '.78rem', textDecoration: 'none', color: '#FFF5E8' }}
+                  >
+                    ▶ Search on YouTube
+                  </a>
+                </div>
               </div>
             )}
           </div>
