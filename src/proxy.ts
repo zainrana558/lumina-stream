@@ -62,9 +62,9 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
     response.headers.set("Permissions-Policy",        "camera=(), microphone=(), geolocation=()");
     response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
 
-    // CSP — allows any HTTPS iframe (streaming site loads 45+ embed providers
-    // that rotate frequently; a static whitelist would break on every pool change).
-    // Script/img/connect are locked down for XSS protection.
+    // CSP — frame-src uses * because providers redirect dynamically to any
+    // domain/protocol (e.g. hdstream.to → http://cf.trekpeak.site). Script/img/
+    // connect are locked down for XSS protection — that's where the real security is.
     response.headers.set(
       "Content-Security-Policy",
       [
@@ -74,8 +74,8 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
         "font-src 'self' data: https://fonts.gstatic.com",
         "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
         "media-src 'self' https: blob:",
-        // Allow any HTTPS iframe — embed providers rotate via replacement pool
-        "frame-src 'self' https:",
+        // Allow ANY iframe source (providers redirect to arbitrary domains/protocols)
+        "frame-src *",
         "connect-src 'self' https: https://*.supabase.co https://*.supabase.com https://*.popads.net https://*.propellerads.com https://*.highperformancedformats.com",
         "worker-src 'self' blob:",
       ].join("; ")
