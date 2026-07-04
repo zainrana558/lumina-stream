@@ -217,7 +217,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 /* ═══════════════════════════════════════════
    EPISODE ROWS & TABS
    ═══════════════════════════════════════════ */
-.ep-row{background:var(--s1);border-radius:12px;cursor:pointer;transition:all .28s;box-shadow:5px 5px 14px rgba(0,0,0,.72),-2px -2px 7px rgba(45,25,90,.2),inset 0 1.5px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.1),0 0 0 1px rgba(255,255,255,.04)}
+.ep-row{position:relative;background:var(--s1);border-radius:12px;cursor:pointer;transition:all .28s;box-shadow:5px 5px 14px rgba(0,0,0,.72),-2px -2px 7px rgba(45,25,90,.2),inset 0 1.5px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.1),0 0 0 1px rgba(255,255,255,.04)}
 .ep-row::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.015;background:repeating-linear-gradient(0deg,transparent 0px,rgba(255,255,255,.08) 1px,transparent 2px)}
 .ep-row:hover{background:var(--s2);transform:translateX(4px);box-shadow:7px 7px 20px rgba(0,0,0,.78),-2px -2px 8px rgba(45,25,90,.24),inset 0 1.5px 0 rgba(255,255,255,.05),inset 0 -1px 0 rgba(0,0,0,.1),0 0 0 1px rgba(255,179,71,.2)}
 .ep-row.playing{box-shadow:inset 4px 4px 12px rgba(0,0,0,.72),inset -2px -2px 5px rgba(35,20,75,.18),0 0 0 1px rgba(255,179,71,.4),0 0 20px rgba(255,179,71,.12);background:#090716}

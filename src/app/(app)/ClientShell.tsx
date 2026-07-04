@@ -295,7 +295,7 @@ function AppShell({ children }: { children: ReactNode }) {
         <Confetti active={confettiActive} />
       </Suspense>
 
-      {/* Bottom sticky ad — hidden on details pages */}
+      {/* Bottom sticky ad banner — only rendered when a banner ad network is configured */}
       {!pathname.startsWith('/details') && (
         <div style={{ position: 'fixed', bottom: 60, left: 0, right: 0, zIndex: 997 }}>
           <AdBanner id="ad-banner-bottom" width={728} height={90} />

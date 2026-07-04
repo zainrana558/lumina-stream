@@ -137,6 +137,11 @@ export default function AdScripts() {
 }
 
 // ═══ Banner Placeholder Component ═══
+// Only renders when a banner-capable ad network (Adsterra) is configured.
+// PopAds/Propeller are pop-under/push only — they don't fill banner containers.
+// Without a real ad network, this would just be an empty transparent block.
+const HAS_BANNER_NETWORK = !!ADSTERRA_ID || !!INTELLIGENCEADX_ID;
+
 export function AdBanner({
   id,
   width = 728,
@@ -150,7 +155,7 @@ export function AdBanner({
   style?: React.CSSProperties;
   className?: string;
 }) {
-  if (!ADS_ENABLED) return null;
+  if (!ADS_ENABLED || !HAS_BANNER_NETWORK) return null;
 
   return (
     <div
@@ -166,8 +171,6 @@ export function AdBanner({
         justifyContent: 'center',
         overflow: 'hidden',
         borderRadius: 8,
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.05)',
         ...style,
       }}
     >
