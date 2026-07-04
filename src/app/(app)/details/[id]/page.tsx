@@ -36,6 +36,7 @@ interface TMDBShowData {
 interface TMDBDetails {
   credits?: { cast: Array<{ id: number; name: string; character: string; profile_path: string | null }> };
   similar?: { results: TMDBShowData[] };
+  videos?: { results: Array<{ id: string; key: string; name: string; type: string; site: string }> };
   seasons?: Array<{ season_number: number; name: string; episode_count: number }>;
   content_ratings?: { results: Array<{ iso_3166_1: string; rating: string }> };
 }
@@ -220,7 +221,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
       // Step 2: Fetch full details only for the matched type
       fullData = await tmdbFetch<TMDBShowData & TMDBDetails>(
         `/${mediaType}/${showId}`,
-        { append_to_response: 'credits,similar,content_ratings' }
+        { append_to_response: 'credits,similar,videos,content_ratings' }
       ).catch(() => rawData as TMDBShowData & TMDBDetails);
     }
   } catch {
@@ -296,6 +297,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         initialShow={show}
         initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
         initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
+        initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
       />
     </>
   );

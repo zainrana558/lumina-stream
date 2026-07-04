@@ -54,13 +54,14 @@ interface DetailsContentProps {
   initialShow: MediaItem | null;
   initialCredits?: TMDBCastMember[];
   initialSimilar?: MediaItem[];
+  initialVideos?: Array<{ id?: string; key: string; name: string; site: string; type: string }>;
   /** Pre-selected season (from episode URL route) */
   defaultSeason?: number;
   /** Pre-selected episode (from episode URL route) */
   defaultEpisode?: number;
 }
 
-export default function DetailsContent({ showId, initialShow, initialCredits = [], initialSimilar = [], defaultSeason, defaultEpisode }: DetailsContentProps) {
+export default function DetailsContent({ showId, initialShow, initialCredits = [], initialSimilar = [], initialVideos = [], defaultSeason, defaultEpisode }: DetailsContentProps) {
   const router = useRouter();
   const { user, profile, openPip, triggerConfetti } = useApp();
 
@@ -138,7 +139,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     onScrollToTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });
 
-  // If show came from SSR, seed fullDetails with initial credits/similar
+  // If show came from SSR, seed fullDetails with initial credits/similar/videos
   useEffect(() => {
     if (initialShow && !fullDetails) {
       /* eslint-disable react-hooks/set-state-in-effect -- seed SSR data into state */
@@ -146,6 +147,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         id: initialShow.id,
         credits: initialCredits.length > 0 ? { cast: initialCredits } : undefined,
         similar: initialSimilar.length > 0 ? { results: initialSimilar as unknown as TMDBShow[] } : undefined,
+        videos: initialVideos.length > 0 ? { results: initialVideos.map(v => ({ ...v, id: v.id || '' })) } : undefined,
       });
       /* eslint-enable react-hooks/set-state-in-effect */
     }
@@ -182,7 +184,8 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     if (show._isAnilist) return;
     const mediaType = show.media_type || 'tv';
     const id = show.id;
-    if (fullDetails?.id === id) return;
+    // Skip if we already have videos from SSR seed (the critical trailer data)
+    if (fullDetails?.videos?.results?.length) return;
     let cancelled = false;
     const controller = new AbortController();
     const load = async () => {
@@ -661,13 +664,16 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
         {/* Inline trailer embed — visible on every details page */}
         {trailerList.length > 0 && (
           <div style={{ marginBottom: '2rem', animation: 'el .5s ease both' }}>
-            <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.85rem' }}>TRAILER</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginBottom: '.85rem' }}>
+              <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc }}>TRAILER</h2>
+              <span className="f-cinzel" style={{ fontSize: '.52rem', color: 'rgba(255,179,71,.5)', letterSpacing: '.08em', background: 'rgba(255,179,71,.08)', padding: '2px 8px', borderRadius: 4 }}>4K</span>
+            </div>
             <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 14, overflow: 'hidden', background: '#000', boxShadow: '6px 6px 24px rgba(0,0,0,.8), -2px -2px 8px rgba(45,25,90,.15), 0 0 0 1px rgba(255,255,255,.04)' }}>
               <iframe
-                src={`https://www.youtube-nocookie.com/embed/${trailerList[0].key}?rel=0`}
+                src={`https://www.youtube.com/embed/${trailerList[0].key}?rel=0&vq=hd2160&modestbranding=1`}
                 title={`${show.title} Trailer`}
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
                 loading="lazy"
               />
@@ -790,7 +796,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
         {tab === 'trailers' && (
           <section aria-label="Trailers">
-            <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '1rem' }}>TRAILERS</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginBottom: '1rem' }}>
+              <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc }}>TRAILERS</h2>
+              <span className="f-cinzel" style={{ fontSize: '.52rem', color: 'rgba(255,179,71,.5)', letterSpacing: '.08em', background: 'rgba(255,179,71,.08)', padding: '2px 8px', borderRadius: 4 }}>4K</span>
+            </div>
           <div>
             {trailerList.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1rem' }}>
@@ -798,10 +807,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   <div key={v.key} style={{ animation: `card-in .42s ${i * 0.06}s both` }}>
                     <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)' }}>
                       <iframe
-                        src={`https://www.youtube-nocookie.com/embed/${v.key}?rel=0`}
+                        src={`https://www.youtube.com/embed/${v.key}?rel=0&vq=hd2160&modestbranding=1`}
                         title={v.name}
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                         allowFullScreen
                         loading="lazy"
                       />

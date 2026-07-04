@@ -47,6 +47,7 @@ interface TMDBShowData {
 interface TMDBDetails extends TMDBShowData {
   credits?: { cast: Array<{ id: number; name: string; character: string; profile_path: string | null }> };
   similar?: { results: TMDBShowData[] };
+  videos?: { results: Array<{ id: string; key: string; name: string; type: string; site: string }> };
   content_ratings?: { results: Array<{ iso_3166_1: string; rating: string }> };
 }
 
@@ -264,7 +265,7 @@ export default async function EpisodePage({
     if (rawData?.id) {
       const fetches: Promise<unknown>[] = [
         tmdbFetch<TMDBDetails>(`/${mediaType}/${showId}`, {
-          append_to_response: 'credits,similar,content_ratings',
+          append_to_response: 'credits,similar,videos,content_ratings',
         }).catch(() => rawData as TMDBDetails),
       ];
 
@@ -392,6 +393,7 @@ export default async function EpisodePage({
         initialShow={show}
         initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
         initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
+        initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
         defaultSeason={season}
         defaultEpisode={episode}
       />

@@ -42,18 +42,18 @@ export default function TrailerModal({ trailers, showTitle, onClose }: {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '90%', maxWidth: 900,
+          width: '92%', maxWidth: 1100,
           background: '#0C091A', borderRadius: 16, overflow: 'hidden',
           boxShadow: '8px 8px 40px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.05)',
           animation: 'el .35s ease both',
         }}
       >
-        {/* YouTube embed */}
-        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
+        {/* YouTube embed — 4K */}
+        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
           <iframe
-            src={`https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0`}
+            src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1&rel=0&vq=hd2160&modestbranding=1`}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-            allowFullScreen allow="autoplay; encrypted-media"
+            allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           />
         </div>
         {/* Trailer info */}
