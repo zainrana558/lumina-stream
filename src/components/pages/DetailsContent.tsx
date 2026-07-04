@@ -658,6 +658,43 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           </div>
         </div>
 
+        {/* Inline trailer embed — visible on every details page */}
+        {trailerList.length > 0 && (
+          <div style={{ marginBottom: '2rem', animation: 'el .5s ease both' }}>
+            <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.85rem' }}>TRAILER</h2>
+            <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 14, overflow: 'hidden', background: '#000', boxShadow: '6px 6px 24px rgba(0,0,0,.8), -2px -2px 8px rgba(45,25,90,.15), 0 0 0 1px rgba(255,255,255,.04)' }}>
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${trailerList[0].key}?rel=0`}
+                title={`${show.title} Trailer`}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                loading="lazy"
+              />
+            </div>
+            {trailerList.length > 1 && (
+              <div style={{ marginTop: '.6rem', textAlign: 'center' }}>
+                <button className="btn-g" onClick={() => setShowTrailer(true)} style={{ fontSize: '.72rem', padding: '6px 16px' }}>
+                  +{trailerList.length - 1} more trailer{trailerList.length > 2 ? 's' : ''}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        {!trailerList.length && !loadingDetails && (
+          <div style={{ marginBottom: '2rem', textAlign: 'center', padding: '1rem 0' }}>
+            <a
+              href={youtubeSearchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-g"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 24px', fontSize: '.78rem', textDecoration: 'none', color: '#FFF5E8' }}
+            >
+              ▶ Watch Trailer on YouTube
+            </a>
+          </div>
+        )}
+
         <section aria-label="Synopsis" className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16, marginBottom: '2rem' }}>
           <h2 className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>SYNOPSIS</h2>
           <p className="f-crimson" style={{  lineHeight: 1.85, color: 'rgba(255,245,232,.8)', fontSize: 'clamp(.95rem,1.2vw,1.05rem)' }}>{show.desc}</p>
