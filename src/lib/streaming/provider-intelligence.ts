@@ -93,17 +93,16 @@ const MOVIE_POOL: ProviderPool = {
   name: 'movies',
   category: 'movie',
   providers: [
-    // Tier 1
-    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc CC', 'VidSrc.to',
-    // Tier 2
-    'Nontongo', 'MoviesApi.to',
+    // Tier 1 — confirmed working (2026-07-05)
+    'VidSrc SU', 'Embed.su', 'VidSrc RU',
+    // Tier 2 — confirmed working (2026-07-05)
+    'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'StreamWish',
-    'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
-    '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
-    'FilmU', 'VidSrc.pm', 'VidSrc.dev', 'VidSrc.link',
-    'VidPhantom', 'SuperEmbed', 'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
-    'TVPizza', 'LordFlix', 'MultiEmbed',
+    'AnyEmbed', 'VaPlayer',
+    '2Embed', 'VidSrc MOV', 'HDStream',
+    'FilmU', 'VidSrc.pm', 'VidSrc.dev',
+    'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
   ],
 };
 
@@ -113,16 +112,16 @@ const ANIME_POOL: ProviderPool = {
   providers: [
     // Anime-dedicated Tier 1 (shown first in dropdown)
     'Cinezo Anime (Sub)', 'Cinezo Anime (Dub)', 'VidSrc WIN Anime',
-    // General Tier 1
+    // General Tier 1 — confirmed working (2026-07-05)
     'VidSrc SU', 'Embed.su', 'VidSrc RU',
-    // General Tier 2
-    'Nontongo', 'MoviesApi.to',
+    // General Tier 2 — confirmed working (2026-07-05)
+    'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'StreamWish',
-    'VidLink', 'AnyEmbed', 'VaPlayer', 'Videasy Player',
-    '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
-    'FilmU', 'VidSrc.pm', 'VidSrc.dev', 'VidSrc.link',
-    'VidPhantom', 'SuperEmbed', 'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
+    'AnyEmbed', 'VaPlayer',
+    '2Embed', 'VidSrc MOV', 'HDStream',
+    'FilmU', 'VidSrc.pm', 'VidSrc.dev',
+    'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
   ],
 };
 
@@ -130,17 +129,16 @@ const TV_POOL: ProviderPool = {
   name: 'tv',
   category: 'tv',
   providers: [
-    // Tier 1
-    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc CC', 'VidSrc.to',
-    // Tier 2
-    'Nontongo', 'MoviesApi.to',
+    // Tier 1 — confirmed working (2026-07-05)
+    'VidSrc SU', 'Embed.su', 'VidSrc RU',
+    // Tier 2 — confirmed working (2026-07-05)
+    'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'StreamWish',
-    'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
-    '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
-    'FilmU', 'VidSrc.pm', 'VidSrc.dev', 'VidSrc.link',
-    'VidPhantom', 'SuperEmbed', 'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
-    'TVPizza', 'LordFlix', 'MultiEmbed',
+    'AnyEmbed', 'VaPlayer',
+    '2Embed', 'VidSrc MOV', 'HDStream',
+    'FilmU', 'VidSrc.pm', 'VidSrc.dev',
+    'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
   ],
 };
 

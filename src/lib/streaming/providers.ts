@@ -165,22 +165,9 @@ const activeProviders: StreamProvider[] = [
   // All general providers also serve anime content via TMDB IDs.
   // ══════════════════════════════════════════════════════════════════
 
-  // VidSrc CC — Previously removed for SAMEORIGIN, now re-enabled via iframe-proxy
-  // Verified working when proxied (server-side fetch bypasses XFO)
-  {
-    name: "VidSrc CC",
-    tier: 1, category: "all", useProxy: true,
-    getMovieUrl: (id) => `https://vidsrc.cc/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.cc/embed/tv/${id}/${s}/${e}`,
-  },
+  // VidSrc CC — REMOVED: confirmed 403 Forbidden (2026-07-05, proxy can't bypass 403)
 
-  // VidSrc.to — Previously removed for SAMEORIGIN, now re-enabled via iframe-proxy
-  {
-    name: "VidSrc.to",
-    tier: 1, category: "all", useProxy: true,
-    getMovieUrl: (id) => `https://vidsrc.to/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
-  },
+  // VidSrc.to — REMOVED: SAMEORIGIN + proxy can't fix CORS for provider API calls
 
   // 1. VidSrc SU — Replacement for blocked VidSrc CC, confirmed working
   {
@@ -261,12 +248,7 @@ const activeProviders: StreamProvider[] = [
     getMovieUrl: (id) => `https://nontongo.win/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://nontongo.win/embed/tv/${id}/${s}/${e}`,
   },
-  {
-    name: "MoviesApi.to",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://moviesapi.to/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://moviesapi.to/tv/${id}-${s}-${e}`,
-  },
+  // MoviesApi.to — REMOVED: confirmed 404 (2026-07-05)
   // VidSrc.vip — REMOVED: unreachable (fetch failed)
   // Replaced with StreamWish (confirmed 200, no XFO)
   {
@@ -280,13 +262,7 @@ const activeProviders: StreamProvider[] = [
   // TIER 2 — StreamX-Omega providers (verified working on production site)
   // ══════════════════════════════════════════════════════════════════
 
-  // VidLink — Used by StreamX-Omega, supports primaryColor param
-  {
-    name: "VidLink",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidlink.pro/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
-  },
+  // VidLink — REMOVED: confirmed 404 (2026-07-05)
 
   // AnyEmbed — TMDB-native embed, clean player
   {
@@ -296,13 +272,7 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://anyembed.xyz/embed/tmdb-tv-${id}-${s}-${e}`,
   },
 
-  // Videasy Player — Different domain from Videasy in replacement pool
-  {
-    name: "Videasy Player",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://player.videasy.net/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://player.videasy.net/tv/${id}/${s}/${e}`,
-  },
+  // Videasy Player — REMOVED: confirmed 404 (2026-07-05)
 
   // VaPlayer — Russian embed provider, reliable
   {
@@ -330,13 +300,7 @@ const activeProviders: StreamProvider[] = [
 
   // VidNest — REMOVED: confirmed 404
 
-  // 111Movies — Numbered domain, TMDB-based
-  {
-    name: "111Movies",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://www.111movies.net/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://www.111movies.net/tv/${id}/${s}/${e}`,
-  },
+  // 111Movies — REMOVED: confirmed 404 (2026-07-05)
 
   // VidFast — REMOVED: confirmed 404
 
@@ -375,31 +339,13 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}`,
   },
 
-  // VidSrc.link — NEW: independent VidSrc domain, 1119ms
-  {
-    name: "VidSrc.link",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.link/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.link/embed/tv/${id}/${s}/${e}`,
-  },
+  // VidSrc.link — REMOVED: confirmed 415 + SAMEORIGIN (2026-07-05)
 
   // ── Promoted from replacement pool (verified working 2026-07-05) ──
 
-  // VidPhantom — promoted, 598ms, no XFO
-  {
-    name: "VidPhantom",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidphantom.com/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidphantom.com/tv/${id}/${s}/${e}`,
-  },
+  // VidPhantom — REMOVED: confirmed 404 (2026-07-05)
 
-  // SuperEmbed — promoted, 693ms, no XFO
-  {
-    name: "SuperEmbed",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://superembed.stream/?video_id=${id}&tmdb=1`,
-    getTvUrl: (id, s, e) => `https://superembed.stream/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
-  },
+  // SuperEmbed — REMOVED: confirmed 404 (2026-07-05)
 
   // Videasy — promoted, recovered (was unreachable), 701ms
   {
@@ -443,30 +389,11 @@ const activeProviders: StreamProvider[] = [
 
   // ── Re-enabled via iframe-proxy (SAMEORIGIN bypass) ──
 
-  // TVPizza — was SAMEORIGIN-blocked, now works through /api/iframe-proxy
-  {
-    name: "TVPizza",
-    tier: 2, category: "all", useProxy: true,
-    getMovieUrl: (id) => `https://tvpizza.com/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://tvpizza.com/embed/tv/${id}/${s}/${e}`,
-  },
+  // TVPizza — REMOVED: SAMEORIGIN + proxy can't fix CORS for provider API calls
 
-  // LordFlix — was SAMEORIGIN-blocked, now works through /api/iframe-proxy
-  {
-    name: "LordFlix",
-    tier: 2, category: "all", useProxy: true,
-    getMovieUrl: (id) => `https://lordflix.com/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://lordflix.com/embed/tv/${id}/${s}/${e}`,
-  },
+  // LordFlix — REMOVED: confirmed 404 (2026-07-05)
 
-  // MultiEmbed — was redirecting to streamingnow.mov with SAMEORIGIN,
-  // now works through /api/iframe-proxy
-  {
-    name: "MultiEmbed",
-    tier: 2, category: "all", useProxy: true,
-    getMovieUrl: (id) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
-    getTvUrl: (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
-  },
+  // MultiEmbed — REMOVED: confirmed 404 (2026-07-05)
 ];
 
 // ---- Pool State ----

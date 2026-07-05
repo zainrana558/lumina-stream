@@ -56,6 +56,11 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Safe cache.put — silences NetworkError when response is opaque or storage is full
+function safeCachePut(cache, request, response) {
+  return cache.put(request, response).catch(() => {});
+}
+
 // Fetch
 self.addEventListener('fetch', (event) => {
   const { request } = event;
@@ -97,7 +102,7 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            caches.open(CACHE_NAME).then((cache) => safeCachePut(cache, request, clone));
           }
           return response;
         })
@@ -113,7 +118,7 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            caches.open(CACHE_NAME).then((cache) => safeCachePut(cache, request, clone));
           }
           return response;
         })
@@ -131,7 +136,7 @@ self.addEventListener('fetch', (event) => {
       return fetch(request).then((response) => {
         if (response.ok && response.type === 'basic') {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          caches.open(CACHE_NAME).then((cache) => safeCachePut(cache, request, clone));
         }
         return response;
       });

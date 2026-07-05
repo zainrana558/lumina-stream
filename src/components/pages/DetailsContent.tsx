@@ -139,10 +139,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   useKeyboardShortcuts(true, {
     onTogglePlayPause: () => { if (playing) {
       // Bug #17: Space/K should send play/pause to iframe, not close the player
+      try {
       const iframe = document.querySelector('.intelligent-player-iframe') as HTMLIFrameElement | null;
       if (iframe?.contentWindow) {
         iframe.contentWindow.postMessage({ type: 'lumina:togglePlayPause' }, '*');
       }
+      } catch { /* cross-origin */ }
     } else { vibrateLong(); setPlaying(true); } },
     onToggleFullscreen: () => { if (playing) playerRef.current?.requestFullscreen?.(); },
     onExit: () => { if (playing) setPlaying(false); },
@@ -387,10 +389,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
   // Helper: send postMessage to the IntelligentPlayer iframe for playback control
   const postToPlayerIframe = useCallback((msg: Record<string, unknown>) => {
-    const iframe = document.querySelector('.intelligent-player-iframe') as HTMLIFrameElement | null;
-    if (iframe?.contentWindow) {
-      iframe.contentWindow.postMessage(msg, '*');
-    }
+    try {
+      const iframe = document.querySelector('.intelligent-player-iframe') as HTMLIFrameElement | null;
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage(msg, '*');
+      }
+    } catch { /* cross-origin iframe — ignore */ }
   }, []);
 
   // Auto-failover: try next in chain (smart mode) or next provider (legacy mode)
@@ -709,7 +713,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                 title={`${show.title} Trailer`}
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowFullScreen
                 loading="lazy"
               />
             </div>
@@ -846,7 +849,6 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                         title={v.name}
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                        allowFullScreen
                         loading="lazy"
                       />
                     </div>

@@ -282,8 +282,7 @@ export default function IntelligentPlayer({
         src={currentProvider.url}
         className="intelligent-player-iframe"
         style={{ width: '100%', height: '100%', border: 'none', position: 'absolute', top: 0, left: 0 }}
-        allowFullScreen
-        allow="autoplay; encrypted-media; picture-in-picture"
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
         // For proxied providers (same-origin), sandbox creates an opaque origin
         // so the parent page's CSP script-src doesn't block the provider's JS.
         // allow-scripts: provider's JS player needs to execute

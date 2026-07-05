@@ -105,7 +105,6 @@ export default function PipPlayer({ url, title, episodeInfo, onClose, onExpand }
         <iframe
           src={url}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-          allowFullScreen
           allow="autoplay; fullscreen"
         />
       </div>
