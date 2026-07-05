@@ -284,6 +284,12 @@ export default function IntelligentPlayer({
         style={{ width: '100%', height: '100%', border: 'none', position: 'absolute', top: 0, left: 0 }}
         allowFullScreen
         allow="autoplay; encrypted-media; picture-in-picture"
+        // For proxied providers (same-origin), sandbox creates an opaque origin
+        // so the parent page's CSP script-src doesn't block the provider's JS.
+        // allow-scripts: provider's JS player needs to execute
+        // allow-forms: some providers submit search/settings forms
+        // NO allow-same-origin: this is what makes it an opaque origin (bypasses CSP)
+        {...((currentProvider as { proxied?: boolean }).proxied ? { sandbox: 'allow-scripts allow-forms allow-popups' } : {})}
         onLoad={() => {
           // Iframe content loaded — notify parent to clear the failover timer
           onIframeLoad?.();

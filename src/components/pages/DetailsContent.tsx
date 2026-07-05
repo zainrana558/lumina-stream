@@ -85,7 +85,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [loadingSeason, setLoadingSeason] = useState(false);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [hasMoreSimilar, setHasMoreSimilar] = useState(true);
-  const [providers, setProviders] = useState<Array<{ name: string; url: string; tier?: number; category?: string; score?: number }>>([]);
+  const [providers, setProviders] = useState<Array<{ name: string; url: string; tier?: number; category?: string; score?: number; proxied?: boolean }>>([]);
   const [selectedProvider, setSelectedProvider] = useState(0);
   const [failoverMsg, setFailoverMsg] = useState('');
   const [loadingProviders, setLoadingProviders] = useState(false);
@@ -969,7 +969,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
                 <IntelligentPlayer
                   key={`player-${activeProviderName}-${epIdx}`}
-                  providers={[{ name: activeProviderName, url: activeProviderUrl, tier: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.tier as 1 | 2 | 3) || 2, category: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.category as 'all' | 'anime') || 'all' }]}
+                  providers={[{ name: activeProviderName, url: activeProviderUrl, tier: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.tier as 1 | 2 | 3) || 2, category: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.category as 'all' | 'anime') || 'all', proxied: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.proxied as boolean) || false }]}
                   mediaId={show.id}
                   season={season}
                   episode={epIdx}

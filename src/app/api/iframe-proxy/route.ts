@@ -49,7 +49,9 @@ const ALLOWED_HOSTS = new Set([
   'player.cinezo.live',
 ]);
 
-export const runtime = 'edge';
+// NOTE: Intentionally NOT using Edge runtime here.
+// The rate limiter's @upstash/ratelimit may have Node.js-specific fallbacks
+// that don't bundle cleanly for Edge. Node.js runtime works for all cases.
 
 export async function GET(request: NextRequest) {
   try {

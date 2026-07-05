@@ -166,8 +166,12 @@ export async function maybeCheckOneProvider(): Promise<void> {
   const prevAlive = getPrevHealth(provider.name);
   const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
 
-  // Effective alive = reachable AND doesn't block framing
-  const effectiveAlive = alive && !framesBlocked;
+  // Providers with useProxy bypass X-Frame-Options via server-side proxy,
+  // so frame-blocking is irrelevant — treat as not blocked.
+  const effectiveFramesBlocked = provider.useProxy ? false : framesBlocked;
+
+  // Effective alive = reachable AND doesn't block framing (unless proxied)
+  const effectiveAlive = alive && !effectiveFramesBlocked;
 
   // Feed latency to Provider Intelligence speed cache
   try {
@@ -176,8 +180,9 @@ export async function maybeCheckOneProvider(): Promise<void> {
     updateHistoricalCache(provider.name, effectiveAlive);
   } catch { /* non-critical */ }
 
-  // Save current health
-  setHealth(provider.name, alive, framesBlocked);
+  // Save current health (for proxied providers, store framesBlocked=false so
+  // getHealth() doesn't report them as dead)
+  setHealth(provider.name, alive, effectiveFramesBlocked);
   setPrevHealth(provider.name, effectiveAlive);
 
   // Provider just died? (was alive, now dead or frame-blocked)
@@ -191,7 +196,8 @@ export async function maybeCheckOneProvider(): Promise<void> {
       if (replacement) {
         // Also pre-health-check the replacement
         const { alive: repAlive, framesBlocked: repBlocked } = await pingProvider(replacement.getMovieUrl(550));
-        setHealth(replacement.name, repAlive, repBlocked);
+        const repEffectiveBlocked = replacement.useProxy ? false : repBlocked;
+        setHealth(replacement.name, repAlive, repEffectiveBlocked);
       }
     }
   }
@@ -236,9 +242,10 @@ export async function checkAllProviders(): Promise<Record<string, boolean>> {
       const url = p.getMovieUrl ? p.getMovieUrl(550) : '';
       if (!url) return;
       const { alive, latencyMs, framesBlocked } = await pingProvider(url);
-      const effectiveAlive = alive && !framesBlocked;
+      const effectiveFramesBlocked = p.useProxy ? false : framesBlocked;
+      const effectiveAlive = alive && !effectiveFramesBlocked;
       results[p.name] = effectiveAlive;
-      setHealth(p.name, alive, framesBlocked);
+      setHealth(p.name, alive, effectiveFramesBlocked);
       // Feed speed cache
       try {
         const { updateSpeedCache, updateHistoricalCache } = await import('@/lib/streaming/provider-intelligence');

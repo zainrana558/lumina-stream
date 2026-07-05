@@ -94,7 +94,7 @@ const MOVIE_POOL: ProviderPool = {
   category: 'movie',
   providers: [
     // Tier 1
-    'VidSrc SU', 'Embed.su', 'VidSrc RU',
+    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc CC', 'VidSrc.to',
     // Tier 2
     'Nontongo', 'MoviesApi.to',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
@@ -103,6 +103,7 @@ const MOVIE_POOL: ProviderPool = {
     '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
     'FilmU', 'VidSrc.pm', 'VidSrc.dev', 'VidSrc.link',
     'VidPhantom', 'SuperEmbed', 'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
+    'TVPizza', 'LordFlix', 'MultiEmbed',
   ],
 };
 
@@ -130,7 +131,7 @@ const TV_POOL: ProviderPool = {
   category: 'tv',
   providers: [
     // Tier 1
-    'VidSrc SU', 'Embed.su', 'VidSrc RU',
+    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc CC', 'VidSrc.to',
     // Tier 2
     'Nontongo', 'MoviesApi.to',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
@@ -139,6 +140,7 @@ const TV_POOL: ProviderPool = {
     '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
     'FilmU', 'VidSrc.pm', 'VidSrc.dev', 'VidSrc.link',
     'VidPhantom', 'SuperEmbed', 'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
+    'TVPizza', 'LordFlix', 'MultiEmbed',
   ],
 };
 
@@ -153,7 +155,11 @@ const PROVIDER_CAPABILITIES: Record<string, {
   'VidSrc SU':        { subtitleSupport: 0.8, quality: 0.85, avgSpeed: 0.7 },
   'Embed.su':         { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.8 },
   'VidSrc RU':        { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.7 },
-  'MultiEmbed':       { subtitleSupport: 0.6, quality: 0.8, avgSpeed: 0.6 },
+  'VidSrc CC':        { subtitleSupport: 0.8, quality: 0.9, avgSpeed: 0.7 },  // proxied
+  'VidSrc.to':        { subtitleSupport: 0.8, quality: 0.9, avgSpeed: 0.7 },  // proxied
+  'MultiEmbed':       { subtitleSupport: 0.6, quality: 0.8, avgSpeed: 0.6 }, // proxied
+  'TVPizza':         { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 }, // proxied
+  'LordFlix':        { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 }, // proxied
   'VidSrc.me':        { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.6 },
   'Nontongo':         { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
   'MoviesApi.to':     { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.6 },

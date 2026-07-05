@@ -51,6 +51,7 @@ export interface EmbedResult {
 interface ReplacementEntry {
   name: string;
   category: ProviderCategory;
+  useProxy?: boolean;
   getMovieUrl: (tmdbId: number) => string;
   getTvUrl: (tmdbId: number, season: number, episode: number) => string;
   getAnimeUrl?: (malId: number, episode: number) => string;
@@ -518,6 +519,7 @@ export function swapInReplacement(deadProviderName: string): StreamProvider | nu
     getMovieUrl: replacement.getMovieUrl,
     getTvUrl: replacement.getTvUrl,
     getAnimeUrl: replacement.getAnimeUrl,
+    useProxy: replacement.useProxy,
   };
   swappedIn.set(replacement.name, newProvider);
   swapMapping.set(deadProviderName, replacement.name);
@@ -579,15 +581,19 @@ export function getAnimeEmbedUrls(
     .sort((a, b) => a.tier - b.tier)
     // Skip general providers when tmdbId is 0 (AniList-only) — they'd produce /tv/0/1/1
     .filter((p) => !!tmdbId)
-    .map((p) => ({
-      name: p.name,
-      tier: p.tier,
-      category: "all" as ProviderCategory,
-      replaced: swappedIn.has(p.name),
-      url: effectiveMediaType === 'movie'
+    .map((p) => {
+      const rawUrl = effectiveMediaType === 'movie'
         ? p.getMovieUrl(tmdbId)
-        : p.getTvUrl(tmdbId, season, episode),
-    }));
+        : p.getTvUrl(tmdbId, season, episode);
+      return {
+        name: p.name,
+        tier: p.tier,
+        category: "all" as ProviderCategory,
+        replaced: swappedIn.has(p.name),
+        proxied: !!p.useProxy,
+        url: p.useProxy ? `/api/iframe-proxy?url=${encodeURIComponent(rawUrl)}` : rawUrl,
+      };
+    });
   const animeProviders: EmbedResult[] = providers
     .filter((p) => p.category === "anime")
     .sort((a, b) => a.tier - b.tier)
