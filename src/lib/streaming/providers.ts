@@ -116,11 +116,33 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
 const activeProviders: StreamProvider[] = [
   // ══════════════════════════════════════════════════════════════════
   // ANIME TIER 1 — Dedicated anime streaming providers
-  // All general providers below also serve anime via TMDB IDs.
-  // These anime-specific providers handle AniList/MAL-only entries.
+  // These providers appear first in the dropdown for anime content.
+  // Cinezo: AniList-native, sub/dub support, multi-language. Gold standard.
+  // VidSrc WIN: TMDB-based anime, fast fallback.
   // ══════════════════════════════════════════════════════════════════
 
-  // VidSrc WIN Anime — Verified 200, 114ms, no XFO. TMDB/MAL-based anime embed.
+  // Cinezo Anime (Sub) — BEST: AniList-native embed, sub/dub, multi-language
+  // Verified 200, ~600ms, no XFO, no CSP block. ?dub=false for sub.
+  {
+    name: "Cinezo Anime (Sub)",
+    tier: 1, category: "anime",
+    getMovieUrl: (id) => `https://player.cinezo.live/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
+    getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}`,
+  },
+
+  // Cinezo Anime (Dub) — BEST: Same as above but with English dub.
+  // Verified 200, ~280ms, no XFO. ?dub=true for dub.
+  {
+    name: "Cinezo Anime (Dub)",
+    tier: 1, category: "anime",
+    getMovieUrl: (id) => `https://player.cinezo.live/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
+    getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}?dub=true`,
+  },
+
+  // VidSrc WIN Anime — Fast TMDB/MAL-based anime embed.
+  // Verified 200, ~153ms, no XFO. Fallback for anime without AniList IDs.
   {
     name: "VidSrc WIN Anime",
     tier: 1, category: "anime",
@@ -131,24 +153,6 @@ const activeProviders: StreamProvider[] = [
       const e = ((ep - 1) % 25) + 1;
       return `https://vidsrc.win/embed/tv/${malId}/${s}/${e}`;
     },
-  },
-
-  // Cinezo — AniList-native embed. Movies/TV via TMDB, anime via AniList ID.
-  // Verified 200, 700ms, no XFO, no CSP block. Supports ?dub=true/false.
-  // Also works as general TMDB provider (movie + tv endpoints).
-  {
-    name: "Cinezo Anime",
-    tier: 1, category: "anime",
-    getMovieUrl: (id) => `https://player.cinezo.live/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
-    getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}`,
-  },
-  {
-    name: "Cinezo Anime (Dub)",
-    tier: 1, category: "anime",
-    getMovieUrl: (id) => `https://player.cinezo.live/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
-    getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}?dub=true`,
   },
 
   // ══════════════════════════════════════════════════════════════════
@@ -560,5 +564,5 @@ export function getAnimeEmbedUrls(
       };
     })
     .filter((p) => p.url !== ''); // Remove entries with empty URLs
-  return [...generalProviders, ...animeProviders];
+  return [...animeProviders, ...generalProviders]; // Anime providers FIRST in dropdown
 }

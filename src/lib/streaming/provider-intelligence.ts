@@ -94,14 +94,15 @@ const MOVIE_POOL: ProviderPool = {
   category: 'movie',
   providers: [
     // Tier 1
-    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc Embed RU', 'VidSrc Embed SU',
-    'VSrc SU', 'MultiEmbed',
+    'VidSrc SU', 'Embed.su', 'VidSrc RU',
     // Tier 2
     'Nontongo', 'MoviesApi.to',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'StreamWish',
     'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
     '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
+    'FilmU', 'VidSrc.pm', 'VidSrc.dev', 'VidSrc.link',
+    'VidPhantom', 'SuperEmbed', 'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
   ],
 };
 
@@ -109,16 +110,18 @@ const ANIME_POOL: ProviderPool = {
   name: 'anime',
   category: 'anime',
   providers: [
-    // Tier 1
-    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc Embed RU', 'VidSrc Embed SU',
-    'VSrc SU', 'MultiEmbed',
-    // Tier 2
+    // Anime-dedicated Tier 1 (shown first in dropdown)
+    'Cinezo Anime (Sub)', 'Cinezo Anime (Dub)', 'VidSrc WIN Anime',
+    // General Tier 1
+    'VidSrc SU', 'Embed.su', 'VidSrc RU',
+    // General Tier 2
     'Nontongo', 'MoviesApi.to',
-    'VidSrc WIN Anime',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'StreamWish',
-    'VidLink', 'AnyEmbed', 'VaPlayer',
+    'VidLink', 'AnyEmbed', 'VaPlayer', 'Videasy Player',
     '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
+    'FilmU', 'VidSrc.pm', 'VidSrc.dev', 'VidSrc.link',
+    'VidPhantom', 'SuperEmbed', 'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
   ],
 };
 
@@ -127,14 +130,15 @@ const TV_POOL: ProviderPool = {
   category: 'tv',
   providers: [
     // Tier 1
-    'VidSrc SU', 'Embed.su', 'VidSrc RU', 'VidSrc Embed RU', 'VidSrc Embed SU',
-    'VSrc SU', 'MultiEmbed',
+    'VidSrc SU', 'Embed.su', 'VidSrc RU',
     // Tier 2
     'Nontongo', 'MoviesApi.to',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'StreamWish',
     'VidLink', 'AnyEmbed', 'Videasy Player', 'VaPlayer',
     '2Embed', 'VidSrc MOV', '111Movies', 'HDStream',
+    'FilmU', 'VidSrc.pm', 'VidSrc.dev', 'VidSrc.link',
+    'VidPhantom', 'SuperEmbed', 'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
   ],
 };
 
@@ -173,7 +177,18 @@ const PROVIDER_CAPABILITIES: Record<string, {
   'SuperEmbed':       { subtitleSupport: 0.6, quality: 0.75, avgSpeed: 0.6 },
   'VidSrc FYI':       { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
   'Videasy':          { subtitleSupport: 0.3, quality: 0.6, avgSpeed: 0.4 },
-  'VidSrc WIN Anime': { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
+  'VidSrc WIN Anime': { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.9 },
+  // Anime-dedicated providers (Cinezo: AniList-native, sub/dub, multi-language)
+  'Cinezo Anime (Sub)': { subtitleSupport: 1.0, quality: 0.85, avgSpeed: 0.7 },
+  'Cinezo Anime (Dub)':  { subtitleSupport: 1.0, quality: 0.85, avgSpeed: 0.8 },
+  // Discovered providers
+  'FilmU':          { subtitleSupport: 0.5, quality: 0.8, avgSpeed: 0.6 },
+  'VidSrc.pm':      { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
+  'VidSrc.dev':     { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
+  'VidSrc.link':    { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.4 },
+  'VidPhantom':     { subtitleSupport: 0.5, quality: 0.75, avgSpeed: 0.6 },
+  'StreamSilk':     { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
+  'FileMoon':       { subtitleSupport: 0.3, quality: 0.7, avgSpeed: 0.3 },
 };
 
 // ── Dynamic speed cache (updated by health monitor) ──

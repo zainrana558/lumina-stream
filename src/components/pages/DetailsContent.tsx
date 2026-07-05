@@ -286,8 +286,8 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           setFailoverChain(data.chain);
           setChainIndex(0);
           setChainExhausted(false);
-          // Also populate providers dropdown from chain
-          setProviders(data.chain.map((c: { provider: string; url: string; score: number; tier: number }) => ({ name: c.provider, url: c.url, tier: c.tier, score: c.score })));
+          // Also populate providers dropdown from chain (include category for grouping)
+          setProviders(data.chain.map((c: { provider: string; url: string; score: number; tier: number; category: string }) => ({ name: c.provider, url: c.url, tier: c.tier, score: c.score, category: c.category })));
           setSelectedProvider(0);
         } else if (data.providers) {
           // Legacy mode fallback
@@ -1007,12 +1007,27 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                     } else {
                       setSelectedProvider(idx); triedProviders.current.add(idx);
                     }
-                  }} style={{ padding: '8px 14px', background: 'rgba(0,0,0,.8)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 10, color: '#FFF5E8', fontSize: '.72rem', cursor: 'pointer', outline: 'none' }}>
-                    {providers.map((p, i) => (
-                      <option key={i} value={i} style={{ background: '#0C091A' }}>
-                        {p.name}{p.tier === 1 ? ' (T1)' : p.tier === 2 ? ' (T2)' : p.tier === 3 ? ' (T3)' : ''}{p.category === 'anime' ? ' Anime' : ''}{failoverChain.length > 0 && p.score != null ? ` [${p.score.toFixed(0)}%]` : ''}{failoverChain.length > 0 && i === chainIndex ? ' ✓' : ''}
-                      </option>
-                    ))}
+                  }} style={{ padding: '8px 14px', background: 'rgba(0,0,0,.85)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 10, color: '#FFF5E8', fontSize: '.72rem', cursor: 'pointer', outline: 'none', maxWidth: 'min(320px, 60vw)' }}>
+                    {(() => {
+                      const hasAnime = providers.some(p => p.category === 'anime');
+                      const hasGeneral = providers.some(p => p.category !== 'anime');
+                      const groups: Array<{ label: string; items: typeof providers }> = [];
+                      if (hasAnime) groups.push({ label: '· Anime Providers', items: providers.filter(p => p.category === 'anime') });
+                      if (hasGeneral) groups.push({ label: '· Streaming Servers', items: providers.filter(p => p.category !== 'anime') });
+                      let optIdx = 0;
+                      return groups.map((g, gi) => (
+                        <optgroup key={gi} label={g.label} style={{ color: gi === 0 && hasAnime ? '#FFB347' : 'rgba(255,245,232,.7)', fontWeight: 600 }}>
+                          {g.items.map((p) => {
+                            const i = providers.indexOf(p);
+                            return (
+                              <option key={i} value={i} style={{ background: '#0C091A' }}>
+                                {p.name}{p.tier === 1 ? ' (T1)' : p.tier === 2 ? ' (T2)' : ''}{failoverChain.length > 0 && p.score != null ? ` [${p.score.toFixed(0)}%]` : ''}{failoverChain.length > 0 && i === chainIndex ? ' ✓' : ''}
+                              </option>
+                            );
+                          })}
+                        </optgroup>
+                      ));
+                    })()}
                   </select>
                 </div>
               )}
