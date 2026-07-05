@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, verifyProfileOwnership } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { watchPartyCreateSchema } from "@/lib/schemas";
+import { csrfGuard } from '@/lib/csrf';
 
 // POST /api/watch-party/create — create a new watch party room
 export async function POST(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, "write");
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: rateLimitHeaders(rl) });

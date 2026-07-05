@@ -32,35 +32,42 @@ function makeKey(endpoint: string, params?: Record<string, string>): string {
   return endpoint + '?' + sorted.map(([k, v]) => `${k}=${v}`).join('&');
 }
 
+interface HomeFetch {
+  id: string;
+  endpoint: string;
+  params?: Record<string, string>;
+  category: 'trending' | 'popular' | 'discover';
+}
+
 // All 21 home page data fetches, defined declaratively
-const HOME_FETCHES = [
-  { id: 'trending',     endpoint: '/trending/all/week',                                          category: 'trending' as const },
-  { id: 'popular',      endpoint: '/movie/popular',                                               category: 'popular' as const },
-  { id: 'tvPopular',    endpoint: '/tv/popular',                                                   category: 'popular' as const },
-  { id: 'topRated',     endpoint: '/movie/top_rated',                                              category: 'popular' as const },
-  { id: 'upcoming',     endpoint: '/movie/upcoming',                                               category: 'popular' as const },
-  { id: 'action',       endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' },               category: 'discover' as const },
-  { id: 'comedy',       endpoint: '/discover/movie', params: { with_genres: '35', sort_by: 'popularity.desc' },               category: 'discover' as const },
-  { id: 'scifi',        endpoint: '/discover/movie', params: { with_genres: '878', sort_by: 'popularity.desc' },              category: 'discover' as const },
+const HOME_FETCHES: HomeFetch[] = [
+  { id: 'trending',     endpoint: '/trending/all/week',                                          category: 'trending' },
+  { id: 'popular',      endpoint: '/movie/popular',                                               category: 'popular' },
+  { id: 'tvPopular',    endpoint: '/tv/popular',                                                   category: 'popular' },
+  { id: 'topRated',     endpoint: '/movie/top_rated',                                              category: 'popular' },
+  { id: 'upcoming',     endpoint: '/movie/upcoming',                                               category: 'popular' },
+  { id: 'action',       endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' },               category: 'discover' },
+  { id: 'comedy',       endpoint: '/discover/movie', params: { with_genres: '35', sort_by: 'popularity.desc' },               category: 'discover' },
+  { id: 'scifi',        endpoint: '/discover/movie', params: { with_genres: '878', sort_by: 'popularity.desc' },              category: 'discover' },
   // Animation row removed — replaced with AniList anime (see below)
-  { id: 'nowPlaying',   endpoint: '/movie/now_playing',                                            category: 'popular' as const },
-  { id: 'airingToday',  endpoint: '/tv/airing_today',                                              category: 'popular' as const },
-  { id: 'onTheAir',     endpoint: '/tv/on_the_air',                                                category: 'popular' as const },
-  { id: 'drama',        endpoint: '/discover/movie', params: { with_genres: '18', sort_by: 'popularity.desc' },               category: 'discover' as const },
-  { id: 'thriller',     endpoint: '/discover/movie', params: { with_genres: '53', sort_by: 'popularity.desc' },               category: 'discover' as const },
-  { id: 'crime',        endpoint: '/discover/movie', params: { with_genres: '80', sort_by: 'popularity.desc' },               category: 'discover' as const },
-  { id: 'romance',      endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' },            category: 'discover' as const },
-  { id: 'family',       endpoint: '/discover/movie', params: { with_genres: '10751', sort_by: 'popularity.desc' },            category: 'discover' as const },
-  { id: 'hiddenGems',   endpoint: '/discover/movie', params: { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' },  category: 'discover' as const },
-  { id: 'acclaimed',    endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' }, category: 'discover' as const },
-  { id: 'warHistory',   endpoint: '/discover/movie', params: { with_genres: '10752,36', sort_by: 'popularity.desc' },          category: 'discover' as const },
+  { id: 'nowPlaying',   endpoint: '/movie/now_playing',                                            category: 'popular' },
+  { id: 'airingToday',  endpoint: '/tv/airing_today',                                              category: 'popular' },
+  { id: 'onTheAir',     endpoint: '/tv/on_the_air',                                                category: 'popular' },
+  { id: 'drama',        endpoint: '/discover/movie', params: { with_genres: '18', sort_by: 'popularity.desc' },               category: 'discover' },
+  { id: 'thriller',     endpoint: '/discover/movie', params: { with_genres: '53', sort_by: 'popularity.desc' },               category: 'discover' },
+  { id: 'crime',        endpoint: '/discover/movie', params: { with_genres: '80', sort_by: 'popularity.desc' },               category: 'discover' },
+  { id: 'romance',      endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' },            category: 'discover' },
+  { id: 'family',       endpoint: '/discover/movie', params: { with_genres: '10751', sort_by: 'popularity.desc' },            category: 'discover' },
+  { id: 'hiddenGems',   endpoint: '/discover/movie', params: { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' },  category: 'discover' },
+  { id: 'acclaimed',    endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' }, category: 'discover' },
+  { id: 'warHistory',   endpoint: '/discover/movie', params: { with_genres: '10752,36', sort_by: 'popularity.desc' },          category: 'discover' },
   // 6 genre featured backdrop fetches
-  { id: 'feat-anime',   endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', vote_count_gte: '50' }, category: 'discover' as const },
-  { id: 'feat-cartoon', endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', without_genres: '10759', with_original_language: 'en' },     category: 'discover' as const },
-  { id: 'feat-horror',  endpoint: '/discover/movie', params: { with_genres: '27', sort_by: 'popularity.desc' },               category: 'discover' as const },
-  { id: 'feat-romance', endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' },            category: 'discover' as const },
-  { id: 'feat-mystery', endpoint: '/discover/movie', params: { with_genres: '9648', sort_by: 'popularity.desc' },              category: 'discover' as const },
-  { id: 'feat-fantasy', endpoint: '/discover/movie', params: { with_genres: '14', sort_by: 'popularity.desc' },               category: 'discover' as const },
+  { id: 'feat-anime',   endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', vote_count_gte: '50' }, category: 'discover' },
+  { id: 'feat-cartoon', endpoint: '/discover/tv', params: { with_genres: '16', sort_by: 'popularity.desc', without_genres: '10759', with_original_language: 'en' },     category: 'discover' },
+  { id: 'feat-horror',  endpoint: '/discover/movie', params: { with_genres: '27', sort_by: 'popularity.desc' },               category: 'discover' },
+  { id: 'feat-romance', endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' },            category: 'discover' },
+  { id: 'feat-mystery', endpoint: '/discover/movie', params: { with_genres: '9648', sort_by: 'popularity.desc' },              category: 'discover' },
+  { id: 'feat-fantasy', endpoint: '/discover/movie', params: { with_genres: '14', sort_by: 'popularity.desc' },               category: 'discover' },
 ];
 
 async function getTMDBData() {
@@ -68,8 +75,8 @@ async function getTMDBData() {
     // Build batch entries — one MGET for all 26 fetches
     const batchEntries = HOME_FETCHES.map(f => ({
       category: f.category,
-      key: makeKey(f.endpoint, f.params),
-      fetcher: () => tmdbFetchRaw<{ results?: TMDBShow[]; total_results?: number }>(f.endpoint, f.params)
+      key: makeKey(f.endpoint, f.params ?? undefined),
+      fetcher: () => tmdbFetchRaw<{ results?: TMDBShow[]; total_results?: number }>(f.endpoint, f.params ?? {})
         .then(data => ({ results: data.results || [], total_results: data.total_results || 0 }))
         .catch(() => ({ results: [] as TMDBShow[], total_results: 0 })),
     }));

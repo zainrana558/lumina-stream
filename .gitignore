@@ -50,5 +50,19 @@ test
 prompt
 
 server.log
+
+# Database files
+db/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Prisma (unused — real DB is Supabase)
+prisma/
+
+# Generated traffic toolkit output
+traffic-toolkit/output/
+
 # Skills directory
 /skills/

@@ -149,7 +149,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     onToggleFullscreen: () => { if (playing) playerRef.current?.requestFullscreen?.(); },
     onExit: () => { if (playing) setPlaying(false); },
     onPreviousEpisode: () => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
-    onNextEpisode: () => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : show.eps; if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
+    onNextEpisode: () => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : (show?.eps ?? 10); if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
     onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); syncEpisodeUrl(season, n); } },
     onToggleSubtitles: () => {},
     onSwitchProvider: () => { if (!playing) return; if (failoverChain.length > 1 && chainIndex < failoverChain.length - 1) { const next = chainIndex + 1; setChainIndex(next); setSelectedProvider(next); setFailoverMsg(`Switching to ${failoverChain[next]?.provider}...`); setTimeout(() => setFailoverMsg(''), 3000); } else if (providers.length > 1) { const next = (selectedProvider + 1) % providers.length; setSelectedProvider(next); triedProviders.current.add(next); } },

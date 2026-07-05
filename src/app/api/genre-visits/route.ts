@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 import { PORTAL_SLUGS } from '@/config/genres';
+import { csrfGuard } from '@/lib/csrf';
+import { ensureCsrfCookie } from '@/lib/csrf';
 
 /**
  * POST /api/genre-visits
@@ -13,6 +15,12 @@ import { PORTAL_SLUGS } from '@/config/genres';
  * Response: { ok: boolean, count: number }
  */
 export async function POST(request: NextRequest) {
+  // CSRF protection
+  const csrfError = await csrfGuard(request);
+  if (csrfError) {
+    return NextResponse.json(csrfError, { status: csrfError.status });
+  }
+
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ ok: true, count: 0, source: 'unconfigured' });
   }
@@ -66,6 +74,7 @@ export async function POST(request: NextRequest) {
  * Falls back to empty if not configured or not authenticated.
  */
 export async function GET() {
+  await ensureCsrfCookie();
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ visits: {}, source: 'unconfigured' });
   }

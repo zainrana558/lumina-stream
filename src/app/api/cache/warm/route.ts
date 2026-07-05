@@ -276,7 +276,7 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
 
 // ─── Home page genre portal feature cards ───────────────────────────────────
 
-const HOME_FEAT_FETCHES = [
+const HOME_FEAT_FETCHES: { id: string; endpoint: string; params: Record<string, string> }[] = [
   { id: 'feat-anime',   endpoint: '/discover/tv',    params: { with_genres: '16,10759', sort_by: 'popularity.desc', with_original_language: 'ja', vote_count_gte: '100' } },
   { id: 'feat-cartoon', endpoint: '/discover/tv',    params: { with_genres: '16', sort_by: 'popularity.desc', without_genres: '10759', with_original_language: 'en' } },
   { id: 'feat-horror',  endpoint: '/discover/movie', params: { with_genres: '27', sort_by: 'popularity.desc' } },
@@ -417,10 +417,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const secret = process.env.CACHE_WARM_SECRET;
   if (!secret) {
-    console.warn(
-      '[warm] CACHE_WARM_SECRET is not set. ' +
-      'Set it in .env.local to enable the cache warm endpoint.'
-    );
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        '[warm] CACHE_WARM_SECRET is not set. ' +
+        'Set it in .env.local to enable the cache warm endpoint.'
+      );
+    }
     return NextResponse.json(
       { error: 'CACHE_WARM_SECRET not configured' },
       { status: 503 }

@@ -10,9 +10,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { isSupabaseConfigured, createClient } from '@/lib/supabase/server';
 import { requireAuth, getVerifiedProfileId } from '@/lib/auth';
+import { csrfGuard } from '@/lib/csrf';
 
 export async function POST(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, 'write');
     if (!rl.success) {
       return NextResponse.json(

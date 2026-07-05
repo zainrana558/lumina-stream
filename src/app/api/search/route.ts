@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
 
     // Merge results: TMDB first, then AniList (dedup by normalized title)
     const tmdbTitles = new Set(
-      tmdbResults.items.map(i => normalizeTitle(i.title))
+      tmdbResults.items.map((i: MediaItem) => normalizeTitle(i.title))
     );
 
     const merged: MediaItem[] = [

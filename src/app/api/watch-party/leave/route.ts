@@ -3,10 +3,17 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuth, verifyProfileOwnership } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { watchPartyLeaveSchema } from "@/lib/schemas";
+import { csrfGuard } from '@/lib/csrf';
 
 // POST /api/watch-party/leave — leave a room
 export async function POST(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, "write");
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: rateLimitHeaders(rl) });

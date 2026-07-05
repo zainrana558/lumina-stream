@@ -3,11 +3,19 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuth, verifyProfileOwnership, getVerifiedProfileId } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { watchPartySyncSchema } from "@/lib/schemas";
+import { csrfGuard } from '@/lib/csrf';
+import { ensureCsrfCookie } from '@/lib/csrf';
 
 // POST /api/watch-party/sync — host syncs playback state to all participants
 // Body: { profile_id, room_id, is_playing, playback_time, season?, episode? }
 export async function POST(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, "write");
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: rateLimitHeaders(rl) });
@@ -61,6 +69,7 @@ export async function POST(request: NextRequest) {
 // GET /api/watch-party/sync?roomId=xxx — poll for playback state changes
 export async function GET(request: NextRequest) {
   try {
+    await ensureCsrfCookie();
     const rl = await checkRateLimit(request);
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: rateLimitHeaders(rl) });

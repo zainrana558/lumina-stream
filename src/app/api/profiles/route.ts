@@ -3,9 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuth, verifyProfileOwnership } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { profileUpdateSchema } from "@/lib/schemas";
+import { csrfGuard } from '@/lib/csrf';
 
 export async function PATCH(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, 'write');
     if (!rl.success) {
       return NextResponse.json(

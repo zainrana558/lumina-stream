@@ -3,9 +3,12 @@ import { createClient } from '@/lib/supabase/server';
 import { requireAuth, verifyProfileOwnership, getVerifiedProfileId } from '@/lib/auth';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { notificationMarkReadSchema, notificationMarkAllReadSchema } from '@/lib/schemas';
+import { csrfGuard } from '@/lib/csrf';
+import { ensureCsrfCookie } from '@/lib/csrf';
 
 export async function GET(request: NextRequest) {
   try {
+    await ensureCsrfCookie();
     const rl = await checkRateLimit(request);
     if (!rl.success) {
       return NextResponse.json(
@@ -57,6 +60,12 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, 'write');
     if (!rl.success) {
       return NextResponse.json(
@@ -106,6 +115,12 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, 'write');
     if (!rl.success) {
       return NextResponse.json(

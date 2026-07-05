@@ -77,7 +77,7 @@ export default async function HealthDashboardPage() {
 
   const data = {
     providers,
-    redisAvailable: fullStatus?.redisAvailable ?? null,
+    redisAvailable: (fullStatus as Record<string, unknown> | null)?.redisAvailable as boolean | null ?? null,
     poolStatus: fullStatus?.pool ?? null,
     recentFailovers: failovers,
   };

@@ -5,10 +5,7 @@ const nextConfig: NextConfig = {
   // Vercel uses its own build pipeline — no standalone needed.
   allowedDevOrigins: ["https://*.space-z.ai"],
   typescript: {
-    // Turbopack's TS plugin caches type info aggressively and doesn't pick up
-    // explicit type changes in some cases (e.g. CacheCategory union extension).
-    // Type correctness is verified via `npx tsc --noEmit` in CI instead.
-    ignoreBuildErrors: true,
+    // Type correctness is verified at build time.
   },
   poweredByHeader: false,
   reactStrictMode: true,

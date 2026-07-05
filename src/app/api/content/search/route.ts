@@ -134,8 +134,8 @@ export async function GET(request: NextRequest) {
                 _isAnilist: true,
                 _anilistId: item.id,
                 _malId: item.idMal ?? undefined,
-                _anilistCover: item.coverImage?.extraLarge || item.coverImage?.large || null,
-                _anilistBanner: item.bannerImage || null,
+                _anilistCover: item.coverImage?.extraLarge || item.coverImage?.large || undefined,
+                _anilistBanner: item.bannerImage || undefined,
                 _anilistUrl: item.siteUrl,
                 _anilistTrailer: item.trailer || null,
               });

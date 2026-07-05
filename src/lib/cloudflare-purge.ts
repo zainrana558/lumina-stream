@@ -30,10 +30,12 @@ export async function purgeEdgeCacheTags(tags: string[]): Promise<PurgeResult> {
 
   // Missing config = feature not enabled, silently skip
   if (!zoneId || !apiToken) {
-    console.warn(
-      '[cloudflare-purge] Missing CLOUDFLARE_ZONE_ID ' +
-      'or CLOUDFLARE_API_TOKEN, skipping edge purge'
-    );
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        '[cloudflare-purge] Missing CLOUDFLARE_ZONE_ID ' +
+        'or CLOUDFLARE_API_TOKEN, skipping edge purge'
+      );
+    }
     return { success: false, error: 'Missing config' };
   }
 
@@ -73,7 +75,7 @@ export async function purgeEdgeCacheTags(tags: string[]): Promise<PurgeResult> {
           );
           results.push({ success: false, error: 'API returned failure' });
         } else {
-          console.log(`[cloudflare-purge] Purged tags: ${chunk.join(', ')}`);
+          if (process.env.NODE_ENV !== 'production') console.log(`[cloudflare-purge] Purged tags: ${chunk.join(', ')}`);
           results.push({ success: true });
         }
       }

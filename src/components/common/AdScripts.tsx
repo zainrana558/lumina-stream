@@ -31,8 +31,8 @@ function injectPopAds(apiKey: string) {
   if (typeof window === 'undefined') return;
   // Prevent double-injection — if _pop already has a siteId, skip
   const existing = (window as unknown as Record<string, unknown[]>)._pop;
-  if (existing && existing.some((v: unknown[]) => v[0] === 'siteId')) {
-    console.log('[Ads] PopAds already initialized, skipping duplicate');
+  if (existing && existing.some((v) => Array.isArray(v) && v[0] === 'siteId')) {
+    if (process.env.NODE_ENV !== 'production') console.log('[Ads] PopAds already initialized, skipping duplicate');
     return;
   }
   const _pop = existing || [];
@@ -110,7 +110,7 @@ function injectAntiAdblock() {
   setTimeout(() => {
     const isBlocked = testAd.offsetHeight === 0 || testAd.offsetParent === null;
     if (isBlocked) {
-      console.log('[Ads] AdBlocker detected');
+      if (process.env.NODE_ENV !== 'production') console.log('[Ads] AdBlocker detected');
       // Store for analytics
       try { localStorage.setItem('_ab', '1'); } catch {}
     }
@@ -121,7 +121,7 @@ export default function AdScripts() {
   const fired = useRef(false);
 
   useEffect(() => {
-    console.log('[Ads] AdScripts mounted — ADS_ENABLED:', ADS_ENABLED, 'POPADS_ID:', POPADS_ID ? '***' + POPADS_ID.slice(-6) : 'not set');
+    if (process.env.NODE_ENV !== 'production') console.log('[Ads] AdScripts mounted — ADS_ENABLED:', ADS_ENABLED, 'POPADS_ID:', POPADS_ID ? '***' + POPADS_ID.slice(-6) : 'not set');
     if (!ADS_ENABLED || fired.current) return;
     fired.current = true;
 
@@ -129,7 +129,7 @@ export default function AdScripts() {
     const timer = setTimeout(() => {
       // Pop-under (PopAds handles its own frequency capping)
       if (POPADS_ID) {
-        console.log('[Ads] Injecting PopAds — siteId:', POPADS_ID);
+        if (process.env.NODE_ENV !== 'production') console.log('[Ads] Injecting PopAds — siteId:', POPADS_ID);
         injectPopAds(POPADS_ID);
       }
 

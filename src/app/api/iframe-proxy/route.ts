@@ -47,6 +47,11 @@ const ALLOWED_HOSTS = new Set([
   'pstream.org', 'iframe.pstream.org',
   // Anime providers
   'player.cinezo.live',
+  // New providers (2026-07-06)
+  'vidcore.org', 'www.vidcore.org',
+  'player.vidplus.to',
+  'player.vidify.top', 'vidify.top',
+  'player.smashy.stream', 'smashy.stream', 'embed.smashystream.com',
 ]);
 
 // NOTE: Intentionally NOT using Edge runtime here.
@@ -124,9 +129,8 @@ export async function GET(request: NextRequest) {
       headers.set(key, value);
     }
 
-    // Set permissive frame headers so the browser allows embedding
-    headers.set('X-Frame-Options', 'ALLOWALL');
-    headers.set('Access-Control-Allow-Origin', '*');
+    // Remove frame-blocking headers but do NOT set ALLOWALL (non-standard).
+    // Let the parent page's CSP frame-src policy control what's allowed.
 
     const contentType = response.headers.get('content-type') || '';
 

@@ -3,9 +3,12 @@ import { createClient } from '@/lib/supabase/server';
 import { requireAuth, verifyProfileOwnership } from '@/lib/auth';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { collectionAddItemSchema, collectionRemoveItemSchema } from '@/lib/schemas';
+import { csrfGuard } from '@/lib/csrf';
+import { ensureCsrfCookie } from '@/lib/csrf';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureCsrfCookie();
     const rl = await checkRateLimit(request);
     if (!rl.success) {
       return NextResponse.json(
@@ -35,6 +38,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, 'write');
     if (!rl.success) {
       return NextResponse.json(
@@ -101,6 +110,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, 'write');
     if (!rl.success) {
       return NextResponse.json(

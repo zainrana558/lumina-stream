@@ -58,10 +58,10 @@ export async function getCachedData<T>(
     try {
       const cached = await client.get<T>(key);
       if (cached) {
-        console.log(`[Redis Cache] HIT for key: ${key}`);
+        if (process.env.NODE_ENV !== 'production') console.log(`[Redis Cache] HIT for key: ${key}`);
         return cached;
       }
-      console.log(`[Redis Cache] MISS for key: ${key}, fetching from origin`);
+      if (process.env.NODE_ENV !== 'production') console.log(`[Redis Cache] MISS for key: ${key}, fetching from origin`);
     } catch (error) {
       console.error(`[Redis Cache] Error reading key ${key}:`, error);
       // Fall through to fetcher

@@ -2,9 +2,16 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { profileSelectSchema } from "@/lib/schemas";
+import { csrfGuard } from '@/lib/csrf';
 
 export async function POST(request: Request) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     // Rate limit: 10 req / 10s (profile switch should be infrequent)
     const rl = await checkRateLimit(request, 'write');
     if (!rl.success) {

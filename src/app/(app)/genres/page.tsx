@@ -175,7 +175,7 @@ async function fetchGenreBackdrops(): Promise<Record<string, string>> {
       // Strategy 2: Hardcoded family-friendly fallback
       const fallback = HARDCODED_BACKDROPS[g.key];
       if (fallback) {
-        console.warn(`[genre-backdrop] Using hardcoded fallback for ${g.key}`);
+        if (process.env.NODE_ENV !== 'production') console.warn(`[genre-backdrop] Using hardcoded fallback for ${g.key}`);
         return { key: g.key, url: fallback };
       }
 
@@ -190,7 +190,7 @@ async function fetchGenreBackdrops(): Promise<Record<string, string>> {
     }
   }
 
-  console.log(`[genre-backdrop] Fetched ${Object.keys(backdrops).length}/${PORTAL_GENRES.length} backdrops`);
+  if (process.env.NODE_ENV !== 'production') console.log(`[genre-backdrop] Fetched ${Object.keys(backdrops).length}/${PORTAL_GENRES.length} backdrops`);
   return backdrops;
 }
 

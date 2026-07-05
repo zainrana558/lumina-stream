@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuth, verifyProfileOwnership } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { commentPostSchema, commentDeleteSchema } from "@/lib/schemas";
+import { csrfGuard } from '@/lib/csrf';
+import { ensureCsrfCookie } from '@/lib/csrf';
 
 interface CommentRow {
   id: string;
@@ -30,6 +32,7 @@ interface CommentQueryRow {
 
 export async function GET(request: NextRequest) {
   try {
+    await ensureCsrfCookie();
     // Rate limit: global (100/10s) — comments read is cheap
     const rl = await checkRateLimit(request);
     if (!rl.success) {
@@ -77,6 +80,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     // Rate limit: 10 req / 10s per IP (write endpoint)
     const rl = await checkRateLimit(request, 'write');
     if (!rl.success) {
@@ -122,6 +131,12 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // CSRF protection
+    const csrfError = await csrfGuard(request);
+    if (csrfError) {
+      return NextResponse.json(csrfError, { status: csrfError.status });
+    }
+
     const rl = await checkRateLimit(request, 'write');
     if (!rl.success) {
       return NextResponse.json(

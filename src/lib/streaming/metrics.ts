@@ -181,7 +181,7 @@ export async function aggregateMetrics(): Promise<HourlyRollup | null> {
         const results = await pipeline.exec();
 
         for (let i = 0; i < keys.length; i++) {
-          const data = results?.[i]?.[1] as Record<string, string> | null;
+          const data = (results as [unknown, Record<string, string>][] | null)?.[i]?.[1] as Record<string, string> | null | undefined;
           if (!data || !data.count) continue;
 
           const providerName = keys[i].replace('metric:selection:', '');
@@ -220,7 +220,7 @@ export async function aggregateMetrics(): Promise<HourlyRollup | null> {
         const results = await pipeline.exec();
 
         for (let i = 0; i < keys.length; i++) {
-          const data = results?.[i]?.[1] as Record<string, string> | null;
+          const data = (results as [unknown, Record<string, string>][] | null)?.[i]?.[1] as Record<string, string> | null | undefined;
           if (!data || !data.checks) continue;
 
           const providerName = keys[i].replace('metric:health:', '');

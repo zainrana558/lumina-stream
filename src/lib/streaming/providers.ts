@@ -146,6 +146,27 @@ const activeProviders: StreamProvider[] = [
     getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}?dub=true`,
   },
 
+  // VidPlus Anime (Sub) — NEW: Highly customizable embed player, AniList-native
+  // Supports server selection, custom colors, chromecast, watchparty
+  // URL: player.vidplus.to/embed/anime/{anilistId}/{episode}
+  {
+    name: "VidPlus Anime (Sub)",
+    tier: 1, category: "anime",
+    getMovieUrl: (id) => `https://player.vidplus.to/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.vidplus.to/embed/tv/${id}/${s}/${e}`,
+    getAniListUrl: (anilistId, ep) => `https://player.vidplus.to/embed/anime/${anilistId}/${ep}`,
+  },
+
+  // VidPlus Anime (Dub) — NEW: Same as above but with English dub.
+  // URL: player.vidplus.to/embed/anime/{anilistId}/{episode}?dub=true
+  {
+    name: "VidPlus Anime (Dub)",
+    tier: 1, category: "anime",
+    getMovieUrl: (id) => `https://player.vidplus.to/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.vidplus.to/embed/tv/${id}/${s}/${e}`,
+    getAniListUrl: (anilistId, ep) => `https://player.vidplus.to/embed/anime/${anilistId}/${ep}?dub=true`,
+  },
+
   // VidSrc WIN Anime — Fast TMDB/MAL-based anime embed.
   // Verified 200, ~153ms, no XFO. Fallback for anime without AniList IDs.
   {
@@ -202,6 +223,27 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc.io/embed/tv/${id}/${s}/${e}`,
   },
 
+  // 4. VidCore — NEW: TMDB Video Player API, 14+ servers, auto-fallback, subtitles, postMessage
+  // No API key required, free, supports movies + TV + anime, HLS up to 1080p
+  // URL: vidcore.org/embed/movie/{id}, vidcore.org/embed/tv/{id}/{s}/{e}
+  // Supports: ?autoPlay=true, ?sub=en, ?theme=38bdf8, ?startAt=60
+  {
+    name: "VidCore",
+    tier: 1, category: "all",
+    getMovieUrl: (id) => `https://vidcore.org/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidcore.org/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // 5. VidPlus — NEW: Highly customizable embed player, server selection, chromecast
+  // Supports movies, TV, anime. Custom colors, fonts, logo, watchparty
+  // URL: player.vidplus.to/embed/movie/{id}, player.vidplus.to/embed/tv/{id}/{s}/{e}
+  {
+    name: "VidPlus",
+    tier: 1, category: "all",
+    getMovieUrl: (id) => `https://player.vidplus.to/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.vidplus.to/embed/tv/${id}/${s}/${e}`,
+  },
+
   // VidSrc Embed RU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN (blocks iframe embed)
   // VidSrc Embed SU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN (blocks iframe embed)
   // VSrc SU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN (blocks iframe embed)
@@ -245,6 +287,26 @@ const activeProviders: StreamProvider[] = [
   // ════════════════════════════════════════════
   // VidSrc.me removed — old domain, replaced by new vidsrcme.ru/su family
   // VidSrc.rip removed — confirmed dead (unreachable)
+  // Vidify — NEW: Custom themes, logo, server selection, Hindi support
+  // URL: player.vidify.top/embed/movie/{id}, player.vidify.top/embed/tv/{id}/{s}/{e}
+  // Supports: ?autoplay=true, ?primarycolor=FF6B6B, ?server=hindi, ?logourl=
+  {
+    name: "Vidify",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://player.vidify.top/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.vidify.top/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // SmashyStream — NEW: Multi-server (A, D, F, SU, FMD, J), subtitle lang, startTime
+  // URL: player.smashy.stream/movie/{id}, player.smashy.stream/tv/{id}?s={s}&e={e}
+  // Supports: ?btPosition=20, ?playerList=D|SU|F, ?subLang=Spanish, ?startTime=1024
+  {
+    name: "SmashyStream",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://player.smashy.stream/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.smashy.stream/tv/${id}?s=${s}&e=${e}`,
+  },
+
   {
     name: "Nontongo",
     tier: 2, category: "all",
@@ -319,6 +381,24 @@ const activeProviders: StreamProvider[] = [
     tier: 2, category: "all",
     getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // SuperEmbed (multiembed.mov) — Re-enabled: multi-server, IMDB+TMDB support
+  // URL: multiembed.mov/?video_id={id}&tmdb=1, &s={s}&e={e} for TV
+  {
+    name: "SuperEmbed",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    getTvUrl: (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+  },
+
+  // VidLink — Re-enabled with correct URL format (previously removed as 404)
+  // URL: vidlink.pro/movie/{id}, vidlink.pro/tv/{id}/{s}/{e}
+  {
+    name: "VidLink",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidlink.pro/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
   },
 
   // VidSrc.dev — REMOVED: domain for sale (2026-07-05)
