@@ -177,13 +177,7 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc.su/embed/tv/${id}/${s}/${e}`,
   },
 
-  // 2. Embed.su — Clean player, minimal ads, fast CDN, non-vidsrc
-  {
-    name: "Embed.su",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://embed.su/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
-  },
+  // Embed.su — REMOVED: domain for sale (2026-07-05)
 
   // SmashyStream removed — confirmed dead (unreachable)
 
@@ -318,13 +312,7 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
   },
 
-  // VidSrc.dev — RECOVERED: was unreachable, now alive again (700ms)
-  {
-    name: "VidSrc.dev",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.dev/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}`,
-  },
+  // VidSrc.dev — REMOVED: domain for sale (2026-07-05)
 
   // VidSrc.link — REMOVED: confirmed 415 + SAMEORIGIN (2026-07-05)
 
@@ -334,13 +322,7 @@ const activeProviders: StreamProvider[] = [
 
   // SuperEmbed — REMOVED: confirmed 404 (2026-07-05)
 
-  // Videasy — promoted, recovered (was unreachable), 701ms
-  {
-    name: "Videasy",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://videasy.com/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://videasy.com/embed/tv/${id}/${s}/${e}`,
-  },
+  // Videasy — REMOVED: domain for sale (2026-07-05)
 
   // StreamHide — REMOVED: unreachable / 000 (2026-07-05)
 

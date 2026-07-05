@@ -94,14 +94,14 @@ const MOVIE_POOL: ProviderPool = {
   category: 'movie',
   providers: [
     // Tier 1 — confirmed working (2026-07-05)
-    'VidSrc SU', 'Embed.su', 'VidSrc RU',
+    'VidSrc SU', 'VidSrc RU',
     // Tier 2 — confirmed working (2026-07-05)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'AnyEmbed', 'VaPlayer',
     '2Embed', 'VidSrc MOV',
-    'FilmU', 'VidSrc.pm', 'VidSrc.dev',
-    'Videasy', 'FileMoon',
+    'FilmU', 'VidSrc.pm',
+    'FileMoon',
   ],
 };
 
@@ -128,14 +128,14 @@ const TV_POOL: ProviderPool = {
   category: 'tv',
   providers: [
     // Tier 1 — confirmed working (2026-07-05)
-    'VidSrc SU', 'Embed.su', 'VidSrc RU',
+    'VidSrc SU', 'VidSrc RU',
     // Tier 2 — confirmed working (2026-07-05)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
     'AnyEmbed', 'VaPlayer',
     '2Embed', 'VidSrc MOV',
-    'FilmU', 'VidSrc.pm', 'VidSrc.dev',
-    'Videasy', 'FileMoon',
+    'FilmU', 'VidSrc.pm',
+    'FileMoon',
   ],
 };
 
