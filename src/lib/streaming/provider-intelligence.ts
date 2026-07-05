@@ -94,7 +94,7 @@ const MOVIE_POOL: ProviderPool = {
   category: 'movie',
   providers: [
     // Tier 1 — confirmed working (2026-07-05)
-    'VidSrc SU', 'VidSrc RU',
+    'VidSrc SU', 'VidSrc RU', 'VidSrc IO',
     // Tier 2 — confirmed working (2026-07-05)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
@@ -128,7 +128,7 @@ const TV_POOL: ProviderPool = {
   category: 'tv',
   providers: [
     // Tier 1 — confirmed working (2026-07-05)
-    'VidSrc SU', 'VidSrc RU',
+    'VidSrc SU', 'VidSrc RU', 'VidSrc IO',
     // Tier 2 — confirmed working (2026-07-05)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',

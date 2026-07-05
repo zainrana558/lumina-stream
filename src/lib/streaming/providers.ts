@@ -193,6 +193,15 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://vidsrc.ru/embed/tv/${id}/${s}/${e}`,
   },
 
+  // 3. VidSrc IO — Server-rendered HTML embed, fast, no XFO, ACAO: *
+  // Verified 200, returns movie/TV titles, no frame blocking (2026-07-05)
+  {
+    name: "VidSrc IO",
+    tier: 1, category: "all",
+    getMovieUrl: (id) => `https://vidsrc.io/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.io/embed/tv/${id}/${s}/${e}`,
+  },
+
   // VidSrc Embed RU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN (blocks iframe embed)
   // VidSrc Embed SU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN (blocks iframe embed)
   // VSrc SU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN (blocks iframe embed)
