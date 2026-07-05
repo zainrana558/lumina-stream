@@ -62,21 +62,21 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // VidSrc PM removed — dead
   // MovieBox removed — standalone app, not an embed provider
   { name: 'StreamSilk', category: 'all', getMovieUrl: (id) => `https://streamsilk.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsilk.com/embed/tv/${id}/${s}/${e}` },
-  { name: 'Series9', category: 'all', getMovieUrl: (id) => `https://series9.io/film/${id}`, getTvUrl: (id, s, e) => `https://series9.io/series/${id}-${s}-${e}` },
+  // Series9 promoted to active TIER 2
   // HDStream — promoted to active TIER 2 (removed from pool)
-  { name: 'StreamHide', category: 'all', getMovieUrl: (id) => `https://streamhide.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamhide.to/embed/tv/${id}/${s}/${e}` },
-  { name: 'MixDrop', category: 'all', getMovieUrl: (id) => `https://mixdrop.to/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://mixdrop.to/embed/tv/${id}/${s}/${e}` },
-  { name: 'VUpload', category: 'all', getMovieUrl: (id) => `https://vupload.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vupload.com/embed/tv/${id}/${s}/${e}` },
+  // StreamHide promoted to active TIER 2
+  // MixDrop promoted to active TIER 2
+  // VUpload —
   { name: 'Series9API', category: 'all', getMovieUrl: (id) => `https://api.series9.io/film/${id}`, getTvUrl: (id, s, e) => `https://api.series9.io/series/${id}/${s}/${e}` },
   { name: 'VidSrc FYI', category: 'all', getMovieUrl: (id) => `https://vidsrc.fyi/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.fyi/embed/tv/${id}/${s}/${e}` },
   { name: 'StreamLare', category: 'all', getMovieUrl: (id) => `https://streamlare.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamlare.com/embed/tv/${id}/${s}/${e}` },
   { name: 'PStream', category: 'all', getMovieUrl: (id) => `https://iframe.pstream.org/embed/tmdb-movie-${id}`, getTvUrl: (id, s, e) => `https://iframe.pstream.org/embed/tmdb-tv-${id}/${s}/${e}` },
-  { name: 'VidPhantom', category: 'all', getMovieUrl: (id) => `https://vidphantom.com/movie/${id}`, getTvUrl: (id, s, e) => `https://vidphantom.com/tv/${id}/${s}/${e}` },
-  { name: 'FileMoon', category: 'all', getMovieUrl: (id) => `https://filemoon.sx/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://filemoon.sx/embed/tv/${id}/${s}/${e}` },
+  // VidPhantom promoted to active TIER 2
+  // FileMoon promoted to active TIER 2
   // VidSrc IO removed — old domain, replaced by new vidsrcme.ru/su family
   // VidSrc IN removed — dead
   { name: 'StreamSB', category: 'all', getMovieUrl: (id) => `https://streamsb.net/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamsb.net/embed/tv/${id}/${s}/${e}` },
-  { name: 'SuperEmbed', category: 'all', getMovieUrl: (id) => `https://superembed.stream/?video_id=${id}&tmdb=1`, getTvUrl: (id, s, e) => `https://superembed.stream/?video_id=${id}&tmdb=1&s=${s}&e=${e}` },
+  // SuperEmbed promoted to active TIER 2
   // PerEmbed removed — unreachable (fetch failed)
   // PrimeWire removed — defunct due to legal action
   // FreEmbed removed — confirmed dead (unreachable)
@@ -87,7 +87,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // 4KHDHub removed — confirmed dead (unreachable)
   // DahmerMovies removed — confirmed dead (unreachable)
   { name: 'LordFlix', category: 'all', getMovieUrl: (id) => `https://lordflix.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://lordflix.com/embed/tv/${id}/${s}/${e}` },
-  { name: 'Videasy', category: 'all', getMovieUrl: (id) => `https://videasy.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://videasy.com/embed/tv/${id}/${s}/${e}` },
+  // Videasy promoted to active TIER 2
   // VixSrc removed — confirmed dead (unreachable)
   // NoTorrent removed — decentralized torrent client, not an embed provider
   // VidSrc SU — promoted to active TIER 1 (removed from pool)
@@ -98,7 +98,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // VidSrc BZ removed — old domain, replaced by new family
   // VidSrc GD removed — old domain, replaced by new family
   // VidSrc DO removed — old domain, replaced by new family
-  { name: 'VidSrc DEV', category: 'all', getMovieUrl: (id) => `https://vidsrc.dev/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}` },
+  // VidSrc DEV removed — promoted to active TIER 2
   // VidSrc XYZ removed — unreachable (fetch failed)
   // VidSrc NET removed — unreachable (fetch failed)
   // VidSrc MN removed — unreachable (fetch failed)
@@ -285,6 +285,98 @@ const activeProviders: StreamProvider[] = [
     tier: 2, category: "all",
     getMovieUrl: (id) => `https://hdstream.to/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://hdstream.to/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // ── NEW: Discovered via deep internet search (2026-07-05) ──
+
+  // FilmU — NEW: clean embed API, 4K support, 820ms
+  {
+    name: "FilmU",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://embed.filmu.in/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://embed.filmu.in/tv/${id}/${s}/${e}`,
+  },
+
+  // VidSrc.pm — NEW: independent VidSrc domain, 694ms
+  {
+    name: "VidSrc.pm",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // VidSrc.dev — RECOVERED: was unreachable, now alive again (700ms)
+  {
+    name: "VidSrc.dev",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrc.dev/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.dev/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // VidSrc.link — NEW: independent VidSrc domain, 1119ms
+  {
+    name: "VidSrc.link",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrc.link/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.link/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // ── Promoted from replacement pool (verified working 2026-07-05) ──
+
+  // VidPhantom — promoted, 598ms, no XFO
+  {
+    name: "VidPhantom",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidphantom.com/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidphantom.com/tv/${id}/${s}/${e}`,
+  },
+
+  // SuperEmbed — promoted, 693ms, no XFO
+  {
+    name: "SuperEmbed",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://superembed.stream/?video_id=${id}&tmdb=1`,
+    getTvUrl: (id, s, e) => `https://superembed.stream/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+  },
+
+  // Videasy — promoted, recovered (was unreachable), 701ms
+  {
+    name: "Videasy",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://videasy.com/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://videasy.com/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // StreamHide — promoted, 747ms
+  {
+    name: "StreamHide",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://streamhide.to/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://streamhide.to/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // Series9 — promoted, 768ms
+  {
+    name: "Series9",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://series9.io/film/${id}`,
+    getTvUrl: (id, s, e) => `https://series9.io/series/${id}-${s}-${e}`,
+  },
+
+  // StreamSilk — promoted, 794ms
+  {
+    name: "StreamSilk",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://streamsilk.com/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://streamsilk.com/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // FileMoon — promoted, 1282ms
+  {
+    name: "FileMoon",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://filemoon.sx/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://filemoon.sx/embed/tv/${id}/${s}/${e}`,
   },
 ];
 
