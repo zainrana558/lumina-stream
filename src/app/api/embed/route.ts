@@ -47,14 +47,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const tmdbId = parseInt(searchParams.get('tmdb') || '0');
     const malId = searchParams.get('mal') ? parseInt(searchParams.get('mal')!) : undefined;
+    const anilistId = searchParams.get('anilist') ? parseInt(searchParams.get('anilist')!) : undefined;
     const type = (searchParams.get('type') || 'tv') as 'movie' | 'tv';
     const season = parseInt(searchParams.get('season') || '1');
     const episode = parseInt(searchParams.get('episode') || '1');
     const isAnime = searchParams.get('isAnime') === 'true';
     const mode = searchParams.get('mode') || 'smart';
 
-    if (!tmdbId && !malId) {
-      return NextResponse.json({ error: 'Missing tmdb or mal parameter' }, { status: 400 });
+    if (!tmdbId && !malId && !anilistId) {
+      return NextResponse.json({ error: 'Missing tmdb, mal, or anilist parameter' }, { status: 400 });
     }
 
     // ── Smart Mode: Provider Intelligence Layer ──
@@ -63,6 +64,7 @@ export async function GET(request: NextRequest) {
         const result = await selectWithIntelligence({
           tmdbId: tmdbId || undefined,
           malId,
+          anilistId,
           mediaType: type,
           season,
           episode,
@@ -98,7 +100,7 @@ export async function GET(request: NextRequest) {
     let providers;
     if (useAnimePool) {
       const effectiveTmdbId = tmdbId || 0;
-      providers = getAnimeEmbedUrls(effectiveTmdbId, season, episode, malId);
+      providers = getAnimeEmbedUrls(effectiveTmdbId, season, episode, malId, undefined, anilistId);
     } else {
       providers = getAllEmbedUrls(type, tmdbId, season, episode);
     }

@@ -275,6 +275,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       mode: 'smart',
     });
     if (malId) params.set('mal', String(malId));
+    if (show._anilistId) params.set('anilist', String(show._anilistId));
     if (isAnime) params.set('isAnime', 'true');
     fetch(`/api/embed?${params}`)
       .then(r => r.json())

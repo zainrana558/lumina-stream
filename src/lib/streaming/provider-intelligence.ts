@@ -425,6 +425,7 @@ async function parallelProbe(
 export async function selectWithIntelligence(options: {
   tmdbId?: number;
   malId?: number;
+  anilistId?: number;
   mediaType?: 'movie' | 'tv';
   season?: number;
   episode?: number;
@@ -460,10 +461,10 @@ export async function selectWithIntelligence(options: {
   if (useAnimePool) {
     // Pass mediaType so anime movies get movie URLs, not TV URLs
     const animeMediaType = contentType.type === 'movie' ? 'movie' : 'tv';
-    allProviders = getAnimeEmbedUrls(tmdbId, season, episode, options.malId, animeMediaType);
+    allProviders = getAnimeEmbedUrls(tmdbId, season, episode, options.malId, animeMediaType, options.anilistId);
     // When tmdbId is 0 (AniList-only items), general providers get invalid URLs
-    // like tv/0/1/1. Keep only anime-specific providers that use malId.
-    if (!tmdbId && options.malId) {
+    // like tv/0/1/1. Keep only anime-specific providers that use malId/anilistId.
+    if (!tmdbId && (options.malId || options.anilistId)) {
       allProviders = allProviders.filter(p => p.category === 'anime');
     }
   } else {

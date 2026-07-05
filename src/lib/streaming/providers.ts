@@ -28,6 +28,8 @@ export interface StreamProvider {
   getMovieUrl: (tmdbId: number) => string;
   getTvUrl: (tmdbId: number, season: number, episode: number) => string;
   getAnimeUrl?: (malId: number, episode: number) => string;
+  /** AniList-based anime URL — takes AniList ID + episode number */
+  getAniListUrl?: (anilistId: number, episode: number) => string;
 }
 
 export interface EmbedResult {
@@ -103,7 +105,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // VidSrc NET removed — unreachable (fetch failed)
   // VidSrc MN removed — unreachable (fetch failed)
   // Anime replacements
-  { name: 'VidSrc WIN Anime', category: 'anime', getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`, getAnimeUrl: (malId, ep) => { const s = Math.floor((ep - 1) / 25) + 1; const e = ((ep - 1) % 25) + 1; return `https://vidsrc.win/embed/tv/${malId}/${s}/${e}`; } },
+  // (VidSrc WIN Anime promoted to active TIER 1 — verified 200, 114ms, no XFO)
   // NetPlay Anime removed — Thai IPTV service, not an embed provider
   // Kwik Anime removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
   // FileMoon Anime removed — unreachable (fetch failed)
@@ -113,7 +115,27 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
 
 const activeProviders: StreamProvider[] = [
   // ══════════════════════════════════════════════════════════════════
-  // TIER 1 — Top providers (curated for quality, diversity, speed, stability)
+  // ANIME TIER 1 — Dedicated anime streaming providers
+  // All general providers below also serve anime via TMDB IDs.
+  // These anime-specific providers handle AniList/MAL-only entries.
+  // ══════════════════════════════════════════════════════════════════
+
+  // VidSrc WIN Anime — Verified 200, 114ms, no XFO. TMDB/MAL-based anime embed.
+  {
+    name: "VidSrc WIN Anime",
+    tier: 1, category: "anime",
+    getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`,
+    getAnimeUrl: (malId, ep) => {
+      const s = Math.floor((ep - 1) / 25) + 1;
+      const e = ((ep - 1) % 25) + 1;
+      return `https://vidsrc.win/embed/tv/${malId}/${s}/${e}`;
+    },
+  },
+
+  // ══════════════════════════════════════════════════════════════════
+  // TIER 1 — Top general providers (curated for quality, diversity, speed, stability)
+  // All general providers also serve anime content via TMDB IDs.
   // ══════════════════════════════════════════════════════════════════
 
   // VidSrc CC — REMOVED: sets X-Frame-Options: SAMEORIGIN (403), blocks iframe embed
@@ -477,6 +499,7 @@ export function getAnimeEmbedUrls(
   episode: number,
   malId?: number,
   mediaType?: 'movie' | 'tv',
+  anilistId?: number,
 ): EmbedResult[] {
   // Default to 'tv' when mediaType not provided (backward compatible)
   const effectiveMediaType = mediaType || 'tv';
@@ -499,9 +522,11 @@ export function getAnimeEmbedUrls(
     .filter((p) => p.category === "anime")
     .sort((a, b) => a.tier - b.tier)
     .map((p) => {
-      // Anime-specific URL: prefer getAnimeUrl (uses MAL ID), fall back to TMDB URL
+      // Anime-specific URL: prefer AniList > MAL ID > TMDB fallback
       let url: string;
-      if (malId && p.getAnimeUrl) {
+      if (anilistId && (p as StreamProvider).getAniListUrl) {
+        url = (p as StreamProvider).getAniListUrl!(anilistId, episode);
+      } else if (malId && p.getAnimeUrl) {
         url = p.getAnimeUrl(malId, episode);
       } else if (mediaType === 'movie') {
         url = tmdbId ? p.getMovieUrl(tmdbId) : '';
