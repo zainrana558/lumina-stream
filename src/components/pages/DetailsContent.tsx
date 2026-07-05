@@ -105,6 +105,28 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   // Wake Lock - keep screen awake during video playback
   useWakeLock(playing);
 
+  // Lock body scroll when player is open to prevent background scrolling
+  useEffect(() => {
+    if (playing) {
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [playing]);
+
   // Keyboard shortcuts (only active when player is open) — must be before early return
   const DETAIL_TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
 
@@ -963,10 +985,10 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
       {/* Player overlay — IntelligentPlayer + PlayerControls */}
       {playing && (
-        <div ref={playerRef} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999, animation: 'fi .28s ease both' }}>
+        <div ref={playerRef} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100dvh', background: '#000', zIndex: 9999, animation: 'fi .28s ease both' }}>
           {activeProviderUrl ? (
             <>
-              <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
                 <IntelligentPlayer
                   key={`player-${activeProviderName}-${epIdx}`}
                   providers={[{ name: activeProviderName, url: activeProviderUrl, tier: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.tier as 1 | 2 | 3) || 2, category: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.category as 'all' | 'anime') || 'all', proxied: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.proxied as boolean) || false }]}
@@ -990,7 +1012,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               </div>
 
               {/* Exit button — always visible during active playback */}
-              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10001, padding: '16px 20px calc(12px + env(safe-area-inset-top, 0px))', background: 'linear-gradient(to bottom,rgba(0,0,0,.72) 0%,transparent 100%)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10001, padding: '10px 16px calc(6px + env(safe-area-inset-top, 0px))', background: 'linear-gradient(to bottom,rgba(0,0,0,.6) 0%,transparent 100%)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                 <div className="f-cinzel" style={{ fontSize: '.82rem', color: 'rgba(255,245,232,.85)', textShadow: '0 1px 6px rgba(0,0,0,.6)', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {show.title}{show.media_type === 'tv' ? ` · S${season} E${epIdx}` : ''}
                 </div>
@@ -1006,12 +1028,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
               {/* Failover toast */}
               {failoverMsg && (
-                <div className="f-cinzel" style={{ position: 'fixed', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 10001, padding: '8px 20px', borderRadius: 10, background: 'rgba(255,107,138,.18)', border: '1px solid rgba(255,107,138,.4)', color: '#FF6B8A',  fontSize: '.72rem', fontWeight: 600, letterSpacing: '.04em', animation: 'fi .3s ease both', whiteSpace: 'nowrap', boxShadow: '0 0 20px rgba(255,107,138,.15)' }}>
+                <div className="f-cinzel" style={{ position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 10001, padding: '8px 20px', borderRadius: 10, background: 'rgba(255,107,138,.18)', border: '1px solid rgba(255,107,138,.4)', color: '#FF6B8A',  fontSize: '.72rem', fontWeight: 600, letterSpacing: '.04em', animation: 'fi .3s ease both', whiteSpace: 'nowrap', boxShadow: '0 0 20px rgba(255,107,138,.15)' }}>
                   {failoverMsg}
                 </div>
               )}
               {providers.length > 1 && (
-                <div style={{ position: 'fixed', top: 60, right: 16, zIndex: 10001 }}>
+                <div style={{ position: 'absolute', top: 50, right: 16, zIndex: 10001 }}>
                   <select className="f-cinzel" value={failoverChain.length > 0 ? chainIndex : selectedProvider} onChange={(e) => {
                     const idx = Number(e.target.value);
                     if (failoverChain.length > 0) {
@@ -1045,18 +1067,18 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
               )}
             </>
           ) : loadingProviders ? (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
               <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid rgba(255,255,255,.1)', borderTopColor: 'rgba(255,179,71,.8)', animation: 'spin 1s linear infinite' }} />
               <div className="f-cinzel" style={{ fontSize: '.82rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.08em' }}>Finding best provider...</div>
             </div>
           ) : chainExhausted ? (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
               <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,107,138,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>!</div>
               <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.7)', letterSpacing: '.06em', textAlign: 'center', maxWidth: 300 }}>All providers unavailable</div>
               <button className="btn-p" onClick={() => { setChainExhausted(false); setChainIndex(0); triedProviders.current.clear(); setProviders([]); setFailoverChain([]); setLoadingProviders(true); setPlaying(false); setTimeout(() => setPlaying(true), 50); }} style={{ padding: '10px 28px', fontSize: '.82rem', marginTop: 8 }}>Retry</button>
             </div>
           ) : (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
               <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>No sources found</div>
               <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '10px 28px', fontSize: '.82rem' }}>Go Back</button>
             </div>
