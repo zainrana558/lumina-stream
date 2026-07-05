@@ -250,13 +250,7 @@ const activeProviders: StreamProvider[] = [
   },
   // MoviesApi.to — REMOVED: confirmed 404 (2026-07-05)
   // VidSrc.vip — REMOVED: unreachable (fetch failed)
-  // Replaced with StreamWish (confirmed 200, no XFO)
-  {
-    name: "StreamWish",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://streamwish.to/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://streamwish.to/embed/tv/${id}/${s}/${e}`,
-  },
+  // StreamWish — REMOVED: confirmed 403 Forbidden (2026-07-05)
 
   // ══════════════════════════════════════════════════════════════════
   // TIER 2 — StreamX-Omega providers (verified working on production site)
@@ -304,14 +298,7 @@ const activeProviders: StreamProvider[] = [
 
   // VidFast — REMOVED: confirmed 404
 
-  // Vyla API — REMOVED: unreachable (fetch failed)
-  // Replaced with HDStream (confirmed 200, no XFO)
-  {
-    name: "HDStream",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://hdstream.to/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://hdstream.to/embed/tv/${id}/${s}/${e}`,
-  },
+  // HDStream — REMOVED: unreachable / 000 (2026-07-05)
 
   // ── NEW: Discovered via deep internet search (2026-07-05) ──
 
@@ -355,29 +342,11 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://videasy.com/embed/tv/${id}/${s}/${e}`,
   },
 
-  // StreamHide — promoted, 747ms
-  {
-    name: "StreamHide",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://streamhide.to/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://streamhide.to/embed/tv/${id}/${s}/${e}`,
-  },
+  // StreamHide — REMOVED: unreachable / 000 (2026-07-05)
 
-  // Series9 — promoted, 768ms
-  {
-    name: "Series9",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://series9.io/film/${id}`,
-    getTvUrl: (id, s, e) => `https://series9.io/series/${id}-${s}-${e}`,
-  },
+  // Series9 — REMOVED: unreachable / 000 (2026-07-05)
 
-  // StreamSilk — promoted, 794ms
-  {
-    name: "StreamSilk",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://streamsilk.com/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://streamsilk.com/embed/tv/${id}/${s}/${e}`,
-  },
+  // StreamSilk — REMOVED: unreachable / 000 (2026-07-05)
 
   // FileMoon — promoted, 1282ms
   {
@@ -486,8 +455,7 @@ export function getAllEmbedUrls(
         tier: p.tier,
         category: p.category,
         replaced: swappedIn.has(p.name),
-        proxied: !!p.useProxy,
-        url: p.useProxy ? `/api/iframe-proxy?url=${encodeURIComponent(rawUrl)}` : rawUrl,
+        url: rawUrl,
       };
     });
 }
@@ -517,8 +485,7 @@ export function getAnimeEmbedUrls(
         tier: p.tier,
         category: "all" as ProviderCategory,
         replaced: swappedIn.has(p.name),
-        proxied: !!p.useProxy,
-        url: p.useProxy ? `/api/iframe-proxy?url=${encodeURIComponent(rawUrl)}` : rawUrl,
+        url: rawUrl,
       };
     });
   const animeProviders: EmbedResult[] = providers
@@ -541,8 +508,7 @@ export function getAnimeEmbedUrls(
         tier: p.tier,
         category: "anime" as ProviderCategory,
         replaced: swappedIn.has(p.name),
-        proxied: !!p.useProxy,
-        url: rawUrl ? (p.useProxy ? `/api/iframe-proxy?url=${encodeURIComponent(rawUrl)}` : rawUrl) : '',
+        url: rawUrl || '',
       };
     })
     .filter((p) => p.url !== ''); // Remove entries with empty URLs

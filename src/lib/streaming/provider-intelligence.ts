@@ -98,11 +98,10 @@ const MOVIE_POOL: ProviderPool = {
     // Tier 2 — confirmed working (2026-07-05)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
-    'StreamWish',
     'AnyEmbed', 'VaPlayer',
-    '2Embed', 'VidSrc MOV', 'HDStream',
+    '2Embed', 'VidSrc MOV',
     'FilmU', 'VidSrc.pm', 'VidSrc.dev',
-    'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
+    'Videasy', 'FileMoon',
   ],
 };
 
@@ -117,11 +116,10 @@ const ANIME_POOL: ProviderPool = {
     // General Tier 2 — confirmed working (2026-07-05)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
-    'StreamWish',
     'AnyEmbed', 'VaPlayer',
-    '2Embed', 'VidSrc MOV', 'HDStream',
+    '2Embed', 'VidSrc MOV',
     'FilmU', 'VidSrc.pm', 'VidSrc.dev',
-    'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
+    'Videasy', 'FileMoon',
   ],
 };
 
@@ -134,11 +132,10 @@ const TV_POOL: ProviderPool = {
     // Tier 2 — confirmed working (2026-07-05)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
-    'StreamWish',
     'AnyEmbed', 'VaPlayer',
-    '2Embed', 'VidSrc MOV', 'HDStream',
+    '2Embed', 'VidSrc MOV',
     'FilmU', 'VidSrc.pm', 'VidSrc.dev',
-    'Videasy', 'StreamHide', 'Series9', 'StreamSilk', 'FileMoon',
+    'Videasy', 'FileMoon',
   ],
 };
 
