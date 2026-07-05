@@ -208,16 +208,17 @@ export function AdBanner({
 
 // ═══ Video Pre-roll Container ═══
 export function AdVideoPreroll({ containerId = 'ad-video-preroll' }: { containerId?: string }) {
-  if (!ADS_ENABLED || !ADSTERRA_ID) return null;
-
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!ADS_ENABLED || !ADSTERRA_ID) return;
     const timer = setTimeout(() => {
-      injectAdsterraVAST(ADSTERRA_ID, containerId);
+      injectAdsterraVAST(ADSTERRA_ID!, containerId);
     }, 1500);
     return () => clearTimeout(timer);
   }, [containerId]);
+
+  if (!ADS_ENABLED || !ADSTERRA_ID) return null;
 
   return (
     <div

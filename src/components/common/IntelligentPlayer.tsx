@@ -139,9 +139,11 @@ export default function IntelligentPlayer({
   // ---- Report playback event (L12) ----
   // Use refs for currentTime and duration to avoid recreating callback on every tick
   const currentTimeRef = useRef(0);
-  currentTimeRef.current = currentTime;
   const durationRef = useRef(0);
-  durationRef.current = duration;
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+    durationRef.current = duration;
+  });
 
   const reportEvent = useCallback(
     (eventType: string, metadata?: Record<string, unknown>) => {

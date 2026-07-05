@@ -230,7 +230,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
 
     genreFetchInitRef.current = true;
     genreIdRef.current = genreId;
-    setMoodLoading(true); // reuse loading state
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading flag before async fetch
+    setMoodLoading(true);
 
     fetch(`/api/browse?genre=${genreId}&page=1&sortBy=popularity.desc`)
       .then(r => r.json())

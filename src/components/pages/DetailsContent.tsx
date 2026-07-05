@@ -261,6 +261,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   // Fetch embed providers — smart mode (returns chain for auto-failover)
   useEffect(() => {
     if (!playing || !show) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading flag before async fetch
     setLoadingProviders(true);
     const mediaType = show.media_type || 'tv';
     const malId = show._malId;
@@ -429,16 +430,29 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
 
   // Bug #13: Keep a ref to handleProviderFail so the timeout always calls the latest version
   const handleProviderFailRef = useRef(handleProviderFail);
-  handleProviderFailRef.current = handleProviderFail;
+  useEffect(() => {
+    handleProviderFailRef.current = handleProviderFail;
+  });
 
-  // Reset tried providers and chain when episode/season changes
+  // Reset chain state when episode/season/providers change.
+  // These state resets must happen in an effect because they depend on
+  // external state (epIdx, season, providers) and the React 19 lint rules
+  // prohibit accessing refs during render. Using a key-based component reset
+  // would require wrapping the entire player in a sub-component.
   useEffect(() => {
     triedProviders.current.clear();
     triedProviders.current.add(selectedProvider);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when episode/season changes
     setChainIndex(0);
     setChainExhausted(false);
+  }, [epIdx, season, providers.length]);
+
+  // Reset iframeLoaded when the active provider URL changes
+  useEffect(() => {
+    iframeLoadedRef.current = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset on provider switch
     setIframeLoaded(false);
-  }, [epIdx, season, providers]);
+  }, [activeProviderUrl]);
 
   // Timeout failover: if iframe doesn't fire onLoad within 15s, auto-switch
   // Reduced from 25s — most providers load in 3-5s; if they haven't
@@ -447,9 +461,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   useEffect(() => {
     const url = activeProviderUrl;
     if (!playing || !url) return;
-    // Reset loaded state for new URL (provider switch)
-    iframeLoadedRef.current = false;
-    setIframeLoaded(false);
+    // loaded state is already reset in render phase above (prevUrlRef)
     if (iframeLoadTimer.current) clearTimeout(iframeLoadTimer.current);
     const timer = setTimeout(() => {
       // Only failover if iframe hasn't reported a successful load yet

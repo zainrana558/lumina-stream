@@ -324,7 +324,6 @@ export default async function GenresPage() {
                     are already optimized at multiple sizes. No Next.js optimization
                     needed, and plain <img> avoids potential fill/loader edge cases. */}
                 {backdropUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={backdropUrl}
                     alt=""

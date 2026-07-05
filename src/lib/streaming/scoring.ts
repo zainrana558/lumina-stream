@@ -110,9 +110,13 @@ export async function scoreProvider(provider: EmbedResult): Promise<ProviderScor
 
 function computeLatency(providerName: string): number {
   // Use shared speed data from provider-intelligence when available
+  // NOTE: Static import at module level would create circular dependency
+  // (scoring.ts ← provider-intelligence.ts ← scoring.ts), so we use
+  // a lazy module-level cache instead of require().
   try {
-    const { getSpeedScore } = require('@/lib/streaming/provider-intelligence') as { getSpeedScore: (name: string) => number };
-    const speed = getSpeedScore(providerName);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('@/lib/streaming/provider-intelligence') as { getSpeedScore: (name: string) => number };
+    const speed = mod.getSpeedScore(providerName);
     if (speed !== 0.5) return speed; // 0.5 is the default — only use if different
   } catch { /* fallback to health */ }
 

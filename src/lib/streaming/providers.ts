@@ -30,6 +30,8 @@ export interface StreamProvider {
   getAnimeUrl?: (malId: number, episode: number) => string;
   /** AniList-based anime URL — takes AniList ID + episode number */
   getAniListUrl?: (anilistId: number, episode: number) => string;
+  /** If true, route through /api/iframe-proxy to bypass X-Frame-Options: SAMEORIGIN */
+  useProxy?: boolean;
 }
 
 export interface EmbedResult {
@@ -39,6 +41,8 @@ export interface EmbedResult {
   category: ProviderCategory;
   /** true if this provider was swapped in from the replacement pool */
   replaced?: boolean;
+  /** true if this URL goes through the iframe proxy (SAMEORIGIN bypass) */
+  proxied?: boolean;
 }
 
 // ---- Replacement Pool (stashed extras) ----
@@ -57,7 +61,7 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   // StreamWish — promoted to active TIER 2 (removed from pool)
   // VidSrc TW removed — old domain, replaced by new vidsrc-me.ru/su family
   { name: 'AutoEmbed', category: 'all', getMovieUrl: (id) => `https://autoembed.co/movie/tmdb/${id}`, getTvUrl: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}` },
-  // TVPizza removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
+  // TVPizza — removed for SAMEORIGIN, available via iframe-proxy in active list
   // LordFlix removed — X-Frame-Options: SAMEORIGIN (blocks iframe embed)
   // VidoLol removed — unreachable (fetch failed)
   // MoviesAPI removed — unreachable (fetch failed)
@@ -160,9 +164,22 @@ const activeProviders: StreamProvider[] = [
   // All general providers also serve anime content via TMDB IDs.
   // ══════════════════════════════════════════════════════════════════
 
-  // VidSrc CC — REMOVED: sets X-Frame-Options: SAMEORIGIN (403), blocks iframe embed
-  // VidSrc.to — REMOVED: sets X-Frame-Options: SAMEORIGIN (403), blocks iframe embed
-  // Replaced with VidSrc SU + VidSrc RU (both confirmed 200, no XFO)
+  // VidSrc CC — Previously removed for SAMEORIGIN, now re-enabled via iframe-proxy
+  // Verified working when proxied (server-side fetch bypasses XFO)
+  {
+    name: "VidSrc CC",
+    tier: 1, category: "all", useProxy: true,
+    getMovieUrl: (id) => `https://vidsrc.cc/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.cc/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // VidSrc.to — Previously removed for SAMEORIGIN, now re-enabled via iframe-proxy
+  {
+    name: "VidSrc.to",
+    tier: 1, category: "all", useProxy: true,
+    getMovieUrl: (id) => `https://vidsrc.to/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+  },
 
   // 1. VidSrc SU — Replacement for blocked VidSrc CC, confirmed working
   {
@@ -422,6 +439,33 @@ const activeProviders: StreamProvider[] = [
     getMovieUrl: (id) => `https://filemoon.sx/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://filemoon.sx/embed/tv/${id}/${s}/${e}`,
   },
+
+  // ── Re-enabled via iframe-proxy (SAMEORIGIN bypass) ──
+
+  // TVPizza — was SAMEORIGIN-blocked, now works through /api/iframe-proxy
+  {
+    name: "TVPizza",
+    tier: 2, category: "all", useProxy: true,
+    getMovieUrl: (id) => `https://tvpizza.com/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://tvpizza.com/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // LordFlix — was SAMEORIGIN-blocked, now works through /api/iframe-proxy
+  {
+    name: "LordFlix",
+    tier: 2, category: "all", useProxy: true,
+    getMovieUrl: (id) => `https://lordflix.com/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://lordflix.com/embed/tv/${id}/${s}/${e}`,
+  },
+
+  // MultiEmbed — was redirecting to streamingnow.mov with SAMEORIGIN,
+  // now works through /api/iframe-proxy
+  {
+    name: "MultiEmbed",
+    tier: 2, category: "all", useProxy: true,
+    getMovieUrl: (id) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1`,
+    getTvUrl: (id, s, e) => `https://multiembed.mov/directstream.php?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+  },
 ];
 
 // ---- Pool State ----
@@ -503,16 +547,20 @@ export function getAllEmbedUrls(
   return getAllProviders()
     .filter((p) => p.category === "all")
     .sort((a, b) => a.tier - b.tier)
-    .map((p) => ({
-      name: p.name,
-      tier: p.tier,
-      category: p.category,
-      replaced: swappedIn.has(p.name),
-      url:
+    .map((p) => {
+      const rawUrl =
         mediaType === "tv" && season !== undefined && episode !== undefined
           ? p.getTvUrl(tmdbId, season, episode)
-          : p.getMovieUrl(tmdbId),
-    }));
+          : p.getMovieUrl(tmdbId);
+      return {
+        name: p.name,
+        tier: p.tier,
+        category: p.category,
+        replaced: swappedIn.has(p.name),
+        proxied: !!p.useProxy,
+        url: p.useProxy ? `/api/iframe-proxy?url=${encodeURIComponent(rawUrl)}` : rawUrl,
+      };
+    });
 }
 
 export function getAnimeEmbedUrls(
@@ -545,22 +593,23 @@ export function getAnimeEmbedUrls(
     .sort((a, b) => a.tier - b.tier)
     .map((p) => {
       // Anime-specific URL: prefer AniList > MAL ID > TMDB fallback
-      let url: string;
+      let rawUrl: string;
       if (anilistId && (p as StreamProvider).getAniListUrl) {
-        url = (p as StreamProvider).getAniListUrl!(anilistId, episode);
+        rawUrl = (p as StreamProvider).getAniListUrl!(anilistId, episode);
       } else if (malId && p.getAnimeUrl) {
-        url = p.getAnimeUrl(malId, episode);
+        rawUrl = p.getAnimeUrl(malId, episode);
       } else if (mediaType === 'movie') {
-        url = tmdbId ? p.getMovieUrl(tmdbId) : '';
+        rawUrl = tmdbId ? p.getMovieUrl(tmdbId) : '';
       } else {
-        url = tmdbId ? p.getTvUrl(tmdbId, season, episode) : '';
+        rawUrl = tmdbId ? p.getTvUrl(tmdbId, season, episode) : '';
       }
       return {
         name: p.name,
         tier: p.tier,
         category: "anime" as ProviderCategory,
         replaced: swappedIn.has(p.name),
-        url,
+        proxied: !!p.useProxy,
+        url: rawUrl ? (p.useProxy ? `/api/iframe-proxy?url=${encodeURIComponent(rawUrl)}` : rawUrl) : '',
       };
     })
     .filter((p) => p.url !== ''); // Remove entries with empty URLs
