@@ -69,7 +69,7 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
       "Content-Security-Policy",
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://*.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://www.wvxhxwntulsdrt.com https://www.wvxhxwntusldrt.com https://www.wtumqlwqhw.com https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su https://vidsrc.win",
+        "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://*.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://www.wvxhxwntulsdrt.com https://www.wvxhxwntusldrt.com https://www.wtumqlwqhw.com https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su https://vidsrc.win https://player.cinezo.live",
         "style-src 'self' 'unsafe-inline'",
         "font-src 'self' data: https://fonts.gstatic.com",
         "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",

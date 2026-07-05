@@ -133,6 +133,24 @@ const activeProviders: StreamProvider[] = [
     },
   },
 
+  // Cinezo — AniList-native embed. Movies/TV via TMDB, anime via AniList ID.
+  // Verified 200, 700ms, no XFO, no CSP block. Supports ?dub=true/false.
+  // Also works as general TMDB provider (movie + tv endpoints).
+  {
+    name: "Cinezo Anime",
+    tier: 1, category: "anime",
+    getMovieUrl: (id) => `https://player.cinezo.live/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
+    getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}`,
+  },
+  {
+    name: "Cinezo Anime (Dub)",
+    tier: 1, category: "anime",
+    getMovieUrl: (id) => `https://player.cinezo.live/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
+    getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}?dub=true`,
+  },
+
   // ══════════════════════════════════════════════════════════════════
   // TIER 1 — Top general providers (curated for quality, diversity, speed, stability)
   // All general providers also serve anime content via TMDB IDs.

@@ -61,6 +61,13 @@ const animeCandidates = [
   { name: 'VidPlus Movie',       url: 'https://player.vidplus.to/embed/movie/550',    tier: 2, category: 'all', note: 'VidPlus movie (TMDB)' },
   { name: 'VidPlus TV',          url: 'https://player.vidplus.to/embed/tv/1396/1/1',  tier: 2, category: 'all', note: 'VidPlus TV (TMDB)' },
   { name: 'databasegdriveplayer', url: 'https://databasegdriveplayer.co/anime.php?v=1711411824019', tier: 2, category: 'anime', note: 'GDrive player anime endpoint' },
+  // AniList-based candidates
+  { name: 'Cinezo Anime (sub)',  url: 'https://player.cinezo.live/embed/anime/21/1',  tier: 1, category: 'anime', note: 'AniList ID 21 (One Piece) sub' },
+  { name: 'Cinezo Anime (dub)',  url: 'https://player.cinezo.live/embed/anime/21/1?dub=true', tier: 1, category: 'anime', note: 'AniList ID 21 (One Piece) dub' },
+  { name: 'Cinezo JJK',         url: 'https://player.cinezo.live/embed/anime/16498/1', tier: 1, category: 'anime', note: 'AniList ID 16498 (Jujutsu Kaisen)' },
+  { name: 'Cinezo Movie',       url: 'https://player.cinezo.live/embed/movie/550', tier: 2, category: 'all', note: 'Cinezo movie TMDB' },
+  { name: 'Cinezo TV',          url: 'https://player.cinezo.live/embed/tv/1396/1/1', tier: 2, category: 'all', note: 'Cinezo TV TMDB' },
+  { name: 'Vidify Anime',       url: 'https://player.vidify.top/embed/anime/21/1',  tier: 2, category: 'anime', note: 'AniList-based, redirects to pro.vidify.top' },
 ];
 
 const allProviders = [...providers, ...animeCandidates];
