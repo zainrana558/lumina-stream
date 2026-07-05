@@ -16,13 +16,23 @@
  * - Ping timeout: 6 seconds
  * - Economy: checks 1 provider per request (round-robin)
  * - Zero Redis commands — all state is in-memory
+ *
+ * v2 CHANGES (2026-07-06):
+ *   - Added triggerBatchHealthCheck(): checks multiple providers in parallel
+ *   - Added startup burst: on first request, quickly probe top providers
+ *   - Reduced CHECK_INTERVAL to 2 min for faster convergence
+ *   - Probe uses redirect:'follow' (not 'manual') to get real embed page
+ *   - Batch size: 3 providers per 30s window for fast full-rotation
  */
 
 import { getAllProviders, getReplacementPool, swapInReplacement, restoreOriginal, getPoolStatus } from '@/lib/streaming/providers';
 
 const HEALTH_TTL = 5 * 60 * 1000; // 5 minutes in ms
 const CHECK_TIMEOUT = 6000; // 6 seconds
-const CHECK_INTERVAL = 5 * 60 * 1000; // Check one provider every 5 min
+const CHECK_INTERVAL = 2 * 60 * 1000; // Check one provider every 2 min (was 5 min)
+const BATCH_INTERVAL = 30 * 1000; // Batch check every 30s (up to 3 providers)
+const BATCH_SIZE = 3; // How many providers to check per batch
+const BURST_SIZE = 5; // How many to check on cold start
 
 // ── In-memory state (no Redis) ──
 interface HealthEntry {
@@ -35,10 +45,13 @@ const healthStore = new Map<string, HealthEntry>();
 const prevHealthStore = new Map<string, boolean>();
 const failCountStore = new Map<string, number>();
 let lastCheckTime = 0;
+let lastBatchCheckTime = 0;
+let startupBurstDone = false;
+
 // Time-based offset so different serverless instances check different providers
-function getNextCheckIndex(total: number): number {
+function getNextCheckIndex(total: number, offset: number = 0): number {
   const now = Date.now();
-  const slot = Math.floor(now / CHECK_INTERVAL);
+  const slot = Math.floor(now / CHECK_INTERVAL) + offset;
   return slot % total;
 }
 
@@ -58,8 +71,10 @@ if (typeof globalThis !== 'undefined') {
 
 /**
  * Check if a single provider is reachable AND allows iframe embedding.
- * Uses GET (not HEAD) because some providers return 405 for HEAD.
- * Checks both X-Frame-Options and CSP frame-ancestors headers.
+ * Uses GET with redirect:'follow' (NOT manual) because:
+ *   - Many embed providers return 302/301 to the actual embed page
+ *   - With redirect:'manual', we'd see a 3xx opaque response and falsely mark it dead
+ *   - Following redirects lets us reach the real embed page and check its headers
  */
 async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: number; framesBlocked: boolean }> {
   const start = Date.now();
@@ -68,12 +83,16 @@ async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: n
     const timeout = setTimeout(() => controller.abort(), CHECK_TIMEOUT);
     const res = await fetch(url, {
       method: 'GET',
-      redirect: 'manual',
+      redirect: 'follow', // Follow redirects to reach the actual embed page
       signal: controller.signal,
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
     });
     clearTimeout(timeout);
     const latencyMs = Date.now() - start;
+
+    // A 2xx/3xx that ultimately resolved means the server is reachable
+    // 4xx/5xx after following redirects means the embed failed
+    const isReachable = res.status >= 200 && res.status < 400;
 
     // Check X-Frame-Options header
     const xfo = res.headers.get('x-frame-options') || res.headers.get('X-Frame-Options') || '';
@@ -88,7 +107,7 @@ async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: n
 
     const framesBlocked = xfoBlocked || faBlocked;
 
-    return { alive: true, latencyMs, framesBlocked };
+    return { alive: isReachable, latencyMs, framesBlocked };
   } catch {
     const latencyMs = Date.now() - start;
     return { alive: false, latencyMs, framesBlocked: false };
@@ -146,25 +165,15 @@ function resetFailCount(name: string): void {
 }
 
 /**
- * Check one provider in a round-robin fashion.
- * Called on embed requests to spread health checks across traffic.
- * Triggers swap-in/swap-out when provider status changes.
+ * Process health check result for a single provider — handles swap logic.
  */
-export async function maybeCheckOneProvider(): Promise<void> {
-  const now = Date.now();
-  if (now - lastCheckTime < CHECK_INTERVAL) return;
-
-  const allProviders = getAllProviders();
-  if (allProviders.length === 0) return;
-
-  // Time-based rotation: spreads checks across serverless instances
-  const idx = getNextCheckIndex(allProviders.length);
-  const provider = allProviders[idx];
-  lastCheckTime = now;
-
-  const sampleUrl = provider.getMovieUrl(550); // Fight Club always exists
+async function processHealthResult(
+  provider: { name: string; useProxy?: boolean; getMovieUrl: (id: number) => string },
+  alive: boolean,
+  latencyMs: number,
+  framesBlocked: boolean,
+): Promise<void> {
   const prevAlive = getPrevHealth(provider.name);
-  const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
 
   // Providers with useProxy bypass X-Frame-Options via server-side proxy,
   // so frame-blocking is irrelevant — treat as not blocked.
@@ -180,8 +189,7 @@ export async function maybeCheckOneProvider(): Promise<void> {
     updateHistoricalCache(provider.name, effectiveAlive);
   } catch { /* non-critical */ }
 
-  // Save current health (for proxied providers, store framesBlocked=false so
-  // getHealth() doesn't report them as dead)
+  // Save current health
   setHealth(provider.name, alive, effectiveFramesBlocked);
   setPrevHealth(provider.name, effectiveAlive);
 
@@ -207,6 +215,106 @@ export async function maybeCheckOneProvider(): Promise<void> {
     resetFailCount(provider.name);
     restoreOriginal(provider.name);
   }
+}
+
+/**
+ * Check one provider in a round-robin fashion.
+ * Called on embed requests to spread health checks across traffic.
+ * Triggers swap-in/swap-out when provider status changes.
+ */
+export async function maybeCheckOneProvider(): Promise<void> {
+  const now = Date.now();
+  if (now - lastCheckTime < CHECK_INTERVAL) return;
+
+  const allProviders = getAllProviders();
+  if (allProviders.length === 0) return;
+
+  // Time-based rotation: spreads checks across serverless instances
+  const idx = getNextCheckIndex(allProviders.length);
+  const provider = allProviders[idx];
+  lastCheckTime = now;
+
+  const sampleUrl = provider.getMovieUrl(550); // Fight Club always exists
+  const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
+
+  await processHealthResult(provider, alive, latencyMs, framesBlocked);
+}
+
+/**
+ * NEW: Trigger a batch health check — probes multiple providers in parallel.
+ * Called on every /api/embed request (non-blocking, rate-limited to every 30s).
+ * This ensures health data converges FAST instead of taking 75+ minutes.
+ *
+ * With ~15 providers and batch_size=3 every 30s:
+ *   - Full rotation in ~2.5 minutes (vs 75+ minutes before)
+ *   - All providers checked within HEALTH_TTL (5 min)
+ */
+export async function triggerBatchHealthCheck(): Promise<void> {
+  const now = Date.now();
+  if (now - lastBatchCheckTime < BATCH_INTERVAL) return;
+
+  const allProviders = getAllProviders();
+  if (allProviders.length === 0) return;
+
+  lastBatchCheckTime = now;
+
+  // Pick providers that haven't been checked recently (or at all)
+  const unchecked = allProviders.filter(p => {
+    const entry = healthStore.get(p.name);
+    return !entry || (now - entry.checkedAt > HEALTH_TTL);
+  });
+
+  if (unchecked.length === 0) return; // All checked recently
+
+  // Sort: prioritize unchecked (no entry at all), then stale
+  unchecked.sort((a, b) => {
+    const aEntry = healthStore.get(a.name);
+    const bEntry = healthStore.get(b.name);
+    const aAge = aEntry ? (now - aEntry.checkedAt) : Infinity;
+    const bAge = bEntry ? (now - bEntry.checkedAt) : Infinity;
+    return bAge - aAge; // Most stale first
+  });
+
+  // Check up to BATCH_SIZE providers in parallel
+  const batch = unchecked.slice(0, BATCH_SIZE);
+
+  await Promise.all(
+    batch.map(async (provider) => {
+      const sampleUrl = provider.getMovieUrl(550);
+      const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
+      await processHealthResult(provider, alive, latencyMs, framesBlocked);
+    })
+  );
+}
+
+/**
+ * NEW: Startup burst — on first request after cold start, quickly probe
+ * the top providers so the intelligence system has real data immediately.
+ * Without this, every serverless cold start means all providers are "unknown"
+ * (50% score) and the intelligence layer can't distinguish good from bad.
+ */
+export async function startupBurstCheck(): Promise<void> {
+  if (startupBurstDone) return;
+  startupBurstDone = true;
+
+  const allProviders = getAllProviders();
+  if (allProviders.length === 0) return;
+
+  // Check top-tier providers first (they appear first in the array)
+  const topProviders = allProviders
+    .filter(p => p.tier === 1)
+    .slice(0, BURST_SIZE);
+
+  if (topProviders.length === 0) return;
+
+  // Probe all in parallel (fire-and-forget, non-blocking)
+  Promise.all(
+    topProviders.map(async (provider) => {
+      const sampleUrl = provider.getMovieUrl(550);
+      const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
+      await processHealthResult(provider, alive, latencyMs, framesBlocked);
+    })
+  ).catch(() => {}); // Non-blocking
 }
 
 /**

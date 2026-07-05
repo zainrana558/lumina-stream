@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
-import { maybeCheckOneProvider } from '@/lib/streaming/health-check';
+import { maybeCheckOneProvider, triggerBatchHealthCheck, startupBurstCheck } from '@/lib/streaming/health-check';
 import { selectWithIntelligence, recordProviderResult } from '@/lib/streaming/provider-intelligence';
 import { getAllEmbedUrls, getAnimeEmbedUrls } from '@/lib/streaming/providers';
 import { resolveContentType } from '@/lib/content/content-intelligence';
@@ -40,8 +40,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Background: check one provider health (round-robin, non-blocking)
+    // Background: trigger health checks (parallel batch for fast convergence)
     maybeCheckOneProvider().catch(() => {});
+    triggerBatchHealthCheck().catch(() => {});
+    // Cold start: burst-check top-tier providers immediately
+    startupBurstCheck().catch(() => {});
 
     // Parse params
     const { searchParams } = new URL(request.url);
@@ -69,7 +72,7 @@ export async function GET(request: NextRequest) {
           season,
           episode,
           isAnime: isAnime || undefined,
-          fastMode: true, // Skip per-request probing (health-check handles it)
+          fastMode: false, // Enable real-time probing of top candidates for best selection
         });
 
         // NexStream proxy rewriting

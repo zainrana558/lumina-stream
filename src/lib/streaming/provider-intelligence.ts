@@ -212,7 +212,7 @@ const PROVIDER_CAPABILITIES: Record<string, {
 
 // ── Dynamic speed cache (updated by health monitor) ──
 
-const speedCache = new Map<string, number>();
+const speedCache = new Map<string, { score: number; updatedAt: number }>();
 const SPEED_CACHE_TTL = 5 * 60 * 1000; // 5 min
 
 export function updateSpeedCache(name: string, latencyMs: number): void {
@@ -224,17 +224,24 @@ export function updateSpeedCache(name: string, latencyMs: number): void {
   else if (latencyMs < 5000) score = 0.5 - ((latencyMs - 2000) / 3000) * 0.2;
   else score = Math.max(0.1, 0.3 - ((latencyMs - 5000) / 10000) * 0.2);
 
-  speedCache.set(name, score);
+  speedCache.set(name, { score, updatedAt: Date.now() });
 }
 
 function getSpeedScore(name: string): number {
   const cached = speedCache.get(name);
   if (cached !== undefined) {
-    // Check if entry is still fresh (speed cache entries are overwritten on update)
-    return cached;
+    // Return stale data but don't evict here (cleanupCaches handles it)
+    return cached.score;
   }
   const caps = PROVIDER_CAPABILITIES[name];
   return caps?.avgSpeed ?? 0.5; // Unknown — neutral
+}
+
+/** Check if speed cache has fresh data for a provider */
+function isSpeedCacheFresh(name: string, maxAgeMs: number): boolean {
+  const cached = speedCache.get(name);
+  if (!cached) return false;
+  return (Date.now() - cached.updatedAt) < maxAgeMs;
 }
 
 // Periodic cache cleanup (every 10 minutes)
@@ -253,9 +260,12 @@ function cleanupCaches(): void {
     }
   }
 
-  // Clear entire speed cache periodically — it gets repopulated on next probe
-  // Speed cache entries don't have individual timestamps
-  speedCache.clear();
+  // Evict stale speed cache entries individually
+  for (const [key, val] of speedCache) {
+    if (now - val.updatedAt >= SPEED_CACHE_TTL) {
+      speedCache.delete(key);
+    }
+  }
 }
 
 // ── Historical success cache (updated by health monitor & playback events) ──
@@ -388,14 +398,21 @@ async function probeProvider(url: string, name: string): Promise<ProbeResult> {
     const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT);
     const res = await fetch(url, {
       method: 'GET',
-      redirect: 'manual',
+      redirect: 'follow', // Follow redirects to reach the actual embed page
       signal: controller.signal,
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
     });
     clearTimeout(timeout);
     const latency = Date.now() - start;
 
-    // Detect frame-blocking headers (only readable with cors mode)
+    // A 2xx/3xx that ultimately resolved means the server is reachable
+    const isReachable = res.status >= 200 && res.status < 400;
+    if (!isReachable) {
+      updateHistoricalCache(name, false);
+      return { name, alive: false, latencyMs: latency };
+    }
+
+    // Detect frame-blocking headers
     try {
       const xfo = res.headers.get('x-frame-options') || '';
       const csp = res.headers.get('content-security-policy') || '';
@@ -554,8 +571,8 @@ export async function selectWithIntelligence(options: {
       const topCandidates = scored
         .slice(0, probeCount)
         .filter(s => {
-          const cached = speedCache.get(s.name);
-          return !cached; // Only probe if no cached speed data
+          // Probe if no cached speed data OR if cached data is stale
+          return !isSpeedCacheFresh(s.name, PROBE_FRESHNESS_MS);
         })
         .map(s => ({
           name: s.name, url: s.url,
@@ -567,23 +584,43 @@ export async function selectWithIntelligence(options: {
         const aliveFromProbe = await parallelProbe(topCandidates, topCandidates.length);
         signalsUsed = true;
 
-        // Re-score with updated caches (probes updated speed + historical)
-        const probedSet = new Set(aliveFromProbe);  // providers confirmed alive
-        const knownDead = new Set(topCandidates.filter(p => !aliveFromProbe.has(p.name)).map(p => p.name));
+        // Re-score ALL candidates with updated caches (probes updated speed + historical)
+        const probedAlive = new Set(aliveFromProbe);  // providers confirmed alive from this probe
+        const probedDead = new Set(topCandidates.filter(p => !aliveFromProbe.has(p.name)).map(p => p.name));
 
-        scored = candidates.map(p => {
+        // Build a fresh scored array, this time with real probe data in caches
+        const rescored = candidates.map(p => {
           const bonus = learnedBonuses.get(p.name) ?? 0;
           const result = scoreProviderIntelligent(p, bonus);
-
-          // Only penalize providers that were actually probed AND confirmed dead
-          // (don't penalize providers that weren't probed at all)
-          if (knownDead.has(p.name)) {
-            result.signals.availability = 0;
-            result.score = Math.round((result.signals.subtitleSupport * 10 + result.signals.responseSpeed * 20 + result.signals.quality * 10 + result.signals.historicalSuccess * 10) * 10) / 10;
-          }
-
           return result;
         });
+
+        // Boost providers that were explicitly confirmed alive by this probe
+        // (their availability signal is now 1.0 from health-check or historical cache)
+        for (const s of rescored) {
+          if (probedAlive.has(s.name)) {
+            // Ensure confirmed-alive providers get a strong availability signal
+            if (s.signals.availability <= 0.5) {
+              s.signals.availability = 1.0;
+              // Recalculate score with boosted availability
+              const raw =
+                1.0 * 50 +
+                s.signals.responseSpeed * 20 +
+                s.signals.subtitleSupport * 10 +
+                s.signals.quality * 10 +
+                s.signals.historicalSuccess * 10;
+              const finalScore = Math.max(0, Math.min(100, raw + ((s.signals.learnedBonus ?? 0) * 100)));
+              s.score = Math.round(finalScore * 10) / 10;
+            }
+          }
+          // Penalize providers confirmed dead by this probe
+          if (probedDead.has(s.name)) {
+            s.signals.availability = 0;
+            s.score = Math.round((s.signals.subtitleSupport * 10 + s.signals.responseSpeed * 20 + s.signals.quality * 10 + s.signals.historicalSuccess * 10) * 10) / 10;
+          }
+        }
+
+        scored = rescored;
       } // end if (topCandidates.length > 0)
     } catch {
       // Probing failed — use cached scores only
