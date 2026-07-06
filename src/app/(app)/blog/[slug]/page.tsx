@@ -172,6 +172,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description: description.slice(0, 160),
+    alternates: { canonical: `${CANONICAL_BASE}/blog/${slug}` },
     openGraph: {
       title,
       description: description.slice(0, 160),
