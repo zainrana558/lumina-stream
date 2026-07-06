@@ -68,7 +68,7 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
       "Content-Security-Policy",
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://*.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://www.wvxhxwntulsdrt.com https://www.wvxhxwntusldrt.com https://www.wtumqlwqhw.com https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su https://vidsrc.win https://player.cinezo.live https://vidcore.org https://player.vidplus.to https://player.vidify.top https://player.smashy.stream",
+        "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://*.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://www.wvxhxwntulsdrt.com https://www.wvxhxwntusldrt.com https://www.wtumqlwqhw.com https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su https://vidsrc.win https://player.cinezo.live https://vidcore.org",
         "style-src 'self' 'unsafe-inline'",
         "font-src 'self' data: https://fonts.gstatic.com",
         "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
@@ -81,22 +81,12 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
           + " https://vidsrc.vip https://vidsrc.pro https://vidsrc.pm https://vidsrc.mov"
           + " https://vidsrc.link https://vidsrc.fyi https://vidsrc.win"
           + " https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su"
-          + " https://multiembed.mov https://multiembed.cc https://vsembed.ru https://streamingnow.mov"
-          + " https://tvpizza.com https://lordflix.com https://kwik.si https://kwik.cx"
-          + " https://embed.su https://2embed.cc https://autoembed.co https://autoembed.cc"
-          + " https://streamsilk.com https://streamlare.com https://streamwish.to"
-          + " https://streamhide.to https://streamsb.net https://nontongo.win"
-          + " https://vidphantom.com https://superembed.stream https://videasy.com"
-          + " https://player.videasy.net https://filemoon.sx https://series9.io"
-          + " https://api.series9.io https://moviesapi.club https://moviesapi.to"
+          + " https://embed.su https://2embed.cc https://autoembed.co"
+          + " https://streamsilk.com https://streamlare.com https://nontongo.win"
+          + " https://filemoon.sx https://series9.io https://api.series9.io"
           + " https://vaplayer.ru https://anyembed.xyz https://vidlink.pro"
-          + " https://111movies.net https://hdstream.to https://embed.filmu.in"
-          + " https://pstream.org https://iframe.pstream.org"
-          + " https://player.cinezo.live"
-          // New providers (2026-07-06)
-          + " https://vidcore.org https://player.vidplus.to"
-          + " https://player.vidify.top https://player.smashy.stream"
-          + " https://smashy.stream"
+          + " https://embed.filmu.in https://pstream.org https://iframe.pstream.org"
+          + " https://player.cinezo.live https://vidcore.org"
           // Broad CDN patterns providers commonly redirect to
           + " https://cf.*.site https://*.cloudfront.net https://*.fastly.net"
           + " https://*.m3u8.click https://*.vidplay.site https://*.vidsrc.*",

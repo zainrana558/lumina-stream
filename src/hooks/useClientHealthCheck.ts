@@ -17,31 +17,28 @@ const PING_TIMEOUT_MS = 3000; // 3 seconds
 
 // Provider sample URLs for health pinging — aligned with Intelligence Layer pools
 const PROVIDER_PING_URLS: { name: string; url: string }[] = [
-  // T1 active providers
-  { name: 'VidSrc SU',    url: 'https://vidsrc.su/embed/movie/550' },
-  { name: 'Embed.su',     url: 'https://embed.su/embed/movie/550' },
-  { name: 'VidSrc RU',    url: 'https://vidsrc.ru/embed/movie/550' },
-  { name: 'MultiEmbed',   url: 'https://multiembed.mov/?video_id=550&tmdb=1' },
-  // T2 active providers
-  { name: 'VidSrc.me',      url: 'https://vidsrc.me/embed/movie/550' },
-  { name: 'Nontongo',       url: 'https://nontongo.win/embed/movie/550' },
-  { name: 'MoviesApi.to',   url: 'https://moviesapi.to/movie/550' },
-  { name: 'StreamWish',     url: 'https://streamwish.to/embed/movie/550' },
-  // StreamX-Omega providers
-  { name: 'VidLink',        url: 'https://vidlink.pro/movie/550' },
-  { name: 'AnyEmbed',       url: 'https://anyembed.xyz/embed/tmdb-movie-550' },
-  { name: 'Videasy Player', url: 'https://player.videasy.net/movie/550' },
-  { name: 'VaPlayer',       url: 'https://vaplayer.ru/embed/movie/550' },
-  { name: '2Embed',         url: 'https://www.2embed.cc/embed/movie/550' },
-  { name: 'VidSrc MOV',     url: 'https://vidsrc.mov/embed/movie/550' },
-  { name: 'VidNest',        url: 'https://vidnest.fun/embed/movie/550' },
-  { name: '111Movies',      url: 'https://www.111movies.net/movie/550' },
-  { name: 'VidFast',        url: 'https://www.vidfast.net/embed/movie/550' },
-  { name: 'HDStream',       url: 'https://hdstream.to/embed/movie/550' },
-  // Pool members (check less frequently via round-robin)
-  { name: 'VidSrc PM',      url: 'https://vidsrc.pm/embed/movie/550' },
+  // Tier 1 providers
+  { name: 'VidSrc SU',       url: 'https://vidsrc.su/embed/movie/550' },
+  { name: 'VidSrc RU',       url: 'https://vidsrc.ru/embed/movie/550' },
+  { name: 'VidSrc IO',       url: 'https://vidsrc.io/embed/movie/550' },
+  { name: 'VidCore',          url: 'https://vidcore.org/embed/movie/550' },
+  { name: 'Cinezo Anime',     url: 'https://player.cinezo.live/embed/movie/550' },
+  { name: 'VidSrc WIN Anime', url: 'https://vidsrc.win/embed/movie/550' },
+  // Tier 2 providers
+  { name: 'VidSrcMe RU',    url: 'https://vidsrcme.ru/embed/movie/550' },
   { name: 'AutoEmbed',      url: 'https://autoembed.co/movie/tmdb/550' },
-  { name: 'SuperEmbed',     url: 'https://superembed.stream/?video_id=550&tmdb=1' },
+  { name: 'StreamSilk',     url: 'https://streamsilk.com/embed/movie/550' },
+  { name: 'AnyEmbed',       url: 'https://anyembed.xyz/embed/tmdb-movie-550' },
+  { name: 'VaPlayer',       url: 'https://vaplayer.ru/embed/movie/550' },
+  { name: 'Nontongo',       url: 'https://nontongo.win/embed/movie/550' },
+  { name: 'VidLink',        url: 'https://vidlink.pro/movie/550' },
+  { name: 'VidSrc.pm',      url: 'https://vidsrc.pm/embed/movie/550' },
+  { name: 'VidSrc MOV',     url: 'https://vidsrc.mov/embed/movie/550' },
+  { name: 'FilmU',          url: 'https://embed.filmu.in/movie/550' },
+  { name: 'FileMoon',       url: 'https://filemoon.sx/embed/movie/550' },
+  { name: '2Embed',         url: 'https://www.2embed.cc/embed/movie/550' },
+  { name: 'Series9API',     url: 'https://api.series9.io/film/550' },
+  { name: 'VidSrc FYI',     url: 'https://vidsrc.fyi/embed/movie/550' },
 ];
 
 async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: number }> {

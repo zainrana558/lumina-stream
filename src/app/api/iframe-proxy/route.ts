@@ -32,26 +32,15 @@ const ALLOWED_HOSTS = new Set([
   'vidsrc.link', 'vidsrc.fyi', 'vidsrc.su', 'vidsrc.ru',
   'vidsrcme.ru', 'vidsrcme.su', 'vidsrc-me.ru', 'vidsrc-me.su',
   'vidsrc.win',
-  // MultiEmbed / vsembed family
-  'multiembed.mov', 'multiembed.cc', 'vsembed.ru', 'streamingnow.mov',
-  // Other embed providers
-  'tvpizza.com', 'lordflix.com', 'kwik.si', 'kwik.cx',
-  'embed.su', '2embed.cc', 'autoembed.co', 'autoembed.cc',
-  'streamsilk.com', 'streamlare.com', 'streamwish.to',
-  'streamhide.to', 'streamsb.net', 'nontongo.win',
-  'vidphantom.com', 'superembed.stream', 'videasy.com',
-  'player.videasy.net', 'filemoon.sx', 'series9.io',
-  'api.series9.io', 'moviesapi.club', 'moviesapi.to',
+  // Active embed providers
+  'embed.su', '2embed.cc', 'autoembed.co',
+  'streamsilk.com', 'streamlare.com', 'nontongo.win',
+  'filemoon.sx', 'series9.io', 'api.series9.io',
   'vaplayer.ru', 'anyembed.xyz', 'vidlink.pro',
-  '111movies.net', 'hdstream.to', 'embed.filmu.in',
-  'pstream.org', 'iframe.pstream.org',
+  'embed.filmu.in', 'pstream.org', 'iframe.pstream.org',
   // Anime providers
   'player.cinezo.live',
-  // New providers (2026-07-06)
   'vidcore.org', 'www.vidcore.org',
-  'player.vidplus.to',
-  'player.vidify.top', 'vidify.top',
-  'player.smashy.stream', 'smashy.stream', 'embed.smashystream.com',
 ]);
 
 // NOTE: Intentionally NOT using Edge runtime here.
