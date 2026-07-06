@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { mediaId, position, duration } = body;
+    const { mediaId, position, duration, mediaType } = body;
 
     if (!mediaId || position === undefined) {
       return NextResponse.json(
@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const profileId = await getVerifiedProfileId(userId) || userId;
+    const resolvedMediaType = mediaType || 'tv'; // default to tv (most content is episodic)
 
     if (!isSupabaseConfigured()) {
       return NextResponse.json({ status: 'saved' }, { headers: rateLimitHeaders(rl) });
@@ -56,11 +57,13 @@ export async function POST(request: NextRequest) {
     await supabase.from('watch_progress').upsert({
       profile_id: profileId,
       media_id: Number(mediaId),
+      media_type: resolvedMediaType,
       position: Number(position),
-      duration: duration ? Number(duration) : null,
+      duration: duration ? Number(duration) : 0,
+      progress: duration ? Math.round((Number(position) / Number(duration)) * 100) : 0,
       updated_at: new Date().toISOString(),
     }, {
-      onConflict: 'profile_id,media_id',
+      onConflict: 'profile_id,media_id,media_type',
     });
 
     return NextResponse.json({ status: 'saved' }, { headers: rateLimitHeaders(rl) });
