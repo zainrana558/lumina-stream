@@ -87,6 +87,7 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
           + " https://vaplayer.ru https://anyembed.xyz https://vidlink.pro"
           + " https://embed.filmu.in https://pstream.org https://iframe.pstream.org"
           + " https://player.cinezo.live https://vidcore.org"
+          + " https://vidbinge.com https://vidsrc.in https://embed.smashystream.com"
           // Broad CDN patterns providers commonly redirect to
           + " https://cf.*.site https://*.cloudfront.net https://*.fastly.net"
           + " https://*.m3u8.click https://*.vidplay.site https://*.vidsrc.*",

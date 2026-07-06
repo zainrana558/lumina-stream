@@ -58,6 +58,10 @@ const REPLACEMENT_POOL: ReplacementEntry[] = [
   { name: 'PStream', category: 'all', getMovieUrl: (id) => `https://iframe.pstream.org/embed/tmdb-movie-${id}`, getTvUrl: (id, s, e) => `https://iframe.pstream.org/embed/tmdb-tv-${id}/${s}/${e}` },
   { name: 'StreamLare', category: 'all', getMovieUrl: (id) => `https://streamlare.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamlare.com/embed/tv/${id}/${s}/${e}` },
   { name: 'VidSrc PRO', category: 'all', getMovieUrl: (id) => `https://vidsrc.pro/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}-${e}` },
+  // New additions verified 2026-07-07
+  { name: 'VidBinge', category: 'all', getMovieUrl: (id) => `https://vidbinge.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidbinge.com/embed/tv/${id}/${s}/${e}` },
+  { name: 'VidSrc IN', category: 'all', getMovieUrl: (id) => `https://vidsrc.in/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.in/embed/tv/${id}/${s}/${e}` },
+  { name: 'SmashyStream', category: 'all', getMovieUrl: (id) => `https://embed.smashystream.com/playere.php?tmdb=${id}`, getTvUrl: (id, s, e) => `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${s}&episode=${e}` },
   // AutoEmbed — promoted to active TIER 2 (2026-07-07)
   // StreamSilk — promoted to active TIER 2 (2026-07-07)
   // Series9API — promoted to active TIER 2 (2026-07-07)

@@ -39,6 +39,10 @@ const PROVIDER_PING_URLS: { name: string; url: string }[] = [
   { name: '2Embed',         url: 'https://www.2embed.cc/embed/movie/550' },
   { name: 'Series9API',     url: 'https://api.series9.io/film/550' },
   { name: 'VidSrc FYI',     url: 'https://vidsrc.fyi/embed/movie/550' },
+  // Replacement pool providers
+  { name: 'PStream',        url: 'https://iframe.pstream.org/embed/tmdb-movie-550' },
+  { name: 'VidBinge',       url: 'https://vidbinge.com/embed/movie/550' },
+  { name: 'VidSrc IN',      url: 'https://vidsrc.in/embed/movie/550' },
 ];
 
 async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: number }> {

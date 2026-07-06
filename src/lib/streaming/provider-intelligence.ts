@@ -93,18 +93,17 @@ const MOVIE_POOL: ProviderPool = {
   name: 'movies',
   category: 'movie',
   providers: [
-    // Tier 1 — confirmed working (2026-07-05)
+    // Tier 1 — confirmed working (2026-07-07)
     'VidSrc SU', 'VidSrc RU', 'VidSrc IO',
-    'VidCore', 'VidPlus',
-    // Tier 2 — confirmed working (2026-07-05)
+    'VidCore',
+    // Tier 2 — confirmed working (2026-07-07)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
+    'AutoEmbed', 'StreamSilk', 'Series9API', 'VidSrc FYI',
     'AnyEmbed', 'VaPlayer',
     '2Embed', 'VidSrc MOV',
     'FilmU', 'VidSrc.pm',
-    'FileMoon',
-    'Vidify', 'SmashyStream',
-    'SuperEmbed', 'VidLink',
+    'FileMoon', 'VidLink',
   ],
 };
 
@@ -114,20 +113,18 @@ const ANIME_POOL: ProviderPool = {
   providers: [
     // Anime-dedicated Tier 1 (shown first in dropdown)
     'Cinezo Anime (Sub)', 'Cinezo Anime (Dub)',
-    'VidPlus Anime (Sub)', 'VidPlus Anime (Dub)',
     'VidSrc WIN Anime',
-    // General Tier 1 — confirmed working (2026-07-05)
+    // General Tier 1 — confirmed working (2026-07-07)
     'VidSrc SU', 'VidSrc RU', 'VidSrc IO',
-    'VidCore', 'VidPlus',
-    // General Tier 2 — confirmed working (2026-07-05)
+    'VidCore',
+    // General Tier 2 — confirmed working (2026-07-07)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
+    'AutoEmbed', 'StreamSilk', 'Series9API', 'VidSrc FYI',
     'AnyEmbed', 'VaPlayer',
     '2Embed', 'VidSrc MOV',
     'FilmU', 'VidSrc.pm',
-    'FileMoon',
-    'Vidify', 'SmashyStream',
-    'SuperEmbed', 'VidLink',
+    'FileMoon', 'VidLink',
   ],
 };
 
@@ -135,18 +132,17 @@ const TV_POOL: ProviderPool = {
   name: 'tv',
   category: 'tv',
   providers: [
-    // Tier 1 — confirmed working (2026-07-05)
+    // Tier 1 — confirmed working (2026-07-07)
     'VidSrc SU', 'VidSrc RU', 'VidSrc IO',
-    'VidCore', 'VidPlus',
-    // Tier 2 — confirmed working (2026-07-05)
+    'VidCore',
+    // Tier 2 — confirmed working (2026-07-07)
     'Nontongo',
     'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
+    'AutoEmbed', 'StreamSilk', 'Series9API', 'VidSrc FYI',
     'AnyEmbed', 'VaPlayer',
     '2Embed', 'VidSrc MOV',
     'FilmU', 'VidSrc.pm',
-    'FileMoon',
-    'Vidify', 'SmashyStream',
-    'SuperEmbed', 'VidLink',
+    'FileMoon', 'VidLink',
   ],
 };
 
@@ -201,8 +197,13 @@ const PROVIDER_CAPABILITIES: Record<string, {
   'VidPhantom':     { subtitleSupport: 0.5, quality: 0.75, avgSpeed: 0.6 },
   'StreamSilk':     { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
   'FileMoon':       { subtitleSupport: 0.3, quality: 0.7, avgSpeed: 0.3 },
-  // New providers (2026-07-06)
+  // Core providers (2026-07-06+)
   'VidCore':        { subtitleSupport: 0.9, quality: 0.9, avgSpeed: 0.7 },
+  'Series9API':     { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
+  // New/recovered replacement pool providers (2026-07-07)
+  'VidBinge':       { subtitleSupport: 0.5, quality: 0.75, avgSpeed: 0.8 },
+  'VidSrc IN':      { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.6 },
+  // Legacy — kept for replacement pool reference
   'VidPlus':        { subtitleSupport: 0.8, quality: 0.85, avgSpeed: 0.7 },
   'VidPlus Anime (Sub)': { subtitleSupport: 0.9, quality: 0.85, avgSpeed: 0.7 },
   'VidPlus Anime (Dub)': { subtitleSupport: 0.9, quality: 0.85, avgSpeed: 0.7 },

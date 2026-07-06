@@ -41,6 +41,8 @@ const ALLOWED_HOSTS = new Set([
   // Anime providers
   'player.cinezo.live',
   'vidcore.org', 'www.vidcore.org',
+  // New replacement pool providers (2026-07-07)
+  'vidbinge.com', 'vidsrc.in', 'embed.smashystream.com',
 ]);
 
 // NOTE: Intentionally NOT using Edge runtime here.
