@@ -70,6 +70,11 @@ export async function GET(request: NextRequest) {
             });
             return response;
           }
+          // Auto-creation failed — redirect to /profiles where user can create one manually
+          const fallbackUrl = next !== '/'
+            ? `/profiles?next=${encodeURIComponent(next)}`
+            : '/profiles';
+          return NextResponse.redirect(new URL(fallbackUrl, requestUrl.origin));
         } else {
           // User has profiles — redirect to profile selector
           // Pass 'next' as query param so after selection they land where they intended
