@@ -67,7 +67,12 @@ export default function Footer() {
         ))}
       </div>
       <div style={{ borderTop: '1px solid rgba(255,255,255,.055)', paddingTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-        <div className="f-mono" style={{ fontSize: '.62rem', letterSpacing: '.09em', color: 'rgba(255,245,232,.22)' }}>&copy; 2025 LUMINA STREAM &middot; ALL RIGHTS RESERVED</div>
+        <div className="f-mono" style={{ fontSize: '.62rem', letterSpacing: '.09em', color: 'rgba(255,245,232,.22)' }}>
+          &copy; 2025 LUMINA STREAM &middot; ALL RIGHTS RESERVED<br />
+          <span style={{ color: 'rgba(255,245,232,.15)' }}>
+            Lumina Stream does not host, upload, or stream any video files. Content is provided by independent third-party providers. Users are responsible for verifying compliance with their local laws.
+          </span>
+        </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           {SOCIAL_ICONS.map(ic => (
             <span

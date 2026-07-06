@@ -29,7 +29,8 @@ export default function CookiePolicyPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 60px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#FFF5E8', marginBottom: 16, letterSpacing: '.02em' }}>Cookie Policy</h1>
-        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 48 }}>Last updated: June 20, 2025</p>
+        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 12 }}>Last updated: July 7, 2026</p>
+        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 48 }}>Effective date: July 7, 2026</p>
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>1. Introduction</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
@@ -112,7 +113,7 @@ export default function CookiePolicyPage() {
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>9. Contact Us</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
-          If you have any questions about this Cookie Policy, reach out through our <Link href="/settings" style={{ color: '#FFB347' }}>Settings</Link> page or social media channels.
+          If you have any questions about this Cookie Policy, reach out through our <Link href="/settings" style={{ color: '#FFB347' }}>Settings</Link> page or social media channels. For comprehensive legal information, please also see our <Link href="/terms" style={{ color: '#FFB347' }}>Terms of Service</Link>, <Link href="/privacy" style={{ color: '#FFB347' }}>Privacy Policy</Link>, <Link href="/disclaimer" style={{ color: '#FFB347' }}>Disclaimer</Link>, and <Link href="/dmca" style={{ color: '#FFB347' }}>DMCA &amp; Copyright Policy</Link>.
         </p>
       </div>
     </>

@@ -16,6 +16,7 @@ import { vibrateMedium, vibrateLong } from '@/lib/haptics';
 import { getTmdbImageUrl, getBackdropUrl, getYoutubeThumbnail } from '@/lib/images';
 import TrailerModal from '@/components/common/TrailerModal';
 import IntelligentPlayer from '@/components/common/IntelligentPlayer';
+import LegalDisclaimerBanner from '@/components/common/LegalDisclaimerBanner';
 
 interface TMDBSeasonEpisode {
   id: number;
@@ -1011,6 +1012,11 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                     setIframeLoaded(true);
                   }}
                 />
+              </div>
+
+              {/* Legal disclaimer banner below player */}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 10001 }}>
+                <LegalDisclaimerBanner />
               </div>
 
               {/* Exit button — always visible during active playback */}
