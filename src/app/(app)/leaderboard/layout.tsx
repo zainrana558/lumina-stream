@@ -4,7 +4,6 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
 export const metadata: Metadata = {
   title: 'Community Leaderboard',
   description: 'See the top-rated movies and TV shows by the Lumina Stream community. Discover what viewers love most.',
-  robots: { index: false, follow: true },
   alternates: {
     canonical: `${CANONICAL_BASE}/leaderboard`,
   },

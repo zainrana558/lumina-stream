@@ -13,6 +13,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: 'Free Movie Streaming Guides & Reviews — Lumina Stream Blog',
   description: 'Discover where to watch movies and TV shows online free. Streaming guides, reviews, and recommendations updated weekly.',
+  alternates: { canonical: `${CANONICAL_BASE}/blog` },
   openGraph: {
     title: 'Free Movie Streaming Guides — Lumina Stream Blog',
     description: 'Discover where to watch movies and TV shows online free.',

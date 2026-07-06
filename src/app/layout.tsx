@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   },
   description: "Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.",
   metadataBase: new URL(CANONICAL_BASE),
-  alternates: { canonical: CANONICAL_BASE, languages: { 'x-default': CANONICAL_BASE, 'en-US': CANONICAL_BASE } },
+  alternates: { languages: { 'x-default': CANONICAL_BASE, 'en-US': CANONICAL_BASE } },
   manifest: '/manifest.json',
   openGraph: {
     title: "Lumina Stream",

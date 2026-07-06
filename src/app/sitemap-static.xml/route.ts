@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
-import { PORTAL_SLUGS, BROWSE_ONLY_GENRES } from '@/config/genres';
+import { PORTAL_SLUGS } from '@/config/genres';
 
 // Static sitemap — no API calls, instant response. Contains all hand-curated pages.
 
@@ -21,7 +21,7 @@ export async function GET() {
   add('/', '1.0');
   add('/browse', '0.9');
   add('/seasonal', '0.9');
-  add('/leaderboard', '0.9');
+  add('/leaderboard', '0.7');
   add('/release-calendar', '0.9');
   add('/movies', '0.9');
   add('/tv-shows', '0.9');
@@ -45,11 +45,6 @@ export async function GET() {
   for (let i = 0; i < 12; i++) {
     const year = CURRENT_YEAR + 1 - i;
     add(`/year/${year}`, year >= CURRENT_YEAR ? '0.8' : '0.6');
-  }
-
-  // Browse-only genre query pages
-  for (const name of BROWSE_ONLY_GENRES) {
-    urls.push(`  <url>\n    <loc>${baseUrl}/browse?genre=${encodeURIComponent(name)}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.6</priority>\n  </url>`);
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
