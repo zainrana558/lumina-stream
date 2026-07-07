@@ -29,8 +29,8 @@ const nextConfig: NextConfig = {
         // Public HTML pages: CDN/browser cache with stale-while-revalidate.
         // ISR revalidate controls Next.js edge cache; this header tells
         // Cloudflare/proxy and browsers to also cache the response.
-        // Note: CSP is set by middleware (src/middleware.ts) — do NOT duplicate here.
-        // Having CSP in both places causes the browser to intersect both policies,
+        // Note: CSP and security headers are set by src/proxy.ts (auth/security layer).
+        // Do NOT duplicate CSP here — the browser intersects both policies,
         // which can break scripts, iframes, and ad network integrations.
         source: '/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap).*)',
         headers: [

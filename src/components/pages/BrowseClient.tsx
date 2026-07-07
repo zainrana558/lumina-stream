@@ -539,14 +539,14 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
               }}>{moodConfig.label[0]}</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 className="f-cinzel" style={{
+              <h2 className="f-cinzel" style={{
                 fontSize: 'clamp(1.3rem,2.5vw,1.8rem)',
                 background: `linear-gradient(135deg, ${moodConfig.color}, #FFF5E8)`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 marginBottom: '.3rem',
                 fontWeight: 700,
-              }}>{moodConfig.label} Vibes</h1>
+              }}>{moodConfig.label} Vibes</h2>
               <p className="f-crimson" style={{
                 color: 'rgba(255,245,232,.5)',
                 fontSize: '.82rem',
@@ -567,7 +567,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         {/* ─── Normal header (hidden in mood mode) ──────────────────── */}
         {!isMoodMode && (
           <>
-            <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>Browse Shows</h1>
+            <h2 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>Browse Shows</h2>
             <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', marginBottom: '1.8rem', fontStyle: 'italic' }}>
               {isSearching
                 ? (searchLoading && searchResults.length === 0
