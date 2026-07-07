@@ -50,10 +50,6 @@ export default function robots(): MetadataRoute.Robots {
     ],
     sitemap: [
       `${siteUrl}/sitemap.xml`,
-      `${siteUrl}/sitemap-details.xml`,
-      `${siteUrl}/sitemap-episodes.xml`,
-      `${siteUrl}/sitemap-people.xml`,
-      `${siteUrl}/sitemap-static.xml`,
     ],
   };
 }
