@@ -236,11 +236,15 @@ export function buildEpisodeMetadata(input: EpisodeMetadataInput): Metadata {
   const pageUrl = `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`;
   const yearStr = showYear ? ` (${showYear})` : '';
 
-  // Title: "Breaking Bad (2008) Season 1 Episode 1 - Pilot" (template appends " | Lumina Stream")
-  const epLabel = `Season ${season} Episode ${episode}`;
-  const titleParts = [`${showTitle}${yearStr}`, epLabel];
-  if (episodeTitle) titleParts.push(episodeTitle);
-  const titleText = titleParts.join(' - ');
+  // Title: compact format to stay under ~60 chars (template appends " | Lumina Stream")
+  // e.g. "Breaking Bad S1E1: Pilot" → 30 chars + " | Lumina Stream" = 47 chars total
+  const epLabel = `S${season}E${episode}`;
+  let titleText: string;
+  if (episodeTitle) {
+    titleText = truncate(`${showTitle} ${epLabel}: ${episodeTitle}`, 50);
+  } else {
+    titleText = `${showTitle} ${epLabel}`;
+  }
 
   // Description: plot or generated fallback
   let desc: string;

@@ -43,7 +43,7 @@ async function fetchWithRetry(url: string, headers: Record<string, string>): Pro
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
     try {
-      const res = await fetch(url, { headers, signal: controller.signal, cache: 'no-store' });
+      const res = await fetch(url, { headers, signal: controller.signal });
       clearTimeout(timeoutId);
 
       if (!res.ok) {
