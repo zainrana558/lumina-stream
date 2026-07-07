@@ -3,6 +3,7 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
 import Link from 'next/link';
 import { PORTAL_GENRES, BROWSE_ONLY_GENRES, TMDB_GENRE_ID_MAP, type PortalGenreConfig } from '@/config/genres';
 
+export const dynamic = 'force-static';
 export const revalidate = 3600; // 1 hour
 
 const siteUrl = CANONICAL_BASE;

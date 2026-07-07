@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
+export const dynamic = 'force-static';
 export const revalidate = 86400;
 
 const siteUrl = CANONICAL_BASE;

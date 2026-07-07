@@ -6,6 +6,7 @@ import { tmdbToMedia } from '@/types';
 import type { Metadata } from 'next';
 import BrowseClient from '@/components/pages/BrowseClient';
 
+export const dynamic = 'force-static';
 export const revalidate = 300;
 
 const siteUrl = CANONICAL_BASE;

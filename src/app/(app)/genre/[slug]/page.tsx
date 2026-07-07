@@ -72,6 +72,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
+export const dynamic = 'force-static';
 export const revalidate = 600; // 10 min
 
 // ─── Static params for build-time generation ────────────────────────────────

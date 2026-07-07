@@ -5,6 +5,7 @@ import type { AniListMedia } from '@/lib/anilist/client';
 import type { Metadata } from 'next';
 import SeasonalClient from './SeasonalClient';
 
+export const dynamic = 'force-static';
 export const revalidate = 600;
 
 const siteUrl = CANONICAL_BASE;

@@ -3,6 +3,7 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
 import type { Metadata } from 'next';
 import PersonPageClient from '@/components/pages/PersonPage';
 
+export const dynamic = 'force-static';
 export const revalidate = 86400; // 24h — person details rarely change
 
 const siteUrl = CANONICAL_BASE;

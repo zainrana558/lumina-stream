@@ -231,6 +231,7 @@ async function getTMDBData() {
   }
 }
 
+export const dynamic = 'force-static';
 export const revalidate = 300; // 5 min — trending data doesn't need real-time
 
 export const metadata: Metadata = {
