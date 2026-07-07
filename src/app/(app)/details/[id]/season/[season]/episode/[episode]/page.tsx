@@ -388,6 +388,32 @@ export default async function EpisodePage({
           { '@type': 'ListItem', position: 4, name: `Episode ${episode}`, item: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}` },
         ],
       }) }} />
+      {/* Visible episode info for SEO — unique content per episode */}
+      {episodeData && (episodeData.name || episodeData.overview) && (
+        <section className="mx-auto max-w-4xl px-4 pt-4 pb-2" aria-label="Episode information">
+          {episodeData.name && (
+            <h2 className="text-lg font-semibold text-white/90 mb-1">
+              Season {season}, Episode {episode}: {episodeData.name}
+            </h2>
+          )}
+          {episodeData.overview && (
+            <p className="text-sm text-white/60 leading-relaxed">
+              {episodeData.overview}
+            </p>
+          )}
+          <div className="flex items-center gap-4 mt-2 text-xs text-white/40">
+            {episodeData.air_date && (
+              <span>Air date: {episodeData.air_date}</span>
+            )}
+            {episodeData.runtime && (
+              <span>Runtime: {episodeData.runtime} min</span>
+            )}
+            {episodeData.vote_average > 0 && (
+              <span>Rating: {episodeData.vote_average.toFixed(1)}/10</span>
+            )}
+          </div>
+        </section>
+      )}
       <DetailsContent
         showId={showId}
         initialShow={show}

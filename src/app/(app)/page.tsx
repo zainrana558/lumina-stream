@@ -236,7 +236,7 @@ export const revalidate = 300; // 5 min — trending data doesn't need real-time
 export const metadata: Metadata = {
   title: 'Lumina Stream - Dream, Discover, Stream',
   description: 'Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.',
-  alternates: { canonical: CANONICAL_BASE },
+  alternates: { canonical: `${CANONICAL_BASE}/` },
   openGraph: {
     title: 'Lumina Stream - Dream, Discover, Stream',
     description: 'Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.',
