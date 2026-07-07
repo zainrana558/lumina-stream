@@ -2,6 +2,17 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "npm install",
+  "headers": [
+    {
+      "source": "/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap|embed).*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=300, stale-while-revalidate=600, max-age=60"
+        }
+      ]
+    }
+  ],
   "crons": [
     {
       "path": "/api/cache/warm",

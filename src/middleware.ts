@@ -50,6 +50,7 @@ export function middleware(request: NextRequest) {
 
   // Override Cache-Control for all public pages
   const response = NextResponse.next();
+  response.headers.delete('Cache-Control');
   response.headers.set(
     'Cache-Control',
     'public, s-maxage=300, stale-while-revalidate=600, max-age=60'
