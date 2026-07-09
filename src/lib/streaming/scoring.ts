@@ -78,6 +78,9 @@ export async function scoreAndSortProviders(
  * Score a single provider using multi-signal scoring.
  */
 export async function scoreProvider(provider: EmbedResult): Promise<ProviderScore> {
+  // Preload intelligence module for speed score (async, cached after first load)
+  await loadIntelligenceModule();
+
   const signals = {
     latency: computeLatency(provider.name),
     successRate: computeSuccessRate(provider.name),
@@ -108,17 +111,28 @@ export async function scoreProvider(provider: EmbedResult): Promise<ProviderScor
 
 // ---- Signal computation ----
 
-function computeLatency(providerName: string): number {
-  // Use shared speed data from provider-intelligence when available
-  // NOTE: Static import at module level would create circular dependency
-  // (scoring.ts ← provider-intelligence.ts ← scoring.ts), so we use
-  // a lazy module-level cache instead of require().
+// Lazy module cache for provider-intelligence (avoids circular dependency
+// between scoring.ts ← provider-intelligence.ts ← scoring.ts)
+let intelligenceModule: { getSpeedScore: (name: string) => number } | null = null;
+let intelligenceLoadAttempted = false;
+
+async function loadIntelligenceModule(): Promise<void> {
+  if (intelligenceLoadAttempted) return;
+  intelligenceLoadAttempted = true;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require('@/lib/streaming/provider-intelligence') as { getSpeedScore: (name: string) => number };
-    const speed = mod.getSpeedScore(providerName);
-    if (speed !== 0.5) return speed; // 0.5 is the default — only use if different
-  } catch { /* fallback to health */ }
+    const mod = await import('@/lib/streaming/provider-intelligence');
+    intelligenceModule = mod as unknown as { getSpeedScore: (name: string) => number };
+  } catch {
+    intelligenceModule = null;
+  }
+}
+
+function computeLatency(providerName: string): number {
+  // Synchronous fallback — uses cached module if already loaded
+  if (intelligenceModule) {
+    const speed = intelligenceModule.getSpeedScore(providerName);
+    if (speed !== 0.5) return speed;
+  }
 
   // Fallback: health-based continuous proxy
   // Returns continuous values instead of binary 0/1 to avoid

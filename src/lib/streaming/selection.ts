@@ -69,13 +69,22 @@ export async function selectProvidersWithScores(options: SelectionOptions): Prom
     tier: item.tier as EmbedResult['tier'],
     category: (item.category === 'anime' ? 'anime' : 'all') as EmbedResult['category'],
     score: item.score,
-    signals: {
-      availability: 0,
-      responseSpeed: 0,
-      subtitleSupport: 0,
-      quality: 0,
-      historicalSuccess: 0,
-      learnedBonus: 0,
-    },
+    signals: item.signals
+      ? {
+          availability: item.signals.availability,
+          responseSpeed: item.signals.responseSpeed,
+          subtitleSupport: item.signals.subtitleSupport,
+          quality: item.signals.quality,
+          historicalSuccess: item.signals.historicalSuccess,
+          learnedBonus: item.signals.learnedBonus,
+        }
+      : {
+          availability: 0,
+          responseSpeed: 0,
+          subtitleSupport: 0,
+          quality: 0,
+          historicalSuccess: 0,
+          learnedBonus: 0,
+        },
   }));
 }

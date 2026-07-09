@@ -266,11 +266,12 @@ export async function getProviderStats(provider?: string): Promise<ProviderStats
 
 function computeBonus(row: Record<string, unknown>): number {
   const totalPlays = (row.total_plays as number) || 0;
-  if (totalPlays < 5) return 0;
+  if (totalPlays < 5) return 0; // Not enough data for a meaningful signal
 
-  const successRate = ((row.successful_plays as number) || 0) / totalPlays;
+  const safeTotal = Math.max(1, totalPlays); // Defensive: prevent division by zero from corrupted data
+  const successRate = ((row.successful_plays as number) || 0) / safeTotal;
   const avgBufferTime = (row.avg_buffer_time as number) || 0;
-  const errorRate = ((row.error_count as number) || 0) / totalPlays;
+  const errorRate = ((row.error_count as number) || 0) / safeTotal;
 
   // Rebalanced: +0.2 reachable with perfect stats (100% success, 0 buffer, 0 errors)
   let bonus = (successRate - 0.5) * 0.4;  // -0.2 to +0.2

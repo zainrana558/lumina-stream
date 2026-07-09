@@ -49,9 +49,33 @@ function buildFallbackRecords(): Map<string, ProviderRecord> {
   const records = new Map<string, ProviderRecord>();
 
   for (const p of providers) {
-    // Bug #24: Build URL patterns from both path-based and query-param providers
+    // Build URL patterns from both path-based and query-param providers
     const sampleMovie = p.getMovieUrl(0);
     const sampleTv = p.getTvUrl(0, 1, 1);
+
+    // Derive movie pattern: replace the sample ID (0) with {id}
+    const movieUrlPattern = sampleMovie
+      .replace(/([?&]video_id=)0/, '$1{id}')
+      .replace(/([?&]tmdb=)0/, '$1{id}')
+      .replace(/\/0(\/|$|\?)/, '/{id}$1')
+      .replace(/\/0$/, '/{id}');
+
+    // Derive TV pattern: replace sample values with placeholders
+    let tvUrlPattern = sampleTv
+      .replace(/([?&]video_id=)0/, '$1{id}')
+      .replace(/([?&]tmdb=)0/, '$1{id}')
+      .replace(/\/0\//, '/{id}/')
+      .replace(/\/0\//, '/{id}/');  // handle multiple /0/ segments
+
+    // Replace season/episode sample values (1) with placeholders
+    tvUrlPattern = tvUrlPattern
+      .replace(/\/1\/1$/, '/{s}/{e}')
+      .replace(/season=1/, 'season={s}')
+      .replace(/episode=1/, 'episode={e}')
+      .replace(/[&?]s=1(&|$)/, '$1s={s}$2')
+      .replace(/[&?]e=1(&|$)/, '$1e={e}$2')
+      .replace(/autonext=1/, 'autonext={autonext}');
+
     records.set(p.name, {
       name: p.name,
       tier: p.tier,
@@ -59,23 +83,9 @@ function buildFallbackRecords(): Map<string, ProviderRecord> {
       isActive: true,
       updatedAt: new Date().toISOString(),
       replaced: false,
-      movieUrlPattern: sampleMovie
-      .replace(/([?&]video_id=)0/, '$1{id}')
-      .replace(/([?&]tmdb=)0/, '$1{id}')
-      .replace(/\/0(\/|$|\?)/, '/{id}$1')
-      .replace(/\/0$/, '/{id}'),
-    tvUrlPattern: sampleTv
-      .replace(/([?&]video_id=)0/, '$1{id}')
-      .replace(/([?&]tmdb=)0/, '$1{id}')
-      .replace(/\/0\//, '/{id}/')
-      .replace(/\/0\//, '/{id}/')
-      .replace(/\/1\/1$/, '/{s}/{e}')
-      .replace(/season=1/, 'season={s}')
-      .replace(/episode=1/, 'episode={e}')
-      .replace(/[&?]s=1(&|$)/, '$1s={s}$2')
-      .replace(/[&?]e=1(&|$)/, '$1e={e}$2')
-      .replace(/autonext=1/, 'autonext={autonext}'),
-    animeUrlPattern: p.getAnimeUrl ? p.getAnimeUrl(0, 1).replace(/\/0\//, '/{id}/').replace(/\/1$/, '/{ep}') : undefined,
+      movieUrlPattern,
+      tvUrlPattern,
+      animeUrlPattern: p.getAnimeUrl ? p.getAnimeUrl(0, 1).replace(/\/0\//, '/{id}/').replace(/\/1$/, '/{ep}') : undefined,
     });
   }
 

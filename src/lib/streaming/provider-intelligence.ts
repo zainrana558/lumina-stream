@@ -77,6 +77,7 @@ export interface IntelligenceChain {
     score: number;
     tier: number;
     category: string;
+    signals: ProviderSignals;
   }>;
   total: number;
   selectionTimeMs: number;
@@ -617,7 +618,13 @@ export async function selectWithIntelligence(options: {
           // Penalize providers confirmed dead by this probe
           if (probedDead.has(s.name)) {
             s.signals.availability = 0;
-            s.score = Math.round((s.signals.subtitleSupport * 10 + s.signals.responseSpeed * 20 + s.signals.quality * 10 + s.signals.historicalSuccess * 10) * 10) / 10;
+            const raw =
+              s.signals.responseSpeed * 20 +
+              s.signals.subtitleSupport * 10 +
+              s.signals.quality * 10 +
+              s.signals.historicalSuccess * 10;
+            const finalScore = Math.max(0, raw + ((s.signals.learnedBonus ?? 0) * 100));
+            s.score = Math.round(finalScore * 10) / 10;
           }
         }
 

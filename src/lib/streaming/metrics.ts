@@ -274,14 +274,17 @@ export async function aggregateMetrics(): Promise<HourlyRollup | null> {
     // Store rollup with 7-day TTL
     await client.set(rollupKey, JSON.stringify(rollup), { ex: 7 * 86400 });
 
-    // Delete raw metrics to prevent double-counting on next aggregation
+    // Delete raw metrics atomically via pipeline to prevent partial deletion
+    // (which would cause double-counting on next aggregation)
+    const deletePipeline = client.pipeline();
     for (const key of Object.keys(selectionRollup)) {
-      await client.del(`metric:selection:${key}`).catch(() => {});
+      deletePipeline.del(`metric:selection:${key}`);
     }
     for (const key of Object.keys(healthRollup)) {
-      await client.del(`metric:health:${key}`).catch(() => {});
+      deletePipeline.del(`metric:health:${key}`);
     }
-    try { await client.del('metric:failover'); } catch {}
+    deletePipeline.del('metric:failover');
+    await deletePipeline.exec();
 
     return rollup;
   } catch {

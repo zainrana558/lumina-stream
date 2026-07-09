@@ -55,7 +55,13 @@ function getNextCheckIndex(total: number, offset: number = 0): number {
   return slot % total;
 }
 
-// Cleanup stale entries every 60s to prevent memory leak
+// Well-known TMDB IDs for health check pings (rotated to avoid single-point dependency)
+const HEALTH_CHECK_MOVIE_IDS = [550, 12, 155]; // Fight Club, The Dark Knight, The Lord of the Rings
+
+function getHealthCheckMovieId(): number {
+  const idx = Math.floor(Date.now() / (5 * 60 * 1000)) % HEALTH_CHECK_MOVIE_IDS.length; // Rotate every 5 min
+  return HEALTH_CHECK_MOVIE_IDS[idx];
+}
 if (typeof globalThis !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
@@ -203,7 +209,7 @@ async function processHealthResult(
       const replacement = swapInReplacement(provider.name);
       if (replacement) {
         // Also pre-health-check the replacement
-        const { alive: repAlive, framesBlocked: repBlocked } = await pingProvider(replacement.getMovieUrl(550));
+        const { alive: repAlive, framesBlocked: repBlocked } = await pingProvider(replacement.getMovieUrl(getHealthCheckMovieId()));
         const repEffectiveBlocked = replacement.useProxy ? false : repBlocked;
         setHealth(replacement.name, repAlive, repEffectiveBlocked);
       }
@@ -234,7 +240,7 @@ export async function maybeCheckOneProvider(): Promise<void> {
   const provider = allProviders[idx];
   lastCheckTime = now;
 
-  const sampleUrl = provider.getMovieUrl(550); // Fight Club always exists
+  const sampleUrl = provider.getMovieUrl(getHealthCheckMovieId()); // Well-known movie for health ping
   const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
 
   await processHealthResult(provider, alive, latencyMs, framesBlocked);
@@ -280,7 +286,7 @@ export async function triggerBatchHealthCheck(): Promise<void> {
 
   await Promise.all(
     batch.map(async (provider) => {
-      const sampleUrl = provider.getMovieUrl(550);
+      const sampleUrl = provider.getMovieUrl(getHealthCheckMovieId());
       const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
       await processHealthResult(provider, alive, latencyMs, framesBlocked);
     })
@@ -310,7 +316,7 @@ export async function startupBurstCheck(): Promise<void> {
   // Probe all in parallel (fire-and-forget, non-blocking)
   Promise.all(
     topProviders.map(async (provider) => {
-      const sampleUrl = provider.getMovieUrl(550);
+      const sampleUrl = provider.getMovieUrl(getHealthCheckMovieId());
       const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
       await processHealthResult(provider, alive, latencyMs, framesBlocked);
     })
@@ -347,9 +353,9 @@ export async function checkAllProviders(): Promise<Record<string, boolean>> {
 
   await Promise.all(
     all.map(async (p) => {
-      const url = p.getMovieUrl ? p.getMovieUrl(550) : '';
-      if (!url) return;
-      const { alive, latencyMs, framesBlocked } = await pingProvider(url);
+      const sampleUrl = p.getMovieUrl ? p.getMovieUrl(getHealthCheckMovieId()) : '';
+      if (!sampleUrl) return;
+      const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
       const effectiveFramesBlocked = p.useProxy ? false : framesBlocked;
       const effectiveAlive = alive && !effectiveFramesBlocked;
       results[p.name] = effectiveAlive;
