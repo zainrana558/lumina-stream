@@ -78,9 +78,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
     }
 
-    // Validate endpoint against allowed prefixes
+    // Validate endpoint against allowed prefixes (exact match or prefix + subpath)
     const path = endpoint.split('?')[0];
-    if (!ALLOWED_PREFIXES.some(p => path.startsWith(p))) {
+    if (!ALLOWED_PREFIXES.some(p => path === p || path.startsWith(p))) {
       return NextResponse.json({ error: 'Invalid endpoint' }, { status: 400 });
     }
 

@@ -32,7 +32,7 @@ function endpointToCacheCategory(endpoint: string): keyof typeof CACHE_TTL {
 }
 
 const FETCH_TIMEOUT = 8000;
-const MAX_RETRIES = 1;
+const MAX_RETRIES = Math.max(1, 1); // Ensure at least 1 retry
 const RETRY_DELAY = 500;
 
 async function fetchWithRetry(url: string, headers: Record<string, string>): Promise<Response> {
@@ -49,9 +49,9 @@ async function fetchWithRetry(url: string, headers: Record<string, string>): Pro
       if (!res.ok) {
         const body = await res.text().catch(() => '');
         lastError = new Error(`TMDB API error: ${res.status} ${body.slice(0, 200)}`);
-        if (res.status >= 400 && res.status < 500) throw lastError;
+        if (res.status >= 400 && res.status < 500) throw lastError; // Client errors not retryable
         if (attempt < MAX_RETRIES) {
-          await new Promise(r => setTimeout(r, RETRY_DELAY * (attempt + 1)));
+          await new Promise(r => setTimeout(r, RETRY_DELAY * Math.pow(2, attempt))); // Exponential backoff
         }
         continue;
       }
@@ -59,10 +59,10 @@ async function fetchWithRetry(url: string, headers: Record<string, string>): Pro
     } catch (error: unknown) {
       clearTimeout(timeoutId);
       lastError = error instanceof Error ? error : new Error(String(error));
-      if (lastError.name === 'AbortError') throw lastError;
-      if (lastError.message.startsWith('TMDB API error: 4')) throw lastError;
+      if (lastError.name === 'AbortError') throw lastError; // Timeout not retryable
+      if (lastError.message.startsWith('TMDB API error: 4')) throw lastError; // Client errors not retryable
       if (attempt < MAX_RETRIES) {
-        await new Promise(r => setTimeout(r, RETRY_DELAY * (attempt + 1)));
+        await new Promise(r => setTimeout(r, RETRY_DELAY * Math.pow(2, attempt))); // Exponential backoff
       }
     }
   }

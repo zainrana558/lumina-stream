@@ -163,14 +163,15 @@ function batchMemoryCheck(
   return { success: true, remaining: estimatedRemaining, reset: entry.windowStart + windowMs };
 }
 
-// Cleanup stale batch entries every 60s to prevent memory leak
+// Cleanup stale batch entries every 30s to prevent memory leak
+// Remove entries older than 2x the max window (120s)
 if (typeof globalThis !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
     for (const [key, val] of batchStore.entries()) {
       if (now > val.windowStart + 120_000) batchStore.delete(key); // 2x max window
     }
-  }, 60_000);
+  }, 30_000); // Every 30s for faster cleanup under high traffic
 }
 
 // ---- Legacy in-memory fallback (used when Redis is completely unavailable) ----

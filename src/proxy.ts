@@ -120,13 +120,14 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
 }
 
 // ── IP extraction ───────────────────────────────────────────────────────────
-// Cloudflare Worker forwards the real client IP via x-forwarded-for /
-// x-real-ip after stripping cf-connecting-ip. Read both headers.
+// Cloudflare Worker forwards the real client IP via cf-connecting-ip.
+// Prefer cf-connecting-ip (set by Cloudflare, cannot be spoofed by client),
+// then x-forwarded-for (set by Vercel/Cloudflare), then x-real-ip.
 function getClientIp(request: NextRequest): string {
-  // Security assumption: This middleware only runs behind Cloudflare or Vercel,
-  // which overwrites x-forwarded-for with the real client IP, so spoofing is not a concern.
+  const cfIp = request.headers.get("cf-connecting-ip");
+  if (cfIp) return cfIp.split(',')[0].trim();
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
+  if (forwarded) return forwarded.split(',')[0].trim();
   return request.headers.get("x-real-ip") || "unknown";
 }
 
@@ -214,6 +215,8 @@ export default async function middleware(request: NextRequest) {
     }
 
     // Validate profile_id cookie ownership (prevent cookie-stuffing)
+    // BLOCKS the request if the profile doesn't belong to this user,
+    // preventing one-request window of unauthorized data access.
     if (user) {
       const profileIdCookie = request.cookies.get("profile_id")?.value;
       if (profileIdCookie) {
@@ -226,6 +229,7 @@ export default async function middleware(request: NextRequest) {
             .maybeSingle();
 
           if (!profile) {
+            // Clear the invalid cookie and redirect to force re-selection
             supabaseResponse.cookies.set("profile_id", "", {
               path:     "/",
               maxAge:   0,
@@ -233,9 +237,18 @@ export default async function middleware(request: NextRequest) {
               secure:   process.env.NODE_ENV === "production",
               sameSite: "lax",
             });
+            return NextResponse.redirect(new URL("/profiles", request.url));
           }
         } catch {
-          // Profile check failed — continue (fail open)
+          // Profile check failed — fail closed: clear cookie and redirect
+          supabaseResponse.cookies.set("profile_id", "", {
+            path:     "/",
+            maxAge:   0,
+            httpOnly: true,
+            secure:   process.env.NODE_ENV === "production",
+            sameSite: "lax",
+          });
+          return NextResponse.redirect(new URL("/profiles", request.url));
         }
       }
     }

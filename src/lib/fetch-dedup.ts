@@ -98,9 +98,9 @@ if (typeof globalThis !== "undefined") {
     const now = Date.now();
     for (const [key, entry] of cache.entries()) {
       const ttl = getCacheTtl(key);
-      if (now - entry.timestamp > ttl * 10) {
+      if (now - entry.timestamp > ttl * 2) { // 2x TTL — cleanup promptly after expiry
         cache.delete(key);
       }
     }
-  }, 120_000); // every 2 min
+  }, 60_000); // Check every 60s (was 2 min)
 }

@@ -68,14 +68,13 @@ export async function validateCsrfToken(request: Request): Promise<boolean> {
   const headerToken = request.headers.get(CSRF_HEADER_NAME);
 
   if (!cookieToken || !headerToken) return false;
-  if (cookieToken.length !== CSRF_TOKEN_LENGTH * 2) return false;
 
-  // Constant-time comparison to prevent timing attacks
+  // Constant-time comparison to prevent timing attacks.
+  // Pad both to fixed length (CSRF_TOKEN_LENGTH * 2) to avoid length-based timing leaks.
   const encoder = new TextEncoder();
-  const a = encoder.encode(cookieToken);
-  const b = encoder.encode(headerToken);
-
-  if (a.byteLength !== b.byteLength) return false;
+  const fixedLen = CSRF_TOKEN_LENGTH * 2;
+  const a = encoder.encode(cookieToken.padEnd(fixedLen, '0'));
+  const b = encoder.encode(headerToken.padEnd(fixedLen, '0'));
 
   let result = 0;
   for (let i = 0; i < a.byteLength; i++) {

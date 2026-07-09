@@ -44,7 +44,7 @@ export type CacheCategory = 'trending' | 'popular' | 'search' | 'details' | 'sea
 
 // ---- Cache helpers ----
 
-function cacheKey(category: CacheCategory, key: string): string {
+async function cacheKey(category: CacheCategory, key: string): Promise<string> {
   // Normalize: strip sensitive params from key to prevent credential leakage
   const clean = key
     .replace(/api_key=[^&]+/gi, '')
@@ -58,16 +58,18 @@ function cacheKey(category: CacheCategory, key: string): string {
   // Hash keys longer than 200 chars to prevent excessive Redis memory usage
   // from maliciously crafted long query strings (Finding #38)
   if (full.length > 200) {
-    // Simple fast hash using SubtleCrypto (async-safe in Node.js)
-    // Fall back to truncated key in edge cases
+    // Use SHA-256 for collision-resistant hashing (crypto.subtle is available in Node.js 18+)
     const encoder = new TextEncoder();
     const data = encoder.encode(full);
-    let hash = 0;
-    for (let i = 0; i < data.length; i++) {
-      const byte = data[i];
-      hash = ((hash << 5) - hash + byte) | 0;
+    try {
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return `lumina:cache:${CACHE_VERSION}:${category}:h:${hashHex.substring(0, 16)}`;
+    } catch {
+      // Fallback: truncated key (rare — only if crypto.subtle unavailable)
+      return `lumina:cache:${CACHE_VERSION}:${category}:t:${full.slice(0, 64)}`;
     }
-    return `lumina:cache:${CACHE_VERSION}:${category}:h:${Math.abs(hash).toString(36)}`;
   }
   return full;
 }
@@ -83,7 +85,7 @@ export async function getCached<T>(
   if (!client) return null;
 
   try {
-    const fullKey = cacheKey(category, key);
+    const fullKey = await cacheKey(category, key);
     const result = await client.get<string>(fullKey);
     if (result) return JSON.parse(result) as T;
     return null;
@@ -104,7 +106,7 @@ export async function setCache<T>(
   if (!client) return;
 
   try {
-    const fullKey = cacheKey(category, key);
+    const fullKey = await cacheKey(category, key);
     const ttl = CACHE_TTL[category];
     await client.set(fullKey, JSON.stringify(data) as unknown as typeof data, {
       ex: ttl,
@@ -161,7 +163,7 @@ export async function fetchBatchWithCache<T>(
   if (entries.length === 0) return [];
 
   const client = getRedis();
-  const keys = entries.map(e => cacheKey(e.category, e.key));
+  const keys = await Promise.all(entries.map(e => cacheKey(e.category, e.key)));
 
   // Try batch read from Redis
   let cachedValues: (string | null)[] | null = null;

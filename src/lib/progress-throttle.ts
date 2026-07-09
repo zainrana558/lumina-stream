@@ -39,6 +39,31 @@ interface ThrottleState {
 
 const stateMap = new Map<string, ThrottleState>();
 
+// Cleanup stale throttle state every 10 minutes (profiles that stopped playing)
+if (typeof globalThis !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, state] of stateMap.entries()) {
+      // No activity for 10 min and no pending save — clean up
+      if (!state.pendingSave && !state.saveTimer && now - state.lastSaveTime > 10 * 60 * 1000) {
+        stateMap.delete(key);
+      }
+    }
+  }, 10 * 60 * 1000);
+}
+
+/**
+ * Clean up throttle state for a profile (call on profile switch / logout).
+ * Flushes any pending save before removing state.
+ */
+export function cleanupThrottleState(profileId: string): void {
+  const state = stateMap.get(profileId);
+  if (state) {
+    if (state.saveTimer) clearTimeout(state.saveTimer);
+    stateMap.delete(profileId);
+  }
+}
+
 function getState(profileId: string): ThrottleState {
   if (!stateMap.has(profileId)) {
     stateMap.set(profileId, { lastSaveTime: 0, pendingSave: null, saveTimer: null, consecutiveFailures: 0 });

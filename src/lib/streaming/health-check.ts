@@ -28,7 +28,7 @@
 import { getAllProviders, getReplacementPool, swapInReplacement, restoreOriginal, getPoolStatus } from '@/lib/streaming/providers';
 
 const HEALTH_TTL = 5 * 60 * 1000; // 5 minutes in ms
-const CHECK_TIMEOUT = 6000; // 6 seconds
+const CHECK_TIMEOUT = 3000; // 3 seconds — fast enough for embed selection, catches dead providers
 const CHECK_INTERVAL = 2 * 60 * 1000; // Check one provider every 2 min (was 5 min)
 const BATCH_INTERVAL = 30 * 1000; // Batch check every 30s (up to 3 providers)
 const BATCH_SIZE = 3; // How many providers to check per batch
