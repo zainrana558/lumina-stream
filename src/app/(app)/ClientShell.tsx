@@ -313,10 +313,13 @@ function AppShell({ children }: { children: ReactNode }) {
       {/* Site footer — hidden on details pages */}
       {!pathname.startsWith('/details') && <Footer />}
 
-      {/* Background provider health monitoring (feeds Intelligence Layer) */}
-      <Suspense fallback={null}>
-        <ClientHealthMonitor />
-      </Suspense>
+      {/* Background provider health monitoring (feeds Intelligence Layer) —
+          only on details pages where embed providers are actually used */}
+      {pathname.startsWith('/details') && (
+        <Suspense fallback={null}>
+          <ClientHealthMonitor />
+        </Suspense>
+      )}
     </div>
   );
 }

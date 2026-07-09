@@ -7,7 +7,6 @@ import type { Metadata } from 'next';
 import BrowseClient from '@/components/pages/BrowseClient';
 import { notFound } from 'next/navigation';
 
-export const dynamic = 'force-static';
 export const revalidate = 86400;
 
 const siteUrl = CANONICAL_BASE;

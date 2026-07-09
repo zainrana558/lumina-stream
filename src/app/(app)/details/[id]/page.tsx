@@ -88,25 +88,33 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   // ── TMDB route ──
   try {
+    // Single strategy: try TV with full details first, fall back to Movie.
+    // This cuts 4 calls down to 2 (1 in metadata, 1 in page body).
     const fallback: TMDBShowData = { id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 };
-    const [tvRes, movieRes] = await Promise.all([
-      tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => fallback),
-      tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => fallback),
-    ]);
-    const data = tvRes.id ? tvRes : movieRes.id ? movieRes : null;
-    const detectedType: 'tv' | 'movie' = tvRes.id ? 'tv' : 'movie';
 
-    if (!data?.id) {
+    const tryTv = async () => {
+      const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/tv/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings' });
+      return d.id ? { data: d, type: 'tv' as const } : null;
+    };
+    const tryMovie = async () => {
+      const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/movie/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings' });
+      return d.id ? { data: d, type: 'movie' as const } : null;
+    };
+
+    const result = (await tryTv().catch(() => null)) || (await tryMovie().catch(() => null));
+
+    if (!result?.data?.id) {
       return {
         title: 'Show',
         robots: { index: false, follow: true },
       };
     }
 
+    const data = result.data;
+    const mediaType = result.type;
     const title = data.title || data.name || 'Show';
     const year = (data.release_date || data.first_air_date)?.slice(0, 4) || undefined;
     const genres = data.genres?.map(g => g.name) || [];
-    const mediaType = detectedType === 'tv' ? 'tv' : 'movie';
     const backdrop = data.backdrop_path;
 
     const thin = isThinContent({
@@ -201,32 +209,37 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
 
   // ── TMDB route: standard ID ──
   let mediaType: 'tv' | 'movie' | null = null;
-  let rawData: TMDBShowData | null = null;
   let fullData: TMDBShowData & TMDBDetails | null = null;
 
   try {
-    // Step 1: Detect media type (try TV first, then Movie) — 2 parallel calls
-    const fallback: TMDBShowData = { id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 };
-    const [tvRes, movieRes] = await Promise.all([
-      tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => fallback),
-      tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => fallback),
-    ]);
-
-    mediaType = tvRes.id ? 'tv' : movieRes.id ? 'movie' : null;
-    rawData = mediaType === 'tv' ? tvRes : movieRes;
-
-    if (!rawData?.id) {
-      // No data found — return the component with null
-    } else {
-      // Step 2: Fetch full details only for the matched type
-      fullData = await tmdbFetch<TMDBShowData & TMDBDetails>(
-        `/${mediaType}/${showId}`,
+    // Try TV first with full details, then Movie — serial but each call
+    // includes append_to_response so we get everything in 1-2 calls total
+    // (instead of 2 type-detection + 1 full-details = 3 calls before)
+    const tryTv = async () => {
+      const d = await tmdbFetch<TMDBShowData & TMDBDetails>(
+        `/tv/${showId}`,
         { append_to_response: 'credits,similar,videos,content_ratings' }
-      ).catch(() => rawData as TMDBShowData & TMDBDetails);
+      );
+      return d.id ? { data: d, type: 'tv' as const } : null;
+    };
+    const tryMovie = async () => {
+      const d = await tmdbFetch<TMDBShowData & TMDBDetails>(
+        `/movie/${showId}`,
+        { append_to_response: 'credits,similar,videos,content_ratings' }
+      );
+      return d.id ? { data: d, type: 'movie' as const } : null;
+    };
+
+    const result = (await tryTv().catch(() => null)) || (await tryMovie().catch(() => null));
+    if (result) {
+      mediaType = result.type;
+      fullData = result.data;
     }
   } catch {
     // fall through to render with null
   }
+
+  const rawData = fullData;
 
   if (!rawData?.id || !mediaType) {
     return <DetailsContent showId={showId} initialShow={null} />;

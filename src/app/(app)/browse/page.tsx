@@ -6,8 +6,7 @@ import type { TMDBShow } from '@/types';
 import { tmdbToMedia } from '@/types';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-static';
-export const revalidate = 300; // 5 min — browse catalog changes slowly
+export const revalidate = 300;
 
 const siteUrl = CANONICAL_BASE;
 const browseUrl = `${siteUrl}/browse`;

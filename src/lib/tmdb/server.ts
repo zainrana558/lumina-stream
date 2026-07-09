@@ -31,8 +31,8 @@ function endpointToCacheCategory(endpoint: string): keyof typeof CACHE_TTL {
   return 'popular';
 }
 
-const FETCH_TIMEOUT = 8000;
-const MAX_RETRIES = Math.max(1, 1); // Ensure at least 1 retry
+const FETCH_TIMEOUT = 4000;
+const MAX_RETRIES = 1;
 const RETRY_DELAY = 500;
 
 async function fetchWithRetry(url: string, headers: Record<string, string>): Promise<Response> {
