@@ -62,40 +62,36 @@ interface SeoContentProps {
   popularity?: number;
 }
 
-/** Genre-specific analysis text — makes each page unique based on genre combo */
+/** Genre-specific analysis text — data-driven, not generic filler */
 function buildGenreAnalysis(title: string, genres: string[], mediaType: string, rating?: number, runtime?: number): string {
-  const g = genres.slice(0, 3).join(' and ');
+  const g = genres.slice(0, 3).join(', ');
   const typeLabel = mediaType === 'movie' ? 'film' : mediaType === 'anime' ? 'anime' : 'series';
   const primaryGenre = genres[0] || 'entertainment';
 
-  const genreInsights: Record<string, string> = {
-    'Action': `The ${primaryGenre} genre is one of the most popular categories on Lumovia, drawing millions of viewers who crave adrenaline-fueled storytelling. ${title} exemplifies what makes great ${g} ${typeLabel}s compelling: strong pacing, memorable characters, and set pieces that keep audiences engaged from beginning to end.`,
-    'Comedy': `${title} brings the art of comedic storytelling to life in a way that resonates with audiences worldwide. The ${g} ${typeLabel} genre has evolved significantly over the decades, and this ${typeLabel} represents some of the best modern ${primaryGenre.toLowerCase()} writing available.`,
-    'Drama': `Drama remains the cornerstone of great storytelling, and ${title} delivers powerful emotional depth that sets it apart from typical ${primaryGenre.toLowerCase()} fare. Viewers on Lumovia consistently rate ${g} titles highly because of their ability to explore complex human experiences.`,
-    'Horror': `The horror genre has experienced a remarkable renaissance in recent years, and ${title} stands as a testament to the creative potential of ${g} storytelling. Horror fans on Lumovia appreciate ${typeLabel}s that balance genuine scares with thoughtful narrative elements.`,
-    'Romance': `Romance continues to be one of the most searched-for genres on streaming platforms, and ${title} captures the emotional resonance that fans of ${g} ${typeLabel}s seek. The chemistry between characters and the exploration of love in its many forms make this ${typeLabel} a standout.`,
-    'Sci-Fi': `Science fiction offers some of the most imaginative storytelling in entertainment, and ${title} pushes the boundaries of the ${g} genre with its creative vision. Fans of speculative fiction on Lumovia will find much to appreciate in this ${typeLabel}'s approach to world-building and futuristic concepts.`,
-    'Thriller': `Thrillers demand tight plotting and relentless tension, and ${title} delivers on both fronts. The ${g} ${typeLabel} genre rewards viewers who appreciate carefully constructed narratives with unexpected twists and morally complex characters.`,
-    'Animation': `Animation has grown far beyond children's entertainment, and ${title} showcases the artistic and narrative possibilities of the medium. ${g} animated ${typeLabel}s attract dedicated fanbases on Lumovia who appreciate both the visual artistry and the depth of storytelling.`,
-    'Fantasy': `Fantasy storytelling transports audiences to extraordinary worlds, and ${title} builds an immersive ${g} experience that keeps viewers coming back. The genre's blend of mythological elements and human drama makes it one of the most engaging categories on Lumovia.`,
-    'Mystery': `Mystery ${typeLabel}s challenge viewers to piece together clues and unravel complex puzzles, and ${title} is a compelling entry in the ${g} genre. The satisfaction of a well-executed reveal keeps fans of detective and suspense stories thoroughly engaged.`,
-    'Crime': `Crime dramas and thrillers continue to captivate audiences with their exploration of the criminal underworld and moral ambiguity. ${title} adds to this rich tradition with its ${g} storytelling that keeps viewers guessing and invested in every scene.`,
-    'Documentary': `Documentary filmmaking has become increasingly popular as viewers seek factual, thought-provoking content. ${title} exemplifies the power of the ${g} genre to inform, challenge, and inspire audiences on Lumovia and beyond.`,
-  };
+  const parts: string[] = [];
 
-  const insight = genreInsights[primaryGenre] || genreInsights['Drama'] || `The ${g} genre offers something for every type of viewer, and ${title} is a strong representative of what makes this category compelling. Lumovia users who enjoy ${primaryGenre.toLowerCase()} content consistently rate these ${typeLabel}s highly for their entertainment value and storytelling quality.`;
+  // Factual genre + type statement
+  parts.push(`${title} is a ${primaryGenre.toLowerCase()} ${typeLabel}${genres.length > 1 ? ` that blends elements of ${genres.slice(1).join(', ')}` : ''}.`);
 
-  const ratingContext = rating && rating >= 7.5
-    ? ` With a TMDB rating of ${rating.toFixed(1)}/10, ${title} ranks among the higher-rated ${primaryGenre.toLowerCase()} titles available on the platform, indicating strong audience approval.`
-    : rating && rating >= 6
-    ? ` The ${rating.toFixed(1)}/10 TMDB rating suggests that ${title} has found its audience, even if opinions vary — which is typical for ${primaryGenre.toLowerCase()} ${typeLabel}s that take creative risks.`
-    : '';
+  // Rating context (factual, not promotional)
+  if (rating && rating > 0) {
+    if (rating >= 8) {
+      parts.push(`With a TMDB score of ${rating.toFixed(1)}/10, it ranks among the highest-rated ${primaryGenre.toLowerCase()} titles in our catalog.`);
+    } else if (rating >= 7) {
+      parts.push(`It holds a solid ${rating.toFixed(1)}/10 rating on TMDB, placing it above average for ${primaryGenre.toLowerCase()} ${typeLabel}s.`);
+    } else if (rating >= 6) {
+      parts.push(`The TMDB community has given it a ${rating.toFixed(1)}/10 rating.`);
+    }
+  }
 
-  const runtimeContext = runtime && mediaType === 'movie'
-    ? ` At ${runtime} minutes, this ${typeLabel} uses its runtime effectively to develop its ${primaryGenre.toLowerCase()} themes without overstaying its welcome.`
-    : '';
+  // Runtime context (movies only, factual)
+  if (runtime && mediaType === 'movie') {
+    const hrs = Math.floor(runtime / 60);
+    const mins = runtime % 60;
+    parts.push(`Runtime: ${hrs > 0 ? `${hrs}h ` : ''}${mins}m.`);
+  }
 
-  return insight + ratingContext + runtimeContext;
+  return parts.join(' ');
 }
 
 /** Build a programmatic FAQ array for any title */

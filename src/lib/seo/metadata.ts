@@ -152,7 +152,7 @@ export function buildShowMetadata(input: ShowMetadataInput): Metadata {
     mediaType === 'tv' ? 'TV Series' :
     'Movie';
 
-  const titleText = `${title}${yearStr} - Watch ${typeLabel} Online`;
+  const titleText = `${title}${yearStr} — Watch ${typeLabel} Online Free`;
 
   const desc = buildDescription({
     plot: description,

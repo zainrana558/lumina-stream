@@ -84,10 +84,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   // ── TMDB route ──
   try {
-    // Single strategy: try TV with full details first, fall back to Movie.
-    // This cuts 4 calls down to 2 (1 in metadata, 1 in page body).
-    const fallback: TMDBShowData = { id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 };
-
+    // TMDB uses SEPARATE ID namespaces for movies and TV.
+    // Both /tv/278 and /movie/278 return valid but DIFFERENT results.
+    // Fix: try both in parallel, pick the one with higher popularity.
     const tryTv = async () => {
       const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/tv/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings' });
       return d.id ? { data: d, type: 'tv' as const } : null;
@@ -97,7 +96,18 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       return d.id ? { data: d, type: 'movie' as const } : null;
     };
 
-    const result = (await tryTv().catch(() => null)) || (await tryMovie().catch(() => null));
+    const [tvResult, movieResult] = await Promise.all([
+      tryTv().catch(() => null),
+      tryMovie().catch(() => null),
+    ]);
+
+    let result: { data: TMDBShowData & TMDBDetails; type: 'tv' | 'movie' } | null = null;
+    if (tvResult && movieResult) {
+      // Both exist — pick higher popularity (more likely the intended content)
+      result = tvResult.data.popularity >= movieResult.data.popularity ? tvResult : movieResult;
+    } else {
+      result = tvResult || movieResult;
+    }
 
     if (!result?.data?.id) {
       return {
@@ -222,9 +232,8 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   let fullData: TMDBShowData & TMDBDetails | null = null;
 
   try {
-    // Try TV first with full details, then Movie — serial but each call
-    // includes append_to_response so we get everything in 1-2 calls total
-    // (instead of 2 type-detection + 1 full-details = 3 calls before)
+    // TMDB uses SEPARATE ID namespaces for movies and TV.
+    // Try both in parallel, pick higher popularity.
     const tryTv = async () => {
       const d = await tmdbFetch<TMDBShowData & TMDBDetails>(
         `/tv/${showId}`,
@@ -240,14 +249,21 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
       return d.id ? { data: d, type: 'movie' as const } : null;
     };
 
-    // Also fetch production_companies, seasons, original_title, tagline, original_language
-    // These are included in the base TV/movie endpoint response already.
-    // No extra API call needed — just use fields from fullData.
+    const [tvResult, movieResult] = await Promise.all([
+      tryTv().catch(() => null),
+      tryMovie().catch(() => null),
+    ]);
 
-    const result = (await tryTv().catch(() => null)) || (await tryMovie().catch(() => null));
-    if (result) {
+    if (tvResult && movieResult) {
+      const result = tvResult.data.popularity >= movieResult.data.popularity ? tvResult : movieResult;
       mediaType = result.type;
       fullData = result.data;
+    } else {
+      const result = tvResult || movieResult;
+      if (result) {
+        mediaType = result.type;
+        fullData = result.data;
+      }
     }
   } catch {
     // fall through to render with null

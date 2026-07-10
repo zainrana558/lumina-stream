@@ -210,7 +210,7 @@ export function tmdbToMedia(item: TMDBShow): MediaItem {
     genre: genres.length > 0 ? genres : ['Drama'],
     r: Math.round(rating * 10) / 10,
     yr: year,
-    eps: item.number_of_episodes || (item.media_type === 'movie' ? 1 : 10),
+    eps: item.number_of_episodes || (item.media_type === 'movie' ? 1 : 0),
     st: item.status || 'Returning Series',
     tag: item.media_type === 'movie' ? 'Movie' : 'Series',
     cs,
