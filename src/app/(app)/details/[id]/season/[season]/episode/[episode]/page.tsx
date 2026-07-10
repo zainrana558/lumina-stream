@@ -241,6 +241,16 @@ export default async function EpisodePage({
             { '@type': 'ListItem', position: 4, name: `Episode ${episode}`, item: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}` },
           ],
         }) }} />
+        <EpisodeSeoContent
+          showTitle={show?.title || 'Anime'}
+          showId={showId}
+          season={season}
+          episode={episode}
+          showOverview={show?.desc || ''}
+          showGenres={[]}
+          showMediaType="anime"
+          totalEpisodes={show?.eps}
+        />
         <DetailsContent showId={showId} initialShow={show} defaultSeason={season} defaultEpisode={episode} />
       </>
     );

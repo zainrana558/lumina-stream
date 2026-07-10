@@ -42,8 +42,8 @@ export async function GET() {
   // Decade pages
   for (const decade of DECADES) add(`/decade/${decade}`, '0.75');
 
-  // Year pages (current year to -11)
-  for (let i = 0; i < 12; i++) {
+  // Year pages (current year to -19)
+  for (let i = 0; i < 20; i++) {
     const year = CURRENT_YEAR + 1 - i;
     add(`/year/${year}`, year >= CURRENT_YEAR ? '0.8' : '0.6');
   }

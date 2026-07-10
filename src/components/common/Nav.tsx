@@ -60,6 +60,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
     { key: 'home', label: 'Home' },
     { key: 'shows', label: 'Browse' },
     { key: 'genre', label: 'Genres' },
+    { key: 'leaderboard', label: 'Leaderboard' },
     { key: 'watchlist', label: 'Watchlist' },
     { key: 'collections', label: 'Collections' },
     { key: 'activity', label: 'Activity' },
@@ -70,6 +71,10 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
     setMenuOpen(false);
     if (item.key === 'genre') {
       router.push('/genre/anime');
+      return;
+    }
+    if (item.key === 'leaderboard') {
+      router.push('/leaderboard');
       return;
     }
     go(item.key);

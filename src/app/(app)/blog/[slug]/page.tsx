@@ -76,6 +76,7 @@ const TEMPLATES = {
 };
 
 function generateBlogContent(show: {
+  id: number;
   title: string;
   year?: string;
   overview: string;
@@ -100,7 +101,7 @@ ${template(
 <div class="cta-block" style="margin-top:32px;padding:24px;border-radius:12px;background:linear-gradient(135deg,rgba(255,179,71,.1),rgba(139,120,255,.1));border:1px solid rgba(255,179,71,.2);text-align:center">
   <p style="font-size:1.1rem;font-weight:700;color:#FFB347;margin:0 0 8px">🎬 Ready to Watch?</p>
   <p style="margin:0 0 16px;color:rgba(255,245,232,.7)">Stream ${show.title} and thousands of more titles — completely free.</p>
-  <a href="/details/${show.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}" style="display:inline-block;padding:12px 32px;border-radius:50px;background:linear-gradient(175deg,#FFE566,#FFB347,#E07200);color:#05020A;font-weight:700;text-decoration:none;font-size:.9rem">▶ Watch Now</a>
+  <a href="/details/${show.id}" style="display:inline-block;padding:12px 32px;border-radius:50px;background:linear-gradient(175deg,#FFE566,#FFB347,#E07200);color:#05020A;font-weight:700;text-decoration:none;font-size:.9rem">▶ Watch Now</a>
 </div>
 </article>`;
 }
@@ -203,6 +204,7 @@ export default async function BlogSlugPage({ params }: Props) {
   if (!show) notFound();
 
   const content = generateBlogContent({
+    id: show.id,
     title: show.title,
     year: show.year,
     overview: show.overview,
