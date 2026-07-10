@@ -13,6 +13,7 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
  *   - sitemap-details.xml → /details/[id] (movies + TV shows)
  *   - sitemap-episodes.xml → /details/[id]/season/[s]/episode/[e]
  *   - sitemap-people.xml  → /person/[id]
+ *   - sitemap-blog.xml    → /blog/[slug] (SEO blog posts)
  */
 
 const SUB_SITEMAPS = [
@@ -20,6 +21,7 @@ const SUB_SITEMAPS = [
   'sitemap-details.xml',
   'sitemap-episodes.xml',
   'sitemap-people.xml',
+  'sitemap-blog.xml',
 ] as const;
 
 export async function GET() {
