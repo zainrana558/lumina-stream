@@ -15,10 +15,12 @@ export async function GET() {
     tmdbFetch<TMDBListResponse<TMDBPerson>>('/trending/person/week', { page: '2' }),
     tmdbFetch<TMDBListResponse<TMDBPerson>>('/trending/person/week', { page: '3' }),
     tmdbFetch<TMDBListResponse<TMDBPerson>>('/trending/person/week', { page: '4' }),
+    tmdbFetch<TMDBListResponse<TMDBPerson>>('/trending/person/week', { page: '5' }),
     tmdbFetch<TMDBListResponse<TMDBPerson>>('/person/popular', { page: '1' }),
     tmdbFetch<TMDBListResponse<TMDBPerson>>('/person/popular', { page: '2' }),
     tmdbFetch<TMDBListResponse<TMDBPerson>>('/person/popular', { page: '3' }),
     tmdbFetch<TMDBListResponse<TMDBPerson>>('/person/popular', { page: '4' }),
+    tmdbFetch<TMDBListResponse<TMDBPerson>>('/person/popular', { page: '5' }),
   ];
 
   const results = await Promise.allSettled(work);
