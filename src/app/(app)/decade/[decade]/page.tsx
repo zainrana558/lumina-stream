@@ -145,6 +145,15 @@ export default async function DecadePage({ params }: { params: Promise<{ decade:
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          { '@type': 'Question', name: `What movies and TV shows are included in the ${meta.title} collection?`, acceptedAnswer: { '@type': 'Answer', text: `The ${meta.title} collection includes the most popular and highest-rated movies and TV shows released between ${meta.startYear} and ${meta.endYear}. We run four separate TMDB discover queries — popular movies, popular TV, top-rated movies, and top-rated TV — all filtered to this decade range, then deduplicate and sort by relevance.` } },
+          { '@type': 'Question', name: 'How many titles are in each decade collection?', acceptedAnswer: { '@type': 'Answer', text: `Each decade page displays up to 100 titles, curated from thousands available on TMDB. The selection prioritizes titles with high popularity and strong audience ratings to surface the most beloved content from each decade.` } },
+          { '@type': 'Question', name: 'Can I browse by individual year instead of decade?', acceptedAnswer: { '@type': 'Answer', text: `Yes. Lumina Stream also offers year-specific pages for every year from ${new Date().getFullYear() - 10} to ${new Date().getFullYear() + 1}. Visit the year pages for a more granular view of releases within the decade that interests you.` } },
+        ],
+      }) }} />
       <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>{meta.title}</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>

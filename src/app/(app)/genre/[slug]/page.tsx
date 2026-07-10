@@ -214,6 +214,15 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          { '@type': 'Question', name: `What ${config.title.toLowerCase()} titles can I find here?`, acceptedAnswer: { '@type': 'Answer', text: `This ${config.title.toLowerCase()} page curates the best titles from ${config.source === 'anilist' ? 'AniList' : 'TMDB'}, updated regularly. Use the sub-genre filters and sort options to narrow down results. Our collection includes both popular hits and critically acclaimed ${config.title.toLowerCase()} content.` } },
+          { '@type': 'Question', name: `How is the ${config.title.toLowerCase()} collection updated?`, acceptedAnswer: { '@type': 'Answer', text: `The ${config.title.toLowerCase()} catalog is powered by ${config.source === 'anilist' ? 'AniList' : 'TMDB'} and refreshed regularly with new titles. Content is re-curated throughout the day to ensure fresh, relevant results.` } },
+          { '@type': 'Question', name: 'Can I filter by sub-genre within this genre?', acceptedAnswer: { '@type': 'Answer', text: `Yes. Each genre page includes sub-genre filter tags that let you narrow results. For example, within horror you can filter for supernatural, psychological, or slasher titles. Click any sub-genre tag to apply the filter.` } },
+        ],
+      }) }} />
       <p className="f-crimson" style={{
         maxWidth: 1200, margin: '0 auto',
         padding: 'clamp(60px,7vw,80px) 20px 0',

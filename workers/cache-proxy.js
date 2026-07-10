@@ -249,7 +249,27 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
   // Needed for: HTML pages (chunked from Vercel) + API data (JSON).
   // Static assets already have Content-Length and are cached by CDN-Cache-Control.
   if (ttl > 0 && !isStaticAsset(pathname) && request.method === 'GET') {
-    const body = await response.arrayBuffer();
+    let body = await response.arrayBuffer();
+
+    // ── SEO: Inject canonical link for HTML pages on proxy domain ──
+    // When the page is served via the proxy domain (e.g. cache-proxy.workers.dev),
+    // inject a <link rel="canonical"> pointing to the Vercel origin so Google
+    // treats the proxy URL as a duplicate of the canonical Vercel URL.
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('text/html') && incomingUrl.hostname !== VERCEL_HOST) {
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+      let html = decoder.decode(body);
+      const canonicalUrl = `${VERCEL_ORIGIN}${pathname}`;
+      const canonicalTag = `<link rel="canonical" href="${canonicalUrl}">`;
+      // Insert after <head> or at the start if no <head>
+      if (html.includes('<head')) {
+        html = html.replace('<head', `<head\n  ${canonicalTag}`);
+      } else {
+        html = canonicalTag + html;
+      }
+      body = new TextEncoder().encode(html).buffer;
+    }
+
     responseHeaders.set('Content-Length', body.byteLength.toString());
     responseHeaders.delete('Transfer-Encoding');
 

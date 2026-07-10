@@ -90,6 +90,15 @@ export default async function TopRatedPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          { '@type': 'Question', name: 'How are the top-rated movies and TV shows ranked?', acceptedAnswer: { '@type': 'Answer', text: 'Titles on the Top Rated page are ranked by audience scores from TMDB. We only include titles with a minimum of 500 user votes to ensure the ratings are reliable and representative of broad audience opinion.' } },
+          { '@type': 'Question', name: 'What is the highest-rated movie of all time?', acceptedAnswer: { '@type': 'Answer', text: 'The highest-rated movies on TMDB include classics like The Shawshank Redemption, The Godfather, and The Dark Knight. Browse the Top Rated page to see the current rankings, which are updated automatically as new votes come in.' } },
+          { '@type': 'Question', name: 'Does the Top Rated page include both movies and TV shows?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. The Top Rated page combines the highest-rated movies and TV shows from TMDB into a single list sorted by rating. You can use the genre and sort filters to focus on specific types of content.' } },
+        ],
+      }) }} />
       <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Top Rated</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>

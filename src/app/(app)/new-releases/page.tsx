@@ -89,6 +89,15 @@ export default async function NewReleasesPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          { '@type': 'Question', name: 'What qualifies as a new release on Lumina Stream?', acceptedAnswer: { '@type': 'Answer', text: 'New releases include movies currently playing in theaters, upcoming theatrical releases, TV shows airing today, series currently on the air, and content trending in the last 24 hours. All data is sourced from TMDB and updated continuously.' } },
+          { '@type': 'Question', name: 'How often is the New Releases page updated?', acceptedAnswer: { '@type': 'Answer', text: 'The New Releases page is updated every five minutes by pulling fresh data from five TMDB endpoints. New titles appear automatically as studios add release dates and TMDB users generate activity around new content.' } },
+          { '@type': 'Question', name: 'Can I see upcoming movies before they are released?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. The New Releases page includes upcoming movies from TMDB, which list titles with announced release dates. Check back regularly as new dates are finalized and new titles are added to the upcoming slate.' } },
+        ],
+      }) }} />
       <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>New Releases</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>

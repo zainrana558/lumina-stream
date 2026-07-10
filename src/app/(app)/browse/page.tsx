@@ -88,6 +88,15 @@ export default async function BrowsePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          { '@type': 'Question', name: 'What can I find on the Lumina Stream Browse page?', acceptedAnswer: { '@type': 'Answer', text: 'The Browse page combines trending, popular, and top-rated movies and TV shows into a single powerful discovery page. It aggregates data from TMDB and AniList to provide a comprehensive catalog of thousands of titles across every genre, updated every few minutes.' } },
+          { '@type': 'Question', name: 'How do I filter content on the Browse page?', acceptedAnswer: { '@type': 'Answer', text: 'Use the built-in genre filter chips, sort by popularity or rating, and the search bar to narrow down results. The Browse page supports filtering by genre, sort order, and text search to help you find exactly what you are looking for.' } },
+          { '@type': 'Question', name: 'How often is the Browse catalog updated?', acceptedAnswer: { '@type': 'Answer', text: 'The catalog data is sourced from TMDB and AniList and refreshed throughout the day. Trending content updates every five minutes, popular lists refresh hourly, and new titles appear automatically as they become popular on TMDB.' } },
+        ],
+      }) }} />
       <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Browse</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>

@@ -8,21 +8,24 @@ const siteUrl = CANONICAL_BASE;
 const calendarUrl = `${siteUrl}/release-calendar`;
 
 export const metadata: Metadata = {
-  title: 'Release Calendar',
-  description: 'Discover upcoming movie releases organized by month.',
+  title: 'Release Calendar - Upcoming Movie Releases by Month',
+  description:
+    'Plan your movie nights with the Lumina Stream release calendar. Browse upcoming theatrical and streaming premieres organized by month, with posters, release dates, and ratings for every film. Covers the next several months of scheduled releases from all major studios, updated automatically as new dates are announced.',
   alternates: { canonical: calendarUrl },
   openGraph: {
     type: 'website',
     url: calendarUrl,
-    title: 'Release Calendar | Lumina Stream',
-    description: 'Discover upcoming movie releases organized by month.',
+    title: 'Release Calendar - Upcoming Movie Releases | Lumina Stream',
+    description:
+      'Plan your movie nights with the Lumina Stream release calendar. Browse upcoming theatrical and streaming premieres organized by month.',
     siteName: 'Lumina Stream',
     images: [{ url: `${siteUrl}/og/og-new-releases.png`, width: 1344, height: 768, alt: 'Release Calendar on Lumina Stream' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Release Calendar | Lumina Stream',
-    description: 'Discover upcoming movie releases organized by month.',
+    title: 'Release Calendar - Upcoming Movie Releases | Lumina Stream',
+    description:
+      'Browse upcoming movie releases organized by month on Lumina Stream.',
     images: [`${siteUrl}/og/og-new-releases.png`],
   },
 };
@@ -107,6 +110,15 @@ export default async function ReleaseCalendarPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          { '@type': 'Question', name: 'What is the Lumina Stream Release Calendar?', acceptedAnswer: { '@type': 'Answer', text: 'The Release Calendar organizes all upcoming movie releases by month, pulling real-time premiere dates from TMDB. It covers the next several months of scheduled theatrical and streaming premieres, with new dates added automatically as studios announce them.' } },
+          { '@type': 'Question', name: 'How far in advance are release dates listed?', acceptedAnswer: { '@type': 'Answer', text: 'The Release Calendar shows upcoming movies as far out as TMDB has data, typically covering several months of future releases. Each entry includes the title, poster, release date, and rating to help you plan your watchlist.' } },
+          { '@type': 'Question', name: 'Are release dates accurate?', acceptedAnswer: { '@type': 'Answer', text: 'Release dates come directly from TMDB, which aggregates studio announcements and theater listings. Dates may shift as studios adjust schedules, but the calendar updates automatically to reflect the latest information available.' } },
+        ],
+      }) }} />
       <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Release Calendar</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>

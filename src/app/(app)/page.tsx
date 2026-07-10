@@ -207,21 +207,21 @@ async function getTMDBData() {
 export const revalidate = 300; // 5 min ISR — avoids 130+ API calls at build time
 
 export const metadata: Metadata = {
-  title: 'Lumina Stream - Dream, Discover, Stream',
-  description: 'Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.',
+  title: 'Lumina Stream - Watch Free Movies, TV Shows, Anime & Cartoons Online',
+  description: 'Lumina Stream is a free streaming catalog with thousands of movies, TV shows, anime series, and cartoons. Discover trending content, top-rated classics, new releases, genre portals, and seasonal anime — all powered by TMDB and AniList with data updated every few minutes.',
   alternates: { canonical: `${CANONICAL_BASE}/` },
   openGraph: {
-    title: 'Lumina Stream - Dream, Discover, Stream',
-    description: 'Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.',
+    title: 'Lumina Stream - Watch Free Movies, TV Shows, Anime & Cartoons Online',
+    description: 'Stream thousands of free movies, TV shows, anime, and cartoons. Trending, top-rated, new releases, and genre portals updated in real time.',
     type: 'website',
     url: CANONICAL_BASE,
     siteName: 'Lumina Stream',
-    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumina Stream - Dream, Discover, Stream' }],
+    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumina Stream - Watch Free Movies, TV Shows, Anime & Cartoons' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Lumina Stream - Dream, Discover, Stream',
-    description: 'Explore a curated collection of movies, TV shows, anime, and cartoons.',
+    title: 'Lumina Stream - Watch Free Movies, TV Shows, Anime & Cartoons Online',
+    description: 'Stream thousands of free movies, TV shows, anime, and cartoons on Lumina Stream.',
     images: [`${CANONICAL_BASE}/og/og-movies.png`],
   },
 };
@@ -233,7 +233,7 @@ export default async function HomePage() {
     '@type': 'WebSite',
     name: 'Lumina Stream',
     url: CANONICAL_BASE,
-    description: 'Stream movies, TV shows, anime, and cartoons for free.',
+    description: 'Lumina Stream is a free streaming catalog with thousands of movies, TV shows, anime series, and cartoons powered by TMDB and AniList.',
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -243,12 +243,100 @@ export default async function HomePage() {
       'query-input': 'required name=search_term_string',
     },
   };
+
+  const homeFaqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'What is Lumina Stream?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream is a free streaming catalog that aggregates movie, TV show, anime, and cartoon data from TMDB and AniList. Browse thousands of titles across every genre, discover trending content, track seasonal anime, and explore curated genre portals — all at no cost and with no account required.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'How much content is available on Lumina Stream?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream catalogs thousands of movies, TV shows, anime series, and cartoons. Content spans every major genre including action, comedy, drama, horror, romance, sci-fi, thriller, mystery, and fantasy. Our catalog is continuously synced with TMDB and AniList, so new titles appear as soon as they become popular.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'Is Lumina Stream free?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Yes. Lumina Stream is completely free to use. No subscription, no payment, and no account is needed to browse and discover content. Create an optional free account to unlock features like watchlists, progress tracking, ratings, and collections.' },
+      },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeFaqJsonLd) }}
+      />
+
+      {/* Server-rendered SEO text — visible to Googlebot without JS */}
+      <style>{`
+        .home-qlink {
+          display: inline-block; padding: 6px 14px; border-radius: 8px;
+          font-size: .78rem; color: #FFB347; text-decoration: none;
+          background: rgba(255,245,232,.04); border: 1px solid rgba(255,245,232,.08);
+          transition: background .2s, border-color .2s;
+        }
+        .home-qlink:hover { background: rgba(255,245,232,.08); border-color: rgba(255,179,71,.3); }
+      `}</style>
+      <section
+        aria-label="About Lumina Stream"
+        style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          padding: 'clamp(20px,3vw,40px) clamp(16px,3vw,24px) 0',
+        }}
+      >
+        <h1 className="f-cinzel-dec" style={{
+          fontSize: 'clamp(1.6rem,3.5vw,2.6rem)',
+          color: '#FFF5E8',
+          marginBottom: 16,
+          letterSpacing: '.02em',
+        }}>
+          Watch Free Movies, TV Shows, Anime & Cartoons Online
+        </h1>
+        <p className="f-crimson" style={{
+          fontSize: 'clamp(.88rem,1.2vw,1.05rem)',
+          color: 'rgba(255,245,232,.55)',
+          lineHeight: 1.75,
+          maxWidth: 860,
+          marginBottom: 20,
+        }}>
+          Lumina Stream is a free streaming catalog that aggregates thousands of movies, TV shows, anime series, and cartoons from The Movie Database (TMDB) and AniList. Every title on this page is pulled from real-time API data — trending content refreshes every five minutes, popular and top-rated lists update hourly, and genre rows are re-curated throughout the day. Scroll down to explore trending movies and TV, genre-specific rows for action, comedy, sci-fi, drama, and thriller, a dedicated anime section powered by AniList, curated collections of hidden gems and critically acclaimed films, and six immersive genre portals for anime, cartoons, horror, romance, mystery, and fantasy. Use the search bar to find any title instantly, or browse our genre index, decade pages, and release calendar for structured discovery. Lumina Stream runs entirely in your browser with no app download required, works on desktop, tablet, and mobile, and costs nothing to use.
+        </p>
+        <nav aria-label="Quick links" style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 8,
+          marginBottom: 8,
+        }}>
+          {[
+            { label: 'Movies', href: '/movies' },
+            { label: 'TV Shows', href: '/tv-shows' },
+            { label: 'Top Rated', href: '/top-rated' },
+            { label: 'New Releases', href: '/new-releases' },
+            { label: 'Anime', href: '/genre/anime' },
+            { label: 'Seasonal Anime', href: '/seasonal' },
+            { label: 'All Genres', href: '/genres' },
+            { label: 'Browse', href: '/browse' },
+            { label: 'Release Calendar', href: '/release-calendar' },
+            { label: 'Decade Collections', href: '/decade/2020s' },
+          ].map(link => (
+            <a key={link.href} href={link.href} className="home-qlink">
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </section>
+
       <Home featured={featured} rows={rows} genreFeatured={genreFeatured} />
     </>
   );

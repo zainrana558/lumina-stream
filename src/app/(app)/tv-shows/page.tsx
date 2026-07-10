@@ -88,6 +88,15 @@ export default async function TVShowsPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(tvJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          { '@type': 'Question', name: 'What TV shows are available on Lumina Stream?', acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream offers a comprehensive TV show catalog including currently airing series, classic shows, popular dramas, hit comedies, and trending TV from around the world. Data is sourced from TMDB and refreshed throughout the day.' } },
+          { '@type': 'Question', name: 'How often are TV shows updated?', acceptedAnswer: { '@type': 'Answer', text: 'Our TV catalog is updated every five minutes using data from five TMDB endpoints — trending TV, popular TV, top-rated TV, airing today, and on the air — so you always see the latest episodes and newly added series.' } },
+          { '@type': 'Question', name: 'Can I browse TV shows by genre?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use the genre filter chips on the TV Shows page to narrow results by genre including drama, comedy, thriller, sci-fi, and more. You can also sort by popularity, rating, or newest to find the perfect show for your mood.' } },
+        ],
+      }) }} />
       <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>TV Shows</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>

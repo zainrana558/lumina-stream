@@ -129,6 +129,15 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          { '@type': 'Question', name: `What movies and TV shows were released in ${year}?`, acceptedAnswer: { '@type': 'Answer', text: `This page collects the most popular and highest-rated movies and TV shows released in ${year}, pulling data from TMDB. We run four separate discover queries — popular movies, popular TV, top-rated movies, and top-rated TV — all filtered to ${year}, then deduplicate and sort by relevance.` } },
+          { '@type': 'Question', name: `How many titles are available for ${year}?`, acceptedAnswer: { '@type': 'Answer', text: `The ${year} page displays up to 100 titles from thousands available on TMDB. The selection prioritizes high-popularity and high-rated content to surface the most significant releases from ${year}.` } },
+          { '@type': 'Question', name: `Can I browse other years or decades?`, acceptedAnswer: { '@type': 'Answer', text: `Yes. Use the decade collection pages to browse titles by era, or visit individual year pages for ${Array.from({length: 12}, (_, i) => new Date().getFullYear() + 1 - i).join(', ')}. All pages are accessible from the navigation menu and interlinked for easy exploration.` } },
+        ],
+      }) }} />
       <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>{isFuture ? `Upcoming ${year}` : `${year}`}</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>

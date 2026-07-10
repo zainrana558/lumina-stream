@@ -1,12 +1,12 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
 import { getAnimeDetail, anilistToMediaItem } from '@/lib/anilist/client';
 import DetailsContent from '@/components/pages/DetailsContent';
+import DetailSeoContent from '@/components/seo/DetailSeoContent';
 import type { Metadata } from 'next';
 import { tmdbToMedia, isAnilistId, toAnilistId } from '@/types';
 import type { TMDBShow, MediaItem } from '@/types';
 import {
   buildShowMetadata,
-  isThinContent,
   stripHtml,
   SITE_URL,
 } from '@/lib/seo/metadata';
@@ -39,6 +39,10 @@ interface TMDBDetails {
   videos?: { results: Array<{ id: string; key: string; name: string; type: string; site: string }> };
   seasons?: Array<{ season_number: number; name: string; episode_count: number }>;
   content_ratings?: { results: Array<{ iso_3166_1: string; rating: string }> };
+  production_companies?: Array<{ name: string }>;
+  original_title?: string;
+  original_language?: string;
+  tagline?: string;
 }
 
 export const revalidate = 600; // 10 min
@@ -59,13 +63,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         const genres = data.genres || [];
         const cover = data.coverImage?.extraLarge || data.coverImage?.large;
 
-        const thin = isThinContent({
-          description,
-          genres,
-          cast: [],
-          coverImage: cover,
-        });
-
         return buildShowMetadata({
           title,
           year,
@@ -76,7 +73,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
           image: cover || undefined,
           imageWidth: cover ? 1200 : undefined,
           imageHeight: cover ? 630 : undefined,
-          isThin: thin,
         });
       }
     } catch { /* fall through */ }
@@ -117,13 +113,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const genres = data.genres?.map(g => g.name) || [];
     const backdrop = data.backdrop_path;
 
-    const thin = isThinContent({
-      description: data.overview,
-      genres,
-      cast: [],
-      posterPath: data.poster_path,
-    });
-
     return buildShowMetadata({
       title,
       year,
@@ -134,7 +123,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       image: backdrop ? `https://image.tmdb.org/t/p/original${backdrop}` : undefined,
       imageWidth: 1200,
       imageHeight: 630,
-      isThin: thin,
     });
   } catch {
     return {
@@ -202,6 +190,21 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
             { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}/details/${showId}` },
           ],
         }) }} />
+        {/* SERVER-RENDERED SEO CONTENT for AniList anime */}
+        {show && (
+          <DetailSeoContent
+            title={show.title}
+            year={show.yr ? String(show.yr) : undefined}
+            overview={stripHtml(show.desc || '')}
+            genres={[]}
+            mediaType="anime"
+            showId={showId}
+            rating={show.r ? show.r / 10 : undefined}
+            episodes={show.eps}
+            cast={[]}
+            similar={[]}
+          />
+        )}
         <DetailsContent showId={showId} initialShow={show} />
       </>
     );
@@ -230,6 +233,10 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
       return d.id ? { data: d, type: 'movie' as const } : null;
     };
 
+    // Also fetch production_companies, seasons, original_title, tagline, original_language
+    // These are included in the base TV/movie endpoint response already.
+    // No extra API call needed — just use fields from fullData.
+
     const result = (await tryTv().catch(() => null)) || (await tryMovie().catch(() => null));
     if (result) {
       mediaType = result.type;
@@ -252,8 +259,10 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   const releaseDate = rawData.release_date || rawData.first_air_date || undefined;
   const castNames = fullData?.credits?.cast?.slice(0, 5).map(c => c.name) || [];
   const genreNames = rawData.genres?.map(g => g.name) || [];
+  const genreIds = rawData.genres?.map(g => g.id) || [];
   const usRating = fullData?.content_ratings?.results?.find(r => r.iso_3166_1 === 'US')?.rating
     || fullData?.content_ratings?.results?.[0]?.rating;
+  const year = (releaseDate)?.slice(0, 4) || undefined;
 
   // Movie or TVSeries schema depending on media type
   const jsonLd: Record<string, unknown> = {
@@ -305,6 +314,32 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
           { '@type': 'ListItem', position: 2, name: title, item: `${SITE_URL}/details/${showId}` },
         ],
       }) }} />
+      {/* SERVER-RENDERED SEO CONTENT — visible to Googlebot without JS */}
+      <DetailSeoContent
+        title={title}
+        year={year}
+        overview={rawData.overview || ''}
+        tagline={rawData.tagline}
+        genres={genreNames}
+        genreIds={genreIds}
+        mediaType={mediaType}
+        showId={showId}
+        rating={rawData.vote_average || undefined}
+        voteCount={rawData.vote_count}
+        runtime={rawData.runtime}
+        seasons={rawData.number_of_seasons}
+        episodes={rawData.number_of_episodes}
+        status={rawData.status}
+        contentRating={usRating}
+        releaseDate={releaseDate}
+        cast={fullData?.credits?.cast?.slice(0, 12) || []}
+        similar={(fullData?.similar?.results?.slice(0, 10) || []).map((r) => ({ id: r.id, title: r.title, name: r.name, vote_average: r.vote_average, release_date: r.release_date, first_air_date: r.first_air_date }))}
+        productionCompanies={fullData?.production_companies?.map(pc => pc.name)}
+        seasonList={fullData?.seasons}
+        originalTitle={rawData.original_title}
+        originalLanguage={rawData.original_language}
+        popularity={rawData.popularity}
+      />
       <DetailsContent
         showId={showId}
         initialShow={show}

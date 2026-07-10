@@ -88,6 +88,15 @@ export default async function MoviesPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(moviesJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          { '@type': 'Question', name: 'How many movies are available on Lumina Stream?', acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream catalogs thousands of movies from every era and genre, including Hollywood blockbusters, indie films, international cinema, and classic movies. Our catalog is continuously synced with TMDB, so new movies appear as soon as they become popular.' } },
+          { '@type': 'Question', name: 'What genres of movies can I browse?', acceptedAnswer: { '@type': 'Answer', text: 'You can browse movies across all major genres including action, comedy, drama, horror, romance, sci-fi, thriller, mystery, fantasy, and more. Use the genre filter chips on the movies page to narrow results by your preferred genre.' } },
+          { '@type': 'Question', name: 'Are new movies added regularly?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Our movies catalog pulls from five TMDB endpoints — trending, popular, top-rated, now playing, and upcoming — to ensure a fresh selection. New theatrical releases and streaming premieres appear automatically as they are added to TMDB.' } },
+        ],
+      }) }} />
       <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Movies</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
