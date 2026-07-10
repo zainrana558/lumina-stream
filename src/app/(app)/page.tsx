@@ -207,21 +207,21 @@ async function getTMDBData() {
 export const revalidate = 300; // 5 min ISR — avoids 130+ API calls at build time
 
 export const metadata: Metadata = {
-  title: 'Lumovia - Watch Free Movies, TV Shows, Anime & Cartoons Online',
-  description: 'Lumovia is a free streaming catalog with thousands of movies, TV shows, anime series, and cartoons. Discover trending content, top-rated classics, new releases, genre portals, and seasonal anime — all powered by TMDB and AniList with data updated every few minutes.',
+  title: 'Lumovia — Free Movies, TV Shows & Anime',
+  description: 'Stream thousands of free movies, TV shows, anime, and cartoons on Lumovia. Discover trending, top-rated, and new releases updated daily.',
   alternates: { canonical: `${CANONICAL_BASE}/` },
   openGraph: {
-    title: 'Lumovia - Watch Free Movies, TV Shows, Anime & Cartoons Online',
-    description: 'Stream thousands of free movies, TV shows, anime, and cartoons. Trending, top-rated, new releases, and genre portals updated in real time.',
+    title: 'Lumovia — Free Movies, TV Shows & Anime',
+    description: 'Stream thousands of free movies, TV shows, anime, and cartoons on Lumovia. Trending, top-rated, and new releases updated daily.',
     type: 'website',
     url: CANONICAL_BASE,
     siteName: 'Lumovia',
-    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumovia - Watch Free Movies, TV Shows, Anime & Cartoons' }],
+    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumovia — Free Movies, TV Shows & Anime' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Lumovia - Watch Free Movies, TV Shows, Anime & Cartoons Online',
-    description: 'Stream thousands of free movies, TV shows, anime, and cartoons on Lumovia.',
+    title: 'Lumovia — Free Movies, TV Shows & Anime',
+    description: 'Stream free movies, TV shows, anime & cartoons on Lumovia.',
     images: [`${CANONICAL_BASE}/og/og-movies.png`],
   },
 };

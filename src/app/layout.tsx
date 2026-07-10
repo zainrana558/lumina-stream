@@ -44,16 +44,16 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: "Lumovia - Dream, Discover, Stream",
+    default: "Lumovia — Free Movies, TV Shows & Anime",
     template: "%s | Lumovia",
   },
-  description: "Lumovia — your free streaming catalog for movies, TV shows, anime, and cartoons. Browse thousands of titles with ratings, trailers, cast info, and episode guides. Updated daily.",
+  description: "Stream thousands of free movies, TV shows, anime, and cartoons on Lumovia. Discover trending, top-rated, and new releases updated daily.",
   metadataBase: new URL(CANONICAL_BASE),
   alternates: { languages: { 'x-default': CANONICAL_BASE, 'en-US': CANONICAL_BASE } },
   manifest: '/manifest.json',
   openGraph: {
     title: "Lumovia",
-    description: "Explore a curated collection of movies, TV shows, anime, and cartoons.",
+    description: "Free movies, TV shows, anime & cartoons on Lumovia.",
     type: "website",
     url: CANONICAL_BASE,
     siteName: "Lumovia",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Lumovia",
-    description: "Explore a curated collection of movies, TV shows, anime, and cartoons.",
+    description: "Free movies, TV shows, anime & cartoons on Lumovia.",
     images: [`${CANONICAL_BASE}/og/og-movies.png`],
   },
   icons: {
