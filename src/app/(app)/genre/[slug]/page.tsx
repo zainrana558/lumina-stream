@@ -2,6 +2,7 @@ import { tmdbFetch } from '@/lib/tmdb/server';
 import { CANONICAL_BASE, TMDB_IMAGE_BASE } from '@/lib/seo/constants';
 import { getFamilyFriendlyAnime, anilistToMediaItem } from '@/lib/anilist/client';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import AnimeThemedPage from '@/components/pages/AnimePage';
 import CartoonThemedPage from '@/components/pages/CartoonPage';
 import HorrorThemedPage from '@/components/pages/HorrorPage';
@@ -223,14 +224,43 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
           { '@type': 'Question', name: 'Can I filter by sub-genre within this genre?', acceptedAnswer: { '@type': 'Answer', text: `Yes. Each genre page includes sub-genre filter tags that let you narrow results. For example, within horror you can filter for supernatural, psychological, or slasher titles. Click any sub-genre tag to apply the filter.` } },
         ],
       }) }} />
-      <p className="f-crimson" style={{
+      <div style={{
         maxWidth: 1200, margin: '0 auto',
         padding: 'clamp(60px,7vw,80px) 20px 0',
-        fontSize: 'clamp(.9rem,1.3vw,1.05rem)',
-        color: 'rgba(255,245,232,.55)', lineHeight: 1.7,
       }}>
-        {config.description} Our {config.title.toLowerCase()} collection is powered by {config.source === 'anilist' ? 'AniList' : 'TMDB'} and updated regularly with new titles. Use the genre filters and sort options below to find exactly what you are in the mood for.
-      </p>
+        <h1 className="f-cinzel-dec" style={{
+          fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8',
+          marginBottom: 12, letterSpacing: '.02em',
+        }}>{config.title}</h1>
+        <p className="f-crimson" style={{
+          fontSize: 'clamp(.9rem,1.3vw,1.05rem)',
+          color: 'rgba(255,245,232,.55)', lineHeight: 1.7,
+          maxWidth: 800, marginBottom: 16,
+        }}>
+          {config.description} Our {config.title.toLowerCase()} collection is powered by {config.source === 'anilist' ? 'AniList' : 'TMDB'} and updated regularly with new titles. Use the genre filters and sort options below to find exactly what you are in the mood for. This curated portal features {shows.length} titles spanning movies, TV shows, and {config.source === 'anilist' ? 'anime series' : 'animated content'}, all organized for easy browsing and discovery.
+        </p>
+        <nav aria-label="Explore other genres" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 0 }}>
+          {[
+            { label: 'All Genres', href: '/genres' },
+            { label: 'Browse All', href: '/browse' },
+            { label: 'Top Rated', href: '/top-rated' },
+            { label: 'New Releases', href: '/new-releases' },
+            ...PORTAL_SLUGS.filter(s => s !== slug).map(s => ({
+              label: PORTAL_GENRE_MAP[s]?.name || s,
+              href: `/genre/${s}`,
+            })),
+          ].map(link => (
+            <Link key={link.href + link.label} href={link.href} style={{
+              display: 'inline-block', padding: '5px 12px', borderRadius: 8,
+              fontSize: '.75rem', color: '#FFB347',
+              background: 'rgba(255,179,71,.06)', border: '1px solid rgba(255,179,71,.12)',
+              textDecoration: 'none', transition: 'background .2s',
+            }}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
       <Component initialShows={shows} />
     </>
   );
