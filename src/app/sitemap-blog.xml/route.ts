@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
-import { tmdbFetchRaw, tmdbFetch } from '@/lib/tmdb/server';
-import { getAnimeDetail } from '@/lib/anilist/client';
+import { tmdbFetchRaw } from '@/lib/tmdb/server';
 
 /**
  * Blog sitemap — SEO blog post URLs for popular movies and TV shows.
