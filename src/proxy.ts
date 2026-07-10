@@ -101,9 +101,9 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
     // Allow requests from both the Cloudflare Worker domain and the Vercel domain.
     // NEXT_PUBLIC_SITE_URL must be set to the Cloudflare Worker URL in production
     // (e.g. https://cache-proxy.zainrana553.workers.dev or custom domain).
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lumina-stream-omega.vercel.app";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lumovia-stream-omega.vercel.app";
     const origin  = request.headers.get("Origin") || "";
-    const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL || "https://lumina-stream-omega.vercel.app";
+    const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL || "https://lumovia-stream-omega.vercel.app";
     const allowedOrigins = new Set([siteUrl, vercelUrl]);
     const reflected = origin && allowedOrigins.has(origin) ? origin : siteUrl;
     response.headers.set("Access-Control-Allow-Origin",  reflected);
@@ -276,6 +276,20 @@ export default async function middleware(request: NextRequest) {
     }
 
     setSecurityHeaders(supabaseResponse, pathname, request);
+
+    // ── Restore public caching for SSG/ISR pages ─────────────────────────
+    // NextResponse.next({ request }) sets "private, no-cache, no-store"
+    // whenever the request object is passed (cookie mutation detection).
+    // This kills CDN caching for all pages. For public HTML pages, we
+    // restore a public cache policy so Vercel Edge + Cloudflare can cache.
+    // API routes set their own Cache-Control in their handlers.
+    if (!pathname.startsWith("/api/")) {
+      supabaseResponse.headers.set(
+        "Cache-Control",
+        "public, s-maxage=300, stale-while-revalidate=600, max-age=60"
+      );
+    }
+
     return supabaseResponse;
 
   } catch {
@@ -289,6 +303,13 @@ export default async function middleware(request: NextRequest) {
 
     const response = NextResponse.next({ request });
     setSecurityHeaders(response, pathname, request);
+    // Also restore caching in the error path
+    if (!pathname.startsWith("/api/")) {
+      response.headers.set(
+        "Cache-Control",
+        "public, s-maxage=300, stale-while-revalidate=600, max-age=60"
+      );
+    }
     return response;
   }
 }

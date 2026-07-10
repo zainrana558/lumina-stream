@@ -52,7 +52,7 @@ export default function PrivacyPage() {
 
         <h2 {...h2}>1. Introduction</h2>
         <p {...ps}>
-          Lumovia (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the website at lumina-stream-omega.vercel.app (the &quot;Service&quot;). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our Service. We respect your privacy and are committed to protecting your personal data. This policy applies to all visitors, including both authenticated and unauthenticated users, and is incorporated into our <Link href="/terms" style={{ color: '#FFB347' }}>Terms of Service</Link> by reference. Please also review our <Link href="/cookies" style={{ color: '#FFB347' }}>Cookie Policy</Link> for information about how we use cookies and similar technologies.
+          Lumovia (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the website at lumovia-stream-omega.vercel.app (the &quot;Service&quot;). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our Service. We respect your privacy and are committed to protecting your personal data. This policy applies to all visitors, including both authenticated and unauthenticated users, and is incorporated into our <Link href="/terms" style={{ color: '#FFB347' }}>Terms of Service</Link> by reference. Please also review our <Link href="/cookies" style={{ color: '#FFB347' }}>Cookie Policy</Link> for information about how we use cookies and similar technologies.
         </p>
 
         <h2 {...h2}>2. Information We Collect</h2>

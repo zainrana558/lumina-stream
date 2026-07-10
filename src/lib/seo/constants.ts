@@ -5,6 +5,6 @@
  * Cloudflare Worker proxy.  NEXT_PUBLIC_SITE_URL is reserved for the proxy
  * and must NOT leak into SEO metadata (canonical, OG, sitemaps, robots).
  */
-export const CANONICAL_BASE = 'https://lumina-stream-omega.vercel.app';
+export const CANONICAL_BASE = 'https://lumovia-stream-omega.vercel.app';
 export const SITE_NAME = 'Lumovia';
 export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = 'https://lumina-stream-omega.vercel.app';
+  const siteUrl = 'https://lumovia-stream-omega.vercel.app';
 
   return {
     rules: [
