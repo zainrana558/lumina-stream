@@ -175,7 +175,7 @@ function isBot(ua: string | null): boolean {
 export default async function middleware(request: NextRequest) {
   try {
     const { createServerClient } = await import("@supabase/ssr");
-    let supabaseResponse = NextResponse.next({ request });
+    let supabaseResponse = NextResponse.next();
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -191,10 +191,14 @@ export default async function middleware(request: NextRequest) {
           },
           setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-            supabaseResponse = NextResponse.next({ request });
+            // DO NOT pass { request } here — it forces Next.js to set
+            // "private, no-cache, no-store" which kills CDN caching.
+            // We create a plain next() and copy cookies manually.
+            const fresh = NextResponse.next();
             cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
+              fresh.cookies.set(name, value, options as { name: string; value: string; path: string; maxAge?: number; domain?: string; httpOnly?: boolean; secure?: boolean; sameSite?: "lax" | "strict" | "none" })
             );
+            supabaseResponse = fresh;
           },
         },
       }
@@ -288,6 +292,7 @@ export default async function middleware(request: NextRequest) {
         "Cache-Control",
         "public, s-maxage=300, stale-while-revalidate=600, max-age=60"
       );
+      supabaseResponse.headers.set("X-MW-Cache", "set");
     }
 
     return supabaseResponse;
@@ -301,7 +306,7 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    const response = NextResponse.next({ request });
+    const response = NextResponse.next();
     setSecurityHeaders(response, pathname, request);
     // Also restore caching in the error path
     if (!pathname.startsWith("/api/")) {
@@ -309,6 +314,7 @@ export default async function middleware(request: NextRequest) {
         "Cache-Control",
         "public, s-maxage=300, stale-while-revalidate=600, max-age=60"
       );
+      response.headers.set("X-MW-Cache", "error-path");
     }
     return response;
   }
