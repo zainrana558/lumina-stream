@@ -18,6 +18,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const profileImg = data.profile_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profile_path}` : undefined;
     const dept = data.known_for_department || '';
     const deptLabel = dept.replace(/([A-Z])/g, ' $1').trim().toLowerCase();
+
+    // Thin content guard: noindex pages with no biography and no profile image
+    const isThin = cleanBio.length < 50 && !profileImg;
+
     const desc = cleanBio.length > 100
       ? cleanBio.slice(0, 155) + '...'
       : `Explore the complete filmography and biography of ${data.name} on Lumovia. ${deptLabel ? `Known for ${deptLabel}.` : ''} View all movies and TV shows featuring ${data.name}, with ratings, trailers, and recommendations.`;
@@ -25,6 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       title: `${data.name} - Movies, TV Shows & Biography`,
       description: desc,
       alternates: { canonical: pageUrl },
+      ...(isThin ? { robots: { index: false, follow: true } } : {}),
       openGraph: {
         type: 'profile',
         url: pageUrl,

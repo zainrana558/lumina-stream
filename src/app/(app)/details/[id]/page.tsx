@@ -8,6 +8,7 @@ import type { TMDBShow, MediaItem } from '@/types';
 import {
   buildShowMetadata,
   stripHtml,
+  isThinContent,
   SITE_URL,
 } from '@/lib/seo/metadata';
 
@@ -122,6 +123,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const year = (data.release_date || data.first_air_date)?.slice(0, 4) || undefined;
     const genres = data.genres?.map(g => g.name) || [];
     const backdrop = data.backdrop_path;
+    const cast = data.credits?.cast?.map(c => c.name) || [];
+
+    const thin = isThinContent({
+      description: data.overview,
+      genres,
+      cast,
+      posterPath: data.poster_path,
+    });
 
     return buildShowMetadata({
       title,
@@ -130,9 +139,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       id: showId,
       description: data.overview,
       genres,
+      cast,
       image: backdrop ? `https://image.tmdb.org/t/p/original${backdrop}` : undefined,
       imageWidth: 1200,
       imageHeight: 630,
+      isThin: thin,
     });
   } catch {
     return {

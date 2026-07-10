@@ -2,13 +2,19 @@ import { NextResponse } from 'next/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
 
-// People sitemap — trending + popular person URLs.
-
+/**
+ * People sitemap — trending + popular person URLs.
+ *
+ * Filters out:
+ *   - Adult content performers (TMDB flags `adult: true`)
+ *   - People with no known credits (thin pages)
+ *   - People with very low popularity (< 1.0)
+ */
 export async function GET() {
   const baseUrl = CANONICAL_BASE;
   const now = new Date().toISOString();
 
-  const ids = new Set<number>();
+  const peopleMap = new Map<number, TMDBPerson>();
 
   const work = [
     tmdbFetch<TMDBListResponse<TMDBPerson>>('/trending/person/week', { page: '1' }),
@@ -25,11 +31,27 @@ export async function GET() {
 
   const results = await Promise.allSettled(work);
   for (const r of results) {
-    if (r.status === 'fulfilled') for (const p of r.value.results) ids.add(p.id);
+    if (r.status === 'fulfilled') {
+      for (const p of r.value.results) {
+        // Keep highest-popularity version of each person
+        const existing = peopleMap.get(p.id);
+        if (!existing || p.popularity > existing.popularity) {
+          peopleMap.set(p.id, p);
+        }
+      }
+    }
   }
 
-  const urls = Array.from(ids).map(id =>
-    `  <url>\n    <loc>${baseUrl}/person/${id}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.7</priority>\n  </url>`
+  // Filter: must have known credits, not adult, and have minimum popularity
+  const filteredPeople = Array.from(peopleMap.values()).filter(p => {
+    if (p.adult) return false;                    // Skip adult content performers
+    if (!p.known_for || p.known_for.length === 0) return false; // No credits = thin page
+    if (p.popularity < 1.0) return false;        // Very low popularity = obscure
+    return true;
+  });
+
+  const urls = filteredPeople.map(p =>
+    `  <url>\n    <loc>${baseUrl}/person/${p.id}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.7</priority>\n  </url>`
   );
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
