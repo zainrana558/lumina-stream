@@ -45,7 +45,7 @@ export default function PostPlayCountdown({ showTitle, showPoster, nextEpInfo, o
             boxShadow: '4px 4px 16px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06)',
             position: 'relative',
           }}>
-            <Image src={showPoster} alt={showTitle} fill style={{ objectFit: 'cover' }} sizes="120px" />
+            <Image src={showPoster} alt={showTitle} fill loading="lazy" style={{ objectFit: 'cover' }} sizes="120px" />
             <div style={{
               position: 'absolute', inset: 0,
               background: 'linear-gradient(135deg, rgba(255,179,71,.15), transparent)',

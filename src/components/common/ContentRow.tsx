@@ -76,7 +76,7 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
       </div>
       <div ref={rowRef} className="hide-scroll" style={{ display: 'flex', gap: 14, padding: '6px clamp(1rem,5vw,3rem)', overflowX: 'auto', overflowY: 'visible' }}>
         {allItems.map((s, i) => (
-          <div key={s.id} style={{ flexShrink: 0, width: 'clamp(135px,30vw,215px)', animation: i < 20 ? `card-in .45s ${i * 0.045}s both` : 'none' }}>
+          <div key={s.id} style={{ flexShrink: 0, width: 'clamp(135px,30vw,215px)', animation: i < 12 ? `card-in .45s ${i * 0.045}s both` : 'none' }}>
             <Card show={s} onClick={onSelect} rank={ranked ? i + 1 : undefined} ring={cardRing} />
           </div>
         ))}

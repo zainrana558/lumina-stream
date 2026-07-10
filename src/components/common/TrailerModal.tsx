@@ -82,7 +82,9 @@ export default function TrailerModal({ trailers, showTitle, onClose }: {
                   <Image
                     src={getYoutubeThumbnail(t.key)}
                     alt={t.name}
-                    fill style={{ objectFit: 'cover' }}
+                    fill
+                    loading="lazy"
+                    style={{ objectFit: 'cover' }}
                     sizes="120px"
                   />
                   {i === activeIdx && (

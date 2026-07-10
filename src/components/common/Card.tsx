@@ -22,7 +22,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
   const s = CS[show.cs];
   const h = { sm: 200, md: 296, lg: 370 }[sz];
   // Support both TMDB poster paths and AniList full cover URLs
-  const posterSrc = getPosterUrl(show);
+  const posterSrc = getPosterUrl(show, 'w342');
   const hasPoster = !!posterSrc;
 
   const onMove = useCallback((e: React.MouseEvent) => {

@@ -211,7 +211,7 @@ function AccountSection({
             
           }}>
             {profile.avatar_url ? (
-              <Image src={profile.avatar_url} alt={profile.name} width={48} height={48} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Image src={profile.avatar_url} alt={profile.name} width={48} height={48} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               profile.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
             )}

@@ -273,7 +273,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
               >
                 {p.profile_path ? (
                   <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, boxShadow: '3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px rgba(139,120,255,.3)' }}>
-                    <Image src={getProfileUrl(p.profile_path, 'w92')!} alt={p.name} width={48} height={48} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <Image src={getProfileUrl(p.profile_path, 'w92')!} alt={p.name} width={48} height={48} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 ) : (
                   <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg,#8B78FF55,#8B78FF22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0, boxShadow: '3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22)' }}>👤</div>
@@ -297,7 +297,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
               <div key={s.id} className="ep-row" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/details/${s.id}`); onClose(); } }} onClick={() => { router.push(`/details/${s.id}`); onClose(); }} style={{ padding: '.9rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .35s ${i * 0.06}s both` }}>
                 {posterSrc ? (
                   <div style={{ width: 42, height: 42, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '2px 2px 8px rgba(0,0,0,.6)' }}>
-                    <Image src={posterSrc} alt={s.title} width={42} height={42} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <Image src={posterSrc} alt={s.title} width={42} height={42} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 ) : (
                   <div style={{ width: 42, height: 42, borderRadius: 10, background: CS[s.cs].bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>{CS[s.cs].em}</div>
