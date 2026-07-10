@@ -76,14 +76,57 @@ export async function generateMetadata({
         const title = data.title.english || data.title.romaji || data.title.native || 'Anime';
         const year = data.startDate?.year || undefined;
         const cover = data.coverImage?.extraLarge || data.coverImage?.large;
+        const genreNames = data.genres || [];
+        const showDesc = (data.description?.replace(/<[^>]*>/g, '') || '').slice(0, 500);
 
-        // AniList doesn't have per-episode details at the title level in our
-        // current query, so episodes without real data are "placeholder"
-        const isPlaceholder = true; // Will be false once AniList episode queries are added
-        const epList = data.episodes
-          ? Array.from({ length: Math.min(data.episodes, season * 25) }, (_, i) => i + 1)
-          : [];
-        const isRealEpisode = episode <= epList.length;
+        // Validate episode exists for this show
+        const totalEps = data.episodes || 0;
+        const isRealEpisode = totalEps > 0 && episode <= totalEps && season === 1;
+
+        // Cross-reference via MAL ID → TMDB to get real episode data
+        let tmdbEpData: TMDBSeasonEpisode | null = null;
+        let isPlaceholder = !isRealEpisode;
+
+        if (data.idMal && isRealEpisode) {
+          try {
+            // Look up TMDB by external ID
+            const findRes = await tmdbFetch<{ tv_results: Array<{ id: number }>; movie_results: Array<{ id: number }> }>(
+              `/find/${data.idMal}`, { external_source: 'imdb_id' }
+            ).catch(() => null);
+
+            // Try tmdb_id external source first, then imdb_id
+            let tmdbTvId: number | null = null;
+            if (findRes?.tv_results?.length) {
+              tmdbTvId = findRes.tv_results[0].id;
+            }
+
+            // If no result via imdb_id, try the MAL-to-TMDB find endpoint
+            if (!tmdbTvId) {
+              const malFind = await tmdbFetch<{ tv_results: Array<{ id: number }> }>(
+                `/find/${data.idMal}`, { external_source: 'tvdb_id' }
+              ).catch(() => null);
+              if (malFind?.tv_results?.length) {
+                tmdbTvId = malFind.tv_results[0].id;
+              }
+            }
+
+            if (tmdbTvId) {
+              const seasonData = await tmdbFetch<{ episodes: TMDBSeasonEpisode[] }>(
+                `/tv/${tmdbTvId}/season/1`
+              ).catch(() => ({ episodes: [] as TMDBSeasonEpisode[] }));
+
+              const ep = seasonData.episodes?.find(
+                (e: TMDBSeasonEpisode) => e.episode_number === episode
+              );
+              if (ep) {
+                tmdbEpData = ep;
+                isPlaceholder = false;
+              }
+            }
+          } catch {
+            // TMDB cross-ref failed — fall back to AniList-only metadata
+          }
+        }
 
         return buildEpisodeMetadata({
           showTitle: title,
@@ -91,9 +134,14 @@ export async function generateMetadata({
           season,
           episode,
           showId,
-          image: cover || undefined,
+          episodeTitle: tmdbEpData?.name || undefined,
+          episodeDescription: tmdbEpData?.overview || (isRealEpisode ? `${title} Episode ${episode} — part of the ${genreNames.slice(0, 3).join(', ') || 'anime'} series with ${totalEps} episodes.` : undefined),
+          runtime: tmdbEpData?.runtime || data.duration || undefined,
+          image: tmdbEpData?.still_path
+            ? `https://image.tmdb.org/t/p/w1280${tmdbEpData.still_path}`
+            : cover || undefined,
           mediaType: 'anime',
-          isPlaceholder: isPlaceholder || !isRealEpisode,
+          isPlaceholder,
         });
       }
     } catch { /* fall through */ }
@@ -184,6 +232,8 @@ export default async function EpisodePage({
     let show: import('@/types').MediaItem | null = null;
     let jsonLd: Record<string, unknown> | null = null;
     let episodeJsonLd: Record<string, unknown> | null = null;
+    let videoJsonLd: Record<string, unknown> | null = null;
+    let tmdbEpData: TMDBSeasonEpisode | null = null;
 
     try {
       const anilistId = toAnilistId(showId);
@@ -193,6 +243,36 @@ export default async function EpisodePage({
         const title = data.title.english || data.title.romaji || data.title.native || 'Anime';
         const cover = data.coverImage?.extraLarge || data.coverImage?.large;
         const description = (data.description?.replace(/<[^>]*>/g, '') || '').slice(0, 500);
+        const genreNames = data.genres || [];
+        const totalEps = data.episodes || 0;
+        const isRealEpisode = totalEps > 0 && episode <= totalEps && season === 1;
+
+        // Cross-reference via MAL ID → TMDB for real episode data
+        if (data.idMal && isRealEpisode) {
+          try {
+            const findRes = await tmdbFetch<{ tv_results: Array<{ id: number }> }>(
+              `/find/${data.idMal}`, { external_source: 'imdb_id' }
+            ).catch(() => null);
+
+            let tmdbTvId: number | null = findRes?.tv_results?.[0]?.id || null;
+
+            if (!tmdbTvId) {
+              const malFind = await tmdbFetch<{ tv_results: Array<{ id: number }> }>(
+                `/find/${data.idMal}`, { external_source: 'tvdb_id' }
+              ).catch(() => null);
+              tmdbTvId = malFind?.tv_results?.[0]?.id || null;
+            }
+
+            if (tmdbTvId) {
+              const seasonData = await tmdbFetch<{ episodes: TMDBSeasonEpisode[] }>(
+                `/tv/${tmdbTvId}/season/1`
+              ).catch(() => ({ episodes: [] as TMDBSeasonEpisode[] }));
+              tmdbEpData = seasonData.episodes?.find(
+                (e: TMDBSeasonEpisode) => e.episode_number === episode
+              ) || null;
+            }
+          } catch { /* TMDB cross-ref failed */ }
+        }
 
         jsonLd = {
           '@context': 'https://schema.org',
@@ -202,15 +282,26 @@ export default async function EpisodePage({
           image: cover || undefined,
           url: `${SITE_URL}/details/${showId}`,
           datePublished: data.startDate?.year ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}` : undefined,
-          ...(data.episodes ? { numberOfEpisodes: data.episodes } : {}),
-          genre: data.genres?.slice(0, 5) || undefined,
+          ...(totalEps ? { numberOfEpisodes: totalEps } : {}),
+          genre: genreNames.slice(0, 5) || undefined,
+          ...(data.meanScore ? {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: (data.meanScore / 10).toFixed(1),
+              bestRating: '10',
+              ratingCount: data.popularity || undefined,
+            },
+          } : {}),
         };
 
-        // Episode-level EpisodeObject schema
+        // Episode-level EpisodeObject schema with real data
+        const epTitle = tmdbEpData?.name || `Episode ${episode}`;
         episodeJsonLd = {
           '@context': 'https://schema.org',
           '@type': 'Episode',
-          name: `Season ${season} Episode ${episode}`,
+          name: epTitle,
+          description: tmdbEpData?.overview || (isRealEpisode ? `Episode ${episode} of ${title}` : undefined),
+          ...(tmdbEpData?.still_path ? { image: `https://image.tmdb.org/t/p/w1280${tmdbEpData.still_path}` } : {}),
           partOfSeason: {
             '@type': 'Season',
             seasonNumber: season,
@@ -223,7 +314,26 @@ export default async function EpisodePage({
           },
           url: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
           position: episode,
+          ...(tmdbEpData?.runtime ? { duration: `PT${tmdbEpData.runtime}M` } : {}),
+          ...(tmdbEpData?.air_date ? { datePublished: tmdbEpData.air_date } : {}),
         };
+
+        // VideoObject for rich video results
+        if (tmdbEpData?.still_path || cover) {
+          videoJsonLd = {
+            '@context': 'https://schema.org',
+            '@type': 'VideoObject',
+            name: epTitle,
+            description: tmdbEpData?.overview || description,
+            thumbnailUrl: tmdbEpData?.still_path
+              ? `https://image.tmdb.org/t/p/w1280${tmdbEpData.still_path}`
+              : cover || undefined,
+            uploadDate: tmdbEpData?.air_date || (data.startDate?.year ? `${data.startDate.year}` : undefined),
+            contentUrl: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
+            embedUrl: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
+            ...(tmdbEpData?.runtime ? { duration: `PT${tmdbEpData.runtime}M` } : {}),
+          };
+        }
       }
     } catch { /* fall through to null */ }
 
@@ -231,6 +341,7 @@ export default async function EpisodePage({
       <>
         {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
         {episodeJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(episodeJsonLd) }} />}
+        {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
@@ -238,7 +349,7 @@ export default async function EpisodePage({
             { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
             { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}/details/${showId}` },
             { '@type': 'ListItem', position: 3, name: `Season ${season}`, item: `${SITE_URL}/details/${showId}/season/${season}` },
-            { '@type': 'ListItem', position: 4, name: `Episode ${episode}`, item: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}` },
+            { '@type': 'ListItem', position: 4, name: tmdbEpData?.name || `Episode ${episode}`, item: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}` },
           ],
         }) }} />
         <DetailsContent showId={showId} initialShow={show} defaultSeason={season} defaultEpisode={episode} />
@@ -247,8 +358,13 @@ export default async function EpisodePage({
           showId={showId}
           season={season}
           episode={episode}
+          episodeTitle={tmdbEpData?.name}
+          episodeOverview={tmdbEpData?.overview}
+          runtime={tmdbEpData?.runtime || show?.epList?.[0] ? (show as unknown as { _duration?: number })._duration : undefined}
+          airDate={tmdbEpData?.air_date}
+          rating={tmdbEpData?.vote_average}
           showOverview={show?.desc || ''}
-          showGenres={[]}
+          showGenres={show?.genre || []}
           showMediaType="anime"
           totalEpisodes={show?.eps}
         />
