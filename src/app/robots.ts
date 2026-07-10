@@ -34,7 +34,6 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/auth/',
           '/embed/',
-          '/blog/',
           '/stats',
           '/watchlist',
           '/profiles',

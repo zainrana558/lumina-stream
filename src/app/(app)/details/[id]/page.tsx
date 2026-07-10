@@ -141,9 +141,11 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
     let show: MediaItem | null = null;
     let jsonLd: Record<string, unknown> | null = null;
     let videoJsonLd: Record<string, unknown> | null = null;
+    let anilistData: Awaited<ReturnType<typeof getAnimeDetail>> = null;
     try {
       const anilistId = toAnilistId(showId);
       const data = await getAnimeDetail(anilistId);
+      anilistData = data;
       if (data) {
         show = anilistToMediaItem(data);
         const title = data.title.english || data.title.romaji || data.title.native || 'Anime';
@@ -196,11 +198,16 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
             title={show.title}
             year={show.yr ? String(show.yr) : undefined}
             overview={stripHtml(show.desc || '')}
-            genres={[]}
+            genres={anilistData?.genres || []}
+            genreIds={[]}
             mediaType="anime"
             showId={showId}
             rating={show.r ? show.r / 10 : undefined}
             episodes={show.eps}
+            popularity={anilistData?.popularity || undefined}
+            originalTitle={anilistData?.title.romaji || anilistData?.title.native || undefined}
+            originalLanguage="ja"
+            status={anilistData?.status === 'RELEASING' ? 'Returning Series' : anilistData?.status === 'FINISHED' ? 'Ended' : undefined}
             cast={[]}
             similar={[]}
           />

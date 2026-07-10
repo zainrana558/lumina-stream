@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { GCARDS } from '@/config/genres';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const FOOTER_SECTIONS = [
   ['Browse', [
     { label: 'Movies', href: '/movies' },
@@ -11,8 +13,18 @@ const FOOTER_SECTIONS = [
     { label: 'Genres', href: '/genres' },
     { label: 'Seasonal Anime', href: '/seasonal' },
     { label: 'Release Calendar', href: '/release-calendar' },
+    { label: 'Leaderboard', href: '/leaderboard' },
   ]],
   ['Genres', GCARDS.map(g => ({ label: g.name, href: `/genre/${g.key}` }))],
+  ['Decades', [
+    { label: '2020s', href: '/decade/2020s' },
+    { label: '2010s', href: '/decade/2010s' },
+    { label: '2000s', href: '/decade/2000s' },
+    { label: '1990s', href: '/decade/1990s' },
+    { label: '1980s', href: '/decade/1980s' },
+    { label: `${CURRENT_YEAR}`, href: `/year/${CURRENT_YEAR}` },
+    { label: `${CURRENT_YEAR - 1}`, href: `/year/${CURRENT_YEAR - 1}` },
+  ]],
   ['Account', [
     { label: 'Sign In', href: '/login' },
     { label: 'Register', href: '/signup' },
@@ -25,11 +37,6 @@ const FOOTER_SECTIONS = [
     { label: 'Cookie Policy', href: '/cookies' },
     { label: 'DMCA', href: '/dmca' },
     { label: 'Disclaimer', href: '/disclaimer' },
-  ]],
-  ['Support', [
-    { label: 'Help', href: '/settings' },
-    { label: 'Contact', href: '/settings' },
-    { label: 'About', href: '/about' },
   ]],
 ] as const;
 
@@ -48,7 +55,7 @@ export default function Footer() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
         <div>
           <Link href="/" className="logo" style={{ fontSize: '1.25rem', display: 'block', marginBottom: '.6rem', textDecoration: 'none', color: 'inherit' }}>LUMINA</Link>
-          <p className="f-crimson" style={{ fontSize: '.88rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.68 }}>The dreamlike world of anime streaming.</p>
+          <p className="f-crimson" style={{ fontSize: '.88rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.68 }}>Free streaming catalog for movies, TV shows, anime &amp; cartoons.</p>
         </div>
         {FOOTER_SECTIONS.map(([t, links]) => (
           <div key={String(t)}>
@@ -68,7 +75,7 @@ export default function Footer() {
       </div>
       <div style={{ borderTop: '1px solid rgba(255,255,255,.055)', paddingTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div className="f-mono" style={{ fontSize: '.62rem', letterSpacing: '.09em', color: 'rgba(255,245,232,.22)' }}>
-          &copy; 2025 LUMINA STREAM &middot; ALL RIGHTS RESERVED<br />
+          &copy; 2026 LUMINA STREAM &middot; ALL RIGHTS RESERVED<br />
           <span style={{ color: 'rgba(255,245,232,.15)' }}>
             Lumina Stream does not host, upload, or stream any video files. Content is provided by independent third-party providers. Users are responsible for verifying compliance with their local laws.
           </span>

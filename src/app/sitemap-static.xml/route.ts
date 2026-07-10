@@ -21,14 +21,15 @@ export async function GET() {
   add('/', '1.0');
   add('/browse', '0.9');
   add('/seasonal', '0.9');
-  add('/leaderboard', '0.7');
+  add('/leaderboard', '0.8');
+  add('/blog', '0.7');
   add('/release-calendar', '0.9');
   add('/movies', '0.9');
   add('/tv-shows', '0.9');
   add('/top-rated', '0.85');
   add('/new-releases', '0.9');
   add('/genres', '0.8');
-  add('/about', '0.6');
+  add('/about', '0.7');
   add('/privacy', '0.4');
   add('/terms', '0.4');
   add('/dmca', '0.4');

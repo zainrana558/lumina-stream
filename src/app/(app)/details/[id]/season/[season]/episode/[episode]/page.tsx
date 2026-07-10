@@ -251,6 +251,7 @@ export default async function EpisodePage({
   let rawData: TMDBShowData | null = null;
   let fullData: TMDBDetails | null = null;
   let episodeData: TMDBSeasonEpisode | null = null;
+  let seasonEpisodeCount: number | undefined;
 
   try {
     const fallback: TMDBShowData = { id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 };
@@ -282,7 +283,9 @@ export default async function EpisodePage({
       fullData = fullRes as TMDBDetails;
 
       if (seasonRes) {
-        const ep = (seasonRes as { episodes: TMDBSeasonEpisode[] }).episodes?.find(
+        const seasonEpisodes = (seasonRes as { episodes: TMDBSeasonEpisode[] }).episodes;
+        seasonEpisodeCount = seasonEpisodes?.length;
+        const ep = seasonEpisodes?.find(
           (e: TMDBSeasonEpisode) => e.episode_number === episode
         );
         if (ep) episodeData = ep;
@@ -402,7 +405,7 @@ export default async function EpisodePage({
         showOverview={rawData?.overview}
         showGenres={genreNames}
         showMediaType={mediaType || undefined}
-        totalEpisodes={undefined}
+        totalEpisodes={seasonEpisodeCount}
       />
       <DetailsContent
         showId={showId}

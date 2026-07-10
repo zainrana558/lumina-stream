@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     default: "Lumina Stream - Dream, Discover, Stream",
     template: "%s | Lumina Stream",
   },
-  description: "Explore a curated collection of movies, TV shows, anime, and cartoons. Trending, popular, and top-rated content updated weekly.",
+  description: "Lumina Stream — your free streaming catalog for movies, TV shows, anime, and cartoons. Browse thousands of titles with ratings, trailers, cast info, and episode guides. Updated daily.",
   metadataBase: new URL(CANONICAL_BASE),
   alternates: { languages: { 'x-default': CANONICAL_BASE, 'en-US': CANONICAL_BASE } },
   manifest: '/manifest.json',
@@ -117,6 +117,27 @@ export default function RootLayout({
               url: CANONICAL_BASE,
               logo: `${CANONICAL_BASE}/logo.svg`,
               sameAs: ['https://github.com/zainrana558'],
+              description: 'Lumina Stream is a free streaming catalog and content discovery platform for movies, TV shows, anime, and cartoons, powered by TMDB and AniList.',
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'Lumina Stream',
+              url: CANONICAL_BASE,
+              description: 'Free streaming catalog — discover movies, TV shows, anime, and cartoons. Browse thousands of titles with ratings, trailers, cast info, and episode guides.',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: `${CANONICAL_BASE}/browse?search={search_term_string}`,
+                },
+                'query-input': 'required name=search_term_string',
+              },
             }),
           }}
         />

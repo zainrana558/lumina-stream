@@ -66,8 +66,8 @@ export default async function BlogIndexPage() {
         }}>
           Free Movie & TV Show Streaming Guides
         </h1>
-        <p style={{ color: 'rgba(255,245,232,.5)', fontSize: '.9rem', maxWidth: 600, margin: '0 auto' }}>
-          Find out where to watch your favorite movies and shows online — 100% free, no sign-up. Updated weekly with the latest titles.
+        <p style={{ color: 'rgba(255,245,232,.5)', fontSize: '.9rem', maxWidth: 700, margin: '0 auto', lineHeight: 1.7 }}>
+          Your ultimate guide to discovering what to watch next. Each guide provides detailed information about movies and TV shows including plot summaries, cast and crew details, ratings from millions of users on TMDB and AniList, episode guides for TV series, and curated recommendations. Whether you are looking for the latest blockbusters, trending anime, classic horror films, or hidden gem dramas, our blog covers it all. Updated multiple times per hour with the freshest content from The Movie Database and AniList.
         </p>
       </div>
 
@@ -138,6 +138,69 @@ export default async function BlogIndexPage() {
           );
         })}
       </div>
+
+        {/* Explore More — internal links for crawl density */}
+        <div style={{ marginTop: 56, borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 40 }}>
+          <h2 style={{ fontSize: 'clamp(1rem, 1.5vw, 1.2rem)', color: '#FFF5E8', marginBottom: 20, fontWeight: 600 }}>
+            Explore Lumina Stream
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {[
+              { label: 'Browse All', href: '/browse' },
+              { label: 'Movies', href: '/movies' },
+              { label: 'TV Shows', href: '/tv-shows' },
+              { label: 'Anime', href: '/genre/anime' },
+              { label: 'Horror', href: '/genre/horror' },
+              { label: 'Romance', href: '/genre/romance' },
+              { label: 'Top Rated', href: '/top-rated' },
+              { label: 'New Releases', href: '/new-releases' },
+              { label: 'All Genres', href: '/genres' },
+              { label: 'About', href: '/about' },
+            ].map(link => (
+              <a
+                key={link.href}
+                href={link.href}
+                style={{
+                  display: 'inline-block', padding: '6px 14px', borderRadius: 8,
+                  fontSize: '.8rem', color: '#FFB347', textDecoration: 'none',
+                  background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)',
+                  transition: 'background .2s, border-color .2s',
+                }}
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'What is Lumina Stream?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream is a free streaming catalog that lets you discover and explore movies, TV shows, anime, and cartoons. We aggregate data from TMDB and AniList to provide detailed information including ratings, cast, trailers, and episode guides for thousands of titles.' },
+          },
+          {
+            '@type': 'Question',
+            name: 'Is Lumina Stream really free?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Yes, Lumina Stream is completely free to use. No subscription, no credit card, no sign-up required to browse and discover content. Our platform is supported by our community of entertainment enthusiasts.' },
+          },
+          {
+            '@type': 'Question',
+            name: 'How often is the content updated?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Our catalog is updated multiple times per hour. Trending content refreshes every few minutes, and new releases are added as soon as they become available on TMDB and AniList.' },
+          },
+        ],
+      }) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: CANONICAL_BASE },
+          { '@type': 'ListItem', position: 2, name: 'Blog', item: `${CANONICAL_BASE}/blog` },
+        ],
+      }) }} />
     </div>
   );
 }
