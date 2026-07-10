@@ -98,15 +98,15 @@ export default async function NewReleasesPage() {
           { '@type': 'Question', name: 'Can I see upcoming movies before they are released?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. The New Releases page includes upcoming movies from TMDB, which list titles with announced release dates. Check back regularly as new dates are finalized and new titles are added to the upcoming slate.' } },
         ],
       }) }} />
-      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
-        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>New Releases</h1>
-        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
-          Stay on top of the latest movies and TV shows with our New Releases hub. This page aggregates the freshest content currently playing in theaters, airing on television, and trending across the globe. Updated continuously throughout the week, it pulls real-time data from TMDB to bring you the most popular new releases alongside upcoming titles generating buzz. Whether you want to catch a film before it leaves theaters or discover a new series everyone is talking about, this is your one-stop destination. We combine five separate TMDB feeds — now playing movies, upcoming movies, airing today TV, currently on the air TV, and daily trending — into a single ranked list sorted by popularity. The result is a constantly evolving snapshot of what the world is watching right now. New titles are added automatically as they appear on TMDB, so check back often to stay ahead of the curve and be the first to discover the next big hit.
-        </p>
-      </header>
       <Suspense>
         <BrowseClient initialShows={shows} />
       </Suspense>
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
+        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Stay on Top of the Latest Movies & TV Shows</h2>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          Stay on top of the latest movies and TV shows with our New Releases hub. This page aggregates the freshest content currently playing in theaters, airing on television, and trending across the globe. Updated continuously throughout the week, it pulls real-time data from TMDB to bring you the most popular new releases alongside upcoming titles generating buzz. Whether you want to catch a film before it leaves theaters or discover a new series everyone is talking about, this is your one-stop destination. We combine five separate TMDB feeds — now playing movies, upcoming movies, airing today TV, currently on the air TV, and daily trending — into a single ranked list sorted by popularity. The result is a constantly evolving snapshot of what the world is watching right now. New titles are added automatically as they appear on TMDB, so check back often to stay ahead of the curve and be the first to discover the next big hit.
+        </p>
+      </section>
     </>
   );
 }

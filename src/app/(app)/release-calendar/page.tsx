@@ -119,13 +119,13 @@ export default async function ReleaseCalendarPage() {
           { '@type': 'Question', name: 'Are release dates accurate?', acceptedAnswer: { '@type': 'Answer', text: 'Release dates come directly from TMDB, which aggregates studio announcements and theater listings. Dates may shift as studios adjust schedules, but the calendar updates automatically to reflect the latest information available.' } },
         ],
       }) }} />
-      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
-        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Release Calendar</h1>
-        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
-          Plan your watchlist with our monthly release calendar. This page organizes all upcoming movie releases by month, pulling real-time premiere dates from TMDB. Browse upcoming blockbusters, indie releases, and limited-edition screenings so you never miss a new film. Each entry includes the movie title, poster, release date, and rating, making it easy to decide what to watch in theaters or stream online when it becomes available. The calendar covers the next several months of scheduled theatrical and streaming premieres, with new dates added automatically as studios announce them. Whether you are a casual moviegoer looking for weekend plans or a dedicated cinephile tracking every release, this page gives you a clear timeline of what is coming and when. Click on any movie to see its full details page with cast, crew, trailers, and related titles.
-        </p>
-      </header>
       <ReleaseCalendarClient grouped={grouped} sortedMonths={sortedMonths} />
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
+        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Plan Your Movie Nights</h2>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          Plan your watchlist with our monthly release calendar. This page organizes all upcoming movie releases by month, pulling real-time premiere dates from TMDB. Browse upcoming blockbusters, indie releases, and limited-edition screenings so you never miss a new film. Each entry includes the movie title, poster, release date, and rating, making it easy to decide what to watch in theaters or stream online when it becomes available. The calendar covers the next several months of scheduled theatrical and streaming premieres, with new dates added automatically as studios announce them. Whether you are a casual moviegoer looking for weekend plans or a dedicated cinephile tracking every release, this page gives you a clear timeline of what is coming and when. Click on any movie above to see its full details page with cast, crew, trailers, and related titles.
+        </p>
+      </section>
     </>
   );
 }

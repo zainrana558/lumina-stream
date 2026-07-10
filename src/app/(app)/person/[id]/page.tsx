@@ -216,23 +216,25 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personFaqJsonLd) }} />
 
+      <PersonPageClient person={data} />
+
       {/* Server-rendered SEO content — visible to Googlebot without JS */}
       <section
         aria-label={`Biography of ${data.name}`}
         style={{
           maxWidth: 1000,
           margin: '0 auto',
-          padding: 'clamp(60px,7vw,80px) 20px 0',
+          padding: '0 20px 60px',
         }}
       >
-        <h1 className="f-cinzel-dec" style={{
+        <h2 className="f-cinzel-dec" style={{
           fontSize: 'clamp(1.8rem,4vw,2.8rem)',
           color: '#FFF5E8',
           marginBottom: 12,
           letterSpacing: '.02em',
         }}>
           {data.name}
-        </h1>
+        </h2>
 
         {/* Fact line */}
         <div className="f-crimson" style={{
@@ -347,8 +349,6 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
           ))}
         </nav>
       </section>
-
-      <PersonPageClient person={data} />
     </>
   );
 }

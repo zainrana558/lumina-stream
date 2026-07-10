@@ -101,13 +101,13 @@ export default async function SeasonalPage() {
           { '@type': 'Question', name: 'What anime seasons are covered?', acceptedAnswer: { '@type': 'Answer', text: 'The Seasonal Anime page covers the current broadcast season in Japan and internationally, including new premieres and continuing series. It uses AniList season detection to automatically track the correct season without manual updates.' } },
         ],
       }) }} />
-      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
-        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Seasonal Anime</h1>
+      <SeasonalClient {...data} />
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
+        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Track the Current Anime Season</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
           Track the current anime season with real-time data from AniList. This page covers every series currently airing in Japan and internationally, organized into three categories: currently airing shows with new episodes each week, trending series gaining rapid popularity, and upcoming premieres on the horizon. Powered by AniList, our seasonal tracker updates continuously so you always know what to watch next. Whether you follow simulcasts or prefer to binge completed seasons, this is your anime calendar. We fetch six pages of data across all three categories — airing, trending, and upcoming — and deduplicate by ID so you never see the same title twice. Each entry includes the cover art, title, episode count, average score, and studio information. The seasonal page is one of the most actively updated pages on Lumina Stream, refreshing every ten minutes to capture new episode counts and popularity shifts as they happen on AniList.
         </p>
-      </header>
-      <SeasonalClient {...data} />
+      </section>
     </>
   );
 }

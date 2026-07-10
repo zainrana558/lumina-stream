@@ -154,15 +154,15 @@ export default async function DecadePage({ params }: { params: Promise<{ decade:
           { '@type': 'Question', name: 'Can I browse by individual year instead of decade?', acceptedAnswer: { '@type': 'Answer', text: `Yes. Lumina Stream also offers year-specific pages for every year from ${new Date().getFullYear() - 10} to ${new Date().getFullYear() + 1}. Visit the year pages for a more granular view of releases within the decade that interests you.` } },
         ],
       }) }} />
-      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
-        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>{meta.title}</h1>
-        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
-          {meta.description}
-        </p>
-      </header>
       <Suspense>
         <BrowseClient initialShows={shows} />
       </Suspense>
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
+        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>{meta.title}</h2>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          {meta.description}
+        </p>
+      </section>
     </>
   );
 }

@@ -49,17 +49,13 @@ export default function LeaderboardPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
-      {/* Server-rendered SEO text */}
-      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 0' }}>
-        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>
-          Community Leaderboard
-        </h1>
-        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
-          The Lumina Stream Community Leaderboard ranks every movie and TV show by average viewer rating. Unlike algorithmic trending lists that reflect popularity or recency, this board reflects genuine quality as judged by real users. Every rating contributes to the aggregate score you see here, with titles needing multiple ratings before they appear to ensure statistical reliability. The leaderboard covers all content types available on Lumina Stream — Hollywood movies, international films, TV dramas, anime series, and cartoons — so you can discover highly-rated titles across every genre and medium. Rankings update in real time as new ratings are submitted, meaning a show you love can climb the board with enough community support. Use this page as a quality filter: if you are not sure what to watch next, pick anything from the top ten and you are virtually guaranteed a great experience. You can also click through to any title to read its full description, view cast and crew details, watch the trailer, and see similar recommendations.
-        </p>
-      </header>
-
       <LeaderboardClient />
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
+        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Community Rankings</h2>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          The Lumina Stream Community Leaderboard ranks every movie and TV show by average viewer rating. Unlike algorithmic trending lists that reflect popularity or recency, this board reflects genuine quality as judged by real users. Every rating contributes to the aggregate score you see here, with titles needing multiple ratings before they appear to ensure statistical reliability. The leaderboard covers all content types available on Lumina Stream — Hollywood movies, international films, TV dramas, anime series, and cartoons — so you can discover highly-rated titles across every genre and medium. Rankings update in real time as new ratings are submitted, meaning a show you love can climb the board with enough community support. Use this page as a quality filter: if you are not sure what to watch next, pick anything from the top ten and you are virtually guaranteed a great experience. You can also click through to any title above to read its full description, view cast and crew details, watch the trailer, and see similar recommendations.
+        </p>
+      </section>
     </>
   );
 }

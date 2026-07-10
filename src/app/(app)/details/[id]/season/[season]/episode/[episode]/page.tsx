@@ -241,6 +241,7 @@ export default async function EpisodePage({
             { '@type': 'ListItem', position: 4, name: `Episode ${episode}`, item: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}` },
           ],
         }) }} />
+        <DetailsContent showId={showId} initialShow={show} defaultSeason={season} defaultEpisode={episode} />
         <EpisodeSeoContent
           showTitle={show?.title || 'Anime'}
           showId={showId}
@@ -251,7 +252,6 @@ export default async function EpisodePage({
           showMediaType="anime"
           totalEpisodes={show?.eps}
         />
-        <DetailsContent showId={showId} initialShow={show} defaultSeason={season} defaultEpisode={episode} />
       </>
     );
   }
@@ -401,6 +401,15 @@ export default async function EpisodePage({
           { '@type': 'ListItem', position: 4, name: `Episode ${episode}`, item: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}` },
         ],
       }) }} />
+      <DetailsContent
+        showId={showId}
+        initialShow={show}
+        initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
+        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
+        initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
+        defaultSeason={season}
+        defaultEpisode={episode}
+      />
       {/* SERVER-RENDERED EPISODE SEO CONTENT */}
       <EpisodeSeoContent
         showTitle={title}
@@ -416,15 +425,6 @@ export default async function EpisodePage({
         showGenres={genreNames}
         showMediaType={mediaType || undefined}
         totalEpisodes={seasonEpisodeCount}
-      />
-      <DetailsContent
-        showId={showId}
-        initialShow={show}
-        initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
-        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
-        initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
-        defaultSeason={season}
-        defaultEpisode={episode}
       />
     </>
   );

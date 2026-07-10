@@ -192,6 +192,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
             { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}/details/${showId}` },
           ],
         }) }} />
+        <DetailsContent showId={showId} initialShow={show} />
         {/* SERVER-RENDERED SEO CONTENT for AniList anime */}
         {show && (
           <DetailSeoContent
@@ -212,7 +213,6 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
             similar={[]}
           />
         )}
-        <DetailsContent showId={showId} initialShow={show} />
       </>
     );
   }
@@ -321,6 +321,13 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
           { '@type': 'ListItem', position: 2, name: title, item: `${SITE_URL}/details/${showId}` },
         ],
       }) }} />
+      <DetailsContent
+        showId={showId}
+        initialShow={show}
+        initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
+        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
+        initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
+      />
       {/* SERVER-RENDERED SEO CONTENT — visible to Googlebot without JS */}
       <DetailSeoContent
         title={title}
@@ -346,13 +353,6 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         originalTitle={rawData.original_title}
         originalLanguage={rawData.original_language}
         popularity={rawData.popularity}
-      />
-      <DetailsContent
-        showId={showId}
-        initialShow={show}
-        initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
-        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
-        initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
       />
     </>
   );

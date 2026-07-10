@@ -275,7 +275,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
       <style>{`
-        .seo-detail{max-width:1000px;margin:0 auto;padding:clamp(60px,7vw,80px) 20px 40px}
+        .seo-detail{max-width:1000px;margin:0 auto;padding:0 20px 60px}
         .seo-detail h1{font-size:clamp(1.6rem,3.5vw,2.6rem);color:#FFF5E8;margin-bottom:8px;letter-spacing:.02em}
         .seo-detail .tagline{font-size:clamp(.9rem,1.3vw,1.05rem);color:#FFB347;margin-bottom:16px;font-style:italic}
         .seo-detail .meta-line{font-size:.85rem;color:rgba(255,245,232,.5);margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}

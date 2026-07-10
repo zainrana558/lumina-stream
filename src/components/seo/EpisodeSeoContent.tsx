@@ -102,7 +102,7 @@ export default function EpisodeSeoContent(props: EpisodeSeoProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
       <style>{`
-        .seo-ep{max-width:1000px;margin:0 auto;padding:clamp(60px,7vw,80px) 20px 30px}
+        .seo-ep{max-width:1000px;margin:0 auto;padding:0 20px 60px}
         .seo-ep h1{font-size:clamp(1.4rem,3vw,2.2rem);color:#FFF5E8;margin-bottom:6px;letter-spacing:.02em}
         .seo-ep .show-link{color:#FFB347;text-decoration:none;font-size:clamp(.95rem,1.4vw,1.15rem);display:inline-block;margin-bottom:14px;transition:color .2s}
         .seo-ep .show-link:hover{color:#fff}

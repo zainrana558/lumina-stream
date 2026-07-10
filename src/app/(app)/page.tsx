@@ -277,6 +277,8 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeFaqJsonLd) }}
       />
 
+      <Home featured={featured} rows={rows} genreFeatured={genreFeatured} />
+
       {/* Server-rendered SEO text — visible to Googlebot without JS */}
       <style>{`
         .home-qlink {
@@ -292,7 +294,7 @@ export default async function HomePage() {
         style={{
           maxWidth: 1200,
           margin: '0 auto',
-          padding: 'clamp(20px,3vw,40px) clamp(16px,3vw,24px) 0',
+          padding: 'clamp(20px,3vw,40px) clamp(16px,3vw,24px) 60px',
         }}
       >
         <h1 className="f-cinzel-dec" style={{
@@ -336,8 +338,6 @@ export default async function HomePage() {
           ))}
         </nav>
       </section>
-
-      <Home featured={featured} rows={rows} genreFeatured={genreFeatured} />
     </>
   );
 }

@@ -97,15 +97,15 @@ export default async function TVShowsPage() {
           { '@type': 'Question', name: 'Can I browse TV shows by genre?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use the genre filter chips on the TV Shows page to narrow results by genre including drama, comedy, thriller, sci-fi, and more. You can also sort by popularity, rating, or newest to find the perfect show for your mood.' } },
         ],
       }) }} />
-      <header style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 20px' }}>
-        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>TV Shows</h1>
-        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
-          Binge-watch the best television series online. Our TV catalog covers everything from prestige dramas and gripping crime thrillers to laugh-out-loud comedies, mind-bending sci-fi, and beloved anime. Discover trending shows currently on the air, classic series that defined their decade, and hidden gems recommended by millions of viewers on TMDB. New episodes and complete seasons are added regularly so you never run out of things to watch. This page aggregates data from multiple TMDB endpoints — currently airing, on the air, popular, trending, and top-rated — to give you a single comprehensive view of the best television available. Whether you want to start a long-running series from the beginning, catch up on a show everyone is talking about, or revisit an old favorite, our TV hub makes it easy. Sort by popularity, rating, or newest arrival and dive straight into the episode guide for any show that catches your eye.
-        </p>
-      </header>
       <Suspense>
         <BrowseClient initialShows={shows} />
       </Suspense>
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
+        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Binge-Watch the Best TV Series Online</h2>
+        <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
+          Binge-watch the best television series online. Our TV catalog covers everything from prestige dramas and gripping crime thrillers to laugh-out-loud comedies, mind-bending sci-fi, and beloved anime. Discover trending shows currently on the air, classic series that defined their decade, and hidden gems recommended by millions of viewers on TMDB. New episodes and complete seasons are added regularly so you never run out of things to watch. This page aggregates data from multiple TMDB endpoints — currently airing, on the air, popular, trending, and top-rated — to give you a single comprehensive view of the best television available. Whether you want to start a long-running series from the beginning, catch up on a show everyone is talking about, or revisit an old favorite, our TV hub makes it easy. Sort by popularity, rating, or newest arrival and dive straight into the episode guide for any show that catches your eye.
+        </p>
+      </section>
     </>
   );
 }
