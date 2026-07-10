@@ -14,20 +14,20 @@ const pageUrl = `${siteUrl}/movies`;
 export const metadata: Metadata = {
   title: 'Movies - Watch Free Movies Online',
   description:
-    'Browse thousands of free movies online. From blockbusters to hidden gems, stream the latest releases, top-rated films, and classic cinema on Lumina Stream.',
+    'Browse thousands of free movies online. From blockbusters to hidden gems, stream the latest releases, top-rated films, and classic cinema on Lumovia.',
   alternates: { canonical: pageUrl },
   openGraph: {
     type: 'website',
     url: pageUrl,
-    title: 'Movies - Watch Free Movies Online | Lumina Stream',
+    title: 'Movies - Watch Free Movies Online | Lumovia',
     description: 'Browse and stream thousands of free movies. Action, comedy, horror, romance, sci-fi, and more.',
-    siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumina Stream Movies' }],
+    siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumovia Movies' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Movies - Watch Free Movies Online | Lumina Stream',
-    description: 'Stream thousands of free movies on Lumina Stream.',
+    title: 'Movies - Watch Free Movies Online | Lumovia',
+    description: 'Stream thousands of free movies on Lumovia.',
     images: [`${siteUrl}/og/og-movies.png`],
   },
 };
@@ -73,7 +73,7 @@ export default async function MoviesPage() {
     name: 'Movies',
     description: metadata.description,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -92,7 +92,7 @@ export default async function MoviesPage() {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
-          { '@type': 'Question', name: 'How many movies are available on Lumina Stream?', acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream catalogs thousands of movies from every era and genre, including Hollywood blockbusters, indie films, international cinema, and classic movies. Our catalog is continuously synced with TMDB, so new movies appear as soon as they become popular.' } },
+          { '@type': 'Question', name: 'How many movies are available on Lumovia?', acceptedAnswer: { '@type': 'Answer', text: 'Lumovia catalogs thousands of movies from every era and genre, including Hollywood blockbusters, indie films, international cinema, and classic movies. Our catalog is continuously synced with TMDB, so new movies appear as soon as they become popular.' } },
           { '@type': 'Question', name: 'What genres of movies can I browse?', acceptedAnswer: { '@type': 'Answer', text: 'You can browse movies across all major genres including action, comedy, drama, horror, romance, sci-fi, thriller, mystery, fantasy, and more. Use the genre filter chips on the movies page to narrow results by your preferred genre.' } },
           { '@type': 'Question', name: 'Are new movies added regularly?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Our movies catalog pulls from five TMDB endpoints — trending, popular, top-rated, now playing, and upcoming — to ensure a fresh selection. New theatrical releases and streaming premieres appear automatically as they are added to TMDB.' } },
         ],
@@ -103,7 +103,7 @@ export default async function MoviesPage() {
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
         <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Explore Thousands of Free Movies Online</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
-          Explore thousands of movies from every era and genre. From Hollywood blockbusters and award-winning dramas to indie hidden gems and international cinema, our catalog spans action, comedy, horror, sci-fi, romance, thriller, and beyond. Whether you are looking for a recent theatrical release, a critically acclaimed classic, or an undiscovered favorite, you will find it here. Every title on this page is sourced from TMDB and refreshed throughout the day, so new movies appear as soon as they become popular. Use the search bar and genre filters to narrow results by mood, rating, or release year. You can also sort by popularity, newest first, or highest rated to quickly surface the best options. From Oscar-winning masterpieces and cult classics to the latest superhero sequels and indie festival darlings, Lumina Stream offers one of the most comprehensive free movie catalogs available online. Start browsing and find your next favorite film.
+          Explore thousands of movies from every era and genre. From Hollywood blockbusters and award-winning dramas to indie hidden gems and international cinema, our catalog spans action, comedy, horror, sci-fi, romance, thriller, and beyond. Whether you are looking for a recent theatrical release, a critically acclaimed classic, or an undiscovered favorite, you will find it here. Every title on this page is sourced from TMDB and refreshed throughout the day, so new movies appear as soon as they become popular. Use the search bar and genre filters to narrow results by mood, rating, or release year. You can also sort by popularity, newest first, or highest rated to quickly surface the best options. From Oscar-winning masterpieces and cult classics to the latest superhero sequels and indie festival darlings, Lumovia offers one of the most comprehensive free movie catalogs available online. Start browsing and find your next favorite film.
         </p>
       </section>
     </>

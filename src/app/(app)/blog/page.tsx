@@ -11,14 +11,14 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: 'Free Movie Streaming Guides & Reviews — Lumina Stream Blog',
+  title: 'Free Movie Streaming Guides & Reviews — Lumovia Blog',
   description: 'Discover where to watch movies and TV shows online free. Streaming guides, reviews, and recommendations updated weekly.',
   alternates: { canonical: `${CANONICAL_BASE}/blog` },
   openGraph: {
-    title: 'Free Movie Streaming Guides — Lumina Stream Blog',
+    title: 'Free Movie Streaming Guides — Lumovia Blog',
     description: 'Discover where to watch movies and TV shows online free.',
     url: `${CANONICAL_BASE}/blog`,
-    siteName: 'Lumina Stream',
+    siteName: 'Lumovia',
   },
 };
 
@@ -142,7 +142,7 @@ export default async function BlogIndexPage() {
         {/* Explore More — internal links for crawl density */}
         <div style={{ marginTop: 56, borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 40 }}>
           <h2 style={{ fontSize: 'clamp(1rem, 1.5vw, 1.2rem)', color: '#FFF5E8', marginBottom: 20, fontWeight: 600 }}>
-            Explore Lumina Stream
+            Explore Lumovia
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             {[
@@ -178,13 +178,13 @@ export default async function BlogIndexPage() {
         mainEntity: [
           {
             '@type': 'Question',
-            name: 'What is Lumina Stream?',
-            acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream is a free streaming catalog that lets you discover and explore movies, TV shows, anime, and cartoons. We aggregate data from TMDB and AniList to provide detailed information including ratings, cast, trailers, and episode guides for thousands of titles.' },
+            name: 'What is Lumovia?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Lumovia is a free streaming catalog that lets you discover and explore movies, TV shows, anime, and cartoons. We aggregate data from TMDB and AniList to provide detailed information including ratings, cast, trailers, and episode guides for thousands of titles.' },
           },
           {
             '@type': 'Question',
-            name: 'Is Lumina Stream really free?',
-            acceptedAnswer: { '@type': 'Answer', text: 'Yes, Lumina Stream is completely free to use. No subscription, no credit card, no sign-up required to browse and discover content. Our platform is supported by our community of entertainment enthusiasts.' },
+            name: 'Is Lumovia really free?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Yes, Lumovia is completely free to use. No subscription, no credit card, no sign-up required to browse and discover content. Our platform is supported by our community of entertainment enthusiasts.' },
           },
           {
             '@type': 'Question',

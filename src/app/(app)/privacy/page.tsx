@@ -9,10 +9,10 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/privacy`;
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy - Lumina Stream',
-  description: 'Lumina Stream privacy policy. Learn how we collect, use, and protect your personal information, including data from Supabase authentication, TMDB, AniList, and third-party embed providers.',
+  title: 'Privacy Policy - Lumovia',
+  description: 'Lumovia privacy policy. Learn how we collect, use, and protect your personal information, including data from Supabase authentication, TMDB, AniList, and third-party embed providers.',
   alternates: { canonical: pageUrl },
-  openGraph: { type: 'website', url: pageUrl, title: 'Privacy Policy - Lumina Stream', description: 'Learn how Lumina Stream handles your data and protects your privacy.', siteName: 'Lumina Stream' },
+  openGraph: { type: 'website', url: pageUrl, title: 'Privacy Policy - Lumovia', description: 'Learn how Lumovia handles your data and protects your privacy.', siteName: 'Lumovia' },
 };
 
 const breadcrumbJsonLd = {
@@ -30,7 +30,7 @@ const webPageJsonLd = {
   name: 'Privacy Policy',
   description: metadata.description,
   url: pageUrl,
-  isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+  isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   datePublished: '2026-07-07',
   dateModified: '2026-07-07',
 };
@@ -52,7 +52,7 @@ export default function PrivacyPage() {
 
         <h2 {...h2}>1. Introduction</h2>
         <p {...ps}>
-          Lumina Stream (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the website at lumina-stream-omega.vercel.app (the &quot;Service&quot;). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our Service. We respect your privacy and are committed to protecting your personal data. This policy applies to all visitors, including both authenticated and unauthenticated users, and is incorporated into our <Link href="/terms" style={{ color: '#FFB347' }}>Terms of Service</Link> by reference. Please also review our <Link href="/cookies" style={{ color: '#FFB347' }}>Cookie Policy</Link> for information about how we use cookies and similar technologies.
+          Lumovia (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the website at lumina-stream-omega.vercel.app (the &quot;Service&quot;). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our Service. We respect your privacy and are committed to protecting your personal data. This policy applies to all visitors, including both authenticated and unauthenticated users, and is incorporated into our <Link href="/terms" style={{ color: '#FFB347' }}>Terms of Service</Link> by reference. Please also review our <Link href="/cookies" style={{ color: '#FFB347' }}>Cookie Policy</Link> for information about how we use cookies and similar technologies.
         </p>
 
         <h2 {...h2}>2. Information We Collect</h2>
@@ -88,7 +88,7 @@ export default function PrivacyPage() {
           <strong {...b}>Upstash Redis.</strong> Used exclusively for server-side rate limiting. Your IP is temporarily stored with automatic expiration and is not persisted, aggregated, or used for any purpose other than rate limiting.
         </p>
         <p {...p}>
-          <strong {...b}>Embed Streaming Providers.</strong> Third-party embed providers (such as vidsrc.fyi, vidsrc.pm, autoembed.co, and others) are independent services operated by entities unaffiliated with Lumina Stream. These providers may set their own cookies and collect data independently. We do not control these services and have no visibility into their data practices — review their individual privacy policies before using them. Please see our <Link href="/disclaimer" style={{ color: '#FFB347' }}>Disclaimer</Link> for our full position on third-party content.
+          <strong {...b}>Embed Streaming Providers.</strong> Third-party embed providers (such as vidsrc.fyi, vidsrc.pm, autoembed.co, and others) are independent services operated by entities unaffiliated with Lumovia. These providers may set their own cookies and collect data independently. We do not control these services and have no visibility into their data practices — review their individual privacy policies before using them. Please see our <Link href="/disclaimer" style={{ color: '#FFB347' }}>Disclaimer</Link> for our full position on third-party content.
         </p>
         <p {...ps}>
           <strong {...b}>Advertising Partners.</strong> To support our free service, we may work with advertising partners such as PopAds, Adsterra, PropellerAds, and related networks. These partners may collect anonymized device information, browsing patterns, and interaction data to serve relevant advertisements. Ad networks may set their own cookies and use tracking technologies subject to their respective privacy policies. You can opt out of interest-based advertising through tools provided by the <a href="https://www.networkadvertising.org" target="_blank" rel="noopener noreferrer" style={{ color: '#FFB347' }}>Network Advertising Initiative</a>.
@@ -116,7 +116,7 @@ export default function PrivacyPage() {
 
         <h2 {...h2}>9. Legal Disclosures</h2>
         <p {...ps}>
-          We may disclose your personal information if required to do so by law, including in response to a valid court order, subpoena, or other legal process; to comply with applicable law, regulation, or legal process; to cooperate with law enforcement investigations; to establish, exercise, or defend our legal rights; or to protect the safety of our users, the public, or Lumina Stream. We will notify affected users of legal disclosures to the extent permitted by law, unless we are legally prohibited from doing so.
+          We may disclose your personal information if required to do so by law, including in response to a valid court order, subpoena, or other legal process; to comply with applicable law, regulation, or legal process; to cooperate with law enforcement investigations; to establish, exercise, or defend our legal rights; or to protect the safety of our users, the public, or Lumovia. We will notify affected users of legal disclosures to the extent permitted by law, unless we are legally prohibited from doing so.
         </p>
 
         <h2 {...h2}>10. Changes to This Policy</h2>

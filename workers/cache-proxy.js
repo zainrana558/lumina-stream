@@ -1,5 +1,5 @@
 /**
- * Lumina Stream — Cloudflare Worker Cache Proxy
+ * Lumovia — Cloudflare Worker Cache Proxy
  *
  * Traffic flow:
  *   Browser → cache-proxy.zainrana553.workers.dev → lumina-stream-omega.vercel.app

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Sign In',
-  description: 'Sign in to your Lumina Stream account to access your watchlist, stats, and personalized recommendations.',
+  description: 'Sign in to your Lumovia account to access your watchlist, stats, and personalized recommendations.',
   robots: { index: false, follow: false },
 };
 

@@ -7,7 +7,7 @@ import type { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Select Profile — Lumina Stream',
+  title: 'Select Profile — Lumovia',
   robots: { index: false, follow: false },
 };
 

@@ -14,20 +14,20 @@ const pageUrl = `${siteUrl}/top-rated`;
 export const metadata: Metadata = {
   title: 'Top Rated Movies & TV Shows - Highest Rated Content',
   description:
-    'Discover the highest-rated movies and TV shows of all time. Handpicked from thousands of critically acclaimed titles rated by millions of viewers on Lumina Stream.',
+    'Discover the highest-rated movies and TV shows of all time. Handpicked from thousands of critically acclaimed titles rated by millions of viewers on Lumovia.',
   alternates: { canonical: pageUrl },
   openGraph: {
     type: 'website',
     url: pageUrl,
-    title: 'Top Rated Movies & TV Shows | Lumina Stream',
+    title: 'Top Rated Movies & TV Shows | Lumovia',
     description: 'Explore the highest-rated movies and TV shows of all time.',
-    siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og/og-top-rated.png`, width: 1344, height: 768, alt: 'Top Rated on Lumina Stream' }],
+    siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-top-rated.png`, width: 1344, height: 768, alt: 'Top Rated on Lumovia' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Top Rated Movies & TV Shows | Lumina Stream',
-    description: 'Discover the highest-rated content on Lumina Stream.',
+    title: 'Top Rated Movies & TV Shows | Lumovia',
+    description: 'Discover the highest-rated content on Lumovia.',
     images: [`${siteUrl}/og/og-top-rated.png`],
   },
 };
@@ -75,7 +75,7 @@ export default async function TopRatedPage() {
     name: 'Top Rated',
     description: metadata.description,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',

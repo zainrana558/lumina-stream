@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { AppProvider } from '@/contexts/AppContext';
 
 export const metadata = {
-  title: 'Select Profile — Lumina Stream',
+  title: 'Select Profile — Lumovia',
   robots: { index: false, follow: false },
 };
 

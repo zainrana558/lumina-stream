@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 /**
  * LegalDisclaimerBanner — shown below the video player iframe.
- * Reinforces that Lumina Stream does not host content and that
+ * Reinforces that Lumovia does not host content and that
  * users are responsible for verifying legality in their jurisdiction.
  * Dismissible (stored in localStorage).
  */
@@ -49,7 +49,7 @@ export default function LegalDisclaimerBanner() {
         }}
       >
         <strong style={{ color: 'rgba(255,179,71,.7)' }}>Notice:</strong> Content is
-        provided by third-party providers not operated by Lumina Stream. We do not host
+        provided by third-party providers not operated by Lumovia. We do not host
         or stream any files. You are responsible for verifying that your use complies
         with local laws.{' '}
         <Link

@@ -1,5 +1,5 @@
 /**
- * Lumina Stream — Cloudflare API Cache Worker
+ * Lumovia — Cloudflare API Cache Worker
  *
  * Caches TMDB + AniList API responses at Cloudflare's edge.
  * Vercel calls this worker instead of hitting TMDB/AniList directly.

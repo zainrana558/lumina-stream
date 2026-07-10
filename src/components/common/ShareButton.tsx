@@ -9,7 +9,7 @@ export default function ShareButton({ title, id }: { title: string; id: number }
 
   const handleShare = async () => {
     const url = typeof window !== 'undefined' ? `${window.location.origin}/details/${id}` : '';
-    const text = `Check out ${title} on Lumina Stream!`;
+    const text = `Check out ${title} on Lumovia!`;
 
     try {
       if (navigator.share) {

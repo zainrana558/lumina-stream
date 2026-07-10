@@ -27,9 +27,9 @@ export const SITE_URL = CANONICAL_BASE;
 
 /** CTA suffixes by media type — appended to meta descriptions */
 const CTA_MAP = {
-  movie: 'Stream it free on Lumina Stream.',
-  tv: 'Watch all episodes free on Lumina Stream.',
-  anime: 'Watch subbed & dubbed on Lumina Stream.',
+  movie: 'Stream it free on Lumovia.',
+  tv: 'Watch all episodes free on Lumovia.',
+  anime: 'Watch subbed & dubbed on Lumovia.',
 } as const;
 
 type MediaType = keyof typeof CTA_MAP;
@@ -91,7 +91,7 @@ function buildDescription(opts: {
 
   const cta = mediaType
     ? CTA_MAP[mediaType]
-    : 'Watch on Lumina Stream.';
+    : 'Watch on Lumovia.';
 
   // Compose: "[enrichment] [plot] [cta]" and truncate to 160
   let desc = enrichment + plotExcerpt + ' ' + cta;
@@ -136,7 +136,7 @@ export interface ShowMetadataInput {
 /**
  * Generate complete Metadata for a show/movie/anime detail page.
  *
- * Title format: "[Title] (Year) - Watch [Type] Online | Lumina Stream"
+ * Title format: "[Title] (Year) - Watch [Type] Online | Lumovia"
  */
 export function buildShowMetadata(input: ShowMetadataInput): Metadata {
   const {
@@ -221,8 +221,8 @@ export interface EpisodeMetadataInput {
 /**
  * Generate complete Metadata for an individual episode page.
  *
- * Title format: "[Show] Season X Episode Y - [Episode Title] | Lumina Stream"
- * If episode title is unknown: "[Show] Season 1 Episode 3 | Lumina Stream"
+ * Title format: "[Show] Season X Episode Y - [Episode Title] | Lumovia"
+ * If episode title is unknown: "[Show] Season 1 Episode 3 | Lumovia"
  *
  * Placeholder episodes (no real data from API) get `noindex` to prevent
  * index bloat — this is critical for programmatic SEO at scale.
@@ -236,8 +236,8 @@ export function buildEpisodeMetadata(input: EpisodeMetadataInput): Metadata {
   const pageUrl = `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`;
   const yearStr = showYear ? ` (${showYear})` : '';
 
-  // Title: compact format to stay under ~60 chars (template appends " | Lumina Stream")
-  // e.g. "Breaking Bad S1E1: Pilot" → 30 chars + " | Lumina Stream" = 47 chars total
+  // Title: compact format to stay under ~60 chars (template appends " | Lumovia")
+  // e.g. "Breaking Bad S1E1: Pilot" → 30 chars + " | Lumovia" = 47 chars total
   const epLabel = `S${season}E${episode}`;
   let titleText: string;
   if (episodeTitle) {
@@ -251,11 +251,11 @@ export function buildEpisodeMetadata(input: EpisodeMetadataInput): Metadata {
   if (episodeDescription && !isPlaceholder) {
     const cleanPlot = stripHtml(episodeDescription);
     const runtimeStr = runtime ? ` (${runtime} min)` : '';
-    desc = truncate(`${showTitle} ${epLabel}: ${cleanPlot}${runtimeStr} Watch now on Lumina Stream.`, 160);
+    desc = truncate(`${showTitle} ${epLabel}: ${cleanPlot}${runtimeStr} Watch now on Lumovia.`, 160);
   } else {
     // Fallback description for episodes without plot data
     const typeLabel = mediaType === 'anime' ? 'anime' : mediaType === 'movie' ? 'movie' : 'series';
-    desc = truncate(`Watch ${showTitle} ${epLabel} online free. Stream this ${typeLabel} and more on Lumina Stream.`, 160);
+    desc = truncate(`Watch ${showTitle} ${epLabel} online free. Stream this ${typeLabel} and more on Lumovia.`, 160);
   }
 
   const ogImages = image

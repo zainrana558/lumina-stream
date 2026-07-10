@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Collections — Lumina Stream',
-  description: 'Create and manage curated lists of your favorite shows on Lumina Stream.',
+  title: 'Collections — Lumovia',
+  description: 'Create and manage curated lists of your favorite shows on Lumovia.',
   robots: { index: false, follow: false },
 };
 

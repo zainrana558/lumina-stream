@@ -10,19 +10,19 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/genres`;
 
 export const metadata: Metadata = {
-  title: 'All Genres - Browse Movies, TV Shows, Anime & Cartoons by Genre | Lumina Stream',
+  title: 'All Genres - Browse Movies, TV Shows, Anime & Cartoons by Genre | Lumovia',
   description:
-    'Browse the complete genre catalog on Lumina Stream. Explore dedicated genre portals for Anime, Cartoon, Horror, Romance, Mystery, and Fantasy, plus 20+ additional genres including Action, Comedy, Drama, Sci-Fi, Thriller, Documentary, Crime, and more. Each genre page features curated titles, genre-specific descriptions, sub-genre filters, and personalized recommendations.',
+    'Browse the complete genre catalog on Lumovia. Explore dedicated genre portals for Anime, Cartoon, Horror, Romance, Mystery, and Fantasy, plus 20+ additional genres including Action, Comedy, Drama, Sci-Fi, Thriller, Documentary, Crime, and more. Each genre page features curated titles, genre-specific descriptions, sub-genre filters, and personalized recommendations.',
   alternates: { canonical: pageUrl },
   openGraph: {
     type: 'website',
     url: pageUrl,
-    title: 'All Genres — Browse Movies, TV Shows, Anime & Cartoons by Genre | Lumina Stream',
-    description: 'Explore every genre on Lumina Stream — from Anime and Horror portals to Action, Comedy, Drama, Sci-Fi, and 20+ more genres with curated content.',
-    siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'All Genres on Lumina Stream' }],
+    title: 'All Genres — Browse Movies, TV Shows, Anime & Cartoons by Genre | Lumovia',
+    description: 'Explore every genre on Lumovia — from Anime and Horror portals to Action, Comedy, Drama, Sci-Fi, and 20+ more genres with curated content.',
+    siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'All Genres on Lumovia' }],
   },
-  twitter: { card: 'summary_large_image', title: 'All Genres | Lumina Stream', description: 'Browse all genres on Lumina Stream.', images: [`${siteUrl}/og/og-genres.png`] },
+  twitter: { card: 'summary_large_image', title: 'All Genres | Lumovia', description: 'Browse all genres on Lumovia.', images: [`${siteUrl}/og/og-genres.png`] },
 };
 
 const GENRE_DESCRIPTIONS: Record<string, string> = {
@@ -50,8 +50,8 @@ const GENRE_DESCRIPTIONS: Record<string, string> = {
 
 const GENRE_FAQ = [
   {
-    q: 'How many genres are available on Lumina Stream?',
-    a: 'Lumina Stream offers over 25 genres organized into two tiers. Six core genres — Anime, Cartoon, Horror, Romance, Mystery, and Fantasy — have dedicated portal pages with custom visual themes, curated content selections, and sub-genre navigation. An additional 19+ genres including Action, Adventure, Comedy, Crime, Documentary, Drama, Family, History, Music, Science Fiction, Thriller, War, and Western are available through our TMDB-powered browse filters. Every genre page displays curated titles with ratings, descriptions, and direct links to individual title pages.',
+    q: 'How many genres are available on Lumovia?',
+    a: 'Lumovia offers over 25 genres organized into two tiers. Six core genres — Anime, Cartoon, Horror, Romance, Mystery, and Fantasy — have dedicated portal pages with custom visual themes, curated content selections, and sub-genre navigation. An additional 19+ genres including Action, Adventure, Comedy, Crime, Documentary, Drama, Family, History, Music, Science Fiction, Thriller, War, and Western are available through our TMDB-powered browse filters. Every genre page displays curated titles with ratings, descriptions, and direct links to individual title pages.',
   },
   {
     q: 'What is the difference between genre portals and browse genres?',
@@ -66,7 +66,7 @@ const GENRE_FAQ = [
     a: 'Genre portal pages revalidate every hour, meaning new titles appear on genre pages within 60 minutes of being added to TMDB or AniList. Trending and popular content within each genre refreshes even more frequently. Our browse filters always query live data, so you always see the most current results when actively browsing.',
   },
   {
-    q: 'Does Lumina Stream have anime-specific genre browsing?',
+    q: 'Does Lumovia have anime-specific genre browsing?',
     a: 'Yes. Anime has its own dedicated genre portal at /genre/anime with a custom visual theme, curated anime selections, and sub-genre tags like Shonen, Shojo, Seinen, Isekai, and Slice of Life. Additionally, our seasonal anime page at /seasonal tracks currently airing anime by season, and our anime content is powered by AniList for the most comprehensive and up-to-date anime database available.',
   },
 ];
@@ -227,7 +227,7 @@ export default async function GenresPage() {
     name: 'All Genres',
     description: metadata.description,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -449,7 +449,7 @@ export default async function GenresPage() {
                 lineHeight: 1.5,
                 margin: 0,
               }}>
-                {GENRE_DESCRIPTIONS[g.name] || 'Explore the best content in this genre on Lumina Stream.'}
+                {GENRE_DESCRIPTIONS[g.name] || 'Explore the best content in this genre on Lumovia.'}
               </p>
             </Link>
           ))}
@@ -503,7 +503,7 @@ export default async function GenresPage() {
         {/* Cross-links for SEO */}
         <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid rgba(255,245,232,.06)' }}>
           <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.7, marginBottom: 12 }}>
-            Explore more ways to discover content on Lumina Stream: browse our complete <Link href="/browse" style={{ color: '#FFB347', textDecoration: 'none' }}>catalog</Link>, check out the <Link href="/top-rated" style={{ color: '#FFB347', textDecoration: 'none' }}>top-rated titles</Link>, find the <Link href="/new-releases" style={{ color: '#FFB347', textDecoration: 'none' }}>newest releases</Link>, explore content by <Link href="/decade/2020s" style={{ color: '#FFB347', textDecoration: 'none' }}>decade</Link> or <Link href={`/year/${new Date().getFullYear()}`} style={{ color: '#FFB347', textDecoration: 'none' }}>year</Link>, track <Link href="/seasonal" style={{ color: '#FFB347', textDecoration: 'none' }}>seasonal anime</Link>, or plan your next binge with our <Link href="/release-calendar" style={{ color: '#FFB347', textDecoration: 'none' }}>release calendar</Link>.
+            Explore more ways to discover content on Lumovia: browse our complete <Link href="/browse" style={{ color: '#FFB347', textDecoration: 'none' }}>catalog</Link>, check out the <Link href="/top-rated" style={{ color: '#FFB347', textDecoration: 'none' }}>top-rated titles</Link>, find the <Link href="/new-releases" style={{ color: '#FFB347', textDecoration: 'none' }}>newest releases</Link>, explore content by <Link href="/decade/2020s" style={{ color: '#FFB347', textDecoration: 'none' }}>decade</Link> or <Link href={`/year/${new Date().getFullYear()}`} style={{ color: '#FFB347', textDecoration: 'none' }}>year</Link>, track <Link href="/seasonal" style={{ color: '#FFB347', textDecoration: 'none' }}>seasonal anime</Link>, or plan your next binge with our <Link href="/release-calendar" style={{ color: '#FFB347', textDecoration: 'none' }}>release calendar</Link>.
           </p>
         </div>
       </div>

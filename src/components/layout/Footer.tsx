@@ -54,7 +54,7 @@ export default function Footer() {
     }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
         <div>
-          <Link href="/" className="logo" style={{ fontSize: '1.25rem', display: 'block', marginBottom: '.6rem', textDecoration: 'none', color: 'inherit' }}>LUMINA</Link>
+          <Link href="/" className="logo" style={{ fontSize: '1.25rem', display: 'block', marginBottom: '.6rem', textDecoration: 'none', color: 'inherit' }}>LUMOVIA</Link>
           <p className="f-crimson" style={{ fontSize: '.88rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.68 }}>Free streaming catalog for movies, TV shows, anime &amp; cartoons.</p>
         </div>
         {FOOTER_SECTIONS.map(([t, links]) => (
@@ -75,9 +75,9 @@ export default function Footer() {
       </div>
       <div style={{ borderTop: '1px solid rgba(255,255,255,.055)', paddingTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div className="f-mono" style={{ fontSize: '.62rem', letterSpacing: '.09em', color: 'rgba(255,245,232,.22)' }}>
-          &copy; 2026 LUMINA STREAM &middot; ALL RIGHTS RESERVED<br />
+          &copy; 2026 LUMOVIA &middot; ALL RIGHTS RESERVED<br />
           <span style={{ color: 'rgba(255,245,232,.15)' }}>
-            Lumina Stream does not host, upload, or stream any video files. Content is provided by independent third-party providers. Users are responsible for verifying compliance with their local laws.
+            Lumovia does not host, upload, or stream any video files. Content is provided by independent third-party providers. Users are responsible for verifying compliance with their local laws.
           </span>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>

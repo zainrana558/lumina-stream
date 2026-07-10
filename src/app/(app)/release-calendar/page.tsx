@@ -10,22 +10,22 @@ const calendarUrl = `${siteUrl}/release-calendar`;
 export const metadata: Metadata = {
   title: 'Release Calendar - Upcoming Movie Releases by Month',
   description:
-    'Plan your movie nights with the Lumina Stream release calendar. Browse upcoming theatrical and streaming premieres organized by month, with posters, release dates, and ratings for every film. Covers the next several months of scheduled releases from all major studios, updated automatically as new dates are announced.',
+    'Plan your movie nights with the Lumovia release calendar. Browse upcoming theatrical and streaming premieres organized by month, with posters, release dates, and ratings for every film. Covers the next several months of scheduled releases from all major studios, updated automatically as new dates are announced.',
   alternates: { canonical: calendarUrl },
   openGraph: {
     type: 'website',
     url: calendarUrl,
-    title: 'Release Calendar - Upcoming Movie Releases | Lumina Stream',
+    title: 'Release Calendar - Upcoming Movie Releases | Lumovia',
     description:
-      'Plan your movie nights with the Lumina Stream release calendar. Browse upcoming theatrical and streaming premieres organized by month.',
-    siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og/og-new-releases.png`, width: 1344, height: 768, alt: 'Release Calendar on Lumina Stream' }],
+      'Plan your movie nights with the Lumovia release calendar. Browse upcoming theatrical and streaming premieres organized by month.',
+    siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-new-releases.png`, width: 1344, height: 768, alt: 'Release Calendar on Lumovia' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Release Calendar - Upcoming Movie Releases | Lumina Stream',
+    title: 'Release Calendar - Upcoming Movie Releases | Lumovia',
     description:
-      'Browse upcoming movie releases organized by month on Lumina Stream.',
+      'Browse upcoming movie releases organized by month on Lumovia.',
     images: [`${siteUrl}/og/og-new-releases.png`],
   },
 };
@@ -95,7 +95,7 @@ export default async function ReleaseCalendarPage() {
     name: 'Release Calendar',
     description: metadata.description,
     url: calendarUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -114,7 +114,7 @@ export default async function ReleaseCalendarPage() {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
-          { '@type': 'Question', name: 'What is the Lumina Stream Release Calendar?', acceptedAnswer: { '@type': 'Answer', text: 'The Release Calendar organizes all upcoming movie releases by month, pulling real-time premiere dates from TMDB. It covers the next several months of scheduled theatrical and streaming premieres, with new dates added automatically as studios announce them.' } },
+          { '@type': 'Question', name: 'What is the Lumovia Release Calendar?', acceptedAnswer: { '@type': 'Answer', text: 'The Release Calendar organizes all upcoming movie releases by month, pulling real-time premiere dates from TMDB. It covers the next several months of scheduled theatrical and streaming premieres, with new dates added automatically as studios announce them.' } },
           { '@type': 'Question', name: 'How far in advance are release dates listed?', acceptedAnswer: { '@type': 'Answer', text: 'The Release Calendar shows upcoming movies as far out as TMDB has data, typically covering several months of future releases. Each entry includes the title, poster, release date, and rating to help you plan your watchlist.' } },
           { '@type': 'Question', name: 'Are release dates accurate?', acceptedAnswer: { '@type': 'Answer', text: 'Release dates come directly from TMDB, which aggregates studio announcements and theater listings. Dates may shift as studios adjust schedules, but the calendar updates automatically to reflect the latest information available.' } },
         ],

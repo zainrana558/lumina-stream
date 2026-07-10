@@ -44,25 +44,25 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: "Lumina Stream - Dream, Discover, Stream",
-    template: "%s | Lumina Stream",
+    default: "Lumovia - Dream, Discover, Stream",
+    template: "%s | Lumovia",
   },
-  description: "Lumina Stream — your free streaming catalog for movies, TV shows, anime, and cartoons. Browse thousands of titles with ratings, trailers, cast info, and episode guides. Updated daily.",
+  description: "Lumovia — your free streaming catalog for movies, TV shows, anime, and cartoons. Browse thousands of titles with ratings, trailers, cast info, and episode guides. Updated daily.",
   metadataBase: new URL(CANONICAL_BASE),
   alternates: { languages: { 'x-default': CANONICAL_BASE, 'en-US': CANONICAL_BASE } },
   manifest: '/manifest.json',
   openGraph: {
-    title: "Lumina Stream",
+    title: "Lumovia",
     description: "Explore a curated collection of movies, TV shows, anime, and cartoons.",
     type: "website",
     url: CANONICAL_BASE,
-    siteName: "Lumina Stream",
+    siteName: "Lumovia",
     locale: "en_US",
-    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: "Lumina Stream - Dream, Discover, Stream" }],
+    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: "Lumovia - Dream, Discover, Stream" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lumina Stream",
+    title: "Lumovia",
     description: "Explore a curated collection of movies, TV shows, anime, and cartoons.",
     images: [`${CANONICAL_BASE}/og/og-movies.png`],
   },
@@ -75,7 +75,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Lumina Stream',
+    title: 'Lumovia',
   },
   robots: {
     index: true,
@@ -100,7 +100,7 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Lumina" />
+        <meta name="apple-mobile-web-app-title" content="Lumovia" />
         <meta name="theme-color" content="#FFB347" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="google-site-verification" content="IZ_kgkZCobezDHfENC4rcTL_eNcV1i71jvcEVmTRrlc" />
@@ -113,11 +113,11 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'Organization',
-              name: 'Lumina Stream',
+              name: 'Lumovia',
               url: CANONICAL_BASE,
               logo: `${CANONICAL_BASE}/logo.svg`,
               sameAs: ['https://github.com/zainrana558'],
-              description: 'Lumina Stream is a free streaming catalog and content discovery platform for movies, TV shows, anime, and cartoons, powered by TMDB and AniList.',
+              description: 'Lumovia is a free streaming catalog and content discovery platform for movies, TV shows, anime, and cartoons, powered by TMDB and AniList.',
             }),
           }}
         />
@@ -127,7 +127,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'WebSite',
-              name: 'Lumina Stream',
+              name: 'Lumovia',
               url: CANONICAL_BASE,
               description: 'Free streaming catalog — discover movies, TV shows, anime, and cartoons. Browse thousands of titles with ratings, trailers, cast info, and episode guides.',
               potentialAction: {

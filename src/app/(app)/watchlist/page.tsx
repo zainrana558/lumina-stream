@@ -109,8 +109,8 @@ export default function WatchlistPage() {
   // Share watchlist
   const handleShare = async () => {
     const shareData = {
-      title: `${profile?.name || 'My'} Lumina Watchlist`,
-      text: `Check out my watchlist on Lumina Stream! I have ${items.length} ${items.length === 1 ? 'title' : 'titles'} saved.`,
+      title: `${profile?.name || 'My'} Lumovia Watchlist`,
+      text: `Check out my watchlist on Lumovia! I have ${items.length} ${items.length === 1 ? 'title' : 'titles'} saved.`,
       url: typeof window !== 'undefined' ? window.location.href : '',
     };
 

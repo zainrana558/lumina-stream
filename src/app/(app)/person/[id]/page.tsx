@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const deptLabel = dept.replace(/([A-Z])/g, ' $1').trim().toLowerCase();
     const desc = cleanBio.length > 100
       ? cleanBio.slice(0, 155) + '...'
-      : `Explore the complete filmography and biography of ${data.name} on Lumina Stream. ${deptLabel ? `Known for ${deptLabel}.` : ''} View all movies and TV shows featuring ${data.name}, with ratings, trailers, and recommendations.`;
+      : `Explore the complete filmography and biography of ${data.name} on Lumovia. ${deptLabel ? `Known for ${deptLabel}.` : ''} View all movies and TV shows featuring ${data.name}, with ratings, trailers, and recommendations.`;
     return {
       title: `${data.name} - Movies, TV Shows & Biography`,
       description: desc,
@@ -28,14 +28,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       openGraph: {
         type: 'profile',
         url: pageUrl,
-        title: `${data.name} - Movies, TV Shows & Biography | Lumina Stream`,
+        title: `${data.name} - Movies, TV Shows & Biography | Lumovia`,
         description: desc,
-        siteName: 'Lumina Stream',
-        images: profileImg ? [{ url: profileImg, width: 600, height: 900, alt: `${data.name} on Lumina Stream` }] : [],
+        siteName: 'Lumovia',
+        images: profileImg ? [{ url: profileImg, width: 600, height: 900, alt: `${data.name} on Lumovia` }] : [],
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${data.name} | Lumina Stream`,
+        title: `${data.name} | Lumovia`,
         description: desc,
         images: profileImg ? [profileImg] : [],
       },
@@ -184,7 +184,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const personFaq = [
     {
       q: `Who is ${data.name}?`,
-      a: `${data.name} is a${deptLabel ? ` ${deptLabel}` : ''} with ${totalCredits} credits on Lumina Stream, spanning ${movieCount} movie${movieCount !== 1 ? 's' : ''} and ${tvCount} TV show${tvCount !== 1 ? 's' : ''}. ${birthDate ? `Born ${birthDate}${data.place_of_birth ? ` in ${data.place_of_birth}` : ''}.` : ''} ${knownFor.length > 0 ? `Best known for ${knownFor.slice(0, 3).map(k => k.title).join(', ')}.` : ''}`,
+      a: `${data.name} is a${deptLabel ? ` ${deptLabel}` : ''} with ${totalCredits} credits on Lumovia, spanning ${movieCount} movie${movieCount !== 1 ? 's' : ''} and ${tvCount} TV show${tvCount !== 1 ? 's' : ''}. ${birthDate ? `Born ${birthDate}${data.place_of_birth ? ` in ${data.place_of_birth}` : ''}.` : ''} ${knownFor.length > 0 ? `Best known for ${knownFor.slice(0, 3).map(k => k.title).join(', ')}.` : ''}`,
     },
     {
       q: `What are the best movies and TV shows featuring ${data.name}?`,
@@ -196,7 +196,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     }] : []),
     {
       q: `Where can I find ${data.name}'s complete filmography?`,
-      a: `The complete filmography of ${data.name} is available right here on Lumina Stream. Scroll down to browse all ${totalCredits} credits organized by media type, with links to every movie and TV show page featuring full details, ratings, cast, and trailers.`,
+      a: `The complete filmography of ${data.name} is available right here on Lumovia. Scroll down to browse all ${totalCredits} credits organized by media type, with links to every movie and TV show page featuring full details, ratings, cast, and trailers.`,
     },
   ];
 
@@ -267,7 +267,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
           maxWidth: 800,
           marginBottom: 12,
         }}>
-          {data.name} has {totalCredits} credits on Lumina Stream spanning {movieCount} movie{movieCount !== 1 ? 's' : ''} and {tvCount} TV show{tvCount !== 1 ? 's' : ''}.
+          {data.name} has {totalCredits} credits on Lumovia spanning {movieCount} movie{movieCount !== 1 ? 's' : ''} and {tvCount} TV show{tvCount !== 1 ? 's' : ''}.
           {knownFor.length > 0 && ` Best known for ${knownFor.slice(0, 3).map(k => k.title).join(', ')}${knownFor.length > 3 ? ` and ${knownFor.length - 3} more` : ''}.`}
           {' '}Browse the complete filmography below, filter by cast or crew roles, and sort by popularity or release year. Click any title to view its full details page with cast, ratings, trailers, and similar recommendations.
         </p>

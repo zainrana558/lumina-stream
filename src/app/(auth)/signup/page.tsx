@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
 export const metadata: Metadata = {
-  title: 'Create Account — Lumina Stream',
-  description: 'Create a free Lumina Stream account to unlock watchlists, collections, viewing stats, year-in-review, activity feed, and personalized recommendations across thousands of movies, TV shows, and anime.',
+  title: 'Create Account — Lumovia',
+  description: 'Create a free Lumovia account to unlock watchlists, collections, viewing stats, year-in-review, activity feed, and personalized recommendations across thousands of movies, TV shows, and anime.',
   alternates: { canonical: `${CANONICAL_BASE}/signup` },
 };
 
@@ -47,7 +47,7 @@ export default function SignupPage() {
 
       <div className="signup-page">
         <SignupForm />
-        <nav className="auth-seo-links" aria-label="Explore Lumina Stream">
+        <nav className="auth-seo-links" aria-label="Explore Lumovia">
           <Link href="/browse">Browse</Link>
           <Link href="/movies">Movies</Link>
           <Link href="/tv-shows">TV Shows</Link>

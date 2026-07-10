@@ -18,15 +18,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: browseUrl,
-    title: 'Browse - Movies & TV Shows | Lumina Stream',
-    description: 'Browse the full catalog of movies and TV shows on Lumina Stream.',
-    siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og/og-movies.png`, width: 1344, height: 768, alt: 'Browse Movies & TV Shows on Lumina Stream' }],
+    title: 'Browse - Movies & TV Shows | Lumovia',
+    description: 'Browse the full catalog of movies and TV shows on Lumovia.',
+    siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-movies.png`, width: 1344, height: 768, alt: 'Browse Movies & TV Shows on Lumovia' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Browse - Movies & TV Shows | Lumina Stream',
-    description: 'Browse the full catalog of movies and TV shows on Lumina Stream.',
+    title: 'Browse - Movies & TV Shows | Lumovia',
+    description: 'Browse the full catalog of movies and TV shows on Lumovia.',
   },
 };
 
@@ -73,7 +73,7 @@ export default async function BrowsePage() {
     name: 'Browse',
     description: metadata.description,
     url: browseUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -92,7 +92,7 @@ export default async function BrowsePage() {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
-          { '@type': 'Question', name: 'What can I find on the Lumina Stream Browse page?', acceptedAnswer: { '@type': 'Answer', text: 'The Browse page combines trending, popular, and top-rated movies and TV shows into a single powerful discovery page. It aggregates data from TMDB and AniList to provide a comprehensive catalog of thousands of titles across every genre, updated every few minutes.' } },
+          { '@type': 'Question', name: 'What can I find on the Lumovia Browse page?', acceptedAnswer: { '@type': 'Answer', text: 'The Browse page combines trending, popular, and top-rated movies and TV shows into a single powerful discovery page. It aggregates data from TMDB and AniList to provide a comprehensive catalog of thousands of titles across every genre, updated every few minutes.' } },
           { '@type': 'Question', name: 'How do I filter content on the Browse page?', acceptedAnswer: { '@type': 'Answer', text: 'Use the built-in genre filter chips, sort by popularity or rating, and the search bar to narrow down results. The Browse page supports filtering by genre, sort order, and text search to help you find exactly what you are looking for.' } },
           { '@type': 'Question', name: 'How often is the Browse catalog updated?', acceptedAnswer: { '@type': 'Answer', text: 'The catalog data is sourced from TMDB and AniList and refreshed throughout the day. Trending content updates every five minutes, popular lists refresh hourly, and new titles appear automatically as they become popular on TMDB.' } },
         ],
@@ -101,9 +101,9 @@ export default async function BrowsePage() {
         <BrowseClient initialShows={shows} />
       </Suspense>
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
-        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Browse the Full Lumina Stream Catalog</h2>
+        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Browse the Full Lumovia Catalog</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
-          Dive into the full Lumina Stream catalog. Browse combines trending, popular, and top-rated movies and TV shows into a single powerful discovery page. Use the built-in search and genre filters to narrow down results by mood, era, or rating. Our catalog is powered by TMDB and AniList, giving you access to thousands of titles across every genre — from Hollywood blockbusters and acclaimed TV dramas to Japanese anime and Western cartoons — all in one place. This is the most flexible page on the site: start with the pre-loaded results above, then refine with genre tags, sort by newest or highest-rated, or type a title into the search bar. Whether you know exactly what you want or you are just exploring, the Browse page adapts to your preferences and surfaces relevant results instantly. New content is synced from TMDB and AniList every few minutes, ensuring the catalog always feels fresh and up to date.
+          Dive into the full Lumovia catalog. Browse combines trending, popular, and top-rated movies and TV shows into a single powerful discovery page. Use the built-in search and genre filters to narrow down results by mood, era, or rating. Our catalog is powered by TMDB and AniList, giving you access to thousands of titles across every genre — from Hollywood blockbusters and acclaimed TV dramas to Japanese anime and Western cartoons — all in one place. This is the most flexible page on the site: start with the pre-loaded results above, then refine with genre tags, sort by newest or highest-rated, or type a title into the search bar. Whether you know exactly what you want or you are just exploring, the Browse page adapts to your preferences and surfaces relevant results instantly. New content is synced from TMDB and AniList every few minutes, ensuring the catalog always feels fresh and up to date.
         </p>
       </section>
     </>

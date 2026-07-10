@@ -84,12 +84,12 @@ export default function YearInReviewPage() {
   }, []);
 
   const handleShare = async () => {
-    const shareText = `🎬 My ${year} on Lumina Stream!\n⏱ ${stats?.totalHours || 0} hours watched\n🎬 ${stats?.totalTitles || 0} titles\n🔥 Come join me!`;
+    const shareText = `🎬 My ${year} on Lumovia!\n⏱ ${stats?.totalHours || 0} hours watched\n🎬 ${stats?.totalTitles || 0} titles\n🔥 Come join me!`;
 
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
-          title: `My ${year} Lumina Year in Review`,
+          title: `My ${year} Lumovia Year in Review`,
           text: shareText,
         });
       } catch (err) {

@@ -206,7 +206,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
     <div className="s-overlay" ref={trapRef} role="dialog" aria-modal="true" aria-label="Search" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ width: '100%', maxWidth: 640 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-          <span className="sec" style={{ fontSize: '1.2rem' }}>Search Lumina</span>
+          <span className="sec" style={{ fontSize: '1.2rem' }}>Search Lumovia</span>
           <button className="btn-icon" onClick={onClose} aria-label="Close search">✕</button>
         </div>
 

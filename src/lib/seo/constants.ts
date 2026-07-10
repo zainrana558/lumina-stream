@@ -6,5 +6,5 @@
  * and must NOT leak into SEO metadata (canonical, OG, sitemaps, robots).
  */
 export const CANONICAL_BASE = 'https://lumina-stream-omega.vercel.app';
-export const SITE_NAME = 'Lumina Stream';
+export const SITE_NAME = 'Lumovia';
 export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';

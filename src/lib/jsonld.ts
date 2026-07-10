@@ -26,7 +26,7 @@ export function buildDetailJsonLd(show: MediaItem, siteUrl: string): object {
     '@context': 'https://schema.org',
     '@type': type,
     name: show.title,
-    description: show.desc || 'Watch on Lumina Stream',
+    description: show.desc || 'Watch on Lumovia',
     image,
     datePublished,
     url: `${siteUrl}/details/${show.id}`,

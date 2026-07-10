@@ -62,7 +62,7 @@ export default function SignupForm() {
     return (
       <>
         <div className="auth-form-container" style={{ textAlign: 'center' }}>
-          <h2>LUMINA</h2>
+          <h2>LUMOVIA</h2>
           <div className="auth-email-sent-icon">✉️</div>
           <p className="auth-email-sent-text">
             Check your email at <span className="auth-email-sent-addr">{email}</span>
@@ -81,7 +81,7 @@ export default function SignupForm() {
   return (
     <>
       <div className="auth-form-container">
-        <h2>LUMINA</h2>
+        <h2>LUMOVIA</h2>
         <p className="auth-subtitle">Begin your journey tonight</p>
 
         <div className="auth-error">{error || oauthError}</div>

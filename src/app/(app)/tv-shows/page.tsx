@@ -14,20 +14,20 @@ const pageUrl = `${siteUrl}/tv-shows`;
 export const metadata: Metadata = {
   title: 'TV Shows - Watch Free TV Series Online',
   description:
-    'Binge-watch the best TV shows online for free. Discover trending series, popular dramas, hit comedies, and must-see TV on Lumina Stream.',
+    'Binge-watch the best TV shows online for free. Discover trending series, popular dramas, hit comedies, and must-see TV on Lumovia.',
   alternates: { canonical: pageUrl },
   openGraph: {
     type: 'website',
     url: pageUrl,
-    title: 'TV Shows - Watch Free TV Series Online | Lumina Stream',
+    title: 'TV Shows - Watch Free TV Series Online | Lumovia',
     description: 'Stream the best TV shows online for free. Drama, comedy, thriller, and more.',
-    siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og/og-tv.png`, width: 1344, height: 768, alt: 'Lumina Stream TV Shows' }],
+    siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-tv.png`, width: 1344, height: 768, alt: 'Lumovia TV Shows' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TV Shows - Watch Free TV Series Online | Lumina Stream',
-    description: 'Binge-watch free TV shows on Lumina Stream.',
+    title: 'TV Shows - Watch Free TV Series Online | Lumovia',
+    description: 'Binge-watch free TV shows on Lumovia.',
     images: [`${siteUrl}/og/og-tv.png`],
   },
 };
@@ -73,7 +73,7 @@ export default async function TVShowsPage() {
     name: 'TV Shows',
     description: metadata.description,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -92,7 +92,7 @@ export default async function TVShowsPage() {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
-          { '@type': 'Question', name: 'What TV shows are available on Lumina Stream?', acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream offers a comprehensive TV show catalog including currently airing series, classic shows, popular dramas, hit comedies, and trending TV from around the world. Data is sourced from TMDB and refreshed throughout the day.' } },
+          { '@type': 'Question', name: 'What TV shows are available on Lumovia?', acceptedAnswer: { '@type': 'Answer', text: 'Lumovia offers a comprehensive TV show catalog including currently airing series, classic shows, popular dramas, hit comedies, and trending TV from around the world. Data is sourced from TMDB and refreshed throughout the day.' } },
           { '@type': 'Question', name: 'How often are TV shows updated?', acceptedAnswer: { '@type': 'Answer', text: 'Our TV catalog is updated every five minutes using data from five TMDB endpoints — trending TV, popular TV, top-rated TV, airing today, and on the air — so you always see the latest episodes and newly added series.' } },
           { '@type': 'Question', name: 'Can I browse TV shows by genre?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use the genre filter chips on the TV Shows page to narrow results by genre including drama, comedy, thriller, sci-fi, and more. You can also sort by popularity, rating, or newest to find the perfect show for your mood.' } },
         ],

@@ -239,7 +239,7 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
     <>
       <div className="ps-container">
         <div className="ps-header">
-          <h1>LUMINA</h1>
+          <h1>LUMOVIA</h1>
           <p>Who&apos;s watching tonight?</p>
           <button className="ps-signout" onClick={handleSignOutNav}>
             ← Sign Out

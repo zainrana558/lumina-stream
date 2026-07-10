@@ -47,7 +47,7 @@ export default function LoginForm() {
   return (
     <>
       <div className="auth-form-container">
-        <h2>LUMINA</h2>
+        <h2>LUMOVIA</h2>
         <p className="auth-subtitle">Welcome back, dreamer</p>
 
         <div className="auth-error">{error || oauthError}</div>

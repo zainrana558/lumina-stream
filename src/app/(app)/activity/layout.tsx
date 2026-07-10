@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Activity Feed — Lumina Stream',
-  description: 'See what you and people you follow have been watching on Lumina Stream.',
+  title: 'Activity Feed — Lumovia',
+  description: 'See what you and people you follow have been watching on Lumovia.',
   robots: { index: false, follow: false },
 };
 

@@ -61,8 +61,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       url: pageUrl,
       title: genre.title,
       description: genre.description,
-      siteName: 'Lumina Stream',
-      images: [{ url: ogImageUrl, width: ogImageWidth, height: ogImageHeight, alt: `${genre.title} on Lumina Stream` }],
+      siteName: 'Lumovia',
+      images: [{ url: ogImageUrl, width: ogImageWidth, height: ogImageHeight, alt: `${genre.title} on Lumovia` }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -200,7 +200,7 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
     name: config.title,
     description: config.description,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',

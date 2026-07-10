@@ -30,13 +30,13 @@ const TEMPLATES = {
 <h2>What Makes ${title} Special</h2>
 <p>With a rating of ${rating}/10 on TMDB, this ${genres?.split(',')[0]?.trim() || type} has earned its place among the best in its genre. Critics and audiences alike have praised its storytelling, performances, and production values. Whether you are a longtime fan or discovering it for the first time, ${title} offers something truly memorable.</p>
 <h2>Complete Cast and Crew Information</h2>
-<p>Lumina Stream provides comprehensive cast and crew details for ${title}, including full filmographies for every cast member, character names, and links to other projects they have worked on. You can click on any cast member to explore their entire body of work across movies and TV shows.</p>
+<p>Lumovia provides comprehensive cast and crew details for ${title}, including full filmographies for every cast member, character names, and links to other projects they have worked on. You can click on any cast member to explore their entire body of work across movies and TV shows.</p>
 <h2>Episode Guides and Season Information</h2>
-<p>For TV series like ${title}, Lumina Stream offers detailed episode guides with air dates, synopses, ratings, and runtime information for every episode across all seasons. Navigate between episodes easily and track your viewing progress.</p>
+<p>For TV series like ${title}, Lumovia offers detailed episode guides with air dates, synopses, ratings, and runtime information for every episode across all seasons. Navigate between episodes easily and track your viewing progress.</p>
 <h2>Where to Watch ${title} Online Free</h2>
-<p>You can explore ${title} right now on Lumina Stream — no registration, no subscription, no hidden fees. Our platform provides the most comprehensive information about ${title} available online, all completely free.</p>
-<p>Lumina Stream offers thousands of movies and TV shows across all genres: action, comedy, horror, anime, sci-fi, romance, mystery, fantasy, and more. All content is powered by TMDB and AniList, the two largest entertainment databases in the world, ensuring accurate and up-to-date information.</p>
-<h2>Why Choose Lumina Stream?</h2>
+<p>You can explore ${title} right now on Lumovia — no registration, no subscription, no hidden fees. Our platform provides the most comprehensive information about ${title} available online, all completely free.</p>
+<p>Lumovia offers thousands of movies and TV shows across all genres: action, comedy, horror, anime, sci-fi, romance, mystery, fantasy, and more. All content is powered by TMDB and AniList, the two largest entertainment databases in the world, ensuring accurate and up-to-date information.</p>
+<h2>Why Choose Lumovia?</h2>
 <ul>
   <li>100% free — no credit card needed</li>
   <li>Detailed information for thousands of titles</li>
@@ -52,10 +52,10 @@ const TEMPLATES = {
 <p>Rating: ${rating}/10 on TMDB | Genre: ${genres || type}</p>
 <p>${overview}</p>
 <p>This ${type === 'tv' ? 'series' : 'film'} is a standout in the ${genres?.split(',')[0]?.trim() || 'entertainment'} category. With its compelling narrative, strong performances, and high production values, ${title} has captured the attention of audiences worldwide and earned a well-deserved ${rating}/10 rating from TMDB users. Whether you are planning a movie night or a weekend binge-watching session, this title deserves a spot on your watchlist.</p>
-<h2>Detailed Information on Lumina Stream</h2>
-<p>On Lumina Stream, you will find everything you need to know about ${title}: a full plot summary, complete cast and crew list with links to their other projects, user ratings and reviews, similar title recommendations, and for TV series, a complete episode guide with individual synopses and air dates. All of this information is available for free, with no account required.</p>
+<h2>Detailed Information on Lumovia</h2>
+<p>On Lumovia, you will find everything you need to know about ${title}: a full plot summary, complete cast and crew list with links to their other projects, user ratings and reviews, similar title recommendations, and for TV series, a complete episode guide with individual synopses and air dates. All of this information is available for free, with no account required.</p>
 <h2>More Titles Like ${title}</h2>
-<p>If you enjoy ${title}, Lumina Stream makes it easy to discover similar titles. Our detail pages include a "You Might Also Like" section powered by TMDB recommendation algorithms, plus genre-based browsing that helps you find more of what you love. Explore our genre portals for Anime, Horror, Romance, Mystery, Fantasy, and Cartoons — each with custom-themed pages and curated collections.</p>
+<p>If you enjoy ${title}, Lumovia makes it easy to discover similar titles. Our detail pages include a "You Might Also Like" section powered by TMDB recommendation algorithms, plus genre-based browsing that helps you find more of what you love. Explore our genre portals for Anime, Horror, Romance, Mystery, Fantasy, and Cartoons — each with custom-themed pages and curated collections.</p>
 `,
 
   guide: (title: string, year: string, overview: string, genres: string, rating: string, type: string) => `
@@ -69,9 +69,9 @@ const TEMPLATES = {
   ${year ? `<li><strong>Year:</strong> ${year}</li>` : ''}
 </ul>
 <h2>Everything You Need to Know About ${title}</h2>
-<p>Lumina Stream provides the most comprehensive information about ${title} available anywhere online. From detailed plot summaries and cast filmographies to episode guides and similar title recommendations, we have everything you need to decide what to watch next. Our data is sourced directly from TMDB and AniList, the world's largest entertainment databases, and updated multiple times per hour to ensure accuracy.</p>
+<p>Lumovia provides the most comprehensive information about ${title} available anywhere online. From detailed plot summaries and cast filmographies to episode guides and similar title recommendations, we have everything you need to decide what to watch next. Our data is sourced directly from TMDB and AniList, the world's largest entertainment databases, and updated multiple times per hour to ensure accuracy.</p>
 <h2>The Easiest Way to Explore ${title}</h2>
-<p>Skip the subscriptions. Skip the sign-ups. Lumina Stream lets you explore ${title} instantly — free, with rich details including cast information, ratings, trailers, and episode guides. Browse thousands of titles across every genre including Action, Comedy, Drama, Horror, Romance, Sci-Fi, Thriller, Mystery, Fantasy, Anime, and Cartoons.</p>
+<p>Skip the subscriptions. Skip the sign-ups. Lumovia lets you explore ${title} instantly — free, with rich details including cast information, ratings, trailers, and episode guides. Browse thousands of titles across every genre including Action, Comedy, Drama, Horror, Romance, Sci-Fi, Thriller, Mystery, Fantasy, Anime, and Cartoons.</p>
 `,
 };
 
@@ -171,11 +171,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const show = await fetchShowData(slug);
 
   if (!show) {
-    return { title: 'Blog — Lumina Stream', robots: { index: false } };
+    return { title: 'Blog — Lumovia', robots: { index: false } };
   }
 
   const title = `Watch ${show.title}${show.year ? ` (${show.year})` : ''} Online Free — No Sign Up`;
-  const description = `Stream ${show.title} free on Lumina Stream. ${show.overview?.slice(0, 120)}... No registration, HD quality. Watch now!`;
+  const description = `Stream ${show.title} free on Lumovia. ${show.overview?.slice(0, 120)}... No registration, HD quality. Watch now!`;
 
   return {
     title,
@@ -217,17 +217,17 @@ export default async function BlogSlugPage({ params }: Props) {
     {
       '@type': 'Question',
       name: `Is ${show.title} available to stream for free?`,
-      acceptedAnswer: { '@type': 'Answer', text: `Yes, you can discover and explore ${show.title} on Lumina Stream for free. Our platform provides detailed information about ${show.title} including ratings, cast, trailers, and episode guides.` },
+      acceptedAnswer: { '@type': 'Answer', text: `Yes, you can discover and explore ${show.title} on Lumovia for free. Our platform provides detailed information about ${show.title} including ratings, cast, trailers, and episode guides.` },
     },
     {
       '@type': 'Question',
       name: `What is ${show.title} about?`,
-      acceptedAnswer: { '@type': 'Answer', text: show.overview?.slice(0, 300) || `${show.title} is a ${show.type === 'tv' ? 'TV series' : 'movie'} available to explore on Lumina Stream.` },
+      acceptedAnswer: { '@type': 'Answer', text: show.overview?.slice(0, 300) || `${show.title} is a ${show.type === 'tv' ? 'TV series' : 'movie'} available to explore on Lumovia.` },
     },
     {
       '@type': 'Question',
       name: `What genre is ${show.title}?`,
-      acceptedAnswer: { '@type': 'Answer', text: `${show.title} falls under the ${show.genres || 'entertainment'} genre. Browse more ${show.genres?.split(',')[0]?.trim() || ''} titles on Lumina Stream's genre pages.` },
+      acceptedAnswer: { '@type': 'Answer', text: `${show.title} falls under the ${show.genres || 'entertainment'} genre. Browse more ${show.genres?.split(',')[0]?.trim() || ''} titles on Lumovia's genre pages.` },
     },
   ];
 

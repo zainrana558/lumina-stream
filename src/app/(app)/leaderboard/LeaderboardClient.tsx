@@ -128,7 +128,7 @@ export default function LeaderboardClient() {
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
         <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>🏆 Community Leaderboard</h1>
-        <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>Top rated by Lumina viewers</p>
+        <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>Top rated by Lumovia viewers</p>
       </div>
 
       <div style={{ padding: `0 ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>

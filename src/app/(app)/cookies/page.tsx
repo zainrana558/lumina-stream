@@ -9,10 +9,10 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/cookies`;
 
 export const metadata: Metadata = {
-  title: 'Cookie Policy - Lumina Stream',
-  description: 'Lumina Stream cookie policy. Learn about essential Supabase auth cookies, third-party embed cookies, local storage usage, and how to manage your cookie preferences.',
+  title: 'Cookie Policy - Lumovia',
+  description: 'Lumovia cookie policy. Learn about essential Supabase auth cookies, third-party embed cookies, local storage usage, and how to manage your cookie preferences.',
   alternates: { canonical: pageUrl },
-  openGraph: { type: 'website', url: pageUrl, title: 'Cookie Policy - Lumina Stream', description: 'Learn how Lumina Stream uses cookies and local storage.', siteName: 'Lumina Stream' },
+  openGraph: { type: 'website', url: pageUrl, title: 'Cookie Policy - Lumovia', description: 'Learn how Lumovia uses cookies and local storage.', siteName: 'Lumovia' },
 };
 
 const breadcrumbJsonLd = {
@@ -30,7 +30,7 @@ const webPageJsonLd = {
   name: 'Cookie Policy',
   description: metadata.description,
   url: pageUrl,
-  isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+  isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   datePublished: '2026-07-07',
   dateModified: '2026-07-07',
 };
@@ -47,7 +47,7 @@ export default function CookiePolicyPage() {
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>1. Introduction</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
-          Cookies are small text files placed on your device by a website to store information about your browsing session. They help websites remember your preferences, maintain your session, and provide a better user experience. This Cookie Policy explains what cookies Lumina Stream (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) uses, why we use them, and how you can manage them. For more information about how we handle your data generally, please see our <Link href="/privacy" style={{ color: '#FFB347' }}>Privacy Policy</Link>.
+          Cookies are small text files placed on your device by a website to store information about your browsing session. They help websites remember your preferences, maintain your session, and provide a better user experience. This Cookie Policy explains what cookies Lumovia (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) uses, why we use them, and how you can manage them. For more information about how we handle your data generally, please see our <Link href="/privacy" style={{ color: '#FFB347' }}>Privacy Policy</Link>.
         </p>
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>2. Essential Cookies</h2>
@@ -61,12 +61,12 @@ export default function CookiePolicyPage() {
           <strong style={{ color: '#FFB347' }}>sb-refresh-token.</strong> Set by Supabase authentication. Contains your refresh token used to obtain a new access token when the current one expires. This cookie has a longer lifespan to keep you logged in across sessions.
         </p>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
-          <strong style={{ color: '#FFB347' }}>profile_id.</strong> Set by Lumina Stream. Stores your currently selected profile identifier so the Service loads the correct profile preferences when you return.
+          <strong style={{ color: '#FFB347' }}>profile_id.</strong> Set by Lumovia. Stores your currently selected profile identifier so the Service loads the correct profile preferences when you return.
         </p>
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>3. Analytics Cookies</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
-          <strong style={{ color: '#FFB347' }}>We do not use any analytics cookies.</strong> Lumina Stream does not use Google Analytics, GA4, or any other third-party analytics service. We do not track your browsing behavior for analytics purposes, and no analytics cookies are set by our Service.
+          <strong style={{ color: '#FFB347' }}>We do not use any analytics cookies.</strong> Lumovia does not use Google Analytics, GA4, or any other third-party analytics service. We do not track your browsing behavior for analytics purposes, and no analytics cookies are set by our Service.
         </p>
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>4. Advertising Cookies</h2>
@@ -76,7 +76,7 @@ export default function CookiePolicyPage() {
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>5. Third-Party Cookies</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 12 }}>
-          When you use the video player on Lumina Stream, the embedded streaming provider (such as vidsrc.fyi, vidsrc.pm, autoembed.co, and others) may set its own cookies on your device. These cookies are governed by the respective provider&apos;s cookie and privacy policies, not ours.
+          When you use the video player on Lumovia, the embedded streaming provider (such as vidsrc.fyi, vidsrc.pm, autoembed.co, and others) may set its own cookies on your device. These cookies are governed by the respective provider&apos;s cookie and privacy policies, not ours.
         </p>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
           Additionally, Cloudflare may set <strong style={{ color: '#FFB347' }}>cf_clearance</strong> cookies as part of DDoS protection and bot mitigation. These cookies are necessary for the Service to remain accessible and are set at the infrastructure level. We do not control the behavior of these third-party cookies. If you wish to understand or manage them, you should consult the respective provider&apos;s own policy documentation.
@@ -84,7 +84,7 @@ export default function CookiePolicyPage() {
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>6. Local Storage</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 12 }}>
-          In addition to cookies, Lumina Stream uses your browser&apos;s localStorage to store certain preferences and data entirely on your device. This data <strong style={{ color: '#FFB347' }}>is never sent to our servers</strong>. We store the following:
+          In addition to cookies, Lumovia uses your browser&apos;s localStorage to store certain preferences and data entirely on your device. This data <strong style={{ color: '#FFB347' }}>is never sent to our servers</strong>. We store the following:
         </p>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 12 }}>
           <strong style={{ color: '#FFB347' }}>Theme preference.</strong> Your chosen light or dark mode setting so the site renders in your preferred appearance on return visits.

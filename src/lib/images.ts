@@ -1,5 +1,5 @@
 /**
- * Centralized image utility for Lumina Stream.
+ * Centralized image utility for Lumovia.
  *
  * All image URLs should be constructed through these helpers
  * to ensure consistent sizing, format, and cache behavior.

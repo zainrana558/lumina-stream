@@ -14,20 +14,20 @@ const pageUrl = `${siteUrl}/new-releases`;
 export const metadata: Metadata = {
   title: 'New Releases - Latest Movies & TV Shows',
   description:
-    'Stay up to date with the latest movie and TV show releases. Watch brand new films, recently aired episodes, and upcoming content on Lumina Stream.',
+    'Stay up to date with the latest movie and TV show releases. Watch brand new films, recently aired episodes, and upcoming content on Lumovia.',
   alternates: { canonical: pageUrl },
   openGraph: {
     type: 'website',
     url: pageUrl,
-    title: 'New Releases - Latest Movies & TV Shows | Lumina Stream',
-    description: 'Watch the latest movies and TV show releases on Lumina Stream.',
-    siteName: 'Lumina Stream',
-    images: [{ url: `${siteUrl}/og/og-new-releases.png`, width: 1344, height: 768, alt: 'New Releases on Lumina Stream' }],
+    title: 'New Releases - Latest Movies & TV Shows | Lumovia',
+    description: 'Watch the latest movies and TV show releases on Lumovia.',
+    siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-new-releases.png`, width: 1344, height: 768, alt: 'New Releases on Lumovia' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'New Releases - Latest Movies & TV Shows | Lumina Stream',
-    description: 'Stream the latest releases on Lumina Stream.',
+    title: 'New Releases - Latest Movies & TV Shows | Lumovia',
+    description: 'Stream the latest releases on Lumovia.',
     images: [`${siteUrl}/og/og-new-releases.png`],
   },
 };
@@ -74,7 +74,7 @@ export default async function NewReleasesPage() {
     name: 'New Releases',
     description: metadata.description,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -93,7 +93,7 @@ export default async function NewReleasesPage() {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
-          { '@type': 'Question', name: 'What qualifies as a new release on Lumina Stream?', acceptedAnswer: { '@type': 'Answer', text: 'New releases include movies currently playing in theaters, upcoming theatrical releases, TV shows airing today, series currently on the air, and content trending in the last 24 hours. All data is sourced from TMDB and updated continuously.' } },
+          { '@type': 'Question', name: 'What qualifies as a new release on Lumovia?', acceptedAnswer: { '@type': 'Answer', text: 'New releases include movies currently playing in theaters, upcoming theatrical releases, TV shows airing today, series currently on the air, and content trending in the last 24 hours. All data is sourced from TMDB and updated continuously.' } },
           { '@type': 'Question', name: 'How often is the New Releases page updated?', acceptedAnswer: { '@type': 'Answer', text: 'The New Releases page is updated every five minutes by pulling fresh data from five TMDB endpoints. New titles appear automatically as studios add release dates and TMDB users generate activity around new content.' } },
           { '@type': 'Question', name: 'Can I see upcoming movies before they are released?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. The New Releases page includes upcoming movies from TMDB, which list titles with announced release dates. Check back regularly as new dates are finalized and new titles are added to the upcoming slate.' } },
         ],

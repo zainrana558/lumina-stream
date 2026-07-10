@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
     : `${year} Movies & TV Shows`;
   const description = isFuture
     ? `Discover upcoming movies and TV shows releasing in ${year}. Get early previews, trailers, and release dates for the most anticipated content of ${year}.`
-    : `Explore the best movies and TV shows from ${year}. Browse the highest-rated and most popular releases from ${year}, all available to discover on Lumina Stream.`;
+    : `Explore the best movies and TV shows from ${year}. Browse the highest-rated and most popular releases from ${year}, all available to discover on Lumovia.`;
 
   return {
     title: `${title} - Watch Free Online`,
@@ -46,12 +46,12 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
     alternates: { canonical: pageUrl },
     openGraph: {
       type: 'website', url: pageUrl,
-      title: `${title} | Lumina Stream`,
+      title: `${title} | Lumovia`,
       description,
-      siteName: 'Lumina Stream',
-      images: [{ url: `${siteUrl}/og/og-decade.png`, width: 1344, height: 768, alt: `${title} on Lumina Stream` }],
+      siteName: 'Lumovia',
+      images: [{ url: `${siteUrl}/og/og-decade.png`, width: 1344, height: 768, alt: `${title} on Lumovia` }],
     },
-    twitter: { card: 'summary_large_image', title: `${title} | Lumina Stream`, description, images: [`${siteUrl}/og/og-decade.png`] },
+    twitter: { card: 'summary_large_image', title: `${title} | Lumovia`, description, images: [`${siteUrl}/og/og-decade.png`] },
   };
 }
 
@@ -114,7 +114,7 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
     name: `${pageTitle} Movies & TV Shows`,
     description: `Browse the best movies and TV shows from ${year}.`,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',

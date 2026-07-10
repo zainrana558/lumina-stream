@@ -18,7 +18,7 @@ const SECTIONS: SettingsSection[] = [
   { id: 'appearance', title: 'Appearance', icon: '🎨' },
   { id: 'notifications', title: 'Notifications', icon: '🔔' },
   { id: 'privacy', title: 'Privacy & Data', icon: '🔒' },
-  { id: 'about', title: 'About Lumina', icon: '✨' },
+  { id: 'about', title: 'About Lumovia', icon: '✨' },
 ];
 
 export default function SettingsPage() {
@@ -250,7 +250,7 @@ function AccountSection({
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,74,74,.2)'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,74,74,.1)'; }}
         >
-          Sign Out of Lumina
+          Sign Out of Lumovia
         </button>
       </div>
     </div>
@@ -377,7 +377,7 @@ function AppearanceSection({ showToast }: { showToast: (msg: string) => void }) 
 
   return (
     <div style={{ animation: 'card-in .3s both' }}>
-      <SectionHeader icon="🎨" title="Appearance" subtitle="Customize how Lumina looks and feels" />
+      <SectionHeader icon="🎨" title="Appearance" subtitle="Customize how Lumovia looks and feels" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -458,7 +458,7 @@ function NotificationsSection({ showToast }: { showToast: (msg: string) => void 
 
   return (
     <div style={{ animation: 'card-in .3s both' }}>
-      <SectionHeader icon="🔔" title="Notifications" subtitle="Control how Lumina notifies you" />
+      <SectionHeader icon="🔔" title="Notifications" subtitle="Control how Lumovia notifies you" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
@@ -573,11 +573,11 @@ function PrivacySection({ showToast }: { showToast: (msg: string) => void }) {
 function AboutSection() {
   return (
     <div style={{ animation: 'card-in .3s both' }}>
-      <SectionHeader icon="✨" title="About Lumina" subtitle="Your personal streaming companion" />
+      <SectionHeader icon="✨" title="About Lumovia" subtitle="Your personal streaming companion" />
 
       <div className="neo-card s1" style={{ padding: '1.5rem', borderRadius: 14, marginBottom: '1rem', textAlign: 'center' }}>
         <div className="f-cinzel-dec" style={{  fontSize: '1.8rem', color: '#FFB347', marginBottom: '.3rem', letterSpacing: '.06em' }}>
-          LUMINA
+          LUMOVIA
         </div>
         <div className="f-crimson" style={{  fontSize: '.85rem', color: 'rgba(255,245,232,.5)', fontStyle: 'italic', marginBottom: '1rem' }}>
           Dream, Discover, Stream

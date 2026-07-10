@@ -9,39 +9,39 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/about`;
 
 export const metadata: Metadata = {
-  title: 'About Lumina Stream - Free Streaming Platform | Movies, TV Shows, Anime & Cartoons',
+  title: 'About Lumovia - Free Streaming Platform | Movies, TV Shows, Anime & Cartoons',
   description:
-    'Lumina Stream is a free streaming catalog powered by TMDB and AniList, offering detailed information on thousands of movies, TV shows, anime series, and cartoons. Discover content by genre, year, decade, or popularity with AI-powered recommendations, complete episode guides, cast filmographies, and personalized watchlists. No subscription required.',
+    'Lumovia is a free streaming catalog powered by TMDB and AniList, offering detailed information on thousands of movies, TV shows, anime series, and cartoons. Discover content by genre, year, decade, or popularity with AI-powered recommendations, complete episode guides, cast filmographies, and personalized watchlists. No subscription required.',
   alternates: { canonical: pageUrl },
   openGraph: {
     type: 'website',
     url: pageUrl,
-    title: 'About Lumina Stream — Free Streaming Catalog for Movies, TV Shows, Anime & Cartoons',
-    description: 'Discover how Lumina Stream aggregates data from TMDB and AniList to create the ultimate free content discovery platform with personalized recommendations, episode guides, and more.',
-    siteName: 'Lumina Stream',
+    title: 'About Lumovia — Free Streaming Catalog for Movies, TV Shows, Anime & Cartoons',
+    description: 'Discover how Lumovia aggregates data from TMDB and AniList to create the ultimate free content discovery platform with personalized recommendations, episode guides, and more.',
+    siteName: 'Lumovia',
   },
 };
 
 const FAQ_ITEMS = [
   {
-    q: 'What is Lumina Stream?',
-    a: 'Lumina Stream is a free streaming catalog that aggregates movie, TV show, anime, and cartoon information from The Movie Database (TMDB) and AniList. It provides a beautifully designed interface to discover, browse, and explore entertainment content.',
+    q: 'What is Lumovia?',
+    a: 'Lumovia is a free streaming catalog that aggregates movie, TV show, anime, and cartoon information from The Movie Database (TMDB) and AniList. It provides a beautifully designed interface to discover, browse, and explore entertainment content.',
   },
   {
-    q: 'Is Lumina Stream free to use?',
-    a: 'Yes, Lumina Stream is completely free. We do not require any subscription, payment, or account creation to browse and discover content. Our platform is supported by our community of entertainment enthusiasts.',
+    q: 'Is Lumovia free to use?',
+    a: 'Yes, Lumovia is completely free. We do not require any subscription, payment, or account creation to browse and discover content. Our platform is supported by our community of entertainment enthusiasts.',
   },
   {
-    q: 'What content is available on Lumina Stream?',
-    a: 'Lumina Stream offers a vast catalog including the latest movies, popular TV shows, trending anime series, and classic cartoons. Our library spans all major genres: action, comedy, drama, horror, romance, mystery, sci-fi, fantasy, and more.',
+    q: 'What content is available on Lumovia?',
+    a: 'Lumovia offers a vast catalog including the latest movies, popular TV shows, trending anime series, and classic cartoons. Our library spans all major genres: action, comedy, drama, horror, romance, mystery, sci-fi, fantasy, and more.',
   },
   {
     q: 'How often is the content updated?',
     a: 'Our catalog is updated regularly throughout the day. Trending content refreshes every few minutes, while our full catalog syncs with TMDB and AniList multiple times per hour to ensure you always see the latest releases and ratings.',
   },
   {
-    q: 'Does Lumina Stream host video content?',
-    a: 'Lumina Stream is a content discovery and catalog platform. We provide detailed information about movies, TV shows, and anime including ratings, cast details, trailers, and recommendations. We help you find where to watch your favorite content.',
+    q: 'Does Lumovia host video content?',
+    a: 'Lumovia is a content discovery and catalog platform. We provide detailed information about movies, TV shows, and anime including ratings, cast details, trailers, and recommendations. We help you find where to watch your favorite content.',
   },
   {
     q: 'How does the recommendation system work?',
@@ -52,15 +52,15 @@ const FAQ_ITEMS = [
     a: 'Yes! Once you create a free account, you can add any movie, TV show, or anime to your personal watchlist. You can also track your viewing progress, rate content, and organize titles into custom collections.',
   },
   {
-    q: 'What devices can I use to access Lumina Stream?',
-    a: 'Lumina Stream is a responsive web application that works on any device with a modern web browser. Whether you are on a desktop computer, laptop, tablet, or smartphone, you get a fully optimized experience.',
+    q: 'What devices can I use to access Lumovia?',
+    a: 'Lumovia is a responsive web application that works on any device with a modern web browser. Whether you are on a desktop computer, laptop, tablet, or smartphone, you get a fully optimized experience.',
   },
   {
     q: 'How is the content rated?',
-    a: 'Ratings on Lumina Stream come from two trusted sources: TMDB (The Movie Database) for movies and TV shows, and AniList for anime. Both platforms aggregate ratings from millions of users worldwide, giving you reliable quality indicators.',
+    a: 'Ratings on Lumovia come from two trusted sources: TMDB (The Movie Database) for movies and TV shows, and AniList for anime. Both platforms aggregate ratings from millions of users worldwide, giving you reliable quality indicators.',
   },
   {
-    q: 'How can I contact Lumina Stream?',
+    q: 'How can I contact Lumovia?',
     a: 'You can reach out to us through our social media channels or by using the feedback form in the app. We value community input and regularly incorporate user suggestions into our platform improvements.',
   },
 ];
@@ -91,13 +91,13 @@ export default function AboutPage() {
   const aboutJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'AboutPage',
-    name: 'About Lumina Stream',
+    name: 'About Lumovia',
     description: metadata.description,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
     mainEntity: {
       '@type': 'Organization',
-      name: 'Lumina Stream',
+      name: 'Lumovia',
       url: siteUrl,
     },
   };
@@ -131,7 +131,7 @@ export default function AboutPage() {
           marginBottom: 16,
           letterSpacing: '.02em',
         }}>
-          About Lumina Stream
+          About Lumovia
         </h1>
         <p className="f-crimson" style={{
           fontSize: 'clamp(1rem, 1.5vw, 1.15rem)',
@@ -139,7 +139,7 @@ export default function AboutPage() {
           lineHeight: 1.8,
           marginBottom: 20,
         }}>
-          Lumina Stream is a free, beautifully designed streaming catalog that helps you discover movies, TV shows, anime, and cartoons. Powered by TMDB and AniList, we aggregate data from millions of titles to create the ultimate content discovery experience.
+          Lumovia is a free, beautifully designed streaming catalog that helps you discover movies, TV shows, anime, and cartoons. Powered by TMDB and AniList, we aggregate data from millions of titles to create the ultimate content discovery experience.
         </p>
         <p className="f-crimson" style={{
           fontSize: 'clamp(.92rem, 1.3vw, 1.05rem)',
@@ -147,7 +147,7 @@ export default function AboutPage() {
           lineHeight: 1.8,
           marginBottom: 20,
         }}>
-          Our platform was built with a single mission: make it effortless to find your next favorite movie, binge-worthy TV show, or the latest anime episode — all without paying a cent or creating an account. Unlike subscription-based streaming services that lock content behind paywalls, Lumina Stream provides a comprehensive, searchable catalog of entertainment that anyone can browse instantly. Whether you are looking for the highest-rated films of all time, trending anime from this season, hidden gems from the 1990s, or a specific episode from a long-running TV series, our platform is designed to get you there in as few clicks as possible.
+          Our platform was built with a single mission: make it effortless to find your next favorite movie, binge-worthy TV show, or the latest anime episode — all without paying a cent or creating an account. Unlike subscription-based streaming services that lock content behind paywalls, Lumovia provides a comprehensive, searchable catalog of entertainment that anyone can browse instantly. Whether you are looking for the highest-rated films of all time, trending anime from this season, hidden gems from the 1990s, or a specific episode from a long-running TV series, our platform is designed to get you there in as few clicks as possible.
         </p>
         <p className="f-crimson" style={{
           fontSize: 'clamp(.92rem, 1.3vw, 1.05rem)',
@@ -164,7 +164,7 @@ export default function AboutPage() {
           color: '#FFF5E8',
           marginBottom: 20,
         }}>
-          What Makes Lumina Stream Different
+          What Makes Lumovia Different
         </h2>
         <div style={{
           display: 'grid',
@@ -207,7 +207,7 @@ export default function AboutPage() {
           color: '#FFF5E8',
           marginBottom: 16,
         }}>
-          How Lumina Stream Works
+          How Lumovia Works
         </h2>
         <p className="f-crimson" style={{
           fontSize: 'clamp(.88rem, 1.2vw, 1rem)',
@@ -215,7 +215,7 @@ export default function AboutPage() {
           lineHeight: 1.8,
           marginBottom: 16,
         }}>
-          Lumina Stream operates as a content discovery engine rather than a traditional streaming service. When you visit any title on our platform, you will find a comprehensive detail page that includes the full synopsis, cast and crew with links to their complete filmographies, user ratings aggregated from millions of TMDB and AniList users, production company information, season and episode breakdowns for TV series and anime, and AI-generated similar title recommendations. For TV shows and anime, we go even deeper — every individual episode has its own dedicated landing page with a unique synopsis, air date, runtime, individual episode rating, and links to navigate between episodes within the same season. This episode-level indexing means that if you are trying to find a specific moment from a show you watched, you can search for it and land on the exact episode page.
+          Lumovia operates as a content discovery engine rather than a traditional streaming service. When you visit any title on our platform, you will find a comprehensive detail page that includes the full synopsis, cast and crew with links to their complete filmographies, user ratings aggregated from millions of TMDB and AniList users, production company information, season and episode breakdowns for TV series and anime, and AI-generated similar title recommendations. For TV shows and anime, we go even deeper — every individual episode has its own dedicated landing page with a unique synopsis, air date, runtime, individual episode rating, and links to navigate between episodes within the same season. This episode-level indexing means that if you are trying to find a specific moment from a show you watched, you can search for it and land on the exact episode page.
         </p>
         <p className="f-crimson" style={{
           fontSize: 'clamp(.88rem, 1.2vw, 1rem)',
@@ -240,7 +240,7 @@ export default function AboutPage() {
           color: '#FFF5E8',
           marginBottom: 20,
         }}>
-          Explore Lumina Stream
+          Explore Lumovia
         </h2>
         <div style={{
           display: 'grid',

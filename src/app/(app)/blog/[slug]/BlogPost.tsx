@@ -108,7 +108,7 @@ export default function BlogPost({ show, content }: { show: Show; content: strin
         color: 'rgba(255,245,232,.3)',
         fontSize: '.75rem',
       }}>
-        <p>Part of the <Link href="/" style={{ color: '#FFB347', textDecoration: 'none' }}>Lumina Stream</Link> catalog · thousands of free movies, TV shows & anime</p>
+        <p>Part of the <Link href="/" style={{ color: '#FFB347', textDecoration: 'none' }}>Lumovia</Link> catalog · thousands of free movies, TV shows & anime</p>
       </div>
     </div>
   );

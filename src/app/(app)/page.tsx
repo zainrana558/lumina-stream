@@ -207,21 +207,21 @@ async function getTMDBData() {
 export const revalidate = 300; // 5 min ISR — avoids 130+ API calls at build time
 
 export const metadata: Metadata = {
-  title: 'Lumina Stream - Watch Free Movies, TV Shows, Anime & Cartoons Online',
-  description: 'Lumina Stream is a free streaming catalog with thousands of movies, TV shows, anime series, and cartoons. Discover trending content, top-rated classics, new releases, genre portals, and seasonal anime — all powered by TMDB and AniList with data updated every few minutes.',
+  title: 'Lumovia - Watch Free Movies, TV Shows, Anime & Cartoons Online',
+  description: 'Lumovia is a free streaming catalog with thousands of movies, TV shows, anime series, and cartoons. Discover trending content, top-rated classics, new releases, genre portals, and seasonal anime — all powered by TMDB and AniList with data updated every few minutes.',
   alternates: { canonical: `${CANONICAL_BASE}/` },
   openGraph: {
-    title: 'Lumina Stream - Watch Free Movies, TV Shows, Anime & Cartoons Online',
+    title: 'Lumovia - Watch Free Movies, TV Shows, Anime & Cartoons Online',
     description: 'Stream thousands of free movies, TV shows, anime, and cartoons. Trending, top-rated, new releases, and genre portals updated in real time.',
     type: 'website',
     url: CANONICAL_BASE,
-    siteName: 'Lumina Stream',
-    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumina Stream - Watch Free Movies, TV Shows, Anime & Cartoons' }],
+    siteName: 'Lumovia',
+    images: [{ url: `${CANONICAL_BASE}/og/og-movies.png`, width: 1344, height: 768, alt: 'Lumovia - Watch Free Movies, TV Shows, Anime & Cartoons' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Lumina Stream - Watch Free Movies, TV Shows, Anime & Cartoons Online',
-    description: 'Stream thousands of free movies, TV shows, anime, and cartoons on Lumina Stream.',
+    title: 'Lumovia - Watch Free Movies, TV Shows, Anime & Cartoons Online',
+    description: 'Stream thousands of free movies, TV shows, anime, and cartoons on Lumovia.',
     images: [`${CANONICAL_BASE}/og/og-movies.png`],
   },
 };
@@ -231,9 +231,9 @@ export default async function HomePage() {
   const websiteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'Lumina Stream',
+    name: 'Lumovia',
     url: CANONICAL_BASE,
-    description: 'Lumina Stream is a free streaming catalog with thousands of movies, TV shows, anime series, and cartoons powered by TMDB and AniList.',
+    description: 'Lumovia is a free streaming catalog with thousands of movies, TV shows, anime series, and cartoons powered by TMDB and AniList.',
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -250,18 +250,18 @@ export default async function HomePage() {
     mainEntity: [
       {
         '@type': 'Question',
-        name: 'What is Lumina Stream?',
-        acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream is a free streaming catalog that aggregates movie, TV show, anime, and cartoon data from TMDB and AniList. Browse thousands of titles across every genre, discover trending content, track seasonal anime, and explore curated genre portals — all at no cost and with no account required.' },
+        name: 'What is Lumovia?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Lumovia is a free streaming catalog that aggregates movie, TV show, anime, and cartoon data from TMDB and AniList. Browse thousands of titles across every genre, discover trending content, track seasonal anime, and explore curated genre portals — all at no cost and with no account required.' },
       },
       {
         '@type': 'Question',
-        name: 'How much content is available on Lumina Stream?',
-        acceptedAnswer: { '@type': 'Answer', text: 'Lumina Stream catalogs thousands of movies, TV shows, anime series, and cartoons. Content spans every major genre including action, comedy, drama, horror, romance, sci-fi, thriller, mystery, and fantasy. Our catalog is continuously synced with TMDB and AniList, so new titles appear as soon as they become popular.' },
+        name: 'How much content is available on Lumovia?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Lumovia catalogs thousands of movies, TV shows, anime series, and cartoons. Content spans every major genre including action, comedy, drama, horror, romance, sci-fi, thriller, mystery, and fantasy. Our catalog is continuously synced with TMDB and AniList, so new titles appear as soon as they become popular.' },
       },
       {
         '@type': 'Question',
-        name: 'Is Lumina Stream free?',
-        acceptedAnswer: { '@type': 'Answer', text: 'Yes. Lumina Stream is completely free to use. No subscription, no payment, and no account is needed to browse and discover content. Create an optional free account to unlock features like watchlists, progress tracking, ratings, and collections.' },
+        name: 'Is Lumovia free?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Yes. Lumovia is completely free to use. No subscription, no payment, and no account is needed to browse and discover content. Create an optional free account to unlock features like watchlists, progress tracking, ratings, and collections.' },
       },
     ],
   };
@@ -290,7 +290,7 @@ export default async function HomePage() {
         .home-qlink:hover { background: rgba(255,245,232,.08); border-color: rgba(255,179,71,.3); }
       `}</style>
       <section
-        aria-label="About Lumina Stream"
+        aria-label="About Lumovia"
         style={{
           maxWidth: 1200,
           margin: '0 auto',
@@ -312,7 +312,7 @@ export default async function HomePage() {
           maxWidth: 860,
           marginBottom: 20,
         }}>
-          Lumina Stream is a free streaming catalog that aggregates thousands of movies, TV shows, anime series, and cartoons from The Movie Database (TMDB) and AniList. Every title on this page is pulled from real-time API data — trending content refreshes every five minutes, popular and top-rated lists update hourly, and genre rows are re-curated throughout the day. Scroll down to explore trending movies and TV, genre-specific rows for action, comedy, sci-fi, drama, and thriller, a dedicated anime section powered by AniList, curated collections of hidden gems and critically acclaimed films, and six immersive genre portals for anime, cartoons, horror, romance, mystery, and fantasy. Use the search bar to find any title instantly, or browse our genre index, decade pages, and release calendar for structured discovery. Lumina Stream runs entirely in your browser with no app download required, works on desktop, tablet, and mobile, and costs nothing to use.
+          Lumovia is a free streaming catalog that aggregates thousands of movies, TV shows, anime series, and cartoons from The Movie Database (TMDB) and AniList. Every title on this page is pulled from real-time API data — trending content refreshes every five minutes, popular and top-rated lists update hourly, and genre rows are re-curated throughout the day. Scroll down to explore trending movies and TV, genre-specific rows for action, comedy, sci-fi, drama, and thriller, a dedicated anime section powered by AniList, curated collections of hidden gems and critically acclaimed films, and six immersive genre portals for anime, cartoons, horror, romance, mystery, and fantasy. Use the search bar to find any title instantly, or browse our genre index, decade pages, and release calendar for structured discovery. Lumovia runs entirely in your browser with no app download required, works on desktop, tablet, and mobile, and costs nothing to use.
         </p>
         <nav aria-label="Quick links" style={{
           display: 'flex',

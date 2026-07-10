@@ -63,12 +63,12 @@ export async function generateMetadata({ params }: { params: Promise<{ decade: s
     alternates: { canonical: pageUrl },
     openGraph: {
       type: 'website', url: pageUrl,
-      title: `${meta.title} | Lumina Stream`,
+      title: `${meta.title} | Lumovia`,
       description: meta.description,
-      siteName: 'Lumina Stream',
-      images: [{ url: `${siteUrl}/og/og-decade.png`, width: 1344, height: 768, alt: `${meta.title} on Lumina Stream` }],
+      siteName: 'Lumovia',
+      images: [{ url: `${siteUrl}/og/og-decade.png`, width: 1344, height: 768, alt: `${meta.title} on Lumovia` }],
     },
-    twitter: { card: 'summary_large_image', title: `${meta.title} | Lumina Stream`, description: meta.description, images: [`${siteUrl}/og/og-decade.png`] },
+    twitter: { card: 'summary_large_image', title: `${meta.title} | Lumovia`, description: meta.description, images: [`${siteUrl}/og/og-decade.png`] },
   };
 }
 
@@ -130,7 +130,7 @@ export default async function DecadePage({ params }: { params: Promise<{ decade:
     name: meta.title,
     description: meta.description,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -151,7 +151,7 @@ export default async function DecadePage({ params }: { params: Promise<{ decade:
         mainEntity: [
           { '@type': 'Question', name: `What movies and TV shows are included in the ${meta.title} collection?`, acceptedAnswer: { '@type': 'Answer', text: `The ${meta.title} collection includes the most popular and highest-rated movies and TV shows released between ${meta.startYear} and ${meta.endYear}. We run four separate TMDB discover queries — popular movies, popular TV, top-rated movies, and top-rated TV — all filtered to this decade range, then deduplicate and sort by relevance.` } },
           { '@type': 'Question', name: 'How many titles are in each decade collection?', acceptedAnswer: { '@type': 'Answer', text: `Each decade page displays up to 100 titles, curated from thousands available on TMDB. The selection prioritizes titles with high popularity and strong audience ratings to surface the most beloved content from each decade.` } },
-          { '@type': 'Question', name: 'Can I browse by individual year instead of decade?', acceptedAnswer: { '@type': 'Answer', text: `Yes. Lumina Stream also offers year-specific pages for every year from ${new Date().getFullYear() - 10} to ${new Date().getFullYear() + 1}. Visit the year pages for a more granular view of releases within the decade that interests you.` } },
+          { '@type': 'Question', name: 'Can I browse by individual year instead of decade?', acceptedAnswer: { '@type': 'Answer', text: `Yes. Lumovia also offers year-specific pages for every year from ${new Date().getFullYear() - 10} to ${new Date().getFullYear() + 1}. Visit the year pages for a more granular view of releases within the decade that interests you.` } },
         ],
       }) }} />
       <Suspense>

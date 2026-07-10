@@ -9,10 +9,10 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/dmca`;
 
 export const metadata: Metadata = {
-  title: 'DMCA & Copyright Policy - Lumina Stream',
-  description: 'Lumina Stream DMCA and copyright policy. Learn about our position as a catalog/discovery platform, DMCA safe harbor compliance, how to file takedown notices, counter-notifications, and our commitment to intellectual property rights.',
+  title: 'DMCA & Copyright Policy - Lumovia',
+  description: 'Lumovia DMCA and copyright policy. Learn about our position as a catalog/discovery platform, DMCA safe harbor compliance, how to file takedown notices, counter-notifications, and our commitment to intellectual property rights.',
   alternates: { canonical: pageUrl },
-  openGraph: { type: 'website', url: pageUrl, title: 'DMCA & Copyright Policy - Lumina Stream', description: 'DMCA takedown procedures and copyright policy for Lumina Stream.', siteName: 'Lumina Stream' },
+  openGraph: { type: 'website', url: pageUrl, title: 'DMCA & Copyright Policy - Lumovia', description: 'DMCA takedown procedures and copyright policy for Lumovia.', siteName: 'Lumovia' },
 };
 
 const breadcrumbJsonLd = {
@@ -30,7 +30,7 @@ const webPageJsonLd = {
   name: 'DMCA & Copyright Policy',
   description: metadata.description,
   url: pageUrl,
-  isPartOf: { '@type': 'WebSite', name: 'Lumina Stream', url: siteUrl },
+  isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   datePublished: '2026-07-07',
   dateModified: '2026-07-07',
 };
@@ -53,13 +53,13 @@ export default function DmcaPage() {
         {/* ── Section 1: Copyright Policy ── */}
         <h2 {...h2}>1. Commitment to Intellectual Property Rights</h2>
         <p {...ps}>
-          Lumina Stream (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) deeply respects the intellectual property rights of content creators, copyright holders, and the broader creative community. We expect all users of our Service to share this respect. This DMCA &amp; Copyright Policy (&quot;Policy&quot;) is an integral part of our <Link href="/terms" style={{ color: '#FFB347' }}>Terms of Service</Link> and is incorporated herein by reference. This Policy outlines our procedures for responding to claims of copyright infringement, describes the steps copyright holders may take, and details our compliance with applicable intellectual property laws, including the Digital Millennium Copyright Act (&quot;DMCA&quot;), Title 17, United States Code, Section 512, and equivalent international provisions such as the EU Copyright Directive (Directive 2001/29/EC, as amended by Directive 2019/790) and the UK Copyright, Designs and Patents Act 1988 (as amended).
+          Lumovia (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) deeply respects the intellectual property rights of content creators, copyright holders, and the broader creative community. We expect all users of our Service to share this respect. This DMCA &amp; Copyright Policy (&quot;Policy&quot;) is an integral part of our <Link href="/terms" style={{ color: '#FFB347' }}>Terms of Service</Link> and is incorporated herein by reference. This Policy outlines our procedures for responding to claims of copyright infringement, describes the steps copyright holders may take, and details our compliance with applicable intellectual property laws, including the Digital Millennium Copyright Act (&quot;DMCA&quot;), Title 17, United States Code, Section 512, and equivalent international provisions such as the EU Copyright Directive (Directive 2001/29/EC, as amended by Directive 2019/790) and the UK Copyright, Designs and Patents Act 1988 (as amended).
         </p>
 
         {/* ── Section 2: Our Position and Service Architecture ── */}
         <h2 {...h2}>2. Our Position and Service Architecture</h2>
         <p {...p}>
-          <strong {...b}>2.1 Catalog and Discovery Platform.</strong> <strong {...b}>Lumina Stream does NOT host, store, upload, cache, transcode, distribute, or stream any video files, movies, TV shows, anime, or any other audiovisual content on our servers or infrastructure.</strong> Our Service functions as an informational directory and search tool that aggregates publicly available metadata from authorized third-party databases. We provide links and embeds to content that exists on third-party servers operated by entities entirely unaffiliated with Lumina Stream.
+          <strong {...b}>2.1 Catalog and Discovery Platform.</strong> <strong {...b}>Lumovia does NOT host, store, upload, cache, transcode, distribute, or stream any video files, movies, TV shows, anime, or any other audiovisual content on our servers or infrastructure.</strong> Our Service functions as an informational directory and search tool that aggregates publicly available metadata from authorized third-party databases. We provide links and embeds to content that exists on third-party servers operated by entities entirely unaffiliated with Lumovia.
         </p>
         <p {...p}>
           <strong {...b}>2.2 Metadata Sources.</strong> The information we display is sourced exclusively from:
@@ -71,16 +71,16 @@ export default function DmcaPage() {
           <strong {...b}>AniList.</strong> We retrieve anime metadata — including titles, synopses, cover images, episode data, and scores — from AniList&apos;s public GraphQL API under the terms of their service.
         </p>
         <p {...p}>
-          <strong {...b}>2.3 Third-Party Embed Providers.</strong> When users elect to watch content, they are directed to third-party streaming embeds operated by independent providers. These providers are solely responsible for the content they host, serve, and distribute. Lumina Stream does not control, endorse, monitor, operate, or have any affiliation with these third-party services. Any streaming that occurs happens entirely on the third-party provider&apos;s infrastructure, not ours. We function analogously to a search engine that provides links to content hosted elsewhere.
+          <strong {...b}>2.3 Third-Party Embed Providers.</strong> When users elect to watch content, they are directed to third-party streaming embeds operated by independent providers. These providers are solely responsible for the content they host, serve, and distribute. Lumovia does not control, endorse, monitor, operate, or have any affiliation with these third-party services. Any streaming that occurs happens entirely on the third-party provider&apos;s infrastructure, not ours. We function analogously to a search engine that provides links to content hosted elsewhere.
         </p>
         <p {...ps}>
-          <strong {...b}>2.4 No Content on Our Servers.</strong> At no point does any video or audio file pass through, reside on, or originate from Lumina Stream&apos;s servers. Our technical architecture makes it impossible for us to host, modify, or distribute streaming media. We serve only HTML pages, API responses containing metadata, JavaScript, CSS, and static image assets.
+          <strong {...b}>2.4 No Content on Our Servers.</strong> At no point does any video or audio file pass through, reside on, or originate from Lumovia&apos;s servers. Our technical architecture makes it impossible for us to host, modify, or distribute streaming media. We serve only HTML pages, API responses containing metadata, JavaScript, CSS, and static image assets.
         </p>
 
         {/* ── Section 3: DMCA Safe Harbor Compliance ── */}
         <h2 {...h2}>3. DMCA Safe Harbor Compliance</h2>
         <p {...p}>
-          <strong {...b}>3.1 Qualification for Safe Harbor.</strong> Lumina Stream qualifies for the safe harbor protections available under 17 U.S.C. &sect; 512 of the DMCA. We meet all statutory requirements for safe harbor eligibility as follows:
+          <strong {...b}>3.1 Qualification for Safe Harbor.</strong> Lumovia qualifies for the safe harbor protections available under 17 U.S.C. &sect; 512 of the DMCA. We meet all statutory requirements for safe harbor eligibility as follows:
         </p>
         <p {...p}>
           <strong {...b}>3.2 &sect; 512(a) — Transitory Digital Network Communications.</strong> To the extent that our Service transmits, routes, or provides connections for third-party embed content through hyperlinks or embedded references, such transmissions are carried out automatically by our technical systems without human intervention, without modification of the content, and without storing the content for longer than necessary to effect the transmission.
@@ -95,7 +95,7 @@ export default function DmcaPage() {
           <strong {...b}>3.5 &sect; 512(d) — Information Location Tools.</strong> Our Service functions as an information location tool (directory/index) that refers or links users to third-party content. We do not have actual knowledge that the linked material is infringing, we are not aware of facts or circumstances from which infringing activity is apparent, we do not receive a direct financial benefit from any specific infringing activity that we have the right and ability to control, and we act expeditiously to remove or disable access to the link or embedded reference upon receiving a valid DMCA takedown notice.
         </p>
         <p {...ps}>
-          <strong {...b}>3.6 Designated DMCA Agent.</strong> In accordance with &sect; 512(c)(2), Lumina Stream designates a DMCA agent to receive notifications of claimed copyright infringement. Contact information for our designated agent is provided in Section 9 below.
+          <strong {...b}>3.6 Designated DMCA Agent.</strong> In accordance with &sect; 512(c)(2), Lumovia designates a DMCA agent to receive notifications of claimed copyright infringement. Contact information for our designated agent is provided in Section 9 below.
         </p>
 
         {/* ── Section 4: Takedown Procedure ── */}
@@ -122,13 +122,13 @@ export default function DmcaPage() {
         {/* ── Section 5: How to File a DMCA Takedown ── */}
         <h2 {...h2}>5. How to File a DMCA Takedown Notice</h2>
         <p {...p}>
-          If you believe that content accessible through Lumina Stream infringes your copyright, you may submit a DMCA takedown notice to our designated DMCA agent. To be valid under 17 U.S.C. &sect; 512(c)(3)(A), your notice must include <strong {...b}>all</strong> of the following elements. Incomplete notices will not be processed:
+          If you believe that content accessible through Lumovia infringes your copyright, you may submit a DMCA takedown notice to our designated DMCA agent. To be valid under 17 U.S.C. &sect; 512(c)(3)(A), your notice must include <strong {...b}>all</strong> of the following elements. Incomplete notices will not be processed:
         </p>
         <p {...p}>
           <strong {...b}>1. Identification of the copyrighted work.</strong> A clear description of the copyrighted work that you claim has been infringed. If multiple works are involved, provide a representative list. Include registration numbers (if registered with the U.S. Copyright Office), the title, author, release date, or any other information that sufficiently identifies the work. If available, provide a URL where the work is legitimately available (e.g., an official streaming platform, the copyright holder&apos;s website, or a retail listing).
         </p>
         <p {...p}>
-          <strong {...b}>2. Identification of the infringing material.</strong> The specific URL(s) or location(s) on Lumina Stream where the allegedly infringing material appears. You must identify each instance with sufficient detail for us to locate it. Provide the full URL of the Lumina Stream page (e.g., the exact details page URL). General statements such as &quot;my entire catalog is infringed&quot; or &quot;all content on your site&quot; are insufficient — specific URLs are mandatory.
+          <strong {...b}>2. Identification of the infringing material.</strong> The specific URL(s) or location(s) on Lumovia where the allegedly infringing material appears. You must identify each instance with sufficient detail for us to locate it. Provide the full URL of the Lumovia page (e.g., the exact details page URL). General statements such as &quot;my entire catalog is infringed&quot; or &quot;all content on your site&quot; are insufficient — specific URLs are mandatory.
         </p>
         <p {...p}>
           <strong {...b}>3. Your contact information.</strong> Your full legal name (not a pseudonym or company name without an individual&apos;s name), physical mailing address (P.O. boxes alone are insufficient for the address of the designated agent), telephone number, and a valid email address so that we may reach you and so that we can forward your information to the affected party.
@@ -150,7 +150,7 @@ export default function DmcaPage() {
           <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 0, whiteSpace: 'pre-wrap' }}>
 {`Subject: DMCA Takedown Notice — Copyright Infringement
 
-To: Lumina Stream DMCA Designated Agent
+To: Lumovia DMCA Designated Agent
 
 1. Description of Copyrighted Work:
    [Title of the work, e.g., "Inception" (2010), directed by
@@ -159,7 +159,7 @@ To: Lumina Stream DMCA Designated Agent
     work is legitimately available, e.g., an official platform.]
 
 2. Location of Infringing Material:
-   [Full URL(s) on Lumina Stream, e.g.,
+   [Full URL(s) on Lumovia, e.g.,
     https://lumina-stream-omega.vercel.app/details/27205-inception
     One URL per line. Specific URLs are required.]
 
@@ -193,7 +193,7 @@ To: Lumina Stream DMCA Designated Agent
           If you believe that your content was wrongly removed or disabled as a result of a DMCA takedown notice, you may file a counter-notification under 17 U.S.C. &sect; 512(g). Your counter-notification must include:
         </p>
         <p {...p}>
-          <strong {...b}>1.</strong> Identification of the material that was removed or disabled and the location (URL) where it previously appeared on Lumina Stream.
+          <strong {...b}>1.</strong> Identification of the material that was removed or disabled and the location (URL) where it previously appeared on Lumovia.
         </p>
         <p {...p}>
           <strong {...b}>2.</strong> A statement, under penalty of perjury, that you have a good faith belief that the material was removed or disabled as a result of a mistake or misidentification.
@@ -202,7 +202,7 @@ To: Lumina Stream DMCA Designated Agent
           <strong {...b}>3.</strong> Your full legal name, physical address, telephone number, and email address.
         </p>
         <p {...p}>
-          <strong {...b}>4.</strong> A statement that you consent to the jurisdiction of the Federal District Court for the judicial district in which your address is located (or, if you are located outside the United States, the Federal District Court for the judicial district in which Lumina Stream is located), and that you will accept service of process from the person who filed the original DMCA notice or their authorized agent.
+          <strong {...b}>4.</strong> A statement that you consent to the jurisdiction of the Federal District Court for the judicial district in which your address is located (or, if you are located outside the United States, the Federal District Court for the judicial district in which Lumovia is located), and that you will accept service of process from the person who filed the original DMCA notice or their authorized agent.
         </p>
         <p {...p}>
           <strong {...b}>5.</strong> Your physical or electronic signature.
@@ -214,7 +214,7 @@ To: Lumina Stream DMCA Designated Agent
         {/* ── Section 7: Repeat Infringers ── */}
         <h2 {...h2}>7. Repeat Infringer Policy</h2>
         <p {...p}>
-          In accordance with 17 U.S.C. &sect; 512(i)(1)(A), Lumina Stream maintains and implements a policy of terminating access for users or accounts that are determined to be repeat infringers. We track all DMCA notices received, actions taken, and any relevant account activity in connection with each notice.
+          In accordance with 17 U.S.C. &sect; 512(i)(1)(A), Lumovia maintains and implements a policy of terminating access for users or accounts that are determined to be repeat infringers. We track all DMCA notices received, actions taken, and any relevant account activity in connection with each notice.
         </p>
         <p {...p}>
           <strong {...b}>Definition of Repeat Infringer.</strong> For the purposes of this policy, a &quot;repeat infringer&quot; includes: (A) any user or account holder who has been the subject of two (2) or more valid DMCA takedown notices in any rolling 12-month period; (B) any user who has been found by a court of competent jurisdiction to have committed copyright infringement on one or more occasions; or (C) any user who engages in a pattern of activity that demonstrates a disregard for intellectual property rights.
@@ -226,10 +226,10 @@ To: Lumina Stream DMCA Designated Agent
         {/* ── Section 8: International Copyright Compliance ── */}
         <h2 {...h2}>8. International Copyright Compliance</h2>
         <p {...p}>
-          <strong {...b}>8.1 European Union.</strong> For users and copyright holders within the European Union, Lumina Stream complies with the EU Copyright Directive (Directive 2001/29/EC, as amended by Directive 2019/790, also known as the &quot;Digital Single Market Directive&quot;). Under this framework, we operate as an information society service provider and benefit from the limitation of liability for mere conduit, caching, and hosting as provided in the E-Commerce Directive (Directive 2000/31/EC, Articles 12-14). We act expeditiously to remove or disable access upon notification of allegedly illegal content.
+          <strong {...b}>8.1 European Union.</strong> For users and copyright holders within the European Union, Lumovia complies with the EU Copyright Directive (Directive 2001/29/EC, as amended by Directive 2019/790, also known as the &quot;Digital Single Market Directive&quot;). Under this framework, we operate as an information society service provider and benefit from the limitation of liability for mere conduit, caching, and hosting as provided in the E-Commerce Directive (Directive 2000/31/EC, Articles 12-14). We act expeditiously to remove or disable access upon notification of allegedly illegal content.
         </p>
         <p {...p}>
-          <strong {...b}>8.2 United Kingdom.</strong> For users and copyright holders in the United Kingdom, Lumina Stream complies with the UK Copyright, Designs and Patents Act 1988 (as amended), including the provisions governing secondary infringement and the liability of service providers. We act in good faith and expeditiously upon receiving valid infringement notices.
+          <strong {...b}>8.2 United Kingdom.</strong> For users and copyright holders in the United Kingdom, Lumovia complies with the UK Copyright, Designs and Patents Act 1988 (as amended), including the provisions governing secondary infringement and the liability of service providers. We act in good faith and expeditiously upon receiving valid infringement notices.
         </p>
         <p {...ps}>
           <strong {...b}>8.3 Other Jurisdictions.</strong> We are committed to complying with the copyright laws of all jurisdictions in which we operate or are accessible. If your jurisdiction has specific notice-and-takedown procedures that differ from the DMCA, please contact us and we will endeavor to comply with the applicable local requirements. We respect and will respond to valid takedown notices from any jurisdiction.
@@ -244,7 +244,7 @@ To: Lumina Stream DMCA Designated Agent
           <strong {...b}>Response Time.</strong> We will acknowledge receipt of all DMCA notices within 48 hours. Valid and complete notices will be processed within 5-7 business days. Incomplete notices will be returned with a request for the missing information.
         </p>
         <p {...ps}>
-          <strong {...b}>Direct Takedown at Source.</strong> Because Lumina Stream does not host, store, or serve any streaming content, the most effective and expeditious way to have allegedly infringing material removed at its source is to also send a DMCA notice directly to the third-party embed provider that is serving the content. We will cooperate fully with copyright holders and will promptly remove links or embeds to any content identified in a valid DMCA notice, but removal at the source prevents the content from being accessible through any platform.
+          <strong {...b}>Direct Takedown at Source.</strong> Because Lumovia does not host, store, or serve any streaming content, the most effective and expeditious way to have allegedly infringing material removed at its source is to also send a DMCA notice directly to the third-party embed provider that is serving the content. We will cooperate fully with copyright holders and will promptly remove links or embeds to any content identified in a valid DMCA notice, but removal at the source prevents the content from being accessible through any platform.
         </p>
       </div>
     </>

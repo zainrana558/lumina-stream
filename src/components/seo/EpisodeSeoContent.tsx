@@ -46,21 +46,21 @@ function buildEpisodeFaq(props: EpisodeSeoProps): Array<{ q: string; a: string }
     const yearOnly = airDate.slice(0, 4);
     faq.push({
       q: `When did ${displayName} air?`,
-      a: `${displayName} originally aired on ${dateStr}. Browse the complete episode guide for ${showTitle} Season ${season} on Lumina Stream, where you can find every episode with air dates, ratings, and detailed synopses.${yearOnly ? ` Explore more TV shows from ${yearOnly} in our curated year and decade collections.` : ''}`,
+      a: `${displayName} originally aired on ${dateStr}. Browse the complete episode guide for ${showTitle} Season ${season} on Lumovia, where you can find every episode with air dates, ratings, and detailed synopses.${yearOnly ? ` Explore more TV shows from ${yearOnly} in our curated year and decade collections.` : ''}`,
     });
   }
 
   if (runtime) {
     faq.push({
       q: `How long is ${displayName}?`,
-      a: `The runtime for ${displayName} is approximately ${runtime} minutes. Episode runtimes may vary slightly depending on the broadcast version. View the full season guide on Lumina Stream for runtimes of all ${totalEpisodes || ''} episodes in Season ${season} of ${showTitle}.`,
+      a: `The runtime for ${displayName} is approximately ${runtime} minutes. Episode runtimes may vary slightly depending on the broadcast version. View the full season guide on Lumovia for runtimes of all ${totalEpisodes || ''} episodes in Season ${season} of ${showTitle}.`,
     });
   }
 
   if (rating && rating > 0) {
     faq.push({
       q: `What is the rating for ${displayName}?`,
-      a: `${displayName} has a rating of ${rating.toFixed(1)}/10 on TMDB. Episode ratings help you identify the standout installments in a season. Lumina Stream displays ratings for every episode of ${showTitle}, making it easy to find the highest-rated episodes in Season ${season}.`,
+      a: `${displayName} has a rating of ${rating.toFixed(1)}/10 on TMDB. Episode ratings help you identify the standout installments in a season. Lumovia displays ratings for every episode of ${showTitle}, making it easy to find the highest-rated episodes in Season ${season}.`,
     });
   }
 
@@ -71,7 +71,7 @@ function buildEpisodeFaq(props: EpisodeSeoProps): Array<{ q: string; a: string }
 
   faq.push({
     q: `Where can I watch ${displayName}?`,
-    a: `Discover ${displayName} on Lumina Stream — a free platform providing detailed episode information, synopses, cast details, air dates, and ratings for ${showTitle} and thousands of other TV series and anime. No subscription or sign-up is required to browse our complete episode guides and explore similar titles.`,
+    a: `Discover ${displayName} on Lumovia — a free platform providing detailed episode information, synopses, cast details, air dates, and ratings for ${showTitle} and thousands of other TV series and anime. No subscription or sign-up is required to browse our complete episode guides and explore similar titles.`,
     });
 
   return faq.slice(0, 7);

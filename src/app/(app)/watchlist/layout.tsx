@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'My Watchlist — Lumina Stream',
-  description: 'Track and manage your personal watchlist. Save movies, TV shows, anime, and cartoons to watch later on Lumina Stream.',
+  title: 'My Watchlist — Lumovia',
+  description: 'Track and manage your personal watchlist. Save movies, TV shows, anime, and cartoons to watch later on Lumovia.',
   robots: { index: false, follow: false },
 };
 
