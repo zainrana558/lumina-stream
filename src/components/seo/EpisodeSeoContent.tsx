@@ -22,7 +22,7 @@ interface EpisodeSeoProps {
 }
 
 function buildEpisodeFaq(props: EpisodeSeoProps): Array<{ q: string; a: string }> {
-  const { showTitle, season, episode, episodeTitle, episodeOverview, runtime, airDate, rating, showOverview, showGenres } = props;
+  const { showTitle, season, episode, episodeTitle, episodeOverview, runtime, airDate, rating, showOverview, showGenres, showMediaType, totalEpisodes } = props;
   const epLabel = `Season ${season} Episode ${episode}`;
   const displayName = episodeTitle ? `${showTitle} ${epLabel}: ${episodeTitle}` : `${showTitle} ${epLabel}`;
   const faq: Array<{ q: string; a: string }> = [];
@@ -30,38 +30,51 @@ function buildEpisodeFaq(props: EpisodeSeoProps): Array<{ q: string; a: string }
   if (episodeOverview && episodeOverview.length > 20) {
     faq.push({
       q: `What happens in ${displayName}?`,
-      a: episodeOverview.length > 300 ? episodeOverview.slice(0, 297) + '...' : episodeOverview,
+      a: episodeOverview.length > 350 ? episodeOverview.slice(0, 347) + '...' : episodeOverview,
     });
   }
 
-  if (episodeOverview && showOverview && showOverview.length > 20) {
+  if (showOverview && showOverview.length > 20) {
     faq.push({
       q: `What is ${showTitle} about?`,
-      a: showOverview.length > 250 ? showOverview.slice(0, 247) + '...' : showOverview,
+      a: (showOverview.length > 300 ? showOverview.slice(0, 297) + '...' : showOverview) + ` ${showGenres && showGenres.length > 0 ? `This ${showMediaType === 'anime' ? 'anime' : 'TV'} series falls under the ${showGenres.slice(0, 3).join(', ')} genre${showGenres.length > 1 ? 's' : ''}.` : ''}`,
     });
   }
 
   if (airDate) {
     const dateStr = new Date(airDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const yearOnly = airDate.slice(0, 4);
     faq.push({
       q: `When did ${displayName} air?`,
-      a: `${displayName} originally aired on ${dateStr}. Browse the complete episode guide for ${showTitle} Season ${season} on Lumina Stream, where you can find every episode with air dates, ratings, and detailed synopses.`,
+      a: `${displayName} originally aired on ${dateStr}. Browse the complete episode guide for ${showTitle} Season ${season} on Lumina Stream, where you can find every episode with air dates, ratings, and detailed synopses.${yearOnly ? ` Explore more TV shows from ${yearOnly} in our curated year and decade collections.` : ''}`,
     });
   }
 
   if (runtime) {
     faq.push({
       q: `How long is ${displayName}?`,
-      a: `The runtime for ${displayName} is approximately ${runtime} minutes. Episode runtimes may vary slightly depending on the broadcast version. View the full season guide on Lumina Stream for runtimes of all episodes in Season ${season}.`,
+      a: `The runtime for ${displayName} is approximately ${runtime} minutes. Episode runtimes may vary slightly depending on the broadcast version. View the full season guide on Lumina Stream for runtimes of all ${totalEpisodes || ''} episodes in Season ${season} of ${showTitle}.`,
+    });
+  }
+
+  if (rating && rating > 0) {
+    faq.push({
+      q: `What is the rating for ${displayName}?`,
+      a: `${displayName} has a rating of ${rating.toFixed(1)}/10 on TMDB. Episode ratings help you identify the standout installments in a season. Lumina Stream displays ratings for every episode of ${showTitle}, making it easy to find the highest-rated episodes in Season ${season}.`,
     });
   }
 
   faq.push({
-    q: `Where can I watch ${displayName}?`,
-    a: `Discover ${displayName} on Lumina Stream. Our platform provides detailed episode information including synopses, cast details, air dates, and ratings for ${showTitle} and thousands of other TV shows. Browse the complete episode guide and explore similar titles.`,
-  });
+    q: `Where does ${displayName} fit in the series?`,
+      a: `This is Episode ${episode} of Season ${season} in ${showTitle}${totalEpisodes ? `, which has ${totalEpisodes} episodes in this season` : ''}. Navigate between episodes using the episode guide above, or visit the full ${showTitle} detail page for season-by-season breakdowns, cast information, and similar show recommendations.`,
+    });
 
-  return faq.slice(0, 5);
+  faq.push({
+    q: `Where can I watch ${displayName}?`,
+    a: `Discover ${displayName} on Lumina Stream — a free platform providing detailed episode information, synopses, cast details, air dates, and ratings for ${showTitle} and thousands of other TV series and anime. No subscription or sign-up is required to browse our complete episode guides and explore similar titles.`,
+    });
+
+  return faq.slice(0, 7);
 }
 
 export default function EpisodeSeoContent(props: EpisodeSeoProps) {
@@ -193,14 +206,18 @@ export default function EpisodeSeoContent(props: EpisodeSeoProps) {
           </>
         )}
 
-        {/* Internal links */}
+        {/* Internal links — dense for crawl budget distribution */}
         <nav aria-label="Related pages" className="nav-links">
           <Link href={`/details/${showId}`}>Full Show Details</Link>
           <Link href="/tv-shows">TV Shows</Link>
           <Link href="/browse">Browse All</Link>
           <Link href="/top-rated">Top Rated</Link>
           <Link href="/new-releases">New Releases</Link>
-          {showGenres?.slice(0, 2).map(g => (
+          <Link href="/seasonal">Seasonal Anime</Link>
+          <Link href="/leaderboard">Leaderboard</Link>
+          <Link href="/genres">All Genres</Link>
+          <Link href="/release-calendar">Release Calendar</Link>
+          {showGenres?.slice(0, 3).map(g => (
             <Link key={g} href={`/browse?genre=${encodeURIComponent(g)}`}>{g}</Link>
           ))}
         </nav>

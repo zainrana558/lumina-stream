@@ -62,9 +62,45 @@ interface SeoContentProps {
   popularity?: number;
 }
 
+/** Genre-specific analysis text — makes each page unique based on genre combo */
+function buildGenreAnalysis(title: string, genres: string[], mediaType: string, rating?: number, runtime?: number): string {
+  const g = genres.slice(0, 3).join(' and ');
+  const typeLabel = mediaType === 'movie' ? 'film' : mediaType === 'anime' ? 'anime' : 'series';
+  const primaryGenre = genres[0] || 'entertainment';
+
+  const genreInsights: Record<string, string> = {
+    'Action': `The ${primaryGenre} genre is one of the most popular categories on Lumina Stream, drawing millions of viewers who crave adrenaline-fueled storytelling. ${title} exemplifies what makes great ${g} ${typeLabel}s compelling: strong pacing, memorable characters, and set pieces that keep audiences engaged from beginning to end.`,
+    'Comedy': `${title} brings the art of comedic storytelling to life in a way that resonates with audiences worldwide. The ${g} ${typeLabel} genre has evolved significantly over the decades, and this ${typeLabel} represents some of the best modern ${primaryGenre.toLowerCase()} writing available.`,
+    'Drama': `Drama remains the cornerstone of great storytelling, and ${title} delivers powerful emotional depth that sets it apart from typical ${primaryGenre.toLowerCase()} fare. Viewers on Lumina Stream consistently rate ${g} titles highly because of their ability to explore complex human experiences.`,
+    'Horror': `The horror genre has experienced a remarkable renaissance in recent years, and ${title} stands as a testament to the creative potential of ${g} storytelling. Horror fans on Lumina Stream appreciate ${typeLabel}s that balance genuine scares with thoughtful narrative elements.`,
+    'Romance': `Romance continues to be one of the most searched-for genres on streaming platforms, and ${title} captures the emotional resonance that fans of ${g} ${typeLabel}s seek. The chemistry between characters and the exploration of love in its many forms make this ${typeLabel} a standout.`,
+    'Sci-Fi': `Science fiction offers some of the most imaginative storytelling in entertainment, and ${title} pushes the boundaries of the ${g} genre with its creative vision. Fans of speculative fiction on Lumina Stream will find much to appreciate in this ${typeLabel}'s approach to world-building and futuristic concepts.`,
+    'Thriller': `Thrillers demand tight plotting and relentless tension, and ${title} delivers on both fronts. The ${g} ${typeLabel} genre rewards viewers who appreciate carefully constructed narratives with unexpected twists and morally complex characters.`,
+    'Animation': `Animation has grown far beyond children's entertainment, and ${title} showcases the artistic and narrative possibilities of the medium. ${g} animated ${typeLabel}s attract dedicated fanbases on Lumina Stream who appreciate both the visual artistry and the depth of storytelling.`,
+    'Fantasy': `Fantasy storytelling transports audiences to extraordinary worlds, and ${title} builds an immersive ${g} experience that keeps viewers coming back. The genre's blend of mythological elements and human drama makes it one of the most engaging categories on Lumina Stream.`,
+    'Mystery': `Mystery ${typeLabel}s challenge viewers to piece together clues and unravel complex puzzles, and ${title} is a compelling entry in the ${g} genre. The satisfaction of a well-executed reveal keeps fans of detective and suspense stories thoroughly engaged.`,
+    'Crime': `Crime dramas and thrillers continue to captivate audiences with their exploration of the criminal underworld and moral ambiguity. ${title} adds to this rich tradition with its ${g} storytelling that keeps viewers guessing and invested in every scene.`,
+    'Documentary': `Documentary filmmaking has become increasingly popular as viewers seek factual, thought-provoking content. ${title} exemplifies the power of the ${g} genre to inform, challenge, and inspire audiences on Lumina Stream and beyond.`,
+  };
+
+  const insight = genreInsights[primaryGenre] || genreInsights['Drama'] || `The ${g} genre offers something for every type of viewer, and ${title} is a strong representative of what makes this category compelling. Lumina Stream users who enjoy ${primaryGenre.toLowerCase()} content consistently rate these ${typeLabel}s highly for their entertainment value and storytelling quality.`;
+
+  const ratingContext = rating && rating >= 7.5
+    ? ` With a TMDB rating of ${rating.toFixed(1)}/10, ${title} ranks among the higher-rated ${primaryGenre.toLowerCase()} titles available on the platform, indicating strong audience approval.`
+    : rating && rating >= 6
+    ? ` The ${rating.toFixed(1)}/10 TMDB rating suggests that ${title} has found its audience, even if opinions vary — which is typical for ${primaryGenre.toLowerCase()} ${typeLabel}s that take creative risks.`
+    : '';
+
+  const runtimeContext = runtime && mediaType === 'movie'
+    ? ` At ${runtime} minutes, this ${typeLabel} uses its runtime effectively to develop its ${primaryGenre.toLowerCase()} themes without overstaying its welcome.`
+    : '';
+
+  return insight + ratingContext + runtimeContext;
+}
+
 /** Build a programmatic FAQ array for any title */
 function buildFaq(props: SeoContentProps): Array<{ q: string; a: string }> {
-  const { title, mediaType, genres, rating, runtime, seasons, episodes, year, overview, releaseDate, status, voteCount } = props;
+  const { title, mediaType, genres, rating, runtime, seasons, episodes, year, overview, releaseDate, status, voteCount, originalLanguage, productionCompanies } = props;
   const typeLabel = mediaType === 'movie' ? 'movie' : mediaType === 'anime' ? 'anime series' : 'TV series';
   const faq: Array<{ q: string; a: string }> = [];
 
@@ -79,21 +115,23 @@ function buildFaq(props: SeoContentProps): Array<{ q: string; a: string }> {
 
   // Q2: Is it worth watching?
   if (rating && rating > 0) {
-    const verdict = rating >= 8 ? 'widely considered excellent and highly recommended' :
-      rating >= 7 ? 'well-received by audiences and generally recommended' :
-      rating >= 6 ? 'moderately rated with mixed reception' :
-      'has a lower than average rating, though individual opinions may vary';
+    const verdict = rating >= 8 ? 'widely considered excellent and highly recommended for fans of ' + (genres[0] || 'great') + ' entertainment' :
+      rating >= 7 ? 'well-received by audiences and generally recommended as a solid ' + (genres[0] || 'entertainment') + ' title' :
+      rating >= 6 ? 'moderately rated with mixed reception — it has its strengths but may not appeal to everyone' :
+      'has a lower than average rating, though individual opinions vary significantly and some viewers may still find it enjoyable';
     faq.push({
-      q: `Is ${title} worth watching?`,
-      a: `${title} has a rating of ${rating.toFixed(1)}/10 on TMDB, which means it is ${verdict}. ${genres.length > 0 ? `It falls under the ${genres.slice(0, 3).join(', ')} ${genres.length > 1 ? 'genres' : 'genre'}.` : ''} ${voteCount ? `This score is based on ${voteCount.toLocaleString()} user ratings.` : ''}`,
+      q: `Is ${title} worth watching in ${new Date().getFullYear()}?`,
+      a: `${title} has a rating of ${rating.toFixed(1)}/10 on TMDB based on ${voteCount ? voteCount.toLocaleString() + ' user ratings' : 'audience ratings'}, which means it is ${verdict}. ${genres.length > 0 ? `It falls under the ${genres.slice(0, 3).join(', ')} ${genres.length > 1 ? 'genres' : 'genre'}.` : ''} You can explore ${title} on Lumina Stream along with thousands of similar titles.`,
     });
   }
 
   // Q3: How long is it? (movie)
   if (runtime && mediaType === 'movie') {
+    const hrs = Math.floor(runtime / 60);
+    const mins = runtime % 60;
     faq.push({
       q: `How long is ${title}?`,
-      a: `${title} has a runtime of ${runtime} minutes (approximately ${Math.floor(runtime / 60)} hours and ${runtime % 60} minutes). ${year ? `It was released in ${year}.` : ''}`,
+      a: `${title} has a runtime of ${runtime} minutes (${hrs > 0 ? `approximately ${hrs} hour${hrs !== 1 ? 's' : ''}` : ''}${mins > 0 ? ` ${mins} minute${mins !== 1 ? 's' : ''}` : ''}). ${year ? `It was released in ${year}.` : ''} Browse the full details page on Lumina Stream for cast information, trailers, and similar movie recommendations.`,
     });
   }
 
@@ -101,7 +139,7 @@ function buildFaq(props: SeoContentProps): Array<{ q: string; a: string }> {
   if ((mediaType === 'tv' || mediaType === 'anime') && seasons && episodes) {
     faq.push({
       q: `How many seasons and episodes does ${title} have?`,
-      a: `${title} has ${seasons} season${seasons !== 1 ? 's' : ''} and ${episodes} episode${episodes !== 1 ? 's' : ''} in total. ${status === 'Returning Series' ? 'The show is currently airing with new episodes being released.' : status === 'Ended' ? 'The series has concluded.' : ''}`,
+      a: `${title} has ${seasons} season${seasons !== 1 ? 's' : ''} and ${episodes} episode${episodes !== 1 ? 's' : ''} in total. ${status === 'Returning Series' ? 'The show is currently airing with new episodes being released regularly.' : status === 'Ended' ? 'The series has concluded its run, but all episodes are available to explore.' : ''} Visit the detail page on Lumina Stream for a complete season-by-season episode guide with air dates and individual ratings.`,
     });
   }
 
@@ -110,17 +148,40 @@ function buildFaq(props: SeoContentProps): Array<{ q: string; a: string }> {
     const dateStr = releaseDate ? new Date(releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : year;
     faq.push({
       q: `When was ${title} released?`,
-      a: `${title} was released on ${dateStr}. ${mediaType === 'movie' ? `It is a ${genres[0] || ''} film.` : `It is a ${genres[0] || ''} ${typeLabel}.`} Browse more ${mediaType === 'movie' ? 'movies' : 'TV shows'} from ${year || 'this period'} on Lumina Stream.`,
+      a: `${title} was released on ${dateStr}. ${mediaType === 'movie' ? `It is a ${genres[0] || ''} film.` : `It is a ${genres[0] || ''} ${typeLabel}.`} Browse more ${mediaType === 'movie' ? 'movies' : 'TV shows'} from ${year || 'this period'} on Lumina Stream, where we organize content by year and decade for easy discovery.`,
     });
   }
 
-  // Q6: Where to watch
+  // Q6: Who is in the cast?
   faq.push({
-    q: `Where can I watch ${title}?`,
-    a: `You can discover and explore ${title} on Lumina Stream. Our platform provides detailed information about ${title} including cast, ratings, trailers, episode guides, and similar recommendations. Lumina Stream aggregates data from TMDB and AniList to give you the most comprehensive view of ${title} available online.`,
+      q: `Who stars in ${title}?`,
+      a: `You can find the complete cast and crew list for ${title} on Lumina Stream. We provide full filmographies for every cast member, character names, and links to other projects they have appeared in. Click on any cast member to explore their entire body of work across movies and TV shows.`,
   });
 
-  return faq.slice(0, 5);
+  // Q7: What language is it in?
+  if (originalLanguage && originalLanguage !== 'en') {
+    const langNames: Record<string, string> = { ja: 'Japanese', ko: 'Korean', zh: 'Chinese', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', pt: 'Portuguese', hi: 'Hindi', th: 'Thai', ar: 'Arabic', tr: 'Turkish', ru: 'Russian', pl: 'Polish', sv: 'Swedish', da: 'Danish', no: 'Norwegian', nl: 'Dutch', cs: 'Czech' };
+    faq.push({
+      q: `What language is ${title} in?`,
+      a: `${title} is originally in ${langNames[originalLanguage] || originalLanguage.toUpperCase()}. International titles are well-represented on Lumina Stream — browse our anime, Korean drama, and international film collections to discover more content from around the world.`,
+    });
+  }
+
+  // Q8: Who produced it?
+  if (productionCompanies && productionCompanies.length > 0) {
+    faq.push({
+      q: `Who produced ${title}?`,
+      a: `${title} was produced by ${productionCompanies.slice(0, 3).join(', ')}${productionCompanies.length > 3 ? ' and others' : ''}. Production company information, along with full cast details, ratings, and release information, is available on the Lumina Stream detail page for ${title}.`,
+    });
+  }
+
+  // Q9: Where to watch
+  faq.push({
+    q: `Where can I watch ${title}?`,
+    a: `You can discover and explore ${title} on Lumina Stream — a free platform that provides the most comprehensive information about ${title} available online, including cast and crew details, user ratings from millions of TMDB and AniList users, trailer links, episode guides for TV series, and AI-powered similar title recommendations. No subscription or sign-up is required to browse.`,
+  });
+
+  return faq.slice(0, 7);
 }
 
 /** Build FAQ JSON-LD schema */
@@ -164,12 +225,49 @@ export default function DetailSeoContent(props: SeoContentProps) {
 
   const castNames = cast.slice(0, 10);
   const castText = castNames.length > 0
-    ? `${title} features ${castNames.slice(0, 3).map(c => c.name).join(', ')}${castNames.length > 3 ? `, ${castNames.slice(3, 6).map(c => c.name).join(', ')}` : ''}${castNames.length > 6 ? `, and ${castNames.slice(6).map(c => c.name).join(', ')}` : ''} in its cast. Click on any cast member name to view their complete filmography, biography, and all movies and TV shows they have appeared in on Lumina Stream.`
+    ? `${title} features ${castNames.slice(0, 3).map(c => c.name).join(', ')}${castNames.length > 3 ? `, ${castNames.slice(3, 6).map(c => c.name).join(', ')}` : ''}${castNames.length > 6 ? `, and ${castNames.slice(6).map(c => c.name).join(', ')}` : ''} in its cast. Each cast member's page on Lumina Stream includes their complete filmography, a detailed biography, and links to every movie and TV show they have appeared in — making it easy to discover new content through your favorite actors.`
     : '';
 
   const similarNames = similar.slice(0, 8).map(s => s.title || s.name || '').filter(Boolean);
   const similarText = similarNames.length > 0
-    ? `If you enjoyed ${title}, you might also like ${similarNames.slice(0, 3).join(', ')}${similarNames.length > 3 ? `, ${similarNames[3]}` : ''}${similarNames.length > 4 ? `, and ${similarNames[4]}` : ''}. All of these titles are available to explore on Lumina Stream with full cast details, ratings, trailers, and episode guides.`
+    ? `If you enjoyed ${title}, you might also like ${similarNames.slice(0, 3).join(', ')}${similarNames.length > 3 ? `, ${similarNames[3]}` : ''}${similarNames.length > 4 ? `, and ${similarNames[4]}` : ''}. All of these titles are available to explore on Lumina Stream with full cast details, ratings, trailers, and episode guides. Our recommendation system analyzes genre, rating, and audience patterns to surface the most relevant similar titles for every show in our catalog.`
+    : '';
+
+  // Build unique genre analysis paragraph
+  const genreAnalysis = genres.length > 0
+    ? buildGenreAnalysis(title, genres, mediaType, rating, runtime)
+    : '';
+
+  // Build a unique "why watch" paragraph based on title characteristics
+  const whyWatchParts: string[] = [];
+  if (rating && rating >= 8) {
+    whyWatchParts.push(`${title} has earned a place among the top-rated ${genres[0] || ''} titles on Lumina Stream with its impressive ${rating.toFixed(1)}/10 TMDB score`);
+  }
+  if (voteCount && voteCount > 5000) {
+    whyWatchParts.push(`backed by a passionate community of ${voteCount.toLocaleString()} raters`);
+  } else if (voteCount && voteCount > 500) {
+    whyWatchParts.push(`supported by ${voteCount.toLocaleString()} audience ratings`);
+  }
+  if (popularity && popularity > 50) {
+    whyWatchParts.push(`and a popularity score of ${Math.round(popularity)} that places it among the most talked-about titles currently`);
+  }
+  const whyWatch = whyWatchParts.length > 0
+    ? whyWatchParts.join(', ') + '.'
+    : `${title} is part of Lumina Stream's extensive catalog of ${mediaType === 'movie' ? 'movies' : 'TV shows and anime'}, where every title comes with detailed information powered by TMDB and AniList.`;
+
+  // Build comparison context paragraph
+  const comparisonParts: string[] = [];
+  if (year) {
+    comparisonParts.push(`${title} was released in ${year}`);
+  }
+  if (genres.length > 0) {
+    comparisonParts.push(`belongs to the ${genres.slice(0, 2).join(' and ')} ${genres.length > 2 ? 'and other ' : ''}genre${genres.length > 1 ? 's' : ''}`);
+  }
+  if (rating) {
+    comparisonParts.push(`holds a ${rating.toFixed(1)}/10 rating on TMDB`);
+  }
+  const comparisonText = comparisonParts.length > 2
+    ? comparisonParts.join(', ') + '. Explore our curated collections by year, decade, and genre to find more titles that match your taste.'
     : '';
 
   return (
@@ -242,6 +340,25 @@ export default function DetailSeoContent(props: SeoContentProps) {
         {overview && overview.length > 20 && (
           <p style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.6)', lineHeight: 1.8 }}>
             {overview}
+          </p>
+        )}
+
+        {/* Genre-specific analysis — unique per page based on genre combination */}
+        {genreAnalysis && (
+          <p style={{ fontSize: 'clamp(.85rem,1.15vw,.98rem)', color: 'rgba(255,245,232,.5)', lineHeight: 1.75 }}>
+            {genreAnalysis}
+          </p>
+        )}
+
+        {/* Why watch — unique per page based on rating/vote count/popularity */}
+        <p style={{ fontSize: 'clamp(.85rem,1.15vw,.98rem)', color: 'rgba(255,245,232,.5)', lineHeight: 1.75 }}>
+          {whyWatch}
+        </p>
+
+        {/* Comparison context — ties the title to broader catalog categories */}
+        {comparisonText && (
+          <p style={{ fontSize: 'clamp(.85rem,1.15vw,.98rem)', color: 'rgba(255,245,232,.5)', lineHeight: 1.75 }}>
+            {comparisonText}
           </p>
         )}
 
@@ -320,6 +437,9 @@ export default function DetailSeoContent(props: SeoContentProps) {
           <Link href="/tv-shows">TV Shows</Link>
           <Link href="/top-rated">Top Rated</Link>
           <Link href="/new-releases">New Releases</Link>
+          <Link href="/seasonal">Seasonal Anime</Link>
+          <Link href="/leaderboard">Leaderboard</Link>
+          <Link href="/release-calendar">Release Calendar</Link>
           <Link href="/genres">All Genres</Link>
           {decadeInfo && <Link href={decadeInfo.href}>{decadeInfo.label} Collection</Link>}
           {year && <Link href={`/year/${year}`}>{year} Releases</Link>}
@@ -328,6 +448,9 @@ export default function DetailSeoContent(props: SeoContentProps) {
             const slug = gid ? portalGenreMap[gid] : null;
             return slug ? <Link key={g} href={slug}>{g}</Link> : null;
           })}
+          {genres.filter(g => !portalGenreMap[genreIds?.[genres.indexOf(g)] ?? -1]).slice(0, 2).map(g => (
+            <Link key={`browse-${g}`} href={`/browse?genre=${encodeURIComponent(g)}`}>{g}</Link>
+          ))}
         </nav>
       </article>
     </>

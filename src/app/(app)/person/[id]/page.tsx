@@ -325,6 +325,27 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             Also known as: {data.also_known_as.slice(0, 8).join(', ')}
           </p>
         )}
+
+        {/* Internal navigation links for crawl density */}
+        <nav aria-label="Explore more" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 24 }}>
+          {[
+            { label: 'Browse All', href: '/browse' },
+            { label: 'Movies', href: '/movies' },
+            { label: 'TV Shows', href: '/tv-shows' },
+            { label: 'Top Rated', href: '/top-rated' },
+            { label: 'New Releases', href: '/new-releases' },
+            { label: 'Seasonal Anime', href: '/seasonal' },
+            { label: 'Leaderboard', href: '/leaderboard' },
+            { label: 'All Genres', href: '/genres' },
+            { label: 'Release Calendar', href: '/release-calendar' },
+          ].map(link => (
+            <a key={link.href} href={link.href} style={{
+              display: 'inline-block', padding: '6px 14px', borderRadius: 8,
+              fontSize: '.78rem', color: '#FFB347', textDecoration: 'none',
+              background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)',
+            }}>{link.label}</a>
+          ))}
+        </nav>
       </section>
 
       <PersonPageClient person={data} />
