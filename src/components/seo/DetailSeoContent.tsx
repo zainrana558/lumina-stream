@@ -75,12 +75,13 @@ function buildGenreAnalysis(title: string, genres: string[], mediaType: string, 
 
   // Rating context (factual, not promotional)
   if (rating && rating > 0) {
+    const dataSource = mediaType === 'anime' ? 'AniList' : 'TMDB';
     if (rating >= 8) {
-      parts.push(`With a TMDB score of ${rating.toFixed(1)}/10, it ranks among the highest-rated ${primaryGenre.toLowerCase()} titles in our catalog.`);
+      parts.push(`With a ${dataSource} score of ${rating.toFixed(1)}/10, it ranks among the highest-rated ${primaryGenre.toLowerCase()} titles in our catalog.`);
     } else if (rating >= 7) {
-      parts.push(`It holds a solid ${rating.toFixed(1)}/10 rating on TMDB, placing it above average for ${primaryGenre.toLowerCase()} ${typeLabel}s.`);
+      parts.push(`It holds a solid ${rating.toFixed(1)}/10 rating on ${dataSource}, placing it above average for ${primaryGenre.toLowerCase()} ${typeLabel}s.`);
     } else if (rating >= 6) {
-      parts.push(`The TMDB community has given it a ${rating.toFixed(1)}/10 rating.`);
+      parts.push(`The ${dataSource} community has given it a ${rating.toFixed(1)}/10 rating.`);
     }
   }
 
@@ -115,9 +116,11 @@ function buildFaq(props: SeoContentProps): Array<{ q: string; a: string }> {
       rating >= 7 ? 'well-received by audiences and generally recommended as a solid ' + (genres[0] || 'entertainment') + ' title' :
       rating >= 6 ? 'moderately rated with mixed reception — it has its strengths but may not appeal to everyone' :
       'has a lower than average rating, though individual opinions vary significantly and some viewers may still find it enjoyable';
+    const source = mediaType === 'anime' ? 'AniList' : 'TMDB';
+    const ratingLabel = mediaType === 'anime' ? 'community score' : 'user ratings';
     faq.push({
       q: `Is ${title} worth watching in ${new Date().getFullYear()}?`,
-      a: `${title} has a rating of ${rating.toFixed(1)}/10 on TMDB based on ${voteCount ? voteCount.toLocaleString() + ' user ratings' : 'audience ratings'}, which means it is ${verdict}. ${genres.length > 0 ? `It falls under the ${genres.slice(0, 3).join(', ')} ${genres.length > 1 ? 'genres' : 'genre'}.` : ''} You can explore ${title} on Lumovia along with thousands of similar titles.`,
+      a: `${title} has a rating of ${rating.toFixed(1)}/10 on ${source} based on ${voteCount ? voteCount.toLocaleString() + ` ${ratingLabel}` : `audience ${ratingLabel}`}, which means it is ${verdict}. ${genres.length > 0 ? `It falls under the ${genres.slice(0, 3).join(', ')} ${genres.length > 1 ? 'genres' : 'genre'}.` : ''} You can explore ${title} on Lumovia along with thousands of similar titles.`,
     });
   }
 
@@ -237,7 +240,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
   // Build a unique "why watch" paragraph based on title characteristics
   const whyWatchParts: string[] = [];
   if (rating && rating >= 8) {
-    whyWatchParts.push(`${title} has earned a place among the top-rated ${genres[0] || ''} titles on Lumovia with its impressive ${rating.toFixed(1)}/10 TMDB score`);
+    whyWatchParts.push(`${title} has earned a place among the top-rated ${genres[0] || ''} titles on Lumovia with its impressive ${rating.toFixed(1)}/10 ${mediaType === 'anime' ? 'AniList' : 'TMDB'} score`);
   }
   if (voteCount && voteCount > 5000) {
     whyWatchParts.push(`backed by a passionate community of ${voteCount.toLocaleString()} raters`);
@@ -260,7 +263,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
     comparisonParts.push(`belongs to the ${genres.slice(0, 2).join(' and ')} ${genres.length > 2 ? 'and other ' : ''}genre${genres.length > 1 ? 's' : ''}`);
   }
   if (rating) {
-    comparisonParts.push(`holds a ${rating.toFixed(1)}/10 rating on TMDB`);
+    comparisonParts.push(`holds a ${rating.toFixed(1)}/10 rating on ${mediaType === 'anime' ? 'AniList' : 'TMDB'}`);
   }
   const comparisonText = comparisonParts.length > 2
     ? comparisonParts.join(', ') + '. Explore our curated collections by year, decade, and genre to find more titles that match your taste.'

@@ -507,6 +507,19 @@ export async function getAnimeDetail(id: number): Promise<AniListMedia | null> {
     query ($id: Int) {
       Media(type: ANIME, id: $id, isAdult: false) {
         ${MEDIA_DETAIL_FRAGMENT}
+        recommendations(page: 1, perPage: 10, sort: [RATING_DESC, POPULARITY_DESC]) {
+          nodes {
+            mediaRecommendation {
+              id
+              title { romaji english native }
+              meanScore
+              coverImage { extraLarge large }
+              format
+              startDate { year }
+              episodes
+            }
+          }
+        }
       }
     }
   `;
@@ -514,13 +527,16 @@ export async function getAnimeDetail(id: number): Promise<AniListMedia | null> {
   const cached = await getCached<AniListMedia>('details', `anilist:detail:${id}`);
   if (cached) return cached;
 
-  const data = await anilistQuery<{ Media: AniListMedia | null }>(query, { id });
+  const data = await anilistQuery<{ Media: (AniListMedia & { recommendations?: { nodes: Array<{ mediaRecommendation: { id: number; title: { romaji: string | null; english: string | null; native: string | null }; meanScore: number | null; coverImage: { extraLarge: string | null; large: string | null } | null; format: AniListMediaFormat | null; startDate: { year: number | null } | null; episodes: number | null } }> } }) | null }>(query, { id });
   const result = data.Media;
   if (result) {
     setCache('details', `anilist:detail:${id}`, result).catch(() => {});
   }
   return result;
 }
+
+/** Type for the extended detail with recommendations */
+export type AniListDetailWithRecs = NonNullable<Awaited<ReturnType<typeof getAnimeDetail>>>;
 
 /**
  * Browse the entire AniList anime catalog (sorted by popularity).

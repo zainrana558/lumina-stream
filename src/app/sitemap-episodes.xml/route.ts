@@ -5,13 +5,12 @@ import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb
 /**
  * Episode sitemap — Programmatic SEO for individual episode landing pages.
  *
- * Strategy: Include episodes for the top ~80 popular/trending TV shows.
- * Each show includes all seasons (capped at 99 seasons, 24 episodes per season).
- * As Google indexes these, it discovers the URL pattern and can follow
- * internal links to deeper seasons/episodes.
+ * Strategy: Include ALL episodes for the top ~80 popular/trending TV shows.
+ * Each show includes all seasons (capped at 99 seasons) with ALL episodes
+ * per season (no artificial cap).
  *
  * Movies are excluded (single-episode content has no per-episode routes).
- * AniList anime is excluded until per-episode detail queries are added.
+ * AniList anime episodes are discovered via internal links from detail pages.
  */
 
 interface TMDBEpisode {
@@ -50,7 +49,6 @@ export async function GET() {
 
   // 2. Fetch all seasons for each show (parallel, with error tolerance)
   const MAX_SEASONS = 99;
-  const MAX_EPS_PER_SEASON = 24;
   const episodeUrls: string[] = [];
 
   const episodePromises = uniqueShows.map(async (show) => {
@@ -61,13 +59,14 @@ export async function GET() {
       if (showData?.number_of_seasons) {
         totalSeasons = Math.min(showData.number_of_seasons, MAX_SEASONS);
       }
-    } catch { /* default to 3 */ }
+    } catch { /* default to MAX_SEASONS */ }
 
     const seasonPromises = Array.from({ length: totalSeasons }, (_, i) =>
       tmdbFetch<{ episodes: TMDBEpisode[] }>(`/tv/${show.id}/season/${i + 1}`)
         .then(seasonData => {
           const episodes = seasonData?.episodes || [];
-          for (const ep of episodes.slice(0, MAX_EPS_PER_SEASON)) {
+          // Include ALL episodes — no cap
+          for (const ep of episodes) {
             episodeUrls.push(
               `  <url>\n    <loc>${baseUrl}/details/${show.id}/season/${i + 1}/episode/${ep.episode_number}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.6</priority>\n  </url>`
             );

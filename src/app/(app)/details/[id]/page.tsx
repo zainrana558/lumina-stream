@@ -3,7 +3,7 @@ import { getAnimeDetail, anilistToMediaItem } from '@/lib/anilist/client';
 import DetailsContent from '@/components/pages/DetailsContent';
 import DetailSeoContent from '@/components/seo/DetailSeoContent';
 import type { Metadata } from 'next';
-import { tmdbToMedia, isAnilistId, toAnilistId } from '@/types';
+import { tmdbToMedia, isAnilistId, toAnilistId, ANILIST_ID_OFFSET } from '@/types';
 import type { TMDBShow, MediaItem } from '@/types';
 import {
   buildShowMetadata,
@@ -172,6 +172,35 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         const title = data.title.english || data.title.romaji || data.title.native || 'Anime';
         const cover = data.coverImage?.extraLarge || data.coverImage?.large;
         const description = (data.description?.replace(/<[^>]*>/g, '') || '').slice(0, 500);
+        const studioNames = data.studios?.nodes?.map(s => s.name).filter(Boolean) || [];
+
+        // Build non-spoiler tag list for genres-like enrichment
+        const tagNames = (data.tags || [])
+          .filter(t => !t.isMediaSpoiler && (t.rank ?? 0) < 30)
+          .map(t => t.name);
+
+        // Build similar anime list from AniList recommendations
+        const recNodes = (data as unknown as { recommendations?: { nodes: Array<{ mediaRecommendation: { id: number; title: { romaji: string | null; english: string | null; native: string | null }; meanScore: number | null; startDate: { year: number | null } | null } }> } }).recommendations?.nodes || [];
+        const similarAnime = recNodes
+          .map(n => {
+            const rec = n.mediaRecommendation;
+            if (!rec) return null;
+            return {
+              id: rec.id + ANILIST_ID_OFFSET, // Namespace the AniList ID
+              title: rec.title.english || rec.title.romaji || rec.title.native || undefined,
+              vote_average: rec.meanScore ? rec.meanScore / 10 : undefined,
+              release_date: rec.startDate?.year ? `${rec.startDate.year}-01-01` : undefined,
+            };
+          })
+          .filter((s): s is NonNullable<typeof s> => s !== null && s.title !== undefined);
+
+        const releaseDate = data.startDate?.year
+          ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}`
+          : undefined;
+
+        // AniList meanScore is 0-100, convert to 0-10 for TMDB-compatible rating
+        const rating10 = data.meanScore ? data.meanScore / 10 : undefined;
+
         jsonLd = {
           '@context': 'https://schema.org',
           '@type': data.format === 'TV' || data.format === 'TV_SHORT' ? 'TVSeries' : 'Movie',
@@ -179,61 +208,85 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
           description,
           image: cover || undefined,
           url: `${SITE_URL}/details/${showId}`,
-          datePublished: data.startDate?.year ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}` : undefined,
+          datePublished: releaseDate,
           ...(data.episodes ? { numberOfEpisodes: data.episodes } : {}),
-          aggregateRating: data.meanScore ? {
-            '@type': 'AggregateRating',
-            ratingValue: (data.meanScore / 10).toFixed(1),
-            bestRating: '10',
-            ratingCount: data.favourites || undefined,
-          } : undefined,
+          ...(data.duration ? { duration: `PT${data.duration}M` } : {}),
+          ...(rating10 ? {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: rating10.toFixed(1),
+              bestRating: '10',
+              ratingCount: data.popularity || undefined,
+            },
+          } : {}),
           genre: data.genres?.slice(0, 5) || undefined,
+          ...(studioNames.length > 0 ? { productionCompany: studioNames.slice(0, 3) } : {}),
         };
+
+        // Build VideoObject with trailer
+        const trailerUrl = data.trailer?.site === 'youtube' ? `https://www.youtube.com/watch?v=${data.trailer.id}` : undefined;
         videoJsonLd = cover ? {
           '@context': 'https://schema.org',
           '@type': 'VideoObject',
           name: title,
           description,
           thumbnailUrl: cover,
-          uploadDate: data.startDate?.year ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}` : new Date().toISOString().split('T')[0],
+          uploadDate: releaseDate || new Date().toISOString().split('T')[0],
           contentUrl: `${SITE_URL}/details/${showId}`,
           embedUrl: `${SITE_URL}/details/${showId}`,
+          ...(trailerUrl ? { embedUrl: trailerUrl } : {}),
+          ...(data.duration ? { duration: `PT${data.duration}M` } : {}),
         } : null;
+
+        // Build season list for anime (AniList uses seasons, we show as Season 1)
+        const seasonList = data.episodes ? [{ season_number: 1, name: 'Season 1', episode_count: data.episodes }] : undefined;
+
+        return (
+          <>
+            {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
+            {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+                { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}/details/${showId}` },
+              ],
+            }) }} />
+            <DetailsContent showId={showId} initialShow={show} />
+            {/* SERVER-RENDERED SEO CONTENT for AniList anime */}
+            {show && (
+              <DetailSeoContent
+                title={show.title}
+                year={show.yr ? String(show.yr) : undefined}
+                overview={stripHtml(show.desc || '')}
+                genres={[...data.genres, ...tagNames.slice(0, 3)]}
+                genreIds={[]}
+                mediaType="anime"
+                showId={showId}
+                rating={rating10}
+                voteCount={data.popularity}
+                runtime={data.duration || undefined}
+                seasons={1}
+                episodes={data.episodes || undefined}
+                status={data.status === 'RELEASING' ? 'Returning Series' : data.status === 'FINISHED' ? 'Ended' : data.status === 'NOT_YET_RELEASED' ? 'Planned' : undefined}
+                releaseDate={releaseDate}
+                cast={[]}
+                similar={similarAnime}
+                productionCompanies={studioNames}
+                seasonList={seasonList}
+                originalTitle={data.title.romaji || data.title.native || undefined}
+                originalLanguage="ja"
+                popularity={data.popularity}
+              />
+            )}
+          </>
+        );
       }
     } catch { /* fall through to null */ }
     return (
       <>
-        {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
-        {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-            { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}/details/${showId}` },
-          ],
-        }) }} />
-        <DetailsContent showId={showId} initialShow={show} />
-        {/* SERVER-RENDERED SEO CONTENT for AniList anime */}
-        {show && (
-          <DetailSeoContent
-            title={show.title}
-            year={show.yr ? String(show.yr) : undefined}
-            overview={stripHtml(show.desc || '')}
-            genres={anilistData?.genres || []}
-            genreIds={[]}
-            mediaType="anime"
-            showId={showId}
-            rating={show.r ? show.r / 10 : undefined}
-            episodes={show.eps}
-            popularity={anilistData?.popularity || undefined}
-            originalTitle={anilistData?.title.romaji || anilistData?.title.native || undefined}
-            originalLanguage="ja"
-            status={anilistData?.status === 'RELEASING' ? 'Returning Series' : anilistData?.status === 'FINISHED' ? 'Ended' : undefined}
-            cast={[]}
-            similar={[]}
-          />
-        )}
+        <DetailsContent showId={showId} initialShow={null} />
       </>
     );
   }

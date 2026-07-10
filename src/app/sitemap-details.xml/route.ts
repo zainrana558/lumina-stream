@@ -1,12 +1,14 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch } from '@/lib/tmdb/server';
+import { browseAllAnime, getTrendingAnime, getTopRatedAnime, getPopularAnime } from '@/lib/anilist/client';
+import { ANILIST_ID_OFFSET } from '@/types';
 import { NextResponse } from 'next/server';
 
 /**
  * GET /sitemap-details.xml
  *
  * Dynamic sitemap for detail pages (/details/[id]).
- * Fetches popular/trending/top-rated content from TMDB and returns
+ * Fetches popular/trending/top-rated content from TMDB + AniList and returns
  * a proper XML sitemap. Google discovers the rest via internal links.
  *
  * Revalidated via cache headers (1 hour).
@@ -33,6 +35,70 @@ async function fetchTmdbIds(endpoint: string, pages: number = 3): Promise<number
       // Continue with what we have
     }
   }
+  return ids;
+}
+
+/** Fetch AniList anime IDs and namespace them for our URL scheme */
+async function fetchAnilistIds(): Promise<number[]> {
+  const ids: number[] = [];
+  const seen = new Set<number>();
+
+  try {
+    // Fetch from multiple AniList endpoints for broad coverage
+    const [trending, popular, topRated, browse] = await Promise.allSettled([
+      // Trending anime (5 pages = ~100 titles)
+      (async () => {
+        const all: number[] = [];
+        for (let p = 1; p <= 5; p++) {
+          const res = await getTrendingAnime(p, 20);
+          all.push(...res.media.map(m => m.id));
+        }
+        return all;
+      })(),
+      // Popular all-time (4 pages = ~80 titles)
+      (async () => {
+        const all: number[] = [];
+        for (let p = 1; p <= 4; p++) {
+          const res = await getPopularAnime(p, 20);
+          all.push(...res.media.map(m => m.id));
+        }
+        return all;
+      })(),
+      // Top rated (3 pages = ~60 titles)
+      (async () => {
+        const all: number[] = [];
+        for (let p = 1; p <= 3; p++) {
+          const res = await getTopRatedAnime(p, 20);
+          all.push(...res.media.map(m => m.id));
+        }
+        return all;
+      })(),
+      // Browse all (6 pages = ~150 titles, sorted by popularity)
+      (async () => {
+        const all: number[] = [];
+        for (let p = 1; p <= 6; p++) {
+          const res = await browseAllAnime(p, 25);
+          all.push(...res.media.map(m => m.id));
+        }
+        return all;
+      })(),
+    ]);
+
+    for (const result of [trending, popular, topRated, browse]) {
+      if (result.status === 'fulfilled') {
+        for (const rawId of result.value) {
+          const namespacedId = rawId + ANILIST_ID_OFFSET;
+          if (!seen.has(namespacedId)) {
+            seen.add(namespacedId);
+            ids.push(namespacedId);
+          }
+        }
+      }
+    }
+  } catch {
+    // AniList fetch failed — continue with TMDB-only sitemap
+  }
+
   return ids;
 }
 
@@ -64,6 +130,7 @@ export async function GET() {
       discoverDocumentary,
       discoverFantasy,
       discoverMystery,
+      anilistIds,
     ] = await Promise.all([
       fetchTmdbIds('/trending/all/week?language=en-US', 5),
       fetchTmdbIds('/movie/popular?language=en-US', 5),
@@ -87,12 +154,15 @@ export async function GET() {
       fetchTmdbIds('/discover/movie?with_genres=99&sort_by=popularity.desc&language=en-US', 2),
       fetchTmdbIds('/discover/movie?with_genres=14&sort_by=popularity.desc&language=en-US', 3),
       fetchTmdbIds('/discover/movie?with_genres=9648&sort_by=popularity.desc&language=en-US', 3),
+      fetchAnilistIds(),
     ]);
 
     // Deduplicate while preserving order (trending first for freshness)
     const seen = new Set<number>();
     const uniqueIds: number[] = [];
-    for (const id of [...trending, ...popularMovies, ...popularTv, ...topRatedMovies, ...topRatedTv, ...nowPlaying, ...onTheAir, ...upcoming, ...animationMovies, ...animationTv, ...discoverAction, ...discoverDrama, ...discoverComedy, ...discoverHorror, ...discoverSciFi, ...discoverRomance, ...discoverThriller, ...discoverAnimation, ...discoverCrime, ...discoverDocumentary, ...discoverFantasy, ...discoverMystery]) {
+    const allSources = [...trending, ...popularMovies, ...popularTv, ...topRatedMovies, ...topRatedTv, ...nowPlaying, ...onTheAir, ...upcoming, ...animationMovies, ...animationTv, ...discoverAction, ...discoverDrama, ...discoverComedy, ...discoverHorror, ...discoverSciFi, ...discoverRomance, ...discoverThriller, ...discoverAnimation, ...discoverCrime, ...discoverDocumentary, ...discoverFantasy, ...discoverMystery, ...anilistIds];
+
+    for (const id of allSources) {
       if (!seen.has(id)) {
         seen.add(id);
         uniqueIds.push(id);
