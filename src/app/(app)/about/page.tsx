@@ -9,15 +9,15 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/about`;
 
 export const metadata: Metadata = {
-  title: 'About Lumina Stream - Free Streaming Platform',
+  title: 'About Lumina Stream - Free Streaming Platform | Movies, TV Shows, Anime & Cartoons',
   description:
-    'Lumina Stream is a free streaming platform for movies, TV shows, anime, and cartoons. Learn about our mission, features, and how to discover your next favorite content.',
+    'Lumina Stream is a free streaming catalog powered by TMDB and AniList, offering detailed information on thousands of movies, TV shows, anime series, and cartoons. Discover content by genre, year, decade, or popularity with AI-powered recommendations, complete episode guides, cast filmographies, and personalized watchlists. No subscription required.',
   alternates: { canonical: pageUrl },
   openGraph: {
     type: 'website',
     url: pageUrl,
-    title: 'About Lumina Stream',
-    description: 'Learn about Lumina Stream — your free streaming platform for movies, TV shows, anime, and cartoons.',
+    title: 'About Lumina Stream — Free Streaming Catalog for Movies, TV Shows, Anime & Cartoons',
+    description: 'Discover how Lumina Stream aggregates data from TMDB and AniList to create the ultimate free content discovery platform with personalized recommendations, episode guides, and more.',
     siteName: 'Lumina Stream',
   },
 };
@@ -137,9 +137,25 @@ export default function AboutPage() {
           fontSize: 'clamp(1rem, 1.5vw, 1.15rem)',
           color: 'rgba(255,245,232,.7)',
           lineHeight: 1.8,
-          marginBottom: 48,
+          marginBottom: 20,
         }}>
           Lumina Stream is a free, beautifully designed streaming catalog that helps you discover movies, TV shows, anime, and cartoons. Powered by TMDB and AniList, we aggregate data from millions of titles to create the ultimate content discovery experience.
+        </p>
+        <p className="f-crimson" style={{
+          fontSize: 'clamp(.92rem, 1.3vw, 1.05rem)',
+          color: 'rgba(255,245,232,.55)',
+          lineHeight: 1.8,
+          marginBottom: 20,
+        }}>
+          Our platform was built with a single mission: make it effortless to find your next favorite movie, binge-worthy TV show, or the latest anime episode — all without paying a cent or creating an account. Unlike subscription-based streaming services that lock content behind paywalls, Lumina Stream provides a comprehensive, searchable catalog of entertainment that anyone can browse instantly. Whether you are looking for the highest-rated films of all time, trending anime from this season, hidden gems from the 1990s, or a specific episode from a long-running TV series, our platform is designed to get you there in as few clicks as possible.
+        </p>
+        <p className="f-crimson" style={{
+          fontSize: 'clamp(.92rem, 1.3vw, 1.05rem)',
+          color: 'rgba(255,245,232,.55)',
+          lineHeight: 1.8,
+          marginBottom: 48,
+        }}>
+          We combine data from The Movie Database (TMDB), the world&apos;s largest community-driven movie and TV database, with AniList, the premier platform for anime and manga tracking. This dual-source approach means you get the best of both worlds: Hollywood blockbusters, indie films, and popular TV series from TMDB alongside comprehensive anime coverage including seasonal charts, episode counts, and Japanese release information from AniList. Our catalog spans every major genre from action and horror to romance and documentary, covers content from every decade since the 1970s, and includes both English-language and international titles from Japanese, Korean, Spanish, French, and dozens of other film industries around the globe. Every title in our catalog comes with detailed cast and crew information, user ratings from millions of voters, production details, and AI-powered similar title recommendations to help you discover content you never knew existed.
         </p>
 
         {/* Feature Grid */}
@@ -148,7 +164,7 @@ export default function AboutPage() {
           color: '#FFF5E8',
           marginBottom: 20,
         }}>
-          What Makes Us Different
+          What Makes Lumina Stream Different
         </h2>
         <div style={{
           display: 'grid',
@@ -184,6 +200,39 @@ export default function AboutPage() {
             </div>
           ))}
         </div>
+
+        {/* How It Works */}
+        <h2 className="f-cinzel" style={{
+          fontSize: 'clamp(1.2rem, 2vw, 1.6rem)',
+          color: '#FFF5E8',
+          marginBottom: 16,
+        }}>
+          How Lumina Stream Works
+        </h2>
+        <p className="f-crimson" style={{
+          fontSize: 'clamp(.88rem, 1.2vw, 1rem)',
+          color: 'rgba(255,245,232,.55)',
+          lineHeight: 1.8,
+          marginBottom: 16,
+        }}>
+          Lumina Stream operates as a content discovery engine rather than a traditional streaming service. When you visit any title on our platform, you will find a comprehensive detail page that includes the full synopsis, cast and crew with links to their complete filmographies, user ratings aggregated from millions of TMDB and AniList users, production company information, season and episode breakdowns for TV series and anime, and AI-generated similar title recommendations. For TV shows and anime, we go even deeper — every individual episode has its own dedicated landing page with a unique synopsis, air date, runtime, individual episode rating, and links to navigate between episodes within the same season. This episode-level indexing means that if you are trying to find a specific moment from a show you watched, you can search for it and land on the exact episode page.
+        </p>
+        <p className="f-crimson" style={{
+          fontSize: 'clamp(.88rem, 1.2vw, 1rem)',
+          color: 'rgba(255,245,232,.55)',
+          lineHeight: 1.8,
+          marginBottom: 16,
+        }}>
+          Our genre system is designed for both casual browsers and dedicated genre fans. Six core genres — Anime, Cartoon, Horror, Romance, Mystery, and Fantasy — have dedicated portal pages with custom visual themes, curated content selections, sub-genre tags, and genre-specific editorial descriptions. These portal pages are designed to be immersive experiences that feel unique to each genre. Beyond the portal genres, we support over twenty additional genres through our TMDB-powered browse filters, including Action, Adventure, Comedy, Crime, Documentary, Drama, Family, History, Music, Science Fiction, Thriller, War, and Western. You can also explore our catalog chronologically using our decade pages (1970s through 2020s) and year pages (the current year back twenty years), making it easy to find the best content from any era.
+        </p>
+        <p className="f-crimson" style={{
+          fontSize: 'clamp(.88rem, 1.2vw, 1rem)',
+          color: 'rgba(255,245,232,.55)',
+          lineHeight: 1.8,
+          marginBottom: 48,
+        }}>
+          For users who want a more personalized experience, creating a free account unlocks additional features: personal watchlists with status tracking (plan to watch, watching, completed), release reminders that notify you when upcoming titles become available, viewing statistics that track your hours watched, title count, daily streaks, and monthly activity patterns, curated collections where you can organize titles into custom lists like &quot;My Top 10 Shonen&quot; or &quot;Weekend Binge Picks,&quot; and a Year in Review feature that compiles your streaming habits into a shareable annual summary. All of these features are completely optional — the core browsing and discovery experience requires no account whatsoever.
+        </p>
 
         {/* Quick Links */}
         <h2 className="f-cinzel" style={{

@@ -10,15 +10,15 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/genres`;
 
 export const metadata: Metadata = {
-  title: 'All Genres - Browse by Genre',
+  title: 'All Genres - Browse Movies, TV Shows, Anime & Cartoons by Genre | Lumina Stream',
   description:
-    'Explore all genres available on Lumina Stream. Browse movies and TV shows by Action, Comedy, Drama, Horror, Romance, Sci-Fi, Thriller, Mystery, Fantasy, Anime, Cartoons, and more.',
+    'Browse the complete genre catalog on Lumina Stream. Explore dedicated genre portals for Anime, Cartoon, Horror, Romance, Mystery, and Fantasy, plus 20+ additional genres including Action, Comedy, Drama, Sci-Fi, Thriller, Documentary, Crime, and more. Each genre page features curated titles, genre-specific descriptions, sub-genre filters, and personalized recommendations.',
   alternates: { canonical: pageUrl },
   openGraph: {
     type: 'website',
     url: pageUrl,
-    title: 'All Genres | Lumina Stream',
-    description: 'Browse all genres — Action, Comedy, Drama, Horror, Romance, Sci-Fi, and more.',
+    title: 'All Genres — Browse Movies, TV Shows, Anime & Cartoons by Genre | Lumina Stream',
+    description: 'Explore every genre on Lumina Stream — from Anime and Horror portals to Action, Comedy, Drama, Sci-Fi, and 20+ more genres with curated content.',
     siteName: 'Lumina Stream',
     images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'All Genres on Lumina Stream' }],
   },
@@ -47,6 +47,29 @@ const GENRE_DESCRIPTIONS: Record<string, string> = {
   Anime: 'Japanese animation spanning every genre — from action-packed shonen to heartwarming slice-of-life stories.',
   Cartoon: 'Fun animated series from Western studios — classics, modern hits, and family-friendly adventures.',
 };
+
+const GENRE_FAQ = [
+  {
+    q: 'How many genres are available on Lumina Stream?',
+    a: 'Lumina Stream offers over 25 genres organized into two tiers. Six core genres — Anime, Cartoon, Horror, Romance, Mystery, and Fantasy — have dedicated portal pages with custom visual themes, curated content selections, and sub-genre navigation. An additional 19+ genres including Action, Adventure, Comedy, Crime, Documentary, Drama, Family, History, Music, Science Fiction, Thriller, War, and Western are available through our TMDB-powered browse filters. Every genre page displays curated titles with ratings, descriptions, and direct links to individual title pages.',
+  },
+  {
+    q: 'What is the difference between genre portals and browse genres?',
+    a: 'Genre portals are immersive, dedicated pages for our six most popular genres (Anime, Cartoon, Horror, Romance, Mystery, Fantasy). Each portal features a custom color scheme, backdrop imagery, sub-genre tags, genre-specific editorial content, and a curated selection of titles. Browse genres use TMDB-powered filtering to show all titles matching a genre tag. Both approaches provide full access to our catalog — portals offer a more thematic, editorial experience while browse genres offer a comprehensive, filterable list view.',
+  },
+  {
+    q: 'Can I browse multiple genres at once?',
+    a: 'Yes. When using the browse page, you can combine genre filters with other criteria like release year, rating threshold, and sort order to find exactly the type of content you are looking for. For example, you can filter for Horror movies from the 2020s sorted by rating, or Comedy TV shows from the 2010s sorted by popularity. Each genre portal also includes sub-genre tags that let you narrow your selection within that genre.',
+  },
+  {
+    q: 'How often are genre pages updated with new content?',
+    a: 'Genre portal pages revalidate every hour, meaning new titles appear on genre pages within 60 minutes of being added to TMDB or AniList. Trending and popular content within each genre refreshes even more frequently. Our browse filters always query live data, so you always see the most current results when actively browsing.',
+  },
+  {
+    q: 'Does Lumina Stream have anime-specific genre browsing?',
+    a: 'Yes. Anime has its own dedicated genre portal at /genre/anime with a custom visual theme, curated anime selections, and sub-genre tags like Shonen, Shojo, Seinen, Isekai, and Slice of Life. Additionally, our seasonal anime page at /seasonal tracks currently airing anime by season, and our anime content is powered by AniList for the most comprehensive and up-to-date anime database available.',
+  },
+];
 
 const ALL_GENRES = [
   ...PORTAL_GENRES.map(g => ({ name: g.name, key: g.key, slug: `/genre/${g.key}`, color: g.tc })),
@@ -215,10 +238,21 @@ export default async function GenresPage() {
     ],
   };
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: GENRE_FAQ.map(item => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
+    })),
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       <style>{`
         .genre-portal-card {
@@ -419,6 +453,58 @@ export default async function GenresPage() {
               </p>
             </Link>
           ))}
+        </div>
+
+        {/* Genre FAQ */}
+        <h2 className="f-cinzel" style={{
+          fontSize: 'clamp(1.1rem, 1.8vw, 1.4rem)',
+          color: '#FFF5E8',
+          marginTop: 48,
+          marginBottom: 20,
+        }}>
+          Frequently Asked Questions About Genres
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {GENRE_FAQ.map(item => (
+            <details
+              key={item.q}
+              style={{
+                background: 'rgba(255,245,232,.03)',
+                border: '1px solid rgba(255,245,232,.07)',
+                borderRadius: 10,
+                padding: '14px 18px',
+                cursor: 'pointer',
+              }}
+            >
+              <summary className="f-cinzel" style={{
+                fontSize: '.88rem',
+                color: '#FFF5E8',
+                listStyle: 'none',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                {item.q}
+                <span style={{ color: 'rgba(255,245,232,.3)', fontSize: '.8rem' }}>+</span>
+              </summary>
+              <p className="f-crimson" style={{
+                fontSize: '.83rem',
+                color: 'rgba(255,245,232,.55)',
+                lineHeight: 1.7,
+                marginTop: 10,
+                marginBottom: 0,
+              }}>
+                {item.a}
+              </p>
+            </details>
+          ))}
+        </div>
+
+        {/* Cross-links for SEO */}
+        <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid rgba(255,245,232,.06)' }}>
+          <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.7, marginBottom: 12 }}>
+            Explore more ways to discover content on Lumina Stream: browse our complete <Link href="/browse" style={{ color: '#FFB347', textDecoration: 'none' }}>catalog</Link>, check out the <Link href="/top-rated" style={{ color: '#FFB347', textDecoration: 'none' }}>top-rated titles</Link>, find the <Link href="/new-releases" style={{ color: '#FFB347', textDecoration: 'none' }}>newest releases</Link>, explore content by <Link href="/decade/2020s" style={{ color: '#FFB347', textDecoration: 'none' }}>decade</Link> or <Link href={`/year/${new Date().getFullYear()}`} style={{ color: '#FFB347', textDecoration: 'none' }}>year</Link>, track <Link href="/seasonal" style={{ color: '#FFB347', textDecoration: 'none' }}>seasonal anime</Link>, or plan your next binge with our <Link href="/release-calendar" style={{ color: '#FFB347', textDecoration: 'none' }}>release calendar</Link>.
+          </p>
         </div>
       </div>
     </>
