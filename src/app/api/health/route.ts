@@ -14,21 +14,33 @@ export async function GET() {
       detail: hasCredentials ? 'Configured' : 'Not configured',
     };
 
-    // Test actual TMDB API call
+    // Test TMDB API through the same path the app uses (Cloudflare Worker or direct)
     if (hasCredentials) {
-      const headers: Record<string, string> = {};
-      if (env.TMDB_BEARER_TOKEN) {
-        headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+      const cacheUrl = process.env.API_CACHE_URL;
+      const testUrl = cacheUrl
+        ? `${cacheUrl}/tmdb/trending/all/week?language=en-US`
+        : 'https://api.themoviedb.org/3/trending/all/week?language=en-US';
+
+      const headers: Record<string, string> = { 'Accept': 'application/json' };
+      if (cacheUrl) {
+        // Route through Cloudflare Worker (sends auth via header)
+        if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
+        else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
+      } else {
+        // Direct TMDB call
+        if (env.TMDB_BEARER_TOKEN) headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+        else if (env.TMDB_API_KEY) testUrl += `&api_key=${env.TMDB_API_KEY}`;
       }
-      const url = 'https://api.themoviedb.org/3/trending/all/week';
+
       const t0 = Date.now();
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(5000) });
+      const res = await fetch(testUrl, { headers, signal: AbortSignal.timeout(5000) });
       const latency = Date.now() - t0;
       const data = await res.json();
+      const cacheStatus = res.headers.get('x-cache-status') || 'direct';
       checks.tmdb_api = {
         ok: res.ok && !!data.results,
         detail: res.ok
-          ? `API responding in ${latency}ms — trending has ${data.total_results || data.results?.length || 0} results`
+          ? `OK via ${cacheUrl ? `Worker (${cacheStatus})` : 'direct'} in ${latency}ms — ${data.total_results || data.results?.length || 0} results`
           : `API returned ${res.status}: ${JSON.stringify(data).slice(0, 200)}`,
         latencyMs: latency,
       };
