@@ -32,6 +32,7 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/disclaimer") ||
     pathname.startsWith("/decade/") ||
     pathname.startsWith("/year/") ||
+    pathname.startsWith("/blog") ||
     pathname.startsWith("/seasonal") ||
     pathname.startsWith("/leaderboard") ||
     pathname.startsWith("/release-calendar") ||
@@ -173,6 +174,43 @@ function isBot(ua: string | null): boolean {
 
 // ── Middleware ──────────────────────────────────────────────────────────────
 export default async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // ── Fast path: public pages skip Supabase entirely ──────────────────────
+  // Calling supabase.auth.getUser() reads cookies, which makes Next.js mark
+  // the response as dynamic (private, no-store). This kills CDN caching and
+  // forces full SSR + TMDB API calls on EVERY page view (~66k Worker
+  // invocations/day). Public pages don't need auth — skip it.
+  if (isPublicPath(pathname)) {
+    const response = NextResponse.next({ request });
+
+    // Still rate-limit API routes even on public paths
+    if (pathname.startsWith("/api/")) {
+      const ip = getClientIp(request);
+      if (!isBot(request.headers.get("user-agent"))) {
+        const rl = checkGlobalRateLimit(ip);
+        if (!rl.success) {
+          return NextResponse.json(
+            { error: "Too many requests. Please slow down." },
+            {
+              status: 429,
+              headers: {
+                "Retry-After":          "10",
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset":     String(Math.ceil((Date.now() + GLOBAL_WINDOW_MS) / 1000)),
+              },
+            }
+          );
+        }
+        response.headers.set("X-RateLimit-Remaining", String(rl.remaining));
+      }
+    }
+
+    setSecurityHeaders(response, pathname, request);
+    return response;
+  }
+
+  // ── Protected paths: full auth check ────────────────────────────────────
   try {
     const { createServerClient } = await import("@supabase/ssr");
     let supabaseResponse = NextResponse.next();
@@ -205,11 +243,10 @@ export default async function middleware(request: NextRequest) {
     );
 
     const { data: { user } } = await supabase.auth.getUser();
-    const pathname  = request.nextUrl.pathname;
     const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
 
-    // Unauthenticated → /login (not /, which would cause a confusing redirect loop)
-    if (!user && !isAuthPage && !isPublicPath(pathname)) {
+    // Unauthenticated → /login
+    if (!user && !isAuthPage) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
@@ -219,8 +256,6 @@ export default async function middleware(request: NextRequest) {
     }
 
     // Validate profile_id cookie ownership (prevent cookie-stuffing)
-    // BLOCKS the request if the profile doesn't belong to this user,
-    // preventing one-request window of unauthorized data access.
     if (user) {
       const profileIdCookie = request.cookies.get("profile_id")?.value;
       if (profileIdCookie) {
@@ -233,7 +268,6 @@ export default async function middleware(request: NextRequest) {
             .maybeSingle();
 
           if (!profile) {
-            // Clear the invalid cookie and redirect to force re-selection
             supabaseResponse.cookies.set("profile_id", "", {
               path:     "/",
               maxAge:   0,
@@ -244,7 +278,6 @@ export default async function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL("/profiles", request.url));
           }
         } catch {
-          // Profile check failed — fail closed: clear cookie and redirect
           supabaseResponse.cookies.set("profile_id", "", {
             path:     "/",
             maxAge:   0,
@@ -254,28 +287,6 @@ export default async function middleware(request: NextRequest) {
           });
           return NextResponse.redirect(new URL("/profiles", request.url));
         }
-      }
-    }
-
-    // Global rate limiting on API routes
-    if (pathname.startsWith("/api/")) {
-      const ip = getClientIp(request);
-      if (!isBot(request.headers.get("user-agent"))) {
-        const rl = checkGlobalRateLimit(ip);
-        if (!rl.success) {
-          return NextResponse.json(
-            { error: "Too many requests. Please slow down." },
-            {
-              status: 429,
-              headers: {
-                "Retry-After":          "10",
-                "X-RateLimit-Remaining": "0",
-                "X-RateLimit-Reset":     String(Math.ceil((Date.now() + GLOBAL_WINDOW_MS) / 1000)),
-              },
-            }
-          );
-        }
-        supabaseResponse.headers.set("X-RateLimit-Remaining", String(rl.remaining));
       }
     }
 
@@ -298,24 +309,15 @@ export default async function middleware(request: NextRequest) {
     return supabaseResponse;
 
   } catch {
-    // Middleware error — fail open for public/auth pages, redirect to /login for protected
-    const { pathname } = request.nextUrl;
-    const isAuthPage   = pathname.startsWith("/login") || pathname.startsWith("/signup");
+    const { pathname: pn } = request.nextUrl;
+    const isAuthPage   = pn.startsWith("/login") || pn.startsWith("/signup");
 
-    if (!isAuthPage && !isPublicPath(pathname)) {
+    if (!isAuthPage && !isPublicPath(pn)) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    const response = NextResponse.next();
-    setSecurityHeaders(response, pathname, request);
-    // Also restore caching in the error path
-    if (!pathname.startsWith("/api/")) {
-      response.headers.set(
-        "Cache-Control",
-        "public, s-maxage=300, stale-while-revalidate=600, max-age=60"
-      );
-      response.headers.set("X-MW-Cache", "error-path");
-    }
+    const response = NextResponse.next({ request });
+    setSecurityHeaders(response, pn, request);
     return response;
   }
 }
