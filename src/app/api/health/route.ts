@@ -17,7 +17,7 @@ export async function GET() {
     // Test TMDB API through the same path the app uses (Cloudflare Worker or direct)
     if (hasCredentials) {
       const cacheUrl = process.env.API_CACHE_URL;
-      const testUrl = cacheUrl
+      let testUrl: string = cacheUrl
         ? `${cacheUrl}/tmdb/trending/all/week?language=en-US`
         : 'https://api.themoviedb.org/3/trending/all/week?language=en-US';
 
