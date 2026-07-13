@@ -101,7 +101,7 @@ export default async function BrowsePage() {
         <BrowseClient initialShows={shows} />
       </Suspense>
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
-        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Browse the Full Lumovia Catalog</h2>
+        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Browse the Full Lumovia Catalog</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
           Dive into the full Lumovia catalog. Browse combines trending, popular, and top-rated movies and TV shows into a single powerful discovery page. Use the built-in search and genre filters to narrow down results by mood, era, or rating. Our catalog is powered by TMDB and AniList, giving you access to thousands of titles across every genre — from Hollywood blockbusters and acclaimed TV dramas to Japanese anime and Western cartoons — all in one place. This is the most flexible page on the site: start with the pre-loaded results above, then refine with genre tags, sort by newest or highest-rated, or type a title into the search bar. Whether you know exactly what you want or you are just exploring, the Browse page adapts to your preferences and surfaces relevant results instantly. New content is synced from TMDB and AniList every few minutes, ensuring the catalog always feels fresh and up to date.
         </p>

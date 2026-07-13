@@ -101,7 +101,7 @@ export default async function MoviesPage() {
         <BrowseClient initialShows={shows} />
       </Suspense>
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
-        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Explore Thousands of Free Movies Online</h2>
+        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Explore Thousands of Free Movies Online</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
           Explore thousands of movies from every era and genre. From Hollywood blockbusters and award-winning dramas to indie hidden gems and international cinema, our catalog spans action, comedy, horror, sci-fi, romance, thriller, and beyond. Whether you are looking for a recent theatrical release, a critically acclaimed classic, or an undiscovered favorite, you will find it here. Every title on this page is sourced from TMDB and refreshed throughout the day, so new movies appear as soon as they become popular. Use the search bar and genre filters to narrow results by mood, rating, or release year. You can also sort by popularity, newest first, or highest rated to quickly surface the best options. From Oscar-winning masterpieces and cult classics to the latest superhero sequels and indie festival darlings, Lumovia offers one of the most comprehensive free movie catalogs available online. Start browsing and find your next favorite film.
         </p>

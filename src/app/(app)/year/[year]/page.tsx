@@ -142,7 +142,7 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
         <BrowseClient initialShows={shows} />
       </Suspense>
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
-        <h2 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>{isFuture ? `Upcoming ${year}` : `${year}`}</h2>
+        <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>{isFuture ? `Upcoming ${year}` : `${year}`}</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
           {isFuture
             ? `Get a head start on ${year}. This page previews the most anticipated movies and TV shows scheduled for release throughout the year, from blockbuster franchise installments to promising indie films and new series pickups. Check back regularly as release dates are finalized and new titles are announced. We pull data from TMDB using discover filters for both movies and television, sorting by popularity and rating to surface the titles generating the most excitement. Use the genre and sort controls above to refine your view of what ${year} has to offer.`
