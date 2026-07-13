@@ -81,18 +81,26 @@ export async function GET(request: Request) {
 
   // ── 1. Core Services (always checked) ──
 
-  // TMDB API
+  // TMDB API — route through Cloudflare Worker to leverage edge cache
   const tmdbCheck = checkService('TMDB API', async () => {
     const env = getValidatedEnv();
-    const headers: Record<string, string> = {};
-    if (env.TMDB_BEARER_TOKEN) {
-      headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+    const headers: Record<string, string> = { 'Accept': 'application/json' };
+    const cacheUrl = process.env.API_CACHE_URL;
+    let url: string;
+    if (cacheUrl) {
+      url = `${cacheUrl}/tmdb/genre/movie/list?language=en-US`;
+      if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
+      else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
     } else {
-      headers['Content-Type'] = 'application/json';
+      if (env.TMDB_BEARER_TOKEN) {
+        headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
+      } else {
+        headers['Content-Type'] = 'application/json';
+      }
+      url = env.TMDB_BEARER_TOKEN
+        ? 'https://api.themoviedb.org/3/genre/movie/list?language=en-US'
+        : `https://api.themoviedb.org/3/genre/movie/list?api_key=${env.TMDB_API_KEY}&language=en-US`;
     }
-    const url = env.TMDB_BEARER_TOKEN
-      ? 'https://api.themoviedb.org/3/genre/movie/list?language=en-US'
-      : `https://api.themoviedb.org/3/genre/movie/list?api_key=${env.TMDB_API_KEY}&language=en-US`;
     const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();

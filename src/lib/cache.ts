@@ -24,12 +24,12 @@ const CACHE_VERSION = 'v4';
 // Kept short so content stays fresh and up-to-date.
 // TMDB trending/discover data changes frequently (daily).
 export const CACHE_TTL = {
-  trending:     15 * 60,       // 15 min — trending changes rapidly
-  popular:      30 * 60,       // 30 min
-  search:       15 * 60,       // 15 min — search results should be fresh
-  details:      3 * 60 * 60,   // 3 hours — details change less often
+  trending:     1 * 60 * 60,   // 1 hour (was 15 min — reduces Worker calls significantly)
+  popular:      2 * 60 * 60,   // 2 hours (was 30 min)
+  search:       30 * 60,       // 30 min (was 15 min)
+  details:      3 * 60 * 60,   // 3 hours
   season:       3 * 60 * 60,   // 3 hours
-  discover:     30 * 60,       // 30 min — was 2hr, too stale
+  discover:     2 * 60 * 60,   // 2 hours (was 30 min)
   genre:        6 * 60 * 60,   // 6 hours (genre list rarely changes)
   credits:      3 * 60 * 60,   // 3 hours
   videos:       3 * 60 * 60,   // 3 hours

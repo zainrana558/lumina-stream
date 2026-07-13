@@ -50,7 +50,10 @@ async function tmdbProxyFetch(endpoint: string, params: URLSearchParams) {
 
   const res = await fetch(fetchUrl, {
     headers,
-    cache: 'no-store',
+    // No cache: 'no-store' — let Next.js use the Worker's edge cache.
+    // The Worker already has TTL-based caching; Redis is L1 cache.
+    // Removing no-store allows Next.js to avoid redundant Worker calls
+    // when multiple serverless instances handle the same query concurrently.
   });
 
   if (!res.ok) {

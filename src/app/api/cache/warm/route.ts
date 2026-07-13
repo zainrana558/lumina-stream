@@ -39,9 +39,8 @@ const TMDB_GENRES = PORTAL_GENRES
     keywordParams: g.keywordParams,
   }));
 
-// TMDB caps meaningful results at ~500 pages.
-// 100 pages × 20 results = up to 2000 quality items per genre.
-const WARM_PAGES = 100;
+// 5 pages × 20 results = ~100 quality items per genre (reduced from 100 pages for Worker cost).
+const WARM_PAGES = 5;
 const BATCH_SIZE = 5;
 
 // ─── Concurrency limiter ──────────────────────────────────────────────────
@@ -245,13 +244,13 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
 
   const [trendingPages, moviePages, tvPages] = await Promise.all([
     Promise.all(
-      Array.from({ length: 30 }, (_, i) =>
+      Array.from({ length: 3 }, (_, i) =>
         tmdbFetch<{ results?: TMDBShow[] }>('/trending/all/week', { page: String(i + 1) })
           .catch(() => ({ results: [] as TMDBShow[] }))
       )
     ),
-    fetchPages('movie', { sort_by: 'popularity.desc', vote_count_gte: '100' }, 20),
-    fetchPages('tv',    { sort_by: 'popularity.desc', vote_count_gte: '50'  }, 20),
+    fetchPages('movie', { sort_by: 'popularity.desc', vote_count_gte: '100' }, 3),
+    fetchPages('tv',    { sort_by: 'popularity.desc', vote_count_gte: '50'  }, 3),
   ]);
 
   const trendingRaw = trendingPages.flatMap(p => (p.results ?? []) as TMDBShow[]);

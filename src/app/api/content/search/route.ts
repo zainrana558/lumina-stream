@@ -149,7 +149,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { results: allResults.slice(0, 40), total: allResults.length, page: parseInt(page) },
-      { headers: rateLimitHeaders(rl) },
+      {
+        headers: {
+          ...rateLimitHeaders(rl),
+          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+        },
+      },
     );
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
