@@ -11,7 +11,7 @@ import { NextResponse } from 'next/server';
  * Fetches popular/trending/top-rated content from TMDB + AniList and returns
  * a proper XML sitemap. Google discovers the rest via internal links.
  *
- * Revalidated via cache headers (1 hour).
+ * Cached at CDN edge for 24 hours (s-maxage=86400).
  */
 
 interface TMDBItem {
@@ -19,7 +19,7 @@ interface TMDBItem {
   popularity: number;
 }
 
-async function fetchTmdbIds(endpoint: string, pages: number = 3): Promise<number[]> {
+async function fetchTmdbIds(endpoint: string, pages: number = 2): Promise<number[]> {
   const ids: number[] = [];
   for (let page = 1; page <= pages; page++) {
     try {
@@ -46,37 +46,37 @@ async function fetchAnilistIds(): Promise<number[]> {
   try {
     // Fetch from multiple AniList endpoints for broad coverage
     const [trending, popular, topRated, browse] = await Promise.allSettled([
-      // Trending anime (5 pages = ~100 titles)
+      // Trending anime (3 pages = ~60 titles)
       (async () => {
         const all: number[] = [];
-        for (let p = 1; p <= 5; p++) {
+        for (let p = 1; p <= 3; p++) {
           const res = await getTrendingAnime(p, 20);
           all.push(...res.media.map(m => m.id));
         }
         return all;
       })(),
-      // Popular all-time (4 pages = ~80 titles)
+      // Popular all-time (2 pages = ~40 titles)
       (async () => {
         const all: number[] = [];
-        for (let p = 1; p <= 4; p++) {
+        for (let p = 1; p <= 2; p++) {
           const res = await getPopularAnime(p, 20);
           all.push(...res.media.map(m => m.id));
         }
         return all;
       })(),
-      // Top rated (3 pages = ~60 titles)
+      // Top rated (2 pages = ~40 titles)
       (async () => {
         const all: number[] = [];
-        for (let p = 1; p <= 3; p++) {
+        for (let p = 1; p <= 2; p++) {
           const res = await getTopRatedAnime(p, 20);
           all.push(...res.media.map(m => m.id));
         }
         return all;
       })(),
-      // Browse all (6 pages = ~150 titles, sorted by popularity)
+      // Browse all (3 pages = ~75 titles, sorted by popularity)
       (async () => {
         const all: number[] = [];
-        for (let p = 1; p <= 6; p++) {
+        for (let p = 1; p <= 3; p++) {
           const res = await browseAllAnime(p, 25);
           all.push(...res.media.map(m => m.id));
         }
@@ -106,7 +106,7 @@ export async function GET() {
   const now = new Date().toISOString().split('T')[0];
 
   try {
-    // Fetch popular content across MANY categories for maximum URL coverage
+    // Fetch popular content from 8 core TMDB endpoints (reduced from 22)
     const [
       trending,
       popularMovies,
@@ -115,52 +115,24 @@ export async function GET() {
       topRatedTv,
       nowPlaying,
       onTheAir,
-      upcoming,
-      animationMovies,
-      animationTv,
-      discoverAction,
-      discoverDrama,
-      discoverComedy,
-      discoverHorror,
-      discoverSciFi,
-      discoverRomance,
-      discoverThriller,
-      discoverAnimation,
-      discoverCrime,
-      discoverDocumentary,
-      discoverFantasy,
-      discoverMystery,
+      topAnimation,
       anilistIds,
     ] = await Promise.all([
-      fetchTmdbIds('/trending/all/week?language=en-US', 5),
-      fetchTmdbIds('/movie/popular?language=en-US', 5),
-      fetchTmdbIds('/tv/popular?language=en-US', 5),
-      fetchTmdbIds('/movie/top_rated?language=en-US', 5),
-      fetchTmdbIds('/tv/top_rated?language=en-US', 5),
-      fetchTmdbIds('/movie/now_playing?language=en-US', 3),
-      fetchTmdbIds('/tv/on_the_air?language=en-US', 3),
-      fetchTmdbIds('/movie/upcoming?language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=16&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/tv?with_genres=16&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=28&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=18&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=35&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=27&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=878&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=10749&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=53&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=16&sort_by=vote_average.desc&vote_count.gte=100&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=80&sort_by=popularity.desc&language=en-US', 2),
-      fetchTmdbIds('/discover/movie?with_genres=99&sort_by=popularity.desc&language=en-US', 2),
-      fetchTmdbIds('/discover/movie?with_genres=14&sort_by=popularity.desc&language=en-US', 3),
-      fetchTmdbIds('/discover/movie?with_genres=9648&sort_by=popularity.desc&language=en-US', 3),
+      fetchTmdbIds('/trending/all/week?language=en-US', 2),
+      fetchTmdbIds('/movie/popular?language=en-US', 3),
+      fetchTmdbIds('/tv/popular?language=en-US', 2),
+      fetchTmdbIds('/movie/top_rated?language=en-US', 2),
+      fetchTmdbIds('/tv/top_rated?language=en-US', 2),
+      fetchTmdbIds('/movie/now_playing?language=en-US', 2),
+      fetchTmdbIds('/tv/on_the_air?language=en-US', 2),
+      fetchTmdbIds('/discover/movie?with_genres=16&sort_by=popularity.desc&language=en-US', 2),
       fetchAnilistIds(),
     ]);
 
     // Deduplicate while preserving order (trending first for freshness)
     const seen = new Set<number>();
     const uniqueIds: number[] = [];
-    const allSources = [...trending, ...popularMovies, ...popularTv, ...topRatedMovies, ...topRatedTv, ...nowPlaying, ...onTheAir, ...upcoming, ...animationMovies, ...animationTv, ...discoverAction, ...discoverDrama, ...discoverComedy, ...discoverHorror, ...discoverSciFi, ...discoverRomance, ...discoverThriller, ...discoverAnimation, ...discoverCrime, ...discoverDocumentary, ...discoverFantasy, ...discoverMystery, ...anilistIds];
+    const allSources = [...trending, ...popularMovies, ...popularTv, ...topRatedMovies, ...topRatedTv, ...nowPlaying, ...onTheAir, ...topAnimation, ...anilistIds];
 
     for (const id of allSources) {
       if (!seen.has(id)) {
@@ -186,7 +158,7 @@ ${urls.map(id => `  <url>
     return new NextResponse(xml, {
       headers: {
         'Content-Type': 'application/xml',
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200',
       },
     });
   } catch {
@@ -197,7 +169,7 @@ ${urls.map(id => `  <url>
     return new NextResponse(xml, {
       headers: {
         'Content-Type': 'application/xml',
-        'Cache-Control': 'public, s-maxage=60',
+        'Cache-Control': 'public, s-maxage=300',
       },
     });
   }

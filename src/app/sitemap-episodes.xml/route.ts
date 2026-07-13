@@ -5,12 +5,13 @@ import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb
 /**
  * Episode sitemap — Programmatic SEO for individual episode landing pages.
  *
- * Strategy: Include ALL episodes for the top ~80 popular/trending TV shows.
- * Each show includes all seasons (capped at 99 seasons) with ALL episodes
- * per season (no artificial cap).
+ * Strategy: Include ALL episodes for the top ~30 popular/trending TV shows.
+ * Each show includes seasons (capped at 10) with ALL episodes per season.
  *
  * Movies are excluded (single-episode content has no per-episode routes).
  * AniList anime episodes are discovered via internal links from detail pages.
+ *
+ * Cached at CDN edge for 24 hours (s-maxage=86400).
  */
 
 interface TMDBEpisode {
@@ -21,10 +22,10 @@ export async function GET() {
   const baseUrl = CANONICAL_BASE;
   const now = new Date().toISOString();
 
-  // 1. Fetch top TV shows (popular + top_rated + trending, 3 pages each = ~80 shows)
+  // 1. Fetch top TV shows (popular + top_rated + trending, 2+2+1 pages = ~30 shows)
   const tvShows: TMDBMediaItem[] = [];
 
-  async function fetchTvPages(endpoint: string, maxPages = 3) {
+  async function fetchTvPages(endpoint: string, maxPages = 2) {
     const promises = Array.from({ length: maxPages }, (_, i) =>
       tmdbFetch<TMDBListResponse<TMDBMediaItem>>(endpoint, { page: String(i + 1) })
         .then(data => { tvShows.push(...data.results.filter(r => r.media_type === 'tv' || !r.media_type)); })
@@ -34,9 +35,9 @@ export async function GET() {
   }
 
   await Promise.allSettled([
-    fetchTvPages('/tv/popular', 3),
-    fetchTvPages('/tv/top_rated', 3),
-    fetchTvPages('/trending/tv/week', 2),
+    fetchTvPages('/tv/popular', 2),
+    fetchTvPages('/tv/top_rated', 2),
+    fetchTvPages('/trending/tv/week', 1),
   ]);
 
   // Deduplicate
@@ -45,10 +46,10 @@ export async function GET() {
     if (seen.has(s.id)) return false;
     seen.add(s.id);
     return true;
-  }).slice(0, 80); // Cap at 80 shows
+  }).slice(0, 30); // Cap at 30 shows
 
   // 2. Fetch all seasons for each show (parallel, with error tolerance)
-  const MAX_SEASONS = 99;
+  const MAX_SEASONS = 10;
   const episodeUrls: string[] = [];
 
   const episodePromises = uniqueShows.map(async (show) => {
@@ -65,7 +66,6 @@ export async function GET() {
       tmdbFetch<{ episodes: TMDBEpisode[] }>(`/tv/${show.id}/season/${i + 1}`)
         .then(seasonData => {
           const episodes = seasonData?.episodes || [];
-          // Include ALL episodes — no cap
           for (const ep of episodes) {
             episodeUrls.push(
               `  <url>\n    <loc>${baseUrl}/details/${show.id}/season/${i + 1}/episode/${ep.episode_number}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.6</priority>\n  </url>`
@@ -87,7 +87,7 @@ ${episodeUrls.join('\n')}
   return new NextResponse(xml, {
     headers: {
       'Content-Type': 'application/xml',
-      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200',
     },
   });
 }
