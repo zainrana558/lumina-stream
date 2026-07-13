@@ -45,6 +45,7 @@ interface SeoContentProps {
   genreIds?: number[];
   mediaType: 'movie' | 'tv' | 'anime';
   showId: number;
+  anilistId?: number;
   rating?: number;
   voteCount?: number;
   runtime?: number;
@@ -180,7 +181,7 @@ function buildFaq(props: SeoContentProps): Array<{ q: string; a: string }> {
     a: `You can discover and explore ${title} on Lumovia — a free platform that provides the most comprehensive information about ${title} available online, including cast and crew details, user ratings from millions of TMDB and AniList users, trailer links, episode guides for TV series, and AI-powered similar title recommendations. No subscription or sign-up is required to browse.`,
   });
 
-  return faq.slice(0, 7);
+  return faq.slice(0, 4);
 }
 
 /** Build FAQ JSON-LD schema */
@@ -208,7 +209,7 @@ function getDecadeLink(year?: string): { label: string; href: string } | null {
 export default function DetailSeoContent(props: SeoContentProps) {
   const {
     title, year, overview, tagline, genres, genreIds, mediaType, showId,
-    rating, voteCount, runtime, seasons, episodes, status, contentRating,
+    anilistId, rating, voteCount, runtime, seasons, episodes, status, contentRating,
     releaseDate, cast, similar, productionCompanies, seasonList,
     originalTitle, originalLanguage, popularity,
   } = props;
@@ -222,14 +223,14 @@ export default function DetailSeoContent(props: SeoContentProps) {
     9648: '/genre/mystery', 14: '/genre/fantasy',
   };
 
-  const castNames = cast.slice(0, 10);
+  const castNames = cast.slice(0, 6);
   const castText = castNames.length > 0
-    ? `${title} features ${castNames.slice(0, 3).map(c => c.name).join(', ')}${castNames.length > 3 ? `, ${castNames.slice(3, 6).map(c => c.name).join(', ')}` : ''}${castNames.length > 6 ? `, and ${castNames.slice(6).map(c => c.name).join(', ')}` : ''} in its cast. Each cast member's page on Lumovia includes their complete filmography, a detailed biography, and links to every movie and TV show they have appeared in — making it easy to discover new content through your favorite actors.`
+    ? `${title} features ${castNames.map(c => c.name).join(', ')} in its cast. Explore each cast member's filmography on Lumovia.`
     : '';
 
-  const similarNames = similar.slice(0, 8).map(s => s.title || s.name || '').filter(Boolean);
+  const similarNames = similar.slice(0, 5).map(s => s.title || s.name || '').filter(Boolean);
   const similarText = similarNames.length > 0
-    ? `If you enjoyed ${title}, you might also like ${similarNames.slice(0, 3).join(', ')}${similarNames.length > 3 ? `, ${similarNames[3]}` : ''}${similarNames.length > 4 ? `, and ${similarNames[4]}` : ''}. All of these titles are available to explore on Lumovia with full cast details, ratings, trailers, and episode guides. Our recommendation system analyzes genre, rating, and audience patterns to surface the most relevant similar titles for every show in our catalog.`
+    ? `If you enjoyed ${title}, you might also like ${similarNames.slice(0, 3).join(', ')}${similarNames.length > 3 ? `, and ${similarNames[3]}` : ''}. All available to explore on Lumovia.`
     : '';
 
   // Build unique genre analysis paragraph
@@ -382,7 +383,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
           <>
             <div className="section-label f-cinzel">Cast &amp; Crew</div>
             <div className="cast-list">
-              {cast.slice(0, 12).map(c => (
+              {cast.slice(0, 6).map(c => (
                 <span key={c.id} className="cast-item">
                   <a href={`/person/${c.id}`}>
                     {c.name}{c.character ? ` as ${c.character}` : ''}
@@ -405,7 +406,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
           <>
             <div className="section-label f-cinzel">You Might Also Like</div>
             <div className="similar-list">
-              {similar.slice(0, 10).map(s => (
+              {similar.slice(0, 5).map(s => (
                 <span key={s.id} className="similar-item">
                   <a href={`/details/${s.id}`}>
                     {s.title || s.name}
@@ -442,7 +443,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
             </a>
           )}
           <a
-            href="https://anilist.co/"
+            href={anilistId ? `https://anilist.co/anime/${anilistId}/` : (mediaType === 'anime' ? `https://anilist.co/search/anime?search=${encodeURIComponent(title)}` : `https://anilist.co/`)}
             target="_blank"
             rel="noopener noreferrer"
             style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
@@ -456,6 +457,14 @@ export default function DetailSeoContent(props: SeoContentProps) {
             style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
           >
             Google Search
+          </a>
+          <a
+            href={`https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
+          >
+            Wikipedia
           </a>
         </div>
 

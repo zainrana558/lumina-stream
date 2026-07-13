@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { tmdbFetch } from '@/lib/tmdb/server';
 import { getAnimeDetail, anilistToMediaItem } from '@/lib/anilist/client';
 import DetailsContent from '@/components/pages/DetailsContent';
@@ -11,6 +12,35 @@ import {
   isThinContent,
   SITE_URL,
 } from '@/lib/seo/metadata';
+
+/**
+ * Cached TMDB detail fetch — shared between generateMetadata() and the page component.
+ * Without this, Next.js calls BOTH in the same request, doubling the TMDB calls.
+ * React.cache() deduplicates identical calls within a single RSC render.
+ */
+const getCachedTmdbDetails = cache(async (showId: number) => {
+  const tryTv = async () => {
+    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/tv/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings' });
+    return d.id ? { data: d, type: 'tv' as const } : null;
+  };
+  const tryMovie = async () => {
+    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/movie/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings' });
+    return d.id ? { data: d, type: 'movie' as const } : null;
+  };
+
+  const [tvResult, movieResult] = await Promise.all([
+    tryTv().catch(() => null),
+    tryMovie().catch(() => null),
+  ]);
+
+  let result: { data: TMDBShowData & TMDBDetails; type: 'tv' | 'movie' } | null = null;
+  if (tvResult && movieResult) {
+    result = tvResult.data.popularity >= movieResult.data.popularity ? tvResult : movieResult;
+  } else {
+    result = tvResult || movieResult;
+  }
+  return result;
+});
 
 interface TMDBShowData {
   id: number;
@@ -85,30 +115,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   // ── TMDB route ──
   try {
-    // TMDB uses SEPARATE ID namespaces for movies and TV.
-    // Both /tv/278 and /movie/278 return valid but DIFFERENT results.
-    // Fix: try both in parallel, pick the one with higher popularity.
-    const tryTv = async () => {
-      const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/tv/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings' });
-      return d.id ? { data: d, type: 'tv' as const } : null;
-    };
-    const tryMovie = async () => {
-      const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/movie/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings' });
-      return d.id ? { data: d, type: 'movie' as const } : null;
-    };
-
-    const [tvResult, movieResult] = await Promise.all([
-      tryTv().catch(() => null),
-      tryMovie().catch(() => null),
-    ]);
-
-    let result: { data: TMDBShowData & TMDBDetails; type: 'tv' | 'movie' } | null = null;
-    if (tvResult && movieResult) {
-      // Both exist — pick higher popularity (more likely the intended content)
-      result = tvResult.data.popularity >= movieResult.data.popularity ? tvResult : movieResult;
-    } else {
-      result = tvResult || movieResult;
-    }
+    const result = await getCachedTmdbDetails(showId);
 
     if (!result?.data?.id) {
       return {
@@ -264,6 +271,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
                 genreIds={[]}
                 mediaType="anime"
                 showId={showId}
+                anilistId={anilistId}
                 rating={rating10}
                 voteCount={data.popularity}
                 runtime={data.duration || undefined}
@@ -296,38 +304,11 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   let fullData: TMDBShowData & TMDBDetails | null = null;
 
   try {
-    // TMDB uses SEPARATE ID namespaces for movies and TV.
-    // Try both in parallel, pick higher popularity.
-    const tryTv = async () => {
-      const d = await tmdbFetch<TMDBShowData & TMDBDetails>(
-        `/tv/${showId}`,
-        { append_to_response: 'credits,similar,videos,content_ratings' }
-      );
-      return d.id ? { data: d, type: 'tv' as const } : null;
-    };
-    const tryMovie = async () => {
-      const d = await tmdbFetch<TMDBShowData & TMDBDetails>(
-        `/movie/${showId}`,
-        { append_to_response: 'credits,similar,videos,content_ratings' }
-      );
-      return d.id ? { data: d, type: 'movie' as const } : null;
-    };
-
-    const [tvResult, movieResult] = await Promise.all([
-      tryTv().catch(() => null),
-      tryMovie().catch(() => null),
-    ]);
-
-    if (tvResult && movieResult) {
-      const result = tvResult.data.popularity >= movieResult.data.popularity ? tvResult : movieResult;
+    // Reuses the SAME cached result from generateMetadata (React.cache dedup)
+    const result = await getCachedTmdbDetails(showId);
+    if (result) {
       mediaType = result.type;
       fullData = result.data;
-    } else {
-      const result = tvResult || movieResult;
-      if (result) {
-        mediaType = result.type;
-        fullData = result.data;
-      }
     }
   } catch {
     // fall through to render with null
@@ -426,8 +407,8 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         status={rawData.status}
         contentRating={usRating}
         releaseDate={releaseDate}
-        cast={fullData?.credits?.cast?.slice(0, 12) || []}
-        similar={(fullData?.similar?.results?.slice(0, 10) || []).map((r) => ({ id: r.id, title: r.title, name: r.name, vote_average: r.vote_average, release_date: r.release_date, first_air_date: r.first_air_date }))}
+        cast={fullData?.credits?.cast?.slice(0, 6) || []}
+        similar={(fullData?.similar?.results?.slice(0, 5) || []).map((r) => ({ id: r.id, title: r.title, name: r.name, vote_average: r.vote_average, release_date: r.release_date, first_air_date: r.first_air_date }))}
         productionCompanies={fullData?.production_companies?.map(pc => pc.name)}
         seasonList={fullData?.seasons}
         originalTitle={rawData.original_title}

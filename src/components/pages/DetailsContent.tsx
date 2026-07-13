@@ -830,6 +830,62 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
             ))}
             </div>
           </section>
+          <section aria-label="External Links" style={{ marginTop: '1.2rem' }}>
+            <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>EXTERNAL LINKS</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {!show._isAnilist && (
+                <a
+                  href={`https://www.themoviedb.org/${show.media_type === 'movie' ? 'movie' : 'tv'}/${show.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="neo-card"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
+                >
+                  <span style={{ fontSize: '1rem' }}>🎬</span> TMDB
+                </a>
+              )}
+              {!show._isAnilist && (
+                <a
+                  href={`https://www.imdb.com/find/?q=${encodeURIComponent(show.title)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="neo-card"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
+                >
+                  <span style={{ fontSize: '1rem' }}>📍</span> IMDb
+                </a>
+              )}
+              {show._isAnilist && (
+                <a
+                  href={`https://anilist.co/anime/${toAnilistId(show.id)}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="neo-card"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
+                >
+                  <span style={{ fontSize: '1rem' }}>🎌</span> AniList
+                </a>
+              )}
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(show.title + (show.yr ? ` ${show.yr}` : ''))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="neo-card"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
+              >
+                <span style={{ fontSize: '1rem' }}>🔍</span> Google
+              </a>
+              <a
+                href={`https://en.wikipedia.org/wiki/${encodeURIComponent(show.title.replace(/ /g, '_'))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="neo-card"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
+              >
+                <span style={{ fontSize: '1rem' }}>📖</span> Wikipedia
+              </a>
+            </div>
+          </section>
           </>
         )}
 
