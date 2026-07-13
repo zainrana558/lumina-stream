@@ -79,6 +79,12 @@ export default function Footer() {
           <span style={{ color: 'rgba(255,245,232,.15)' }}>
             Lumovia does not host, upload, or stream any video files. Content is provided by independent third-party providers. Users are responsible for verifying compliance with their local laws.
           </span>
+          <span style={{ display: 'block', marginTop: '.5rem' }}>
+            Data powered by{' '}
+            <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,245,232,.3)', textDecoration: 'none' }}>TMDB</a>
+            {' & '}
+            <a href="https://anilist.co/" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,245,232,.3)', textDecoration: 'none' }}>AniList</a>
+          </span>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           {SOCIAL_ICONS.map(ic => (

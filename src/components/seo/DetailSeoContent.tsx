@@ -418,6 +418,47 @@ export default function DetailSeoContent(props: SeoContentProps) {
           </>
         )}
 
+        {/* External links — important for SEO (Google requires external links) */}
+        <div className="section-label f-cinzel" style={{ marginTop: 28 }}>External Sources</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          {mediaType !== 'anime' && (
+            <a
+              href={`https://www.themoviedb.org/${mediaType === 'movie' ? 'movie' : 'tv'}/${showId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
+            >
+              View on TMDB
+            </a>
+          )}
+          {mediaType !== 'anime' && (
+            <a
+              href={`https://www.imdb.com/find/?q=${encodeURIComponent(title)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
+            >
+              Search on IMDb
+            </a>
+          )}
+          <a
+            href="https://anilist.co/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
+          >
+            AniList
+          </a>
+          <a
+            href={`https://www.google.com/search?q=${encodeURIComponent(title + (year ? ` ${year}` : ''))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
+          >
+            Google Search
+          </a>
+        </div>
+
         {faq.length > 0 && (
           <>
             <div className="section-label f-cinzel" style={{ marginTop: 36 }}>Frequently Asked Questions about {title}</div>
