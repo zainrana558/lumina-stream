@@ -229,10 +229,10 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
         maxWidth: 1200, margin: '0 auto',
         padding: '60px 20px 60px',
       }}>
-        <h2 className="f-cinzel-dec" style={{
+        <h1 className="f-cinzel-dec" style={{
           fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8',
           marginBottom: 12, letterSpacing: '.02em',
-        }}>{config.title}</h2>
+        }}>{config.title}</h1>
         <p className="f-crimson" style={{
           fontSize: 'clamp(.9rem,1.3vw,1.05rem)',
           color: 'rgba(255,245,232,.55)', lineHeight: 1.7,

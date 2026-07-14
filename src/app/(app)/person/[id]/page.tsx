@@ -232,14 +232,14 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
           padding: '0 20px 60px',
         }}
       >
-        <h2 className="f-cinzel-dec" style={{
+        <h1 className="f-cinzel-dec" style={{
           fontSize: 'clamp(1.8rem,4vw,2.8rem)',
           color: '#FFF5E8',
           marginBottom: 12,
           letterSpacing: '.02em',
         }}>
           {data.name}
-        </h2>
+        </h1>
 
         {/* Fact line */}
         <div className="f-crimson" style={{

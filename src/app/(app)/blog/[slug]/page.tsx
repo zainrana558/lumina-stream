@@ -25,7 +25,7 @@ export const revalidate = 3600; // 1 hour
 // ═══ Blog post templates for variety ═══
 const TEMPLATES = {
   review: (title: string, year: string, overview: string, genres: string, rating: string, type: string) => `
-<h2>Is ${title} Worth Watching in ${new Date().getFullYear()}?</h2>
+<h1>Is ${title} Worth Watching in ${new Date().getFullYear()}?</h1>
 <p>Absolutely. ${title}${year ? ` (${year})` : ''} is a ${type} that delivers on every front. ${overview} Whether you are a dedicated fan of ${genres?.split(',')[0]?.trim() || 'great entertainment'} or simply looking for something new to watch this weekend, ${title} offers an experience that stays with you long after the credits roll.</p>
 <h2>What Makes ${title} Special</h2>
 <p>With a rating of ${rating}/10 on TMDB, this ${genres?.split(',')[0]?.trim() || type} has earned its place among the best in its genre. Critics and audiences alike have praised its storytelling, performances, and production values. Whether you are a longtime fan or discovering it for the first time, ${title} offers something truly memorable.</p>

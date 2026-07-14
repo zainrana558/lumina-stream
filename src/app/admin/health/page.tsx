@@ -21,7 +21,7 @@ export default async function HealthDashboardPage() {
   } catch {
     return (
       <div style={{ padding: 40, color: '#ff6b6b', fontFamily: 'monospace', minHeight: '100vh', background: '#07040F' }}>
-        <h2 style={{ fontSize: '1.4rem', marginBottom: 12 }}>Access Denied</h2>
+        <p style={{ fontSize: '1.4rem', marginBottom: 12 }}>Access Denied</p>
         <p>Authentication required to view the health dashboard.</p>
       </div>
     );

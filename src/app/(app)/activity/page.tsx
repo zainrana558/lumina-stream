@@ -45,7 +45,7 @@ export default function ActivityPage() {
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
         </div>
-        <h2 className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to see activity</h2>
+        <p className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to see activity</p>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
     );

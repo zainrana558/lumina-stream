@@ -93,7 +93,7 @@ export default function CollectionsPage() {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ fontSize: '3rem', opacity: .3 }}>📋</div>
-        <h2 className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to manage collections</h2>
+        <p className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to manage collections</p>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
     );
