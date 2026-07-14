@@ -1,5 +1,6 @@
 'use client';
 
+import '@/styles/home.css';
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
