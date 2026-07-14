@@ -4,6 +4,12 @@ import { browseAllAnime, getTrendingAnime, getTopRatedAnime, getPopularAnime } f
 import { ANILIST_ID_OFFSET } from '@/types';
 import { NextResponse } from 'next/server';
 
+// In-memory cache: survives across invocations within the same serverless instance.
+// On cold start or after TTL expiry, regenerates from APIs.
+let cachedXml: string | null = null;
+let cachedAt = 0;
+const SITEMAP_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 /**
  * GET /sitemap-details.xml
  *
@@ -11,7 +17,7 @@ import { NextResponse } from 'next/server';
  * Fetches popular/trending/top-rated content from TMDB + AniList and returns
  * a proper XML sitemap. Google discovers the rest via internal links.
  *
- * Cached at CDN edge for 24 hours (s-maxage=86400).
+ * Cached in-memory for 24 hours + CDN s-maxage=86400.
  */
 
 interface TMDBItem {
@@ -103,6 +109,13 @@ async function fetchAnilistIds(): Promise<number[]> {
 }
 
 export async function GET() {
+  // Return cached XML if still fresh (avoids 20+ API calls per request)
+  if (cachedXml && Date.now() - cachedAt < SITEMAP_TTL) {
+    return new NextResponse(cachedXml, {
+      headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' },
+    });
+  }
+
   const now = new Date().toISOString().split('T')[0];
 
   try {
@@ -154,6 +167,10 @@ ${urls.map(id => `  <url>
     <priority>0.7</priority>
   </url>`).join('\n')}
 </urlset>`;
+
+    // Cache in memory for 24h
+    cachedXml = xml;
+    cachedAt = Date.now();
 
     return new NextResponse(xml, {
       headers: {

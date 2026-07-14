@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
 
+// In-memory cache: avoids 10 API calls per request
+let cachedXml: string | null = null;
+let cachedAt = 0;
+const SITEMAP_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 /**
  * People sitemap — trending + popular person URLs.
  *
@@ -11,6 +16,13 @@ import { tmdbFetch, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/se
  *   - People with very low popularity (< 1.0)
  */
 export async function GET() {
+  // Return cached XML if still fresh
+  if (cachedXml && Date.now() - cachedAt < SITEMAP_TTL) {
+    return new NextResponse(cachedXml, {
+      headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400' },
+    });
+  }
+
   const baseUrl = CANONICAL_BASE;
   const now = new Date().toISOString();
 
@@ -58,6 +70,10 @@ export async function GET() {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.join('\n')}
 </urlset>`;
+
+  // Cache in memory for 24h
+  cachedXml = xml;
+  cachedAt = Date.now();
 
   return new NextResponse(xml, {
     headers: {

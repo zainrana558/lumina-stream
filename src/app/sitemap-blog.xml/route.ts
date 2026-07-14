@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetchRaw } from '@/lib/tmdb/server';
 
+// In-memory cache: avoids 3 API calls per request
+let cachedXml: string | null = null;
+let cachedAt = 0;
+const SITEMAP_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 /**
  * Blog sitemap — SEO blog post URLs for popular movies and TV shows.
  *
@@ -25,6 +30,13 @@ interface TMDBItem {
 }
 
 export async function GET() {
+  // Return cached XML if still fresh
+  if (cachedXml && Date.now() - cachedAt < SITEMAP_TTL) {
+    return new NextResponse(cachedXml, {
+      headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' },
+    });
+  }
+
   const now = new Date().toISOString().split('T')[0];
 
   try {
@@ -78,6 +90,10 @@ export async function GET() {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.join('\n')}
 </urlset>`;
+
+    // Cache in memory for 24h
+    cachedXml = xml;
+    cachedAt = Date.now();
 
     return new NextResponse(xml, {
       headers: {
