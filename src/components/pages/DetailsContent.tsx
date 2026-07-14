@@ -91,6 +91,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [failoverMsg, setFailoverMsg] = useState('');
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [trailerPlaying, setTrailerPlaying] = useState(false);
   const [youtubeTrailers, setYoutubeTrailers] = useState<Array<{ key: string; name: string; site: string; type: string }>>([]);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const iframeLoadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -701,21 +702,35 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           </div>
         </div>
 
-        {/* Inline trailer embed — visible on every details page */}
+        {/* Inline trailer embed — click-to-play thumbnail instead of eager iframe */}
         {trailerList.length > 0 && (
           <div style={{ marginBottom: '2rem', animation: 'el .5s ease both' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginBottom: '.85rem' }}>
               <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc }}>TRAILER</h2>
               <span className="f-cinzel" style={{ fontSize: '.52rem', color: 'rgba(255,179,71,.5)', letterSpacing: '.08em', background: 'rgba(255,179,71,.08)', padding: '2px 8px', borderRadius: 4 }}>4K</span>
             </div>
-            <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 14, overflow: 'hidden', background: '#000', boxShadow: '6px 6px 24px rgba(0,0,0,.8), -2px -2px 8px rgba(45,25,90,.15), 0 0 0 1px rgba(255,255,255,.04)' }}>
-              <iframe
-                src={`https://www.youtube.com/embed/${trailerList[0].key}?rel=0&vq=hd2160&modestbranding=1`}
-                title={`${show.title} Trailer`}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                loading="lazy"
-              />
+            <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 14, overflow: 'hidden', background: '#000', boxShadow: '6px 6px 24px rgba(0,0,0,.8), -2px -2px 8px rgba(45,25,90,.15), 0 0 0 1px rgba(255,255,255,.04)', cursor: 'pointer' }} onClick={() => setTrailerPlaying(true)}>
+              {trailerPlaying ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${trailerList[0].key}?rel=0&vq=hd2160&modestbranding=1&autoplay=1`}
+                  title={`${show.title} Trailer`}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                />
+              ) : (
+                <>
+                  <img
+                    src={getYoutubeThumbnail(trailerList[0].key, 'maxresdefault')}
+                    alt={`${show.title} trailer thumbnail`}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.35)' }}>
+                    <div style={{ width: 68, height: 48, borderRadius: 12, background: 'rgba(255,179,71,.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(255,140,0,.5)' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8 5v14l11-7z" fill="#05020A" /></svg>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
             {trailerList.length > 1 && (
               <div style={{ marginTop: '.6rem', textAlign: 'center' }}>

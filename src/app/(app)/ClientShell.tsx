@@ -4,13 +4,14 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { AppProvider, useApp } from '@/contexts/AppContext';
-import Nav from '@/components/common/Nav';
-import BottomNav from '@/components/layout/BottomNav';
-import ThemeSwitcher from '@/components/common/ThemeSwitcher';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import AdScripts, { AdBanner, HAS_BANNER_NETWORK } from '@/components/common/AdScripts';
 
-// Dynamic imports for heavy/rarely-used components — reduces initial JS bundle
+// Dynamic imports — reduces initial JS bundle by code-splitting non-critical UI
+const AdScripts = lazy(() => import('@/components/common/AdScripts'));
+const AdBanner = lazy(() => import('@/components/common/AdScripts').then(m => ({ default: m.AdBanner })));
+const Nav = lazy(() => import('@/components/common/Nav'));
+const BottomNav = lazy(() => import('@/components/layout/BottomNav'));
+const ThemeSwitcher = lazy(() => import('@/components/common/ThemeSwitcher'));
 const Stars = lazy(() => import('@/components/common/Stars'));
 const SearchOverlay = lazy(() => import('@/components/common/SearchOverlay'));
 const PipPlayer = lazy(() => import('@/components/common/PipPlayer'));
@@ -222,7 +223,9 @@ function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       {/* Ad monetization scripts */}
-      <AdScripts />
+      <Suspense fallback={null}>
+        <AdScripts />
+      </Suspense>
 
       {/* Particle effects */}
       {!reducedMotion && (
@@ -232,15 +235,17 @@ function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Navigation */}
-      <Nav
-        page={page}
-        go={go}
-        openSearch={() => setSearchOpen(true)}
-        user={user}
-        profile={profile}
-        onSignOut={handleSignOut}
-        onShowShortcuts={() => setShortcutOverlay(true)}
-      />
+      <Suspense fallback={null}>
+        <Nav
+          page={page}
+          go={go}
+          openSearch={() => setSearchOpen(true)}
+          user={user}
+          profile={profile}
+          onSignOut={handleSignOut}
+          onShowShortcuts={() => setShortcutOverlay(true)}
+        />
+      </Suspense>
       {searchOpen && (
         <Suspense fallback={null}>
           <SearchOverlay onClose={() => setSearchOpen(false)} />
@@ -282,24 +287,28 @@ function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Mobile bottom nav */}
-      <BottomNav
-        page={page}
-        go={go}
-        openSearch={() => setSearchOpen(true)}
-        onShowShortcuts={() => setShortcutOverlay(true)}
-      />
+      <Suspense fallback={null}>
+        <BottomNav
+          page={page}
+          go={go}
+          openSearch={() => setSearchOpen(true)}
+          onShowShortcuts={() => setShortcutOverlay(true)}
+        />
+      </Suspense>
 
       {/* Theme switcher & confetti */}
-      <ThemeSwitcher />
+      <Suspense fallback={null}>
+        <ThemeSwitcher />
+      </Suspense>
       <Suspense fallback={null}>
         <Confetti active={confettiActive} />
       </Suspense>
 
       {/* Bottom sticky ad banner — only rendered when a banner ad network is configured */}
-      {!pathname.startsWith('/details') && HAS_BANNER_NETWORK && (
-        <div style={{ position: 'fixed', bottom: 60, left: 0, right: 0, zIndex: 997 }}>
+      {!pathname.startsWith('/details') && (
+        <Suspense fallback={null}>
           <AdBanner id="ad-banner-bottom" width={728} height={90} />
-        </div>
+        </Suspense>
       )}
 
       {/* Notification permission prompt */}

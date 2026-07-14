@@ -274,30 +274,6 @@ export default function DetailSeoContent(props: SeoContentProps) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
-      <style>{`
-        .seo-detail{max-width:1000px;margin:0 auto;padding:0 20px 60px}
-        .seo-detail h1{font-size:clamp(1.6rem,3.5vw,2.6rem);color:#FFF5E8;margin-bottom:8px;letter-spacing:.02em}
-        .seo-detail .tagline{font-size:clamp(.9rem,1.3vw,1.05rem);color:#FFB347;margin-bottom:16px;font-style:italic}
-        .seo-detail .meta-line{font-size:.85rem;color:rgba(255,245,232,.5);margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-        .seo-detail .tag{padding:3px 10px;border-radius:6px;font-size:.78rem;background:rgba(255,245,232,.05);border:1px solid rgba(255,245,232,.1);color:rgba(255,245,232,.6)}
-        .seo-detail .tag-accent{background:rgba(255,179,71,.1);border-color:rgba(255,179,71,.25);color:#FFB347}
-        .seo-detail p{font-size:clamp(.88rem,1.2vw,1.02rem);color:rgba(255,245,232,.55);line-height:1.75;margin-bottom:16px;max-width:860px}
-        .seo-detail .section-label{font-size:.82rem;color:#FFB347;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;margin-top:28px}
-        .seo-detail .cast-list,.seo-detail .similar-list,.seo-detail .season-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-        .seo-detail .cast-item a,.seo-detail .similar-item a,.seo-detail .season-item a{display:inline-block;padding:5px 12px;border-radius:8px;font-size:.8rem;color:#FFB347;text-decoration:none;background:rgba(255,245,232,.04);border:1px solid rgba(255,245,232,.08);transition:background .2s,border-color .2s}
-        .seo-detail .similar-item a{color:#FFF5E8}
-        .seo-detail .season-item a{color:rgba(255,245,232,.7)}
-        .seo-detail .cast-item a:hover,.seo-detail .similar-item a:hover,.seo-detail .season-item a:hover{background:rgba(255,245,232,.08);border-color:rgba(255,179,71,.3)}
-        .seo-detail details{background:rgba(255,245,232,.03);border:1px solid rgba(255,245,232,.07);border-radius:10px;padding:14px 18px;margin-bottom:10px;cursor:pointer}
-        .seo-detail details summary{font-size:.88rem;color:#FFF5E8;list-style:none;display:flex;justify-content:space-between;align-items:center}
-        .seo-detail details summary::after{content:'+';color:rgba(255,245,232,.3);font-size:.8rem}
-        .seo-detail details[open] summary::after{content:'-'}
-        .seo-detail details .answer{font-size:.83rem;color:rgba(255,245,232,.55);line-height:1.7;margin-top:10px}
-        .seo-detail .nav-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
-        .seo-detail .nav-links a{display:inline-block;padding:6px 14px;border-radius:8px;font-size:.78rem;color:#FFB347;text-decoration:none;background:rgba(255,245,232,.04);border:1px solid rgba(255,245,232,.08);transition:background .2s,border-color .2s}
-        .seo-detail .nav-links a:hover{background:rgba(255,245,232,.08);border-color:rgba(255,179,71,.3)}
-      `}</style>
-
       <article className="seo-detail f-crimson" aria-label={`Information about ${title}`}>
         <h1 className="f-cinzel-dec">{title}{year ? ` (${year})` : ''}</h1>
         {tagline && <div className="tagline f-crimson">{tagline}</div>}

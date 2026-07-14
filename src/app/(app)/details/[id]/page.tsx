@@ -261,7 +261,8 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
               ],
             }) }} />
             <DetailsContent showId={showId} initialShow={show} />
-            {/* SERVER-RENDERED SEO CONTENT for AniList anime */}
+            {/* SERVER-RENDERED SEO CONTENT for AniList anime — placed AFTER DetailsContent
+                so the hero backdrop (LCP element) renders first, improving LCP */}
             {show && (
               <DetailSeoContent
                 title={show.title}
@@ -389,7 +390,8 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
         initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
       />
-      {/* SERVER-RENDERED SEO CONTENT — visible to Googlebot without JS */}
+      {/* SERVER-RENDERED SEO CONTENT — placed AFTER DetailsContent so the hero
+          backdrop (the LCP element) is rendered first in the DOM */}
       <DetailSeoContent
         title={title}
         year={year}
