@@ -3,12 +3,13 @@ import { tmdbFetch } from '@/lib/tmdb/server';
 import { browseAllAnime, getTrendingAnime, getTopRatedAnime, getPopularAnime } from '@/lib/anilist/client';
 import { ANILIST_ID_OFFSET } from '@/types';
 import { NextResponse } from 'next/server';
+import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 
-// In-memory cache: survives across invocations within the same serverless instance.
-// On cold start or after TTL expiry, regenerates from APIs.
-let cachedXml: string | null = null;
-let cachedAt = 0;
+// In-memory cache as L1 (same-instance fast path)
+let inMemoryXml: string | null = null;
+let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_NAME = 'sitemap-details';
 
 /**
  * GET /sitemap-details.xml
@@ -109,11 +110,19 @@ async function fetchAnilistIds(): Promise<number[]> {
 }
 
 export async function GET() {
-  // Return cached XML if still fresh (avoids 20+ API calls per request)
-  if (cachedXml && Date.now() - cachedAt < SITEMAP_TTL) {
-    return new NextResponse(cachedXml, {
-      headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' },
-    });
+  const cacheHeaders = { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' };
+
+  // L1: In-memory cache (same warm instance — zero I/O)
+  if (inMemoryXml && Date.now() - inMemoryAt < SITEMAP_TTL) {
+    return new NextResponse(inMemoryXml, { headers: cacheHeaders });
+  }
+
+  // L2: Filesystem cache (/tmp — survives across warm invocations on same instance)
+  const fsCache = await getSitemapCache(CACHE_NAME);
+  if (fsCache) {
+    inMemoryXml = fsCache;
+    inMemoryAt = Date.now();
+    return new NextResponse(fsCache, { headers: cacheHeaders });
   }
 
   const now = new Date().toISOString().split('T')[0];
@@ -168,9 +177,10 @@ ${urls.map(id => `  <url>
   </url>`).join('\n')}
 </urlset>`;
 
-    // Cache in memory for 24h
-    cachedXml = xml;
-    cachedAt = Date.now();
+    // Cache: in-memory + filesystem for 24h
+    inMemoryXml = xml;
+    inMemoryAt = Date.now();
+    setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
     return new NextResponse(xml, {
       headers: {

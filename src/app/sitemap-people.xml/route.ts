@@ -1,11 +1,13 @@
-import { NextResponse } from 'next/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
+import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
+import { NextResponse } from 'next/server';
 
-// In-memory cache: avoids 10 API calls per request
-let cachedXml: string | null = null;
-let cachedAt = 0;
-const SITEMAP_TTL = 24 * 60 * 60 * 1000; // 24 hours
+// In-memory L1 + filesystem L2 cache
+let inMemoryXml: string | null = null;
+let inMemoryAt = 0;
+const SITEMAP_TTL = 24 * 60 * 60 * 1000;
+const CACHE_NAME = 'sitemap-people';
 
 /**
  * People sitemap — trending + popular person URLs.
@@ -16,11 +18,19 @@ const SITEMAP_TTL = 24 * 60 * 60 * 1000; // 24 hours
  *   - People with very low popularity (< 1.0)
  */
 export async function GET() {
-  // Return cached XML if still fresh
-  if (cachedXml && Date.now() - cachedAt < SITEMAP_TTL) {
-    return new NextResponse(cachedXml, {
-      headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400' },
-    });
+  const cacheHeaders = { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400' };
+
+  // L1: In-memory cache
+  if (inMemoryXml && Date.now() - inMemoryAt < SITEMAP_TTL) {
+    return new NextResponse(inMemoryXml, { headers: cacheHeaders });
+  }
+
+  // L2: Filesystem cache
+  const fsCache = await getSitemapCache(CACHE_NAME);
+  if (fsCache) {
+    inMemoryXml = fsCache;
+    inMemoryAt = Date.now();
+    return new NextResponse(fsCache, { headers: cacheHeaders });
   }
 
   const baseUrl = CANONICAL_BASE;
@@ -71,9 +81,10 @@ export async function GET() {
 ${urls.join('\n')}
 </urlset>`;
 
-  // Cache in memory for 24h
-  cachedXml = xml;
-  cachedAt = Date.now();
+  // Cache: in-memory + filesystem for 24h
+  inMemoryXml = xml;
+  inMemoryAt = Date.now();
+  setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
   return new NextResponse(xml, {
     headers: {
