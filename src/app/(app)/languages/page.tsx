@@ -106,6 +106,30 @@ export default function LanguagesPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            {
+              '@type': 'Question',
+              name: 'How many languages are available on Lumovia?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Lumovia organizes content across over 20 languages, including English, Japanese, Korean, Spanish, French, Hindi, Mandarin, German, Portuguese, Italian, and many more. Each language page shows all movies and TV shows available in that language.' },
+            },
+            {
+              '@type': 'Question',
+              name: 'How are movies and TV shows categorized by language?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Lumovia uses original language metadata from TMDB and AniList to classify titles by their primary spoken language. This includes both original productions and dubbed content. Click any language to browse all titles in that language with full details and ratings.' },
+            },
+            {
+              '@type': 'Question',
+              name: 'Can I find anime in Japanese or K-Dramas in Korean?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Absolutely. The Japanese language page is the best way to discover anime in their original language, while the Korean language page surfaces K-Dramas and Korean films. Lumovia also supports dubbed content, so you may find the same title listed under multiple languages.' },
+            },
+          ],
+        }) }}
+      />
 
       <div
         style={{

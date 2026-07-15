@@ -168,20 +168,10 @@ export default function FaqPage() {
     ],
   };
 
-  const faqPageJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: 'Lumovia FAQ',
-    description: metadata.description,
-    url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
-  };
-
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageJsonLd) }} />
 
       <div style={{
         maxWidth: 800,

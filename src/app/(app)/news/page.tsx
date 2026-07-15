@@ -110,17 +110,40 @@ export default function NewsPage() {
 
   const newsJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'WebPage',
+    '@type': 'CollectionPage',
     name: 'Lumovia News & Updates',
     description: metadata.description,
     url: pageUrl,
     isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
 
+  const articlesJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Latest Lumovia News Articles',
+    itemListElement: NEWS_ENTRIES.slice(0, 10).map((entry, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'NewsArticle',
+        headline: entry.title,
+        description: entry.description,
+        datePublished: entry.date,
+        articleSection: entry.category,
+        publisher: {
+          '@type': 'Organization',
+          name: 'Lumovia',
+          url: siteUrl,
+        },
+      },
+    })),
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(newsJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articlesJsonLd) }} />
 
       <style>{`
         .news-card { transition: background .2s, border-color .2s; }

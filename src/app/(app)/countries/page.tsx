@@ -99,6 +99,30 @@ export default function CountriesPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            {
+              '@type': 'Question',
+              name: 'What countries and film industries are covered on Lumovia?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Lumovia covers film and TV industries from over 20 countries and regions, including the United States, Japan, South Korea, France, India, the United Kingdom, Germany, Spain, Italy, China, Thailand, Brazil, Nigeria, and more. Each country page shows movies and TV shows produced in or associated with that region.' },
+            },
+            {
+              '@type': 'Question',
+              name: 'How does Lumovia categorize content by country?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Lumovia uses production country data from TMDB and AniList to organize content by origin. When you browse a country page, you see all titles that were produced or co-produced in that region, along with ratings, release dates, and genre information.' },
+            },
+            {
+              '@type': 'Question',
+              name: 'Can I filter movies and TV shows by country?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Yes. Click any country on this page to browse all titles from that region. You can also use the search and browse filters on Lumovia to combine country filters with genre, year, and rating preferences for precise discovery.' },
+            },
+          ],
+        }) }}
+      />
 
       <style>{`
         .country-card {

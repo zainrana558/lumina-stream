@@ -57,7 +57,18 @@ export default function ContactPage() {
       '@type': 'Organization',
       name: 'Lumovia',
       url: siteUrl,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${siteUrl}/logo.svg`,
+      },
+      sameAs: ['https://github.com/zainrana558'],
       email: 'support@lumovia.stream',
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        email: 'support@lumovia.stream',
+        availableLanguage: ['English'],
+      },
     },
   };
 

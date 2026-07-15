@@ -72,11 +72,21 @@ export default async function ActorsPage() {
     description: metadata.description,
     url: pageUrl,
     isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
-    mainEntity: actors.slice(0, 20).map(a => ({
-      '@type': 'Person',
-      name: a.name,
-      url: `${siteUrl}${personUrl(a.id, a.name)}`,
-      image: a.profile_path ? `https://image.tmdb.org/t/p/w185${a.profile_path}` : undefined,
+  };
+
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Top 20 Most Popular Actors',
+    itemListElement: actors.slice(0, 20).map((a, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Person',
+        name: a.name,
+        url: `${siteUrl}${personUrl(a.id, a.name)}`,
+        image: a.profile_path ? `https://image.tmdb.org/t/p/w185${a.profile_path}` : undefined,
+      },
     })),
   };
 
@@ -86,6 +96,28 @@ export default async function ActorsPage() {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
       { '@type': 'ListItem', position: 2, name: 'Actors', item: pageUrl },
+    ],
+  };
+
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How are actors ranked on Lumovia?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Actors on Lumovia are ranked by TMDB\'s real-time popularity algorithm, which measures audience interest across page views, search queries, and social engagement. Rankings update hourly to reflect the latest trends.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'What information is available for each actor?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Each actor profile on Lumovia includes a detailed biography, complete filmography with ratings, character names for every role, and links to every movie and TV show they have appeared in.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'How many actors are listed on Lumovia?',
+        acceptedAnswer: { '@type': 'Answer', text: `This page showcases the top ${actors.length} most popular actors and actresses currently trending. Our directory includes performers from Hollywood, international cinema, and television, with more added as popularity data updates.` },
+      },
     ],
   };
 
@@ -100,7 +132,9 @@ export default async function ActorsPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       <div style={{
         maxWidth: 1200,

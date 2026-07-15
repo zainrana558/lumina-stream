@@ -209,12 +209,20 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         // AniList meanScore is 0-100, convert to 0-10 for TMDB-compatible rating
         const rating10 = data.meanScore ? data.meanScore / 10 : undefined;
 
+        // Build ImageObject for the cover
+        const coverImageObject = cover ? {
+          '@type': 'ImageObject',
+          url: cover,
+          width: 1200,
+          height: 630,
+        } : undefined;
+
         jsonLd = {
           '@context': 'https://schema.org',
           '@type': data.format === 'TV' || data.format === 'TV_SHORT' ? 'TVSeries' : 'Movie',
           name: title,
           description,
-          image: cover || undefined,
+          image: coverImageObject || cover || undefined,
           url: `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}`,
           datePublished: releaseDate,
           ...(data.episodes ? { numberOfEpisodes: data.episodes } : {}),
@@ -335,12 +343,19 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   const year = (releaseDate)?.slice(0, 4) || undefined;
 
   // Movie or TVSeries schema depending on media type
+  const posterImage = poster ? {
+    '@type': 'ImageObject',
+    url: poster,
+    width: 500,
+    height: 750,
+  } : undefined;
+
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': mediaType === 'tv' ? 'TVSeries' : 'Movie',
     name: title,
     description,
-    image: poster,
+    image: posterImage || poster,
     url: `${SITE_URL}${mediaUrl(showId, title, mediaType, year)}`,
     datePublished: releaseDate,
     ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),

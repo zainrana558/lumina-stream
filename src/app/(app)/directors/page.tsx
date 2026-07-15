@@ -72,12 +72,22 @@ export default async function DirectorsPage() {
     description: metadata.description,
     url: pageUrl,
     isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
-    mainEntity: directors.slice(0, 20).map(d => ({
-      '@type': 'Person',
-      name: d.name,
-      url: `${siteUrl}${personUrl(d.id, d.name)}`,
-      image: d.profile_path ? `https://image.tmdb.org/t/p/w185${d.profile_path}` : undefined,
-      jobTitle: 'Film Director',
+  };
+
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Top 20 Most Popular Directors',
+    itemListElement: directors.slice(0, 20).map((d, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Person',
+        name: d.name,
+        url: `${siteUrl}${personUrl(d.id, d.name)}`,
+        image: d.profile_path ? `https://image.tmdb.org/t/p/w185${d.profile_path}` : undefined,
+        jobTitle: 'Film Director',
+      },
     })),
   };
 
@@ -87,6 +97,28 @@ export default async function DirectorsPage() {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
       { '@type': 'ListItem', position: 2, name: 'Directors', item: pageUrl },
+    ],
+  };
+
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How are directors ranked on Lumovia?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Directors on Lumovia are ranked by TMDB\'s real-time popularity algorithm, which tracks audience interest across page views, search volume, and recent release activity. Only directors listed under the "Directing" department are included.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'What information is available for each director?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Each director profile on Lumovia includes a detailed biography, a complete list of directing credits with ratings, and links to every movie and TV show they have worked on. You can filter their filmography by movies or TV shows.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'How many directors are listed on Lumovia?',
+        acceptedAnswer: { '@type': 'Answer', text: `This page showcases the top ${directors.length} most popular film and TV directors currently trending. Our directory includes filmmakers from Hollywood, international cinema, and television, updated hourly with fresh popularity data.` },
+      },
     ],
   };
 
@@ -101,7 +133,9 @@ export default async function DirectorsPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       <div style={{
         maxWidth: 1200,

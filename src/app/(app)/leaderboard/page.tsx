@@ -50,6 +50,27 @@ export default function LeaderboardPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'How does the Lumovia leaderboard work?',
+            acceptedAnswer: { '@type': 'Answer', text: 'The Lumovia leaderboard ranks movies and TV shows by average viewer rating. Every rating submitted by the community contributes to the aggregate score. Titles need multiple ratings before appearing to ensure statistical reliability.' },
+          },
+          {
+            '@type': 'Question',
+            name: 'How often do leaderboard rankings update?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Leaderboard rankings update in real time as new ratings are submitted. A show you love can climb the board with enough community support, while newly released titles can quickly enter the rankings after receiving initial ratings.' },
+          },
+          {
+            '@type': 'Question',
+            name: 'What types of content are ranked?',
+            acceptedAnswer: { '@type': 'Answer', text: 'The leaderboard covers all content types on Lumovia — Hollywood movies, international films, TV dramas, anime series, and cartoons. You can use filters to view rankings by content type, genre, or time period.' },
+          },
+        ],
+      }) }} />
 
       <LeaderboardClient />
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>

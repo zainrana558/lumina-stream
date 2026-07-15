@@ -214,6 +214,9 @@ export default async function BlogSlugPage({ params }: Props) {
     type: show.type,
   });
 
+  const today = new Date().toISOString().split('T')[0];
+  const pageUrl = `${CANONICAL_BASE}/blog/${slug}`;
+
   const faqItems = [
     {
       '@type': 'Question',
@@ -232,24 +235,55 @@ export default async function BlogSlugPage({ params }: Props) {
     },
   ];
 
-  const jsonLd = {
+  const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: `Watch ${show.title} Online Free`,
+    headline: `Watch ${show.title}${show.year ? ` (${show.year})` : ''} Online Free`,
     description: show.overview?.slice(0, 200),
     image: show.poster ? `https://image.tmdb.org/t/p/w500${show.poster}` : undefined,
-    datePublished: new Date().toISOString().split('T')[0],
-    publisher: {
+    datePublished: show.year ? `${show.year}-01-01` : today,
+    dateModified: today,
+    author: {
       '@type': 'Organization',
       name: SITE_NAME,
       url: CANONICAL_BASE,
     },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: CANONICAL_BASE,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${CANONICAL_BASE}/logo.svg`,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': pageUrl,
+    },
+  };
+
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
     mainEntity: faqItems,
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: CANONICAL_BASE },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${CANONICAL_BASE}/blog` },
+      { '@type': 'ListItem', position: 3, name: show.title, item: pageUrl },
+    ],
   };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <BlogPost show={show} content={content} />
     </>
   );

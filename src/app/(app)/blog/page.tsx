@@ -55,6 +55,7 @@ async function getPopularShows() {
 
 export default async function BlogIndexPage() {
   const shows = await getPopularShows();
+  const blogUrl = `${CANONICAL_BASE}/blog`;
 
   return (
     <div style={{
@@ -64,6 +65,44 @@ export default async function BlogIndexPage() {
       paddingTop: 80,
       paddingBottom: 120,
     }}>
+      {/* JSON-LD at top for consistency */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'Lumovia Blog — Streaming Guides & Reviews',
+        description: 'Free movie and TV show streaming guides, reviews, and recommendations updated weekly on Lumovia.',
+        url: blogUrl,
+        isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: CANONICAL_BASE },
+      }) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: CANONICAL_BASE },
+          { '@type': 'ListItem', position: 2, name: 'Blog', item: blogUrl },
+        ],
+      }) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'What is Lumovia?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Lumovia is a free streaming catalog that lets you discover and explore movies, TV shows, anime, and cartoons. We aggregate data from TMDB and AniList to provide detailed information including ratings, cast, trailers, and episode guides for thousands of titles.' },
+          },
+          {
+            '@type': 'Question',
+            name: 'Is Lumovia really free?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Yes, Lumovia is completely free to use. No subscription, no credit card, no sign-up required to browse and discover content. Our platform is supported by our community of entertainment enthusiasts.' },
+          },
+          {
+            '@type': 'Question',
+            name: 'How often is the content updated?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Our catalog is updated multiple times per hour. Trending content refreshes every few minutes, and new releases are added as soon as they become available on TMDB and AniList.' },
+          },
+        ],
+      }) }} />
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
         <h1 style={{
@@ -180,35 +219,6 @@ export default async function BlogIndexPage() {
             ))}
           </div>
         </div>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-          {
-            '@type': 'Question',
-            name: 'What is Lumovia?',
-            acceptedAnswer: { '@type': 'Answer', text: 'Lumovia is a free streaming catalog that lets you discover and explore movies, TV shows, anime, and cartoons. We aggregate data from TMDB and AniList to provide detailed information including ratings, cast, trailers, and episode guides for thousands of titles.' },
-          },
-          {
-            '@type': 'Question',
-            name: 'Is Lumovia really free?',
-            acceptedAnswer: { '@type': 'Answer', text: 'Yes, Lumovia is completely free to use. No subscription, no credit card, no sign-up required to browse and discover content. Our platform is supported by our community of entertainment enthusiasts.' },
-          },
-          {
-            '@type': 'Question',
-            name: 'How often is the content updated?',
-            acceptedAnswer: { '@type': 'Answer', text: 'Our catalog is updated multiple times per hour. Trending content refreshes every few minutes, and new releases are added as soon as they become available on TMDB and AniList.' },
-          },
-        ],
-      }) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: CANONICAL_BASE },
-          { '@type': 'ListItem', position: 2, name: 'Blog', item: `${CANONICAL_BASE}/blog` },
-        ],
-      }) }} />
     </div>
   );
 }

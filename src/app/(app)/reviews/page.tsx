@@ -97,17 +97,40 @@ export default function ReviewsPage() {
 
   const reviewsJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'WebPage',
+    '@type': 'CollectionPage',
     name: 'Lumovia Ratings & Reviews',
     description: metadata.description,
     url: pageUrl,
     isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Where do Lumovia ratings come from?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Lumovia displays ratings from two primary sources: TMDB (The Movie Database), which aggregates votes from millions of users on a 1-10 scale, and AniList, which uses a weighted community score on a 1-100 scale for anime titles. Both are independent, community-driven platforms.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'What is a good rating on Lumovia?',
+        acceptedAnswer: { '@type': 'Answer', text: 'On the TMDB 1-10 scale, a score of 7.5 or above generally indicates a well-regarded title, while 8.5+ signals exceptional quality. For AniList (1-100), scores above 75 are strong and 85+ are outstanding. Our Top Rated page surfaces the highest-scoring titles across both systems.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'How is the Popularity Index different from ratings?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Ratings reflect quality as judged by viewers over time, while the Popularity Index measures current buzz and audience interest. A title can be highly rated but not currently popular (a classic film), or very popular but only moderately rated (a new release). Both metrics help you discover different types of content.' },
+      },
+    ],
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewsJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       <style>{`
         .review-source-card { transition: background .2s, border-color .2s; }

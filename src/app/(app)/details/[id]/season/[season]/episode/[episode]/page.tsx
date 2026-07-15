@@ -442,12 +442,19 @@ export default async function EpisodePage({
   const showBaseUrl = `${SITE_URL}${mediaUrl(showId, title, mediaType, releaseDate?.slice(0, 4))}`;
 
   // Show-level schema
+  const showPosterImage = poster ? {
+    '@type': 'ImageObject',
+    url: poster,
+    width: 500,
+    height: 750,
+  } : undefined;
+
   const showJsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': mediaType === 'tv' ? 'TVSeries' : 'Movie',
     name: title,
     description,
-    image: poster,
+    image: showPosterImage || poster,
     url: showBaseUrl,
     datePublished: releaseDate,
     ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),

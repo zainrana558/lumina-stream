@@ -106,6 +106,12 @@ export default function AboutPage() {
       '@type': 'Organization',
       name: 'Lumovia',
       url: siteUrl,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${siteUrl}/logo.svg`,
+      },
+      sameAs: ['https://github.com/zainrana558'],
+      description: 'Lumovia is a free streaming catalog and content discovery platform for movies, TV shows, anime, and cartoons, powered by TMDB and AniList.',
     },
   };
 

@@ -1,6 +1,7 @@
 import { isAnilistId } from '@/types';
 import type { MediaItem } from '@/types';
 import { mediaUrl } from '@/lib/slug';
+import { CANONICAL_BASE } from '@/lib/seo/constants';
 
 /**
  * Build a Schema.org JSON-LD object for a detail page.
@@ -20,6 +21,14 @@ export function buildDetailJsonLd(show: MediaItem, siteUrl: string): object {
     image = `https://image.tmdb.org/t/p/w780${show.poster_path}`;
   }
 
+  // Build ImageObject for the poster
+  const imageObject = image ? {
+    '@type': 'ImageObject',
+    url: image,
+    width: isMovie ? 500 : 780,
+    height: isMovie ? 750 : 1170,
+  } : undefined;
+
   // Date: MediaItem stores the year as `yr`; format as ISO date string
   const datePublished = show.yr ? `${show.yr}-01-01` : undefined;
 
@@ -28,7 +37,7 @@ export function buildDetailJsonLd(show: MediaItem, siteUrl: string): object {
     '@type': type,
     name: show.title,
     description: show.desc || 'Watch on Lumovia',
-    image,
+    image: imageObject || image,
     datePublished,
     url: `${siteUrl}${mediaUrl(show.id, show.title, show.media_type, show.yr, isAnilistId(show.id))}`,
     sameAs: `${siteUrl}/details/${show.id}`,

@@ -171,6 +171,30 @@ export default function StudiosPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            {
+              '@type': 'Question',
+              name: 'What production studios are listed on Lumovia?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Lumovia\'s studio directory covers major Hollywood studios like Warner Bros., Disney, Universal, and Paramount, streaming originals from Netflix and Amazon, animation powerhouses like Pixar and Studio Ghibli, and international distributors. Click any studio to browse their complete catalog on Lumovia.' },
+            },
+            {
+              '@type': 'Question',
+              name: 'How does Lumovia associate titles with studios?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Studio associations are sourced from TMDB production company data. When you visit a studio page, you see all movies and TV shows that list that studio as a production company, complete with ratings, release dates, and cast information.' },
+            },
+            {
+              '@type': 'Question',
+              name: 'Can I browse all titles from a specific studio?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Yes. Click on any studio name on this page to see a filtered view of all titles associated with that studio. You can then sort by rating, release year, or popularity to find the best content from your favorite studios.' },
+            },
+          ],
+        }) }}
+      />
 
       <div
         style={{
