@@ -15,6 +15,7 @@ export const metadata = {
       'See the top-rated movies and TV shows as ranked by the Lumovia community. Discover what viewers love most.',
     url: pageUrl,
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
     type: 'website',
   },
   twitter: {
@@ -22,6 +23,7 @@ export const metadata = {
     title: 'Community Leaderboard | Lumovia',
     description:
       'See the top-rated movies and TV shows as ranked by the Lumovia community.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 

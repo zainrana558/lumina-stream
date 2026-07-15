@@ -7,6 +7,20 @@ export const metadata: Metadata = {
   title: 'Create Account — Lumovia',
   description: 'Create a free Lumovia account to unlock watchlists, collections, viewing stats, year-in-review, activity feed, and personalized recommendations across thousands of movies, TV shows, and anime.',
   alternates: { canonical: `${CANONICAL_BASE}/signup` },
+  openGraph: {
+    type: 'website',
+    url: `${CANONICAL_BASE}/signup`,
+    title: 'Create Account — Lumovia',
+    description: 'Create a free account to unlock watchlists, collections, stats, and personalized recommendations.',
+    siteName: 'Lumovia',
+    images: [{ url: `${CANONICAL_BASE}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Create Account — Lumovia',
+    description: 'Create a free account to unlock watchlists, collections, stats, and personalized recommendations.',
+    images: [`${CANONICAL_BASE}/og/og-genres.png`],
+  },
 };
 
 // Auth pages use Supabase client at component top-level which requires

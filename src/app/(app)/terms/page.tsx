@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: 'Terms of Service - Lumovia',
   description: 'Lumovia terms of service. Read the legal terms and conditions governing your use of Lumovia, including acceptable use, intellectual property, disclaimers, and limitation of liability.',
   alternates: { canonical: pageUrl },
-  openGraph: { type: 'website', url: pageUrl, title: 'Terms of Service - Lumovia', description: 'Read the terms and conditions governing your use of Lumovia.', siteName: 'Lumovia' },
+  openGraph: { type: 'website', url: pageUrl, title: 'Terms of Service - Lumovia', description: 'Read the terms and conditions governing your use of Lumovia.', siteName: 'Lumovia', images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }] },
+  twitter: { card: 'summary_large_image' as const, title: 'Terms of Service - Lumovia', description: 'Read the terms and conditions governing your use of Lumovia.', images: [`${siteUrl}/og/og-genres.png`] },
 };
 
 const breadcrumbJsonLd = {

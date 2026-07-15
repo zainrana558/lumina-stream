@@ -15,10 +15,18 @@ export const metadata: Metadata = {
   description: 'Discover where to watch movies and TV shows online free. Streaming guides, reviews, and recommendations updated weekly.',
   alternates: { canonical: `${CANONICAL_BASE}/blog` },
   openGraph: {
+    type: 'website',
     title: 'Free Movie Streaming Guides — Lumovia Blog',
     description: 'Discover where to watch movies and TV shows online free.',
     url: `${CANONICAL_BASE}/blog`,
     siteName: 'Lumovia',
+    images: [{ url: `${CANONICAL_BASE}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia Blog' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Free Movie Streaming Guides — Lumovia Blog',
+    description: 'Discover where to watch movies and TV shows online free. Streaming guides, reviews, and recommendations.',
+    images: [`${CANONICAL_BASE}/og/og-genres.png`],
   },
 };
 

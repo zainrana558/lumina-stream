@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: 'Disclaimer - Lumovia',
   description: 'Lumovia disclaimer. Lumovia is a metadata catalog and discovery platform. We do not host, upload, store, or distribute any video files. All streaming is provided by third-party embed services.',
   alternates: { canonical: pageUrl },
-  openGraph: { type: 'website', url: pageUrl, title: 'Disclaimer - Lumovia', description: 'Important disclaimers about Lumovia\'s services, third-party content, and limitations of liability.', siteName: 'Lumovia' },
+  openGraph: { type: 'website', url: pageUrl, title: 'Disclaimer - Lumovia', description: 'Important disclaimers about Lumovia\'s services, third-party content, and limitations of liability.', siteName: 'Lumovia', images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }] },
+  twitter: { card: 'summary_large_image' as const, title: 'Disclaimer - Lumovia', description: 'Important disclaimers about Lumovia\'s services and third-party content.', images: [`${siteUrl}/og/og-genres.png`] },
 };
 
 const breadcrumbJsonLd = {

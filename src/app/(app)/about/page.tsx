@@ -19,6 +19,13 @@ export const metadata: Metadata = {
     title: 'About Lumovia — Free Streaming Catalog for Movies, TV Shows, Anime & Cartoons',
     description: 'Discover how Lumovia aggregates data from TMDB and AniList to create the ultimate free content discovery platform with personalized recommendations, episode guides, and more.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'About Lumovia — Free Streaming Catalog',
+    description: 'Discover how Lumovia aggregates data from TMDB and AniList to create the ultimate free content discovery platform.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 

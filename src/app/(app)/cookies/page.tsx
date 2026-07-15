@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: 'Cookie Policy - Lumovia',
   description: 'Lumovia cookie policy. Learn about essential Supabase auth cookies, third-party embed cookies, local storage usage, and how to manage your cookie preferences.',
   alternates: { canonical: pageUrl },
-  openGraph: { type: 'website', url: pageUrl, title: 'Cookie Policy - Lumovia', description: 'Learn how Lumovia uses cookies and local storage.', siteName: 'Lumovia' },
+  openGraph: { type: 'website', url: pageUrl, title: 'Cookie Policy - Lumovia', description: 'Learn how Lumovia uses cookies and local storage.', siteName: 'Lumovia', images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }] },
+  twitter: { card: 'summary_large_image' as const, title: 'Cookie Policy - Lumovia', description: 'Learn how Lumovia uses cookies and local storage.', images: [`${siteUrl}/og/og-genres.png`] },
 };
 
 const breadcrumbJsonLd = {

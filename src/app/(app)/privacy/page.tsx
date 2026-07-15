@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: 'Privacy Policy - Lumovia',
   description: 'Lumovia privacy policy. Learn how we collect, use, and protect your personal information, including data from Supabase authentication, TMDB, AniList, and third-party embed providers.',
   alternates: { canonical: pageUrl },
-  openGraph: { type: 'website', url: pageUrl, title: 'Privacy Policy - Lumovia', description: 'Learn how Lumovia handles your data and protects your privacy.', siteName: 'Lumovia' },
+  openGraph: { type: 'website', url: pageUrl, title: 'Privacy Policy - Lumovia', description: 'Learn how Lumovia handles your data and protects your privacy.', siteName: 'Lumovia', images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }] },
+  twitter: { card: 'summary_large_image' as const, title: 'Privacy Policy - Lumovia', description: 'Learn how Lumovia handles your data and protects your privacy.', images: [`${siteUrl}/og/og-genres.png`] },
 };
 
 const breadcrumbJsonLd = {

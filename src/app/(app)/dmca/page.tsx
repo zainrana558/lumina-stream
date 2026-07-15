@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: 'DMCA & Copyright Policy - Lumovia',
   description: 'Lumovia DMCA and copyright policy. Learn about our position as a catalog/discovery platform, DMCA safe harbor compliance, how to file takedown notices, counter-notifications, and our commitment to intellectual property rights.',
   alternates: { canonical: pageUrl },
-  openGraph: { type: 'website', url: pageUrl, title: 'DMCA & Copyright Policy - Lumovia', description: 'DMCA takedown procedures and copyright policy for Lumovia.', siteName: 'Lumovia' },
+  openGraph: { type: 'website', url: pageUrl, title: 'DMCA & Copyright Policy - Lumovia', description: 'DMCA takedown procedures and copyright policy for Lumovia.', siteName: 'Lumovia', images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }] },
+  twitter: { card: 'summary_large_image' as const, title: 'DMCA & Copyright Policy - Lumovia', description: 'DMCA takedown procedures and copyright policy for Lumovia.', images: [`${siteUrl}/og/og-genres.png`] },
 };
 
 const breadcrumbJsonLd = {

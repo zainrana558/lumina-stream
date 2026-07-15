@@ -190,9 +190,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: show.poster ? [{ url: `https://image.tmdb.org/t/p/w500${show.poster}`, width: 500, height: 750 }] : [],
     },
     twitter: {
-      card: 'summary_large_image',
+      card: 'summary_large_image' as const,
       title,
       description: description.slice(0, 160),
+      images: show.poster ? [`https://image.tmdb.org/t/p/w500${show.poster}`] : [],
     },
   };
 }
