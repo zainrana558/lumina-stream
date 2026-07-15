@@ -97,6 +97,7 @@ export default function LanguagesPage() {
 
   return (
     <>
+      <style>{`.lang-card:hover{background:rgba(255,245,232,.08)!important;border-color:rgba(255,245,232,.15)!important}`}</style>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -177,23 +178,13 @@ export default function LanguagesPage() {
                     textDecoration: 'none',
                   }}
                 >
-                  <div
-                    style={{
+                  <div className="lang-card" style={{
                       background: 'rgba(255,245,232,.04)',
                       border: '1px solid rgba(255,245,232,.08)',
                       borderRadius: 12,
                       padding: '20px 16px',
                       transition: 'background .2s, border-color .2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,245,232,.08)';
-                      (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,245,232,.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,245,232,.04)';
-                      (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,245,232,.08)';
-                    }}
-                  >
+                    }}>
                     <div
                       className="f-cinzel"
                       style={{
