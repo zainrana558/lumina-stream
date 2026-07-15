@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { COUNTRY_SLUGS } from '@/lib/slug';
 import Link from 'next/link';
 
 export const dynamic = 'force-static';
@@ -186,7 +187,7 @@ export default function CountriesPage() {
               {category.countries.map((country) => (
                 <div key={country.code} className="country-card">
                   <Link
-                    href={`/browse?country=${country.code}`}
+                    href={`/country/${COUNTRY_SLUGS[country.code] || country.code.toLowerCase()}`}
                     className="country-link"
                   >
                     <div

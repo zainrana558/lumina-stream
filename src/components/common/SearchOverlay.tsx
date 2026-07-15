@@ -10,6 +10,7 @@ import SearchFilters, { type FilterState } from '@/components/common/SearchFilte
 import { addSearch, getRecentSearches, clearSearchHistory } from '@/lib/searchHistory';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { getPosterUrl, getProfileUrl } from '@/lib/images';
+import { mediaUrl } from '@/lib/slug';
 
 interface TMDBPersonResult {
   id: number;
@@ -262,12 +263,12 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  const knownId = p.known_for?.[0]?.id;
-                  if ((e.key === 'Enter' || e.key === ' ') && knownId) { e.preventDefault(); router.push(`/details/${knownId}`); onClose(); }
+                  const kf = p.known_for?.[0];
+                  if ((e.key === 'Enter' || e.key === ' ') && kf?.id) { e.preventDefault(); router.push(mediaUrl(kf.id, kf.title || kf.name || '', kf.media_type)); onClose(); }
                 }}
                 onClick={() => {
-                  const knownId = p.known_for?.[0]?.id;
-                  if (knownId) { router.push(`/details/${knownId}`); onClose(); }
+                  const kf = p.known_for?.[0];
+                  if (kf?.id) { router.push(mediaUrl(kf.id, kf.title || kf.name || '', kf.media_type)); onClose(); }
                 }}
                 style={{ padding: '.9rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .35s ${i * 0.06}s both` }}
               >
@@ -294,7 +295,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
             {results.map((s, i) => {
               const posterSrc = getPosterUrl(s, 'w92');
               return (
-              <div key={s.id} className="ep-row" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/details/${s.id}`); onClose(); } }} onClick={() => { router.push(`/details/${s.id}`); onClose(); }} style={{ padding: '.9rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .35s ${i * 0.06}s both` }}>
+              <div key={s.id} className="ep-row" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(mediaUrl(s.id, s.title, s.media_type, s.yr, s._isAnilist)); onClose(); } }} onClick={() => { router.push(mediaUrl(s.id, s.title, s.media_type, s.yr, s._isAnilist)); onClose(); }} style={{ padding: '.9rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .35s ${i * 0.06}s both` }}>
                 {posterSrc ? (
                   <div style={{ width: 42, height: 42, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '2px 2px 8px rgba(0,0,0,.6)' }}>
                     <Image src={posterSrc} alt={s.title} width={42} height={42} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

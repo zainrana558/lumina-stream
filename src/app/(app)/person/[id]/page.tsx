@@ -2,15 +2,16 @@ import { tmdbFetch } from '@/lib/tmdb/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import type { Metadata } from 'next';
 import PersonPageClient from '@/components/pages/PersonPage';
+import { extractIdFromSlug, personUrl, mediaUrl } from '@/lib/slug';
 
 export const revalidate = 86400; // 24h — person details rarely change
 
 const siteUrl = CANONICAL_BASE;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
-  const personId = Number(id);
-  const pageUrl = `${siteUrl}/person/${id}`;
+  const { id: rawSlug } = await params;
+  const personId = extractIdFromSlug(rawSlug) || Number(rawSlug);
+  const pageUrl = `${siteUrl}/actor/${rawSlug}`;
   try {
     const data = await tmdbFetch<{ name: string; biography?: string; profile_path?: string | null; known_for_department?: string }>(`/person/${personId}`).catch(() => ({ name: 'Person', biography: '' as string | undefined, profile_path: null, known_for_department: undefined as string | undefined }));
     const bio = data.biography || '';
@@ -51,8 +52,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function PersonPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const personId = Number(id);
+  const { id: rawSlug } = await params;
+  const personId = extractIdFromSlug(rawSlug) || Number(rawSlug);
+  const pageUrl = `${siteUrl}/actor/${rawSlug}`;
 
   // Fetch data outside try/catch to avoid JSX in try/catch
   type PersonData = {
@@ -124,7 +126,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: data.name,
-    url: `${siteUrl}/person/${personId}`,
+    url: pageUrl,
     image: data.profile_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.profile_path}` : undefined,
     jobTitle: data.known_for_department || undefined,
     description: data.biography || undefined,
@@ -139,7 +141,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
-      { '@type': 'ListItem', position: 2, name: data.name, item: `${siteUrl}/person/${personId}` },
+      { '@type': 'ListItem', position: 2, name: data.name, item: pageUrl },
     ],
   };
 
@@ -285,7 +287,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {knownFor.slice(0, 8).map(k => (
-                <a key={k.id} href={`/details/${k.id}`} style={{
+                <a key={k.id} href={mediaUrl(k.id, k.title, k.mediaType, k.year)} style={{
                   display: 'inline-block', padding: '5px 12px', borderRadius: 8,
                   fontSize: '.8rem', color: '#FFF5E8', textDecoration: 'none',
                   background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)',

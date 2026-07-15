@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { LANGUAGE_SLUGS } from '@/lib/slug';
 
 export const dynamic = 'force-static';
 export const revalidate = 86400;
@@ -170,7 +171,7 @@ export default function LanguagesPage() {
               {category.languages.map((lang) => (
                 <Link
                   key={lang.name}
-                  href={`/browse?language=${lang.iso}`}
+                  href={`/language/${LANGUAGE_SLUGS[lang.iso] || lang.iso.toLowerCase()}`}
                   style={{
                     display: 'block',
                     textDecoration: 'none',

@@ -11,6 +11,7 @@
 
 import Link from 'next/link';
 import { SITE_URL } from '@/lib/seo/metadata';
+import { personUrl, mediaUrl } from '@/lib/slug';
 
 interface CastMember {
   id: number;
@@ -346,7 +347,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
             <div className="season-list">
               {seasonList.map(s => (
                 <span key={s.season_number} className="season-item">
-                  <a href={`/details/${showId}/season/${s.season_number}/episode/1`}>
+                  <a href={`${mediaUrl(showId, title, mediaType, year)}/season/${s.season_number}/episode/1`}>
                     {s.name} ({s.episode_count} episodes)
                   </a>
                 </span>
@@ -361,7 +362,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
             <div className="cast-list">
               {cast.slice(0, 6).map(c => (
                 <span key={c.id} className="cast-item">
-                  <a href={`/person/${c.id}`}>
+                  <a href={personUrl(c.id, c.name)}>
                     {c.name}{c.character ? ` as ${c.character}` : ''}
                   </a>
                 </span>
@@ -384,7 +385,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
             <div className="similar-list">
               {similar.slice(0, 5).map(s => (
                 <span key={s.id} className="similar-item">
-                  <a href={`/details/${s.id}`}>
+                  <a href={mediaUrl(s.id, s.title || s.name || '', undefined, (s.release_date || s.first_air_date)?.slice(0,4))}>
                     {s.title || s.name}
                     {s.vote_average ? ` (${s.vote_average.toFixed(1)})` : ''}
                   </a>

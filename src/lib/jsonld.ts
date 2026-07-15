@@ -1,5 +1,6 @@
 import { isAnilistId } from '@/types';
 import type { MediaItem } from '@/types';
+import { mediaUrl } from '@/lib/slug';
 
 /**
  * Build a Schema.org JSON-LD object for a detail page.
@@ -29,7 +30,9 @@ export function buildDetailJsonLd(show: MediaItem, siteUrl: string): object {
     description: show.desc || 'Watch on Lumovia',
     image,
     datePublished,
-    url: `${siteUrl}/details/${show.id}`,
+    url: `${siteUrl}${mediaUrl(show.id, show.title, show.media_type, show.yr, isAnilistId(show.id))}`,
+    sameAs: `${siteUrl}/details/${show.id}`,
+
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue: show.r,

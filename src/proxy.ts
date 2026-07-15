@@ -17,6 +17,13 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/genre/") ||
     pathname.startsWith("/details/") ||
     pathname.startsWith("/person/") ||
+    pathname.startsWith("/movie/") ||
+    pathname.startsWith("/tv/") ||
+    pathname.startsWith("/anime/") ||
+    pathname.startsWith("/actor/") ||
+    pathname.startsWith("/country/") ||
+    pathname.startsWith("/language/") ||
+    pathname.startsWith("/studio/") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
     pathname.startsWith("/movies") ||

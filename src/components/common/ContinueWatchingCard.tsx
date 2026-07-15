@@ -7,6 +7,7 @@ import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
 import { vibrateTap } from '@/lib/haptics';
 import { getPosterUrl, getBlurPlaceholder } from '@/lib/images';
+import { mediaUrl } from '@/lib/slug';
 
 interface ContinueWatchingCardProps {
   show: MediaItem;
@@ -20,7 +21,7 @@ const ContinueWatchingCard = memo(function ContinueWatchingCard({ show }: Contin
 
   return (
     <div
-      onClick={() => { vibrateTap(); router.push(`/details/${show.id}`); }}
+      onClick={() => { vibrateTap(); router.push(mediaUrl(show.id, show.title, show.media_type, show.yr, show._isAnilist)); }}
       style={{
         flexShrink: 0, width: 'clamp(155px,17vw,215px)',
         height: 296, borderRadius: 14, overflow: 'hidden',

@@ -12,6 +12,7 @@ import {
   isThinContent,
   SITE_URL,
 } from '@/lib/seo/metadata';
+import { extractIdFromSlug, mediaUrl } from '@/lib/slug';
 
 /**
  * Cached TMDB detail fetch — shared between generateMetadata() and the page component.
@@ -79,8 +80,8 @@ interface TMDBDetails {
 export const revalidate = 600; // 10 min
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
-  const showId = Number(id);
+  const { id: rawSlug } = await params;
+  const showId = extractIdFromSlug(rawSlug) || Number(rawSlug);
 
   // ── AniList route ──
   if (isAnilistId(showId)) {
@@ -161,8 +162,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function DetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const showId = Number(id);
+  const { id: rawSlug } = await params;
+  const showId = extractIdFromSlug(rawSlug) || Number(rawSlug);
 
   // ── AniList route: ID >= ANILIST_ID_OFFSET ──
   if (isAnilistId(showId)) {
@@ -214,7 +215,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
           name: title,
           description,
           image: cover || undefined,
-          url: `${SITE_URL}/details/${showId}`,
+          url: `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}`,
           datePublished: releaseDate,
           ...(data.episodes ? { numberOfEpisodes: data.episodes } : {}),
           ...(data.duration ? { duration: `PT${data.duration}M` } : {}),
@@ -239,8 +240,8 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
           description,
           thumbnailUrl: cover,
           uploadDate: releaseDate || new Date().toISOString().split('T')[0],
-          contentUrl: `${SITE_URL}/details/${showId}`,
-          embedUrl: `${SITE_URL}/details/${showId}`,
+          contentUrl: `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}`,
+          embedUrl: `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}`,
           ...(trailerUrl ? { embedUrl: trailerUrl } : {}),
           ...(data.duration ? { duration: `PT${data.duration}M` } : {}),
         } : null;
@@ -257,7 +258,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
               '@type': 'BreadcrumbList',
               itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-                { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}/details/${showId}` },
+                { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}` },
               ],
             }) }} />
             <DetailsContent showId={showId} initialShow={show} />
@@ -340,7 +341,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
     name: title,
     description,
     image: poster,
-    url: `${SITE_URL}/details/${showId}`,
+    url: `${SITE_URL}${mediaUrl(showId, title, mediaType, year)}`,
     datePublished: releaseDate,
     ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),
     ...(rawData.number_of_seasons ? { numberOfSeasons: rawData.number_of_seasons } : {}),
@@ -366,8 +367,8 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
     description,
     thumbnailUrl: `https://image.tmdb.org/t/p/w1280${rawData.backdrop_path}`,
     uploadDate: releaseDate || new Date().toISOString().split('T')[0],
-    contentUrl: `${SITE_URL}/details/${showId}`,
-    embedUrl: `${SITE_URL}/details/${showId}`,
+    contentUrl: `${SITE_URL}${mediaUrl(showId, title, mediaType, year)}`,
+    embedUrl: `${SITE_URL}${mediaUrl(showId, title, mediaType, year)}`,
     ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),
   } : null;
 
@@ -380,7 +381,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-          { '@type': 'ListItem', position: 2, name: title, item: `${SITE_URL}/details/${showId}` },
+          { '@type': 'ListItem', position: 2, name: title, item: `${SITE_URL}${mediaUrl(showId, title, mediaType, year)}` },
         ],
       }) }} />
       <DetailsContent

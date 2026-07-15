@@ -2,6 +2,7 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { NextResponse } from 'next/server';
+import { personUrl } from '@/lib/slug';
 
 // In-memory L1 + filesystem L2 cache
 let inMemoryXml: string | null = null;
@@ -73,7 +74,7 @@ export async function GET() {
   });
 
   const urls = filteredPeople.map(p =>
-    `  <url>\n    <loc>${baseUrl}/person/${p.id}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.7</priority>\n  </url>`
+    `  <url>\n    <loc>${baseUrl}${personUrl(p.id, p.name)}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.7</priority>\n  </url>`
   );
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

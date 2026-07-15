@@ -160,7 +160,7 @@ To: Lumovia DMCA Designated Agent
 
 2. Location of Infringing Material:
    [Full URL(s) on Lumovia, e.g.,
-    https://lumovia-stream-omega.vercel.app/details/27205-inception
+    https://lumovia-stream-omega.vercel.app/movie/inception-2010-27205
     One URL per line. Specific URLs are required.]
 
 3. My Contact Information:

@@ -10,9 +10,9 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
  *
  * Sub-sitemaps:
  *   - sitemap-static.xml  → core pages, genres, decades, years, legal
- *   - sitemap-details.xml → /details/[id] (movies + TV shows)
- *   - sitemap-episodes.xml → /details/[id]/season/[s]/episode/[e]
- *   - sitemap-people.xml  → /person/[id]
+ *   - sitemap-details.xml → /movie/[slug], /tv/[slug], /anime/[slug]
+ *   - sitemap-episodes.xml → /movie/[slug]/season/[s]/episode/[e], /tv/[slug]/season/[s]/episode/[e]
+ *   - sitemap-people.xml  → /actor/[slug]
  *   - sitemap-blog.xml    → /blog/[slug] (SEO blog posts)
  */
 

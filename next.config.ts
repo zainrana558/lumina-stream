@@ -23,6 +23,32 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  async rewrites() {
+    return [
+      // ── Clean slug routes → internal ID-based routes ──────────────────
+      // The slug contains a trailing numeric ID (e.g., inception-2010-27205).
+      // Next.js rewrites extract it and map to /details/[id].
+      //
+      // /movie/inception-2010-27205 → /details/27205
+      { source: '/movie/:slug', destination: '/details/:slug' },
+      // /tv/breaking-bad-2008-1396 → /details/1396
+      { source: '/tv/:slug', destination: '/details/:slug' },
+      // /anime/one-piece-1999-100000164 → /details/100000164
+      { source: '/anime/:slug', destination: '/details/:slug' },
+      // /actor/leonardo-dicaprio-287 → /person/287
+      { source: '/actor/:slug', destination: '/person/:slug' },
+      // /country/japan → /browse?country=JP
+      { source: '/country/:slug', destination: '/browse?country=:slug' },
+      // /language/japanese → /browse?language=ja
+      { source: '/language/:slug', destination: '/browse?language=:slug' },
+      // /country/japan/1 → /browse?country=JP&page=1 (pagination)
+      { source: '/country/:slug/:page', destination: '/browse?country=:slug&page=:page' },
+      // /language/japanese/1 → /browse?language=ja&page=1 (pagination)
+      { source: '/language/:slug/:page', destination: '/browse?language=:slug&page=:page' },
+      // /studio/warner-bros → /browse?q=Warner+Bros
+      { source: '/studio/:slug', destination: '/browse?q=:slug' },
+    ];
+  },
   async headers() {
     return [
       {

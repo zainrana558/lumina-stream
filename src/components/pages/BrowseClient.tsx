@@ -7,6 +7,7 @@ import { GENRES_ALL, PORTAL_NAME_SET, TMDB_GENRE_NAME_MAP } from '@/styles/theme
 import { tmdbToMedia } from '@/types';
 import Card from '@/components/common/Card';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { SLUG_TO_COUNTRY, SLUG_TO_LANGUAGE } from '@/lib/slug';
 
 interface BrowseClientProps {
   initialShows: MediaItem[];
@@ -81,8 +82,11 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const moodParam = searchParams.get('mood')?.toLowerCase() || '';
   const moodConfig = moodParam ? MOOD_CONFIG[moodParam] : null;
   const genreParam = searchParams.get('genre') || '';
-  const countryParam = searchParams.get('country') || '';
-  const languageParam = searchParams.get('language') || '';
+  // Resolve slug-based params to ISO codes (e.g. "japan" → "JP", "japanese" → "ja")
+  const rawCountry = searchParams.get('country') || '';
+  const rawLanguage = searchParams.get('language') || '';
+  const countryParam = SLUG_TO_COUNTRY[rawCountry] || rawCountry;
+  const languageParam = SLUG_TO_LANGUAGE[rawLanguage] || rawLanguage;
 
   const [allShows, setAllShows] = useState<MediaItem[]>(initialShows);
   const [genre, setGenre] = useState(() => {
@@ -92,7 +96,14 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     }
     return 'All';
   });
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState(() => {
+    const rawQ = searchParams.get('q') || '';
+    // Convert slug-style query back to readable text (e.g. "warner-bros" → "Warner Bros")
+    if (rawQ.includes('-') && !rawQ.includes(' ')) {
+      return rawQ.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+    return rawQ;
+  });
   const [sort, setSort] = useState<SortKey>('r');
   const [isMobile, setIsMobile] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -127,7 +138,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const isSearching = activeQuery.length > 0;
 
   // Build browse API query string with persistent country/language filters
-  const browseQs = (overrides: Record<string, string> = '') => {
+  const browseQs = (overrides: Record<string, string> = {}) => {
     const p = new URLSearchParams(overrides);
     if (countryParam && countryParam !== 'all') p.set('country', countryParam);
     if (languageParam && languageParam !== 'all') p.set('language', languageParam);

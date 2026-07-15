@@ -7,6 +7,7 @@ import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
 import { vibrateTap } from '@/lib/haptics';
 import { getPosterUrl, getBlurPlaceholder } from '@/lib/images';
+import { mediaUrl } from '@/lib/slug';
 
 interface CardProps {
   show: MediaItem;
@@ -73,7 +74,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
 
   useEffect(() => () => { if (raf.current) cancelAnimationFrame(raf.current); }, []);
 
-  const href = `/details/${show.id}`;
+  const href = mediaUrl(show.id, show.title, show.media_type, show.yr, show._isAnilist);
 
   return (
     <Link

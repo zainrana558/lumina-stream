@@ -10,6 +10,7 @@ import {
   stripHtml,
   SITE_URL,
 } from '@/lib/seo/metadata';
+import { extractIdFromSlug, mediaUrl } from '@/lib/slug';
 
 export const revalidate = 600; // 10 min
 
@@ -62,8 +63,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ id: string; season: string; episode: string }>;
 }): Promise<Metadata> {
-  const { id, season: seasonStr, episode: episodeStr } = await params;
-  const showId = Number(id);
+  const { id: rawSlug, season: seasonStr, episode: episodeStr } = await params;
+  const showId = extractIdFromSlug(rawSlug) || Number(rawSlug);
   const season = Number(seasonStr);
   const episode = Number(episodeStr);
 
@@ -222,8 +223,8 @@ export default async function EpisodePage({
 }: {
   params: Promise<{ id: string; season: string; episode: string }>;
 }) {
-  const { id, season: seasonStr, episode: episodeStr } = await params;
-  const showId = Number(id);
+  const { id: rawSlug, season: seasonStr, episode: episodeStr } = await params;
+  const showId = extractIdFromSlug(rawSlug) || Number(rawSlug);
   const season = Number(seasonStr);
   const episode = Number(episodeStr);
 
@@ -234,6 +235,7 @@ export default async function EpisodePage({
     let episodeJsonLd: Record<string, unknown> | null = null;
     let videoJsonLd: Record<string, unknown> | null = null;
     let tmdbEpData: TMDBSeasonEpisode | null = null;
+    let anilistBaseUrl = '';
 
     try {
       const anilistId = toAnilistId(showId);
@@ -274,13 +276,14 @@ export default async function EpisodePage({
           } catch { /* TMDB cross-ref failed */ }
         }
 
+        anilistBaseUrl = `${SITE_URL}${mediaUrl(showId, title, 'tv', data.startDate?.year, true)}`;
         jsonLd = {
           '@context': 'https://schema.org',
           '@type': data.format === 'TV' || data.format === 'TV_SHORT' ? 'TVSeries' : 'Movie',
           name: title,
           description,
           image: cover || undefined,
-          url: `${SITE_URL}/details/${showId}`,
+          url: anilistBaseUrl,
           datePublished: data.startDate?.year ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}` : undefined,
           ...(totalEps ? { numberOfEpisodes: totalEps } : {}),
           genre: genreNames.slice(0, 5) || undefined,
@@ -310,9 +313,9 @@ export default async function EpisodePage({
           partOfSeries: {
             '@type': data.format === 'TV' || data.format === 'TV_SHORT' ? 'TVSeries' : 'Movie',
             name: title,
-            url: `${SITE_URL}/details/${showId}`,
+            url: anilistBaseUrl,
           },
-          url: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
+          url: `${anilistBaseUrl}/season/${season}/episode/${episode}`,
           position: episode,
           ...(tmdbEpData?.runtime ? { duration: `PT${tmdbEpData.runtime}M` } : {}),
           ...(tmdbEpData?.air_date ? { datePublished: tmdbEpData.air_date } : {}),
@@ -329,8 +332,8 @@ export default async function EpisodePage({
               ? `https://image.tmdb.org/t/p/w1280${tmdbEpData.still_path}`
               : cover || undefined,
             uploadDate: tmdbEpData?.air_date || (data.startDate?.year ? `${data.startDate.year}` : undefined),
-            contentUrl: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
-            embedUrl: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
+            contentUrl: `${anilistBaseUrl}/season/${season}/episode/${episode}`,
+            embedUrl: `${anilistBaseUrl}/season/${season}/episode/${episode}`,
             ...(tmdbEpData?.runtime ? { duration: `PT${tmdbEpData.runtime}M` } : {}),
           };
         }
@@ -347,9 +350,9 @@ export default async function EpisodePage({
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-            { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}/details/${showId}` },
-            { '@type': 'ListItem', position: 3, name: `Season ${season}`, item: `${SITE_URL}/details/${showId}/season/${season}` },
-            { '@type': 'ListItem', position: 4, name: tmdbEpData?.name || `Episode ${episode}`, item: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}` },
+            { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: anilistBaseUrl },
+            { '@type': 'ListItem', position: 3, name: `Season ${season}`, item: `${anilistBaseUrl}/season/${season}` },
+            { '@type': 'ListItem', position: 4, name: tmdbEpData?.name || `Episode ${episode}`, item: `${anilistBaseUrl}/season/${season}/episode/${episode}` },
           ],
         }) }} />
         <DetailsContent showId={showId} initialShow={show} defaultSeason={season} defaultEpisode={episode} />
@@ -366,6 +369,7 @@ export default async function EpisodePage({
           showOverview={show?.desc || ''}
           showGenres={show?.genre || []}
           showMediaType="anime"
+          showYear={show?.yr}
           totalEpisodes={show?.eps}
         />
       </>
@@ -435,6 +439,8 @@ export default async function EpisodePage({
   const usRating = fullData?.content_ratings?.results?.find(r => r.iso_3166_1 === 'US')?.rating
     || fullData?.content_ratings?.results?.[0]?.rating;
 
+  const showBaseUrl = `${SITE_URL}${mediaUrl(showId, title, mediaType, releaseDate?.slice(0, 4))}`;
+
   // Show-level schema
   const showJsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -442,7 +448,7 @@ export default async function EpisodePage({
     name: title,
     description,
     image: poster,
-    url: `${SITE_URL}/details/${showId}`,
+    url: showBaseUrl,
     datePublished: releaseDate,
     ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),
     ...(rawData.number_of_seasons ? { numberOfSeasons: rawData.number_of_seasons } : {}),
@@ -477,9 +483,9 @@ export default async function EpisodePage({
     partOfSeries: {
       '@type': mediaType === 'tv' ? 'TVSeries' : 'Movie',
       name: title,
-      url: `${SITE_URL}/details/${showId}`,
+      url: showBaseUrl,
     },
-    url: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
+    url: `${showBaseUrl}/season/${season}/episode/${episode}`,
     position: episode,
     ...(episodeData?.runtime ? { duration: `PT${episodeData.runtime}M` } : {}),
     datePublished: episodeData?.air_date || releaseDate,
@@ -497,8 +503,8 @@ export default async function EpisodePage({
         ? `https://image.tmdb.org/t/p/w1280${rawData.backdrop_path}`
         : undefined,
     uploadDate: episodeData?.air_date || releaseDate || new Date().toISOString().split('T')[0],
-    contentUrl: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
-    embedUrl: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`,
+    contentUrl: `${showBaseUrl}/season/${season}/episode/${episode}`,
+    embedUrl: `${showBaseUrl}/season/${season}/episode/${episode}`,
     ...(episodeData?.runtime ? { duration: `PT${episodeData.runtime}M` } : {}),
   } : null;
 
@@ -512,9 +518,9 @@ export default async function EpisodePage({
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-          { '@type': 'ListItem', position: 2, name: title, item: `${SITE_URL}/details/${showId}` },
-          { '@type': 'ListItem', position: 3, name: `Season ${season}`, item: `${SITE_URL}/details/${showId}/season/${season}` },
-          { '@type': 'ListItem', position: 4, name: `Episode ${episode}`, item: `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}` },
+          { '@type': 'ListItem', position: 2, name: title, item: showBaseUrl },
+          { '@type': 'ListItem', position: 3, name: `Season ${season}`, item: `${showBaseUrl}/season/${season}` },
+          { '@type': 'ListItem', position: 4, name: `Episode ${episode}`, item: `${showBaseUrl}/season/${season}/episode/${episode}` },
         ],
       }) }} />
       <DetailsContent
@@ -540,6 +546,7 @@ export default async function EpisodePage({
         showOverview={rawData?.overview}
         showGenres={genreNames}
         showMediaType={mediaType || undefined}
+        showYear={releaseDate?.slice(0, 4)}
         totalEpisodes={seasonEpisodeCount}
       />
     </>

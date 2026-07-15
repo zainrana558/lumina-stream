@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { CS } from '@/styles/themes';
 
 import { getPosterUrl } from '@/lib/images';
+import { mediaUrl } from '@/lib/slug';
 
 interface UpcomingMovie {
   id: number;
@@ -222,7 +223,7 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/details/${movie.id}`);
+                              router.push(mediaUrl(movie.id, movie.title, 'movie', movie.release_date?.slice(0, 4)));
                             }}
                             className="btn-p"
                             style={{ marginTop: '.75rem', padding: '7px 16px', fontSize: '.72rem' }}

@@ -7,6 +7,7 @@ import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
 
 import { getPosterUrl, getBlurPlaceholder } from '@/lib/images';
+import { mediaUrl } from '@/lib/slug';
 
 interface SeasonalClientProps {
   airingToday: MediaItem[];
@@ -35,8 +36,8 @@ function SeasonCard({ item, index }: { item: MediaItem; index: number }) {
       className="neo-card"
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/details/${item.id}`); }}
-      onClick={() => router.push(`/details/${item.id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter') router.push(mediaUrl(item.id, item.title, item.media_type, item.yr, item._isAnilist)); }}
+      onClick={() => router.push(mediaUrl(item.id, item.title, item.media_type, item.yr, item._isAnilist))}
       style={{
         borderRadius: 14, overflow: 'hidden', cursor: 'pointer',
         animation: `card-in .5s ${index * 0.05}s both`,

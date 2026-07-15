@@ -2,6 +2,7 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb/server';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { NextResponse } from 'next/server';
+import { mediaUrl } from '@/lib/slug';
 
 // In-memory L1 + filesystem L2 cache
 let inMemoryXml: string | null = null;
@@ -90,7 +91,7 @@ export async function GET() {
           const episodes = seasonData?.episodes || [];
           for (const ep of episodes) {
             episodeUrls.push(
-              `  <url>\n    <loc>${baseUrl}/details/${show.id}/season/${i + 1}/episode/${ep.episode_number}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.6</priority>\n  </url>`
+              `  <url>\n    <loc>${baseUrl}${mediaUrl(show.id, show.title || show.name || '', show.media_type, (show.release_date || show.first_air_date)?.slice(0, 4))}/season/${i + 1}/episode/${ep.episode_number}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.6</priority>\n  </url>`
             );
           }
         })

@@ -17,6 +17,7 @@
  */
 
 import type { Metadata } from 'next';
+import { mediaUrl } from '@/lib/slug';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -131,6 +132,8 @@ export interface ShowMetadataInput {
   imageHeight?: number;
   /** Whether this page has thin/insufficient content (adds noindex) */
   isThin?: boolean;
+  /** Whether the ID is an AniList ID (for /anime/ prefix) */
+  isAnilist?: boolean;
 }
 
 /**
@@ -141,10 +144,10 @@ export interface ShowMetadataInput {
 export function buildShowMetadata(input: ShowMetadataInput): Metadata {
   const {
     title, year, mediaType, id, description, cast, genres,
-    image, imageWidth, imageHeight, isThin,
+    image, imageWidth, imageHeight, isThin, isAnilist,
   } = input;
 
-  const pageUrl = `${SITE_URL}/details/${id}`;
+  const pageUrl = `${SITE_URL}${mediaUrl(id, title, mediaType, year, isAnilist)}`;
   const yearStr = year ? ` (${year})` : '';
 
   const typeLabel =
@@ -216,6 +219,8 @@ export interface EpisodeMetadataInput {
   mediaType?: MediaType;
   /** Whether this is a generated/placeholder episode (thin content) */
   isPlaceholder?: boolean;
+  /** Whether the show ID is an AniList ID (for /anime/ prefix) */
+  isAnilist?: boolean;
 }
 
 /**
@@ -230,10 +235,11 @@ export interface EpisodeMetadataInput {
 export function buildEpisodeMetadata(input: EpisodeMetadataInput): Metadata {
   const {
     showTitle, showYear, season, episode, episodeTitle,
-    episodeDescription, runtime, showId, image, mediaType, isPlaceholder,
+    episodeDescription, runtime, showId, image, mediaType, isPlaceholder, isAnilist,
   } = input;
 
-  const pageUrl = `${SITE_URL}/details/${showId}/season/${season}/episode/${episode}`;
+  const showPath = mediaUrl(showId, showTitle, mediaType, showYear, isAnilist);
+  const pageUrl = `${SITE_URL}${showPath}/season/${season}/episode/${episode}`;
   const yearStr = showYear ? ` (${showYear})` : '';
 
   // Title: compact format to stay under ~60 chars (template appends " | Lumovia")

@@ -12,6 +12,7 @@ import ContinueWatchingCard from '@/components/common/ContinueWatchingCard';
 import MoodRoulette from '@/components/common/MoodRoulette';
 import GenreProgress from '@/components/common/GenreProgress';
 import { getBackdropUrl } from '@/lib/images';
+import { mediaUrl } from '@/lib/slug';
 import Image from 'next/image';
 import { lazy, Suspense } from 'react';
 
@@ -253,8 +254,8 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
           <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)', alignSelf: 'center', }}>{F.eps} eps · {F.yr}</span>
         </div>
         <div className="s5" style={{ display: 'flex', gap: '.85rem', flexWrap: 'wrap' }}>
-          <button className="btn-p" onClick={() => router.push(`/details/${F.id}`)}>▶ Play Now</button>
-          <button className="btn-g" onClick={() => router.push(`/details/${F.id}`)}>ℹ More Info</button>
+          <button className="btn-p" onClick={() => router.push(mediaUrl(F.id, F.title, F.media_type, F.yr, F._isAnilist))}>▶ Play Now</button>
+          <button className="btn-g" onClick={() => router.push(mediaUrl(F.id, F.title, F.media_type, F.yr, F._isAnilist))}>ℹ More Info</button>
           <button className="btn-g" onClick={() => toggleHeroWatchlist(F)}>
             {heroWatchlist.has(F.id) ? '✓ In My List' : '+ My List'}
           </button>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { studioSlug } from '@/lib/slug';
 
 export const dynamic = 'force-static';
 export const revalidate = 86400;
@@ -236,7 +237,7 @@ export default function StudiosPage() {
               {category.studios.map((studio) => (
                 <Link
                   key={studio.name}
-                  href={`/browse?q=${encodeURIComponent(studio.name)}`}
+                  href={`/studio/${studioSlug(studio.name)}`}
                   style={{
                     display: 'block',
                     textDecoration: 'none',

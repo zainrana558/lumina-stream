@@ -14,6 +14,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { vibrateMedium, vibrateLong } from '@/lib/haptics';
 import { getTmdbImageUrl, getBackdropUrl, getYoutubeThumbnail } from '@/lib/images';
+import { personUrl } from '@/lib/slug';
 import TrailerModal from '@/components/common/TrailerModal';
 import IntelligentPlayer from '@/components/common/IntelligentPlayer';
 import LegalDisclaimerBanner from '@/components/common/LegalDisclaimerBanner';
@@ -829,7 +830,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
             <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.25rem' }}>CAST</h2>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             {castList.map((c, i) => (
-              <Link key={c.id || c.name || i} href={c.id ? `/person/${c.id}` : '#'} className="neo-card" style={{ padding: '13px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .42s ${i * 0.08}s both`, textDecoration: 'none', color: 'inherit' }}>
+              <Link key={c.id || c.name || i} href={c.id ? personUrl(c.id, c.name) : '#'} className="neo-card" style={{ padding: '13px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .42s ${i * 0.08}s both`, textDecoration: 'none', color: 'inherit' }}>
                 {c.profile_path ? (
                   <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', boxShadow: `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px ${s.acc}40` }}>
                     <Image src={getTmdbImageUrl(c.profile_path, 'w185')!} alt={c.name} width={40} height={40} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

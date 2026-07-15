@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, getImageUrl, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
+import { personUrl } from '@/lib/slug';
 
 export const revalidate = 3600;
 
@@ -74,7 +75,7 @@ export default async function DirectorsPage() {
     mainEntity: directors.slice(0, 20).map(d => ({
       '@type': 'Person',
       name: d.name,
-      url: `${siteUrl}/person/${d.id}`,
+      url: `${siteUrl}${personUrl(d.id, d.name)}`,
       image: d.profile_path ? `https://image.tmdb.org/t/p/w185${d.profile_path}` : undefined,
       jobTitle: 'Film Director',
     })),
@@ -147,7 +148,7 @@ export default async function DirectorsPage() {
             return (
               <Link
                 key={director.id}
-                href={`/person/${director.id}`}
+                href={personUrl(director.id, director.name)}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',

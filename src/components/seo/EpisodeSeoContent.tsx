@@ -4,6 +4,7 @@
  */
 
 import Link from 'next/link';
+import { mediaUrl } from '@/lib/slug';
 
 interface EpisodeSeoProps {
   showTitle: string;
@@ -19,6 +20,7 @@ interface EpisodeSeoProps {
   showGenres?: string[];
   showMediaType?: 'tv' | 'movie' | 'anime';
   totalEpisodes?: number;
+  showYear?: number | string;
 }
 
 function buildEpisodeFaq(props: EpisodeSeoProps): Array<{ q: string; a: string }> {
@@ -80,7 +82,7 @@ function buildEpisodeFaq(props: EpisodeSeoProps): Array<{ q: string; a: string }
 export default function EpisodeSeoContent(props: EpisodeSeoProps) {
   const {
     showTitle, showId, season, episode, episodeTitle, episodeOverview,
-    runtime, airDate, rating, showOverview, showGenres, showMediaType, totalEpisodes,
+    runtime, airDate, rating, showOverview, showGenres, showMediaType, totalEpisodes, showYear,
   } = props;
 
   const faq = buildEpisodeFaq(props);
@@ -126,7 +128,7 @@ export default function EpisodeSeoContent(props: EpisodeSeoProps) {
       `}</style>
 
       <article className="seo-ep f-crimson" aria-label={`Episode information for ${displayName}`}>
-        <Link href={`/details/${showId}`} className="show-link f-cinzel">
+        <Link href={mediaUrl(showId, showTitle, showMediaType, showYear)} className="show-link f-cinzel">
           {showTitle}
         </Link>
         <h1 className="f-cinzel-dec">
@@ -155,7 +157,7 @@ export default function EpisodeSeoContent(props: EpisodeSeoProps) {
           {Array.from({ length: Math.min(totalEpisodes || 20, 24) }, (_, i) => i + 1).map(epNum => (
             <a
               key={epNum}
-              href={`/details/${showId}/season/${season}/episode/${epNum}`}
+              href={`${mediaUrl(showId, showTitle, showMediaType, showYear)}/season/${season}/episode/${epNum}`}
               className={epNum === episode ? 'active' : ''}
               aria-current={epNum === episode ? 'page' : undefined}
             >
@@ -186,7 +188,7 @@ export default function EpisodeSeoContent(props: EpisodeSeoProps) {
             <p>
               {showOverview.length > 400 ? showOverview.slice(0, 397) + '...' : showOverview}
               {' '}Read more about {showTitle} and browse all episodes on the{' '}
-              <a href={`/details/${showId}`} style={{ color: '#FFB347', textDecoration: 'none' }}>
+              <a href={mediaUrl(showId, showTitle, showMediaType, showYear)} style={{ color: '#FFB347', textDecoration: 'none' }}>
                 full details page
               </a>.
             </p>
@@ -208,7 +210,7 @@ export default function EpisodeSeoContent(props: EpisodeSeoProps) {
 
         {/* Internal links — dense for crawl budget distribution */}
         <nav aria-label="Related pages" className="nav-links">
-          <Link href={`/details/${showId}`}>Full Show Details</Link>
+          <Link href={mediaUrl(showId, showTitle, showMediaType, showYear)}>Full Show Details</Link>
           <Link href="/tv-shows">TV Shows</Link>
           <Link href="/browse">Browse All</Link>
           <Link href="/top-rated">Top Rated</Link>
