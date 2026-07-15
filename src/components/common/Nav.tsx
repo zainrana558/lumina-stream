@@ -113,7 +113,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
-          style={{ display: 'none', width: 32, height: 32, fontSize: '1rem' }}
+          style={{ display: 'none', width: 44, height: 44, fontSize: '1rem', alignItems: 'center', justifyContent: 'center' }}
         >=</button>
         <div onClick={() => go('home')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') go('home'); }} style={{ cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}>
           <span className="logo" style={{ fontSize: 'clamp(1.05rem,2vw,1.35rem)' }}>LUMOVIA</span>

@@ -172,6 +172,8 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
   useEffect(() => {
     if (reducedMotion) return;
     let raf: number | undefined;
+    let attached = false;
+
     const fn = (e: MouseEvent) => {
       if (raf) return;
       raf = requestAnimationFrame(() => {
@@ -182,9 +184,32 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
         bgRef.current.style.transform = `translate(${x}px,${y}px) scale(1.07)`;
       });
     };
-    window.addEventListener('mousemove', fn as EventListener);
-    return () => window.removeEventListener('mousemove', fn as EventListener);
-  }, []);
+
+    // Defer listener attachment until after LCP (2s) and only when hero is visible
+    const timer = setTimeout(() => {
+      if (!bgRef.current) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting && !attached) {
+            window.addEventListener('mousemove', fn as EventListener);
+            attached = true;
+          } else if (!entry.isIntersecting && attached) {
+            window.removeEventListener('mousemove', fn as EventListener);
+            attached = false;
+          }
+        },
+        { threshold: 0 }
+      );
+      observer.observe(bgRef.current);
+      return () => observer.disconnect();
+    }, 2000);
+
+    return () => {
+      clearTimeout(timer);
+      if (attached) window.removeEventListener('mousemove', fn as EventListener);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [reducedMotion]);
 
   if (featured.length === 0) {
     return (
@@ -229,6 +254,7 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
               alt={`${F.title} featured backdrop`}
               fill
               priority
+              fetchPriority="high"
               sizes="100vw"
               style={{ objectFit: 'cover', zIndex: 0 }}
             />
@@ -695,6 +721,11 @@ export default function Home({
 
       {/* ── Content Rows ── */}
       <section style={{ padding: '0 0 3.5rem', position: 'relative', zIndex: 3 }}>
+        {/* Static rows first (server-rendered via ISR) so they define the initial
+            viewport layout and prevent CLS when Continue Watching loads async. */}
+        {filteredRows.map((row, i) => (
+          <ContentRow key={`row-${i}`} title={row.title} sub={row.sub} items={row.items} ranked={row.title.includes('Top 10')} loadMoreEndpoint={row.endpoint} loadMoreParams={row.params} />
+        ))}
         {continueWatching.length > 0 && (
           <div style={{ marginBottom: 44 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16, paddingInline: 'clamp(1rem,5vw,3rem)' }}>
@@ -721,9 +752,6 @@ export default function Home({
         {!loadingRecs && recommendedItems.length > 0 && (
           <ContentRow title="Because You Watched" sub="Recommended based on your history" items={recommendedItems} />
         )}
-        {filteredRows.map((row, i) => (
-          <ContentRow key={`row-${i}`} title={row.title} sub={row.sub} items={row.items} ranked={row.title.includes('Top 10')} loadMoreEndpoint={row.endpoint} loadMoreParams={row.params} />
-        ))}
       </section>
 
       {/* ── GENRE PORTALS — Cinematic Backdrop Banners ── */}

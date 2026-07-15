@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useRef, useCallback, useEffect } from 'react';
+import { memo, useRef, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { MediaItem } from '@/types';
@@ -20,6 +20,10 @@ interface CardProps {
 const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: CardProps) {
   const ref = useRef<HTMLAnchorElement>(null);
   const raf = useRef<number | undefined>(undefined);
+  const [hoverCapable] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.matchMedia('(hover: hover)').matches;
+  });
   const s = CS[show.cs];
   const h = { sm: 200, md: 296, lg: 370 }[sz];
   // Support both TMDB poster paths and AniList full cover URLs
@@ -44,25 +48,6 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
     });
   }, []);
 
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (raf.current || !e.touches[0]) return;
-    raf.current = requestAnimationFrame(() => {
-      raf.current = undefined;
-      const el = ref.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const touch = e.touches[0];
-      const x = (touch.clientX - rect.left) / rect.width - 0.5;
-      const y = (touch.clientY - rect.top) / rect.height - 0.5;
-      el.style.transform = `perspective(750px) rotateY(${x * 12}deg) rotateX(${y * -12}deg) scale3d(1.03,1.03,1.03)`;
-      const sh = el.querySelector('.cshine');
-      if (sh) {
-        (sh as HTMLElement).style.opacity = '1';
-        (sh as HTMLElement).style.background = `radial-gradient(circle at ${(x + 0.5) * 100}% ${(y + 0.5) * 100}%,rgba(255,255,255,.1) 0%,transparent 55%)`;
-      }
-    });
-  }, []);
-
   const onLeave = useCallback(() => {
     const el = ref.current;
     if (el) {
@@ -82,9 +67,8 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
       ref={ref}
       className="card"
       style={{ height: h, textDecoration: 'none', color: 'inherit' }}
-      onMouseMove={onMove}
-      onTouchMove={onTouchMove}
-      onMouseLeave={onLeave}
+      onMouseMove={hoverCapable ? onMove : undefined}
+      onMouseLeave={hoverCapable ? onLeave : undefined}
       onClick={(e) => {
         if (onClick) {
           e.preventDefault();

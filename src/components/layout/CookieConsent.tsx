@@ -9,7 +9,7 @@ export default function CookieConsent() {
 
   useEffect(() => {
     if (!localStorage.getItem(CONSENT_KEY)) {
-      const timer = setTimeout(() => setVisible(true), 1500);
+      const timer = setTimeout(() => setVisible(true), 3000);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -55,12 +55,13 @@ export default function CookieConsent() {
           style={{
             fontSize: '.72rem',
             letterSpacing: '.08em',
-            padding: '8px 18px',
+            padding: '12px 18px',
             borderRadius: 8,
             border: '1px solid rgba(255,245,232,.12)',
             background: 'transparent',
             color: 'rgba(255,245,232,.5)',
             cursor: 'pointer',
+            minHeight: 44,
             transition: 'all .2s',
           }}
         >
@@ -72,13 +73,14 @@ export default function CookieConsent() {
           style={{
             fontSize: '.72rem',
             letterSpacing: '.08em',
-            padding: '8px 18px',
+            padding: '12px 18px',
             borderRadius: 8,
             border: 'none',
             background: 'linear-gradient(135deg, #FFB347, #C860FF)',
             color: '#05030C',
             cursor: 'pointer',
             fontWeight: 600,
+            minHeight: 44,
             transition: 'all .2s',
           }}
         >

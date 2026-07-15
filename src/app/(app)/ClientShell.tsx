@@ -35,20 +35,10 @@ function NotificationBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Show banner after a short delay if:
-    // - Notifications are supported
-    // - Permission is default (not yet asked)
-    // - User hasn't dismissed the prompt before
-    if (isSupported && permissionStatus === 'default' && !hasPromptBeenDismissed()) {
-      const showTimer = setTimeout(() => setVisible(true), 4000);
-      // Auto-dismiss 5.5 seconds after appearing
-      const hideTimer = setTimeout(() => {
-        dismissPrompt();
-        setVisible(false);
-      }, 9500); // 4s delay + 5.5s visible
-      return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
-    }
-  }, [isSupported, permissionStatus, hasPromptBeenDismissed, dismissPrompt]);
+    // Notification banner is now user-triggered only (e.g., via bell icon).
+    // Auto-triggering caused CLS and intrusive interstitial issues.
+    // No automatic display — will be shown via parent trigger if needed.
+  }, []);
 
   if (!visible) return null;
 
@@ -65,7 +55,7 @@ function NotificationBanner() {
   return (
     <div style={{
       position: 'fixed',
-      bottom: 80,
+      bottom: 78,
       left: '50%',
       transform: 'translateX(-50%)',
       zIndex: 996,
@@ -144,7 +134,13 @@ function AppShell({ children }: { children: ReactNode }) {
   );
   const [transitioning, setTransitioning] = useState(false);
   const [shortcutOverlay, setShortcutOverlay] = useState(false);
+  const [orbsVisible, setOrbsVisible] = useState(false);
   const prevPathRef = useRef(pathname);
+
+  useEffect(() => {
+    const t = requestIdleCallback(() => setOrbsVisible(true));
+    return () => cancelIdleCallback(t);
+  }, []);
 
   // Register Service Worker
   useEffect(() => {
@@ -218,12 +214,14 @@ function AppShell({ children }: { children: ReactNode }) {
   return (
     <div style={{ minHeight: '100vh', background: '#07040F', position: 'relative' }}>
       <a href="#main-content" className="skip-link" aria-label="Skip to main content">Skip to content</a>
-      {/* Ambient background orbs */}
+      {/* Ambient background orbs — deferred until after mount to avoid blocking LCP */}
+      {orbsVisible && (
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
         <div style={{ position: 'absolute', top: '-26%', left: '-13%', width: '66vw', height: '66vw', borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb, var(--accent3,#8B78FF) 11%, transparent) 0%,transparent 70%)', animation: 'aurora 20s ease-in-out infinite' }} />
         <div style={{ position: 'absolute', top: '36%', right: '-18%', width: '55vw', height: '55vw', borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb, var(--accent2,#FF6B8A) 9%, transparent) 0%,transparent 70%)', animation: 'aurora 24s ease-in-out infinite reverse', animationDelay: '-7s' }} />
         <div style={{ position: 'absolute', bottom: '-22%', left: '28%', width: '48vw', height: '48vw', borderRadius: '50%', background: 'radial-gradient(circle,color-mix(in srgb, var(--accent,#FFB347) 7%, transparent) 0%,transparent 70%)', animation: 'aurora 28s ease-in-out infinite', animationDelay: '-13s' }} />
       </div>
+      )}
 
       {/* Ad monetization scripts */}
       <Suspense fallback={null}>

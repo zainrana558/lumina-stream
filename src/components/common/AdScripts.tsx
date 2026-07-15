@@ -125,14 +125,19 @@ export default function AdScripts() {
     if (!ADS_ENABLED || fired.current) return;
     fired.current = true;
 
-    // Small delay — let page content load first (better UX)
-    const timer = setTimeout(() => {
-      // Pop-under (PopAds handles its own frequency capping)
-      if (POPADS_ID) {
-        if (process.env.NODE_ENV !== 'production') console.log('[Ads] Injecting PopAds — siteId:', POPADS_ID);
+    // Pop-under: click-initiated only (no timer) to avoid intrusive interstitials
+    // and improve Core Web Vitals (CLS, INP). PopAds handles its own frequency capping.
+    if (POPADS_ID) {
+      const onClick = () => {
+        if (process.env.NODE_ENV !== 'production') console.log('[Ads] Injecting PopAds on first click — siteId:', POPADS_ID);
         injectPopAds(POPADS_ID);
-      }
+        document.removeEventListener('click', onClick, true);
+      };
+      document.addEventListener('click', onClick, { once: true, capture: true });
+    }
 
+    // Delayed non-intrusive scripts (push, analytics, anti-adblock)
+    const timer = setTimeout(() => {
       // Push notifications (PropellerAds)
       if (PROPELLERADS_ID) {
         injectPropellerPush(PROPELLERADS_ID);
@@ -145,7 +150,7 @@ export default function AdScripts() {
 
       // Anti-adblock detection
       injectAntiAdblock();
-    }, 2000);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -265,8 +270,8 @@ export function AdOverlay({ id }: { id: string }) {
           position: 'absolute',
           top: -12,
           right: 8,
-          width: 24,
-          height: 24,
+          width: 36,
+          height: 36,
           borderRadius: '50%',
           border: 'none',
           background: '#FF4A4A',
