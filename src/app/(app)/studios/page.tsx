@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
 export const dynamic = 'force-static';
@@ -19,6 +20,13 @@ export const metadata: Metadata = {
     description:
       'Browse our comprehensive directory of production studios from Hollywood majors to streaming originals, animation powerhouses, and international distributors.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Production Studios Directory — Lumovia',
+    description: 'Browse our comprehensive directory of production studios from Hollywood majors to streaming originals, animation powerhouses, and international distributors.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 
@@ -226,13 +234,17 @@ export default function StudiosPage() {
               }}
             >
               {category.studios.map((studio) => (
-                <div
+                <Link
                   key={studio.name}
+                  href={`/browse?q=${encodeURIComponent(studio.name)}`}
                   style={{
+                    display: 'block',
+                    textDecoration: 'none',
                     background: 'rgba(255,245,232,.04)',
                     border: '1px solid rgba(255,245,232,.08)',
                     borderRadius: 12,
                     padding: '20px 16px',
+                    transition: 'background .2s, border-color .2s',
                   }}
                 >
                   <div
@@ -256,7 +268,7 @@ export default function StudiosPage() {
                   >
                     {studio.desc}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           </section>

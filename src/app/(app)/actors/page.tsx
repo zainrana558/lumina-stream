@@ -19,6 +19,13 @@ export const metadata: Metadata = {
     title: 'Popular Actors & Actresses | Lumovia',
     description: 'Browse the top 100 most popular actors and actresses. Discover their profiles, best-known roles, and complete filmographies on Lumovia.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Popular Actors & Actresses | Lumovia',
+    description: 'Browse the top 100 most popular actors and actresses. Discover their profiles, best-known roles, and complete filmographies on Lumovia.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 

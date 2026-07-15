@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'popularity.desc';
     const page = searchParams.get('page') || '1';
     const language = searchParams.get('language') || '';
+    const country = searchParams.get('country') || '';
 
     // Build TMDB discover params
     const baseParams: Record<string, string> = { sort_by: sortBy, page };
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
     if (minRating) baseParams['vote_average.gte'] = minRating;
     if (minRating) baseParams['vote_count.gte'] = '10';
     if (language && language !== 'all') baseParams.with_original_language = language;
+    if (country && country !== 'all') baseParams.watch_region = country;
 
     const fetchMedia = async (mt: 'movie' | 'tv') => {
       const p = { ...baseParams };

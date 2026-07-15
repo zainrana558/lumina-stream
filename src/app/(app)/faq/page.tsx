@@ -19,6 +19,13 @@ export const metadata: Metadata = {
     title: 'Lumovia FAQ — Frequently Asked Questions',
     description: 'Get answers to the most common questions about Lumovia, including how ratings work, account features, device support, content sources, and legal information.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Lumovia FAQ — Frequently Asked Questions',
+    description: 'Get answers to the most common questions about Lumovia, including how ratings work, account features, device support, content sources, and legal information.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 
@@ -163,7 +170,7 @@ export default function FaqPage() {
 
   const faqPageJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'FAQPage',
+    '@type': 'WebPage',
     name: 'Lumovia FAQ',
     description: metadata.description,
     url: pageUrl,

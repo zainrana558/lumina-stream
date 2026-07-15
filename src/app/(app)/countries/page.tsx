@@ -20,6 +20,13 @@ export const metadata: Metadata = {
     description:
       'Browse our global directory of film industries. Explore movies and TV shows from Hollywood, Bollywood, K-Drama, anime, European cinema, and Latin American productions.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Countries & Film Industries — Lumovia',
+    description: 'Browse our global directory of film industries. Explore movies and TV shows from Hollywood, Bollywood, K-Drama, anime, European cinema, and Latin American productions.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 

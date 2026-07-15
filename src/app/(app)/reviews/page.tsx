@@ -18,6 +18,13 @@ export const metadata: Metadata = {
     title: 'Lumovia Ratings & Reviews — TMDB & AniList Score Explanations',
     description: 'Understand how ratings are calculated on Lumovia, powered by TMDB and AniList community scores for movies, TV shows, and anime.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Lumovia Ratings & Reviews — TMDB & AniList Score Explanations',
+    description: 'Understand how ratings are calculated on Lumovia, powered by TMDB and AniList community scores for movies, TV shows, and anime.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 

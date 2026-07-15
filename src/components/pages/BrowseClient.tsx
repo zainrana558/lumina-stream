@@ -81,6 +81,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   const moodParam = searchParams.get('mood')?.toLowerCase() || '';
   const moodConfig = moodParam ? MOOD_CONFIG[moodParam] : null;
   const genreParam = searchParams.get('genre') || '';
+  const countryParam = searchParams.get('country') || '';
+  const languageParam = searchParams.get('language') || '';
 
   const [allShows, setAllShows] = useState<MediaItem[]>(initialShows);
   const [genre, setGenre] = useState(() => {
@@ -123,6 +125,16 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
 
   const activeQuery = q.trim();
   const isSearching = activeQuery.length > 0;
+
+  // Build browse API query string with persistent country/language filters
+  const browseQs = (overrides: Record<string, string> = '') => {
+    const p = new URLSearchParams(overrides);
+    if (countryParam && countryParam !== 'all') p.set('country', countryParam);
+    if (languageParam && languageParam !== 'all') p.set('language', languageParam);
+    const s = p.toString();
+    return s ? `?${s}` : '';
+  };
+
   const isMoodMode = !!moodConfig;
 
   // Determine hasMore based on mode (derived — no setState effect needed)
@@ -177,7 +189,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     const genresCsv = moodConfig.anilistGenres.join(',');
 
     Promise.all([
-      fetch(`/api/browse?genre=${moodConfig.genres}&page=1&sortBy=popularity.desc`)
+      fetch(`/api/browse${browseQs({ genre: moodConfig.genres, page: '1', sortBy: 'popularity.desc' })}`)
         .then(r => r.json()).catch(() => ({ results: [] })),
       fetch(`/api/anime?type=genre&genres=${encodeURIComponent(genresCsv)}&page=1&perPage=25`)
         .then(r => r.json()).catch(() => ({ results: [] })),
@@ -220,8 +232,10 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
   // instead of only client-side filtering the initial ~80 trending shows.
   const genreFetchInitRef = useRef(false);
   const genreIdRef = useRef<number | null>(null);
+  const countryRef = useRef(countryParam);
+  const languageRef = useRef(languageParam);
   useEffect(() => {
-    if (!genreParam || isMoodMode || genreFetchInitRef.current) return;
+    if (!genreParam || isMoodMode || (genreFetchInitRef.current && countryRef.current === countryParam && languageRef.current === languageParam)) return;
     // Only fetch for non-portal genres (portal genres have their own /genre/[slug] pages)
     if (PORTAL_NAME_SET.has(genreParam)) return;
 
@@ -230,10 +244,11 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
 
     genreFetchInitRef.current = true;
     genreIdRef.current = genreId;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading flag before async fetch
+    countryRef.current = countryParam;
+    languageRef.current = languageParam;
     setMoodLoading(true);
 
-    fetch(`/api/browse?genre=${genreId}&page=1&sortBy=popularity.desc`)
+    fetch(`/api/browse${browseQs({ genre: String(genreId), page: '1', sortBy: 'popularity.desc' })}`)
       .then(r => r.json())
       .then(data => {
         const items: TMDBShow[] = data.results || [];
@@ -315,7 +330,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         const genresCsv = moodConfig.anilistGenres.join(',');
 
         const [tmdbData, animeData] = await Promise.all([
-          fetch(`/api/browse?genre=${moodConfig.genres}&page=${tmdbNext}&sortBy=popularity.desc`)
+          fetch(`/api/browse${browseQs({ genre: moodConfig.genres, page: String(tmdbNext), sortBy: 'popularity.desc' })}`)
             .then(r => r.json()).catch(() => ({ results: [] })),
           fetch(`/api/anime?type=genre&genres=${encodeURIComponent(genresCsv)}&page=${animeNext}&perPage=25`)
             .then(r => r.json()).catch(() => ({ results: [] })),
@@ -368,7 +383,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
           const genreId = genreIdRef.current;
 
           const tmdbUrl = genreId
-            ? `/api/browse?genre=${genreId}&page=${tmdbNext}&sortBy=popularity.desc`
+            ? `/api/browse${browseQs({ genre: String(genreId), page: String(tmdbNext), sortBy: 'popularity.desc' })}`
             : `/api/tmdb?endpoint=/trending/all/week&page=${tmdbNext}`;
 
           const [tmdbData, animeData] = await Promise.all([

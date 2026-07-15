@@ -22,9 +22,11 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
   const [drop, setDrop] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [genreDrop, setGenreDrop] = useState(false);
+  const [moreDrop, setMoreDrop] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const genreRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -32,6 +34,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDrop(false);
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
       if (genreRef.current && !genreRef.current.contains(e.target as Node)) setGenreDrop(false);
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreDrop(false);
     };
     document.addEventListener('mousedown', fn);
     return () => document.removeEventListener('mousedown', fn);
@@ -40,11 +43,11 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
   // Close dropdown on Escape
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setDrop(false); setMenuOpen(false); setGenreDrop(false); }
+      if (e.key === 'Escape') { setDrop(false); setMenuOpen(false); setGenreDrop(false); setMoreDrop(false); }
     };
-    if (drop || menuOpen || genreDrop) document.addEventListener('keydown', fn);
+    if (drop || menuOpen || genreDrop || moreDrop) document.addEventListener('keydown', fn);
     return () => document.removeEventListener('keydown', fn);
-  }, [drop, menuOpen, genreDrop]);
+  }, [drop, menuOpen, genreDrop, moreDrop]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -183,6 +186,85 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                 >
                   <div style={{ width: 4, height: 4, borderRadius: '50%', background: g.color, flexShrink: 0 }} />
                   <span className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.06em', color: '#FFF5E8' }}>{g.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* More dropdown */}
+        <div
+          ref={moreRef}
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setMoreDrop(true)}
+          onMouseLeave={() => setMoreDrop(false)}
+        >
+          <span
+            className="nl"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMoreDrop(!moreDrop); } }}
+            onClick={() => setMoreDrop(!moreDrop)}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            More
+            <svg width="10" height="6" viewBox="0 0 10 6" style={{ transition: 'transform .2s', transform: moreDrop ? 'rotate(180deg)' : 'rotate(0)' }}>
+              <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          {moreDrop && (
+            <div
+              role="menu"
+              aria-label="More links"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                marginTop: 12,
+                minWidth: 180,
+                background: '#0C091A',
+                border: '1px solid rgba(255,255,255,.06)',
+                borderRadius: 14,
+                boxShadow: '10px 10px 28px rgba(0,0,0,.88),-4px -4px 12px rgba(45,25,90,.25),inset 0 1.5px 0 rgba(255,255,255,.05),inset 0 -1px 0 rgba(0,0,0,.15),0 0 0 1px rgba(255,255,255,.05)',
+                padding: '6px',
+                zIndex: 997,
+                animation: 'fi .15s ease both',
+              }}
+            >
+              {([
+                { label: 'Actors', href: '/actors' },
+                { label: 'Directors', href: '/directors' },
+                { label: 'Studios', href: '/studios' },
+                { label: 'Countries', href: '/countries' },
+                { label: 'Languages', href: '/languages' },
+                { label: 'Coming Soon', href: '/coming-soon' },
+                { label: 'News', href: '/news' },
+                { label: 'Reviews', href: '/reviews' },
+                { label: 'FAQ', href: '/faq' },
+                { label: 'About', href: '/about' },
+                { label: 'Blog', href: '/blog' },
+                { label: 'Contact', href: '/contact' },
+              ] as const).map((item) => (
+                <div
+                  key={item.label}
+                  role="menuitem"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMoreDrop(false); router.push(item.href); } }}
+                  onClick={() => { setMoreDrop(false); router.push(item.href); }}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    transition: 'background .15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,179,71,.5)', flexShrink: 0 }} />
+                  <span className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.06em', color: '#FFF5E8' }}>{item.label}</span>
                 </div>
               ))}
             </div>

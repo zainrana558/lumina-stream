@@ -97,15 +97,15 @@ export default async function TrendingPage() {
           { '@type': 'Question', name: 'What is the difference between daily and weekly trending?', acceptedAnswer: { '@type': 'Answer', text: 'Daily trending shows the most popular movies and TV shows over the last 24 hours, capturing sudden spikes in interest. Weekly trending measures popularity over the past seven days, surfacing titles with sustained global attention. The Trending page combines both for a comprehensive view.' } },
         ],
       }) }} />
-      <Suspense>
-        <BrowseClient initialShows={shows} />
-      </Suspense>
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Discover What the World Is Watching Right Now</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
           The Trending page is your pulse on global entertainment. By aggregating data from four separate TMDB trending endpoints — daily and weekly rankings for all media, movies only, and TV shows only — this page delivers a comprehensive snapshot of what audiences everywhere are engaging with right now. Every item is ranked by popularity score and deduplicated so you never see the same title twice. Whether a blockbuster just dropped its first trailer, a limited series is generating awards buzz, or a sleeper indie film is going viral, you will find it here first. Updated every five minutes with fresh TMDB data, the Trending page ensures you are always in sync with the latest waves of viewer interest across movies and television worldwide.
         </p>
       </section>
+      <Suspense>
+        <BrowseClient initialShows={shows} />
+      </Suspense>
     </>
   );
 }

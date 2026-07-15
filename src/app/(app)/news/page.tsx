@@ -18,6 +18,13 @@ export const metadata: Metadata = {
     title: 'Lumovia News & Updates — Latest Features and Changelog',
     description: 'Discover the newest features, improvements, and announcements from the Lumovia streaming catalog platform.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Lumovia News & Updates — Latest Features and Changelog',
+    description: 'Discover the newest features, improvements, and announcements from the Lumovia streaming catalog platform.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
 export const dynamic = 'force-static';
@@ -19,6 +20,13 @@ export const metadata: Metadata = {
     description:
       'Explore our catalog in over 20 languages. Find movies, TV shows, and anime in English, Japanese, Korean, French, Spanish, Hindi, and more.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Browse by Language — Lumovia',
+    description: 'Explore our catalog in over 20 languages. Find movies, TV shows, and anime in English, Japanese, Korean, French, Spanish, Hindi, and more.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 
@@ -26,43 +34,43 @@ const LANGUAGE_CATEGORIES = [
   {
     title: 'Germanic',
     languages: [
-      { name: 'English', titles: '85,000+ titles', region: 'Global' },
-      { name: 'German', titles: '8,500+ titles', region: 'Germany, Austria, Switzerland' },
-      { name: 'Dutch', titles: '2,200+ titles', region: 'Netherlands, Belgium' },
-      { name: 'Swedish', titles: '3,100+ titles', region: 'Sweden' },
-      { name: 'Norwegian', titles: '1,800+ titles', region: 'Norway' },
-      { name: 'Danish', titles: '1,900+ titles', region: 'Denmark' },
+      { name: 'English', iso: 'en', titles: '85,000+ titles', region: 'Global' },
+      { name: 'German', iso: 'de', titles: '8,500+ titles', region: 'Germany, Austria, Switzerland' },
+      { name: 'Dutch', iso: 'nl', titles: '2,200+ titles', region: 'Netherlands, Belgium' },
+      { name: 'Swedish', iso: 'sv', titles: '3,100+ titles', region: 'Sweden' },
+      { name: 'Norwegian', iso: 'no', titles: '1,800+ titles', region: 'Norway' },
+      { name: 'Danish', iso: 'da', titles: '1,900+ titles', region: 'Denmark' },
     ],
   },
   {
     title: 'Romance',
     languages: [
-      { name: 'French', titles: '12,000+ titles', region: 'France, Canada, Belgium, Switzerland' },
-      { name: 'Spanish', titles: '14,000+ titles', region: 'Spain, Latin America, USA' },
-      { name: 'Portuguese', titles: '7,500+ titles', region: 'Brazil, Portugal' },
-      { name: 'Italian', titles: '6,800+ titles', region: 'Italy, Switzerland' },
-      { name: 'Romanian', titles: '1,200+ titles', region: 'Romania, Moldova' },
+      { name: 'French', iso: 'fr', titles: '12,000+ titles', region: 'France, Canada, Belgium, Switzerland' },
+      { name: 'Spanish', iso: 'es', titles: '14,000+ titles', region: 'Spain, Latin America, USA' },
+      { name: 'Portuguese', iso: 'pt', titles: '7,500+ titles', region: 'Brazil, Portugal' },
+      { name: 'Italian', iso: 'it', titles: '6,800+ titles', region: 'Italy, Switzerland' },
+      { name: 'Romanian', iso: 'ro', titles: '1,200+ titles', region: 'Romania, Moldova' },
     ],
   },
   {
     title: 'Asian',
     languages: [
-      { name: 'Japanese', titles: '18,000+ titles', region: 'Japan' },
-      { name: 'Korean', titles: '12,000+ titles', region: 'South Korea' },
-      { name: 'Mandarin Chinese', titles: '9,500+ titles', region: 'China, Taiwan, Singapore' },
-      { name: 'Hindi', titles: '11,000+ titles', region: 'India' },
-      { name: 'Thai', titles: '3,800+ titles', region: 'Thailand' },
-      { name: 'Vietnamese', titles: '1,500+ titles', region: 'Vietnam' },
+      { name: 'Japanese', iso: 'ja', titles: '18,000+ titles', region: 'Japan' },
+      { name: 'Korean', iso: 'ko', titles: '12,000+ titles', region: 'South Korea' },
+      { name: 'Mandarin Chinese', iso: 'zh', titles: '9,500+ titles', region: 'China, Taiwan, Singapore' },
+      { name: 'Hindi', iso: 'hi', titles: '11,000+ titles', region: 'India' },
+      { name: 'Thai', iso: 'th', titles: '3,800+ titles', region: 'Thailand' },
+      { name: 'Vietnamese', iso: 'vi', titles: '1,500+ titles', region: 'Vietnam' },
     ],
   },
   {
     title: 'Other',
     languages: [
-      { name: 'Arabic', titles: '3,200+ titles', region: 'Middle East, North Africa' },
-      { name: 'Turkish', titles: '4,500+ titles', region: 'Turkey' },
-      { name: 'Russian', titles: '7,000+ titles', region: 'Russia, CIS' },
-      { name: 'Polish', titles: '2,800+ titles', region: 'Poland' },
-      { name: 'Czech', titles: '1,600+ titles', region: 'Czech Republic' },
+      { name: 'Arabic', iso: 'ar', titles: '3,200+ titles', region: 'Middle East, North Africa' },
+      { name: 'Turkish', iso: 'tr', titles: '4,500+ titles', region: 'Turkey' },
+      { name: 'Russian', iso: 'ru', titles: '7,000+ titles', region: 'Russia, CIS' },
+      { name: 'Polish', iso: 'pl', titles: '2,800+ titles', region: 'Poland' },
+      { name: 'Czech', iso: 'cs', titles: '1,600+ titles', region: 'Czech Republic' },
     ],
   },
 ];
@@ -160,47 +168,64 @@ export default function LanguagesPage() {
               }}
             >
               {category.languages.map((lang) => (
-                <div
+                <Link
                   key={lang.name}
+                  href={`/browse?language=${lang.iso}`}
                   style={{
-                    background: 'rgba(255,245,232,.04)',
-                    border: '1px solid rgba(255,245,232,.08)',
-                    borderRadius: 12,
-                    padding: '20px 16px',
+                    display: 'block',
+                    textDecoration: 'none',
                   }}
                 >
                   <div
-                    className="f-cinzel"
                     style={{
-                      fontSize: '.95rem',
-                      color: '#FFB347',
-                      marginBottom: 6,
+                      background: 'rgba(255,245,232,.04)',
+                      border: '1px solid rgba(255,245,232,.08)',
+                      borderRadius: 12,
+                      padding: '20px 16px',
+                      transition: 'background .2s, border-color .2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,245,232,.08)';
+                      (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,245,232,.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,245,232,.04)';
+                      (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,245,232,.08)';
                     }}
                   >
-                    {lang.name}
+                    <div
+                      className="f-cinzel"
+                      style={{
+                        fontSize: '.95rem',
+                        color: '#FFB347',
+                        marginBottom: 6,
+                      }}
+                    >
+                      {lang.name}
+                    </div>
+                    <div
+                      className="f-crimson"
+                      style={{
+                        fontSize: '.78rem',
+                        color: 'rgba(255,245,232,.7)',
+                        marginBottom: 8,
+                      }}
+                    >
+                      {lang.titles}
+                    </div>
+                    <p
+                      className="f-crimson"
+                      style={{
+                        fontSize: '.78rem',
+                        color: 'rgba(255,245,232,.4)',
+                        lineHeight: 1.5,
+                        margin: 0,
+                      }}
+                    >
+                      {lang.region}
+                    </p>
                   </div>
-                  <div
-                    className="f-crimson"
-                    style={{
-                      fontSize: '.78rem',
-                      color: 'rgba(255,245,232,.7)',
-                      marginBottom: 8,
-                    }}
-                  >
-                    {lang.titles}
-                  </div>
-                  <p
-                    className="f-crimson"
-                    style={{
-                      fontSize: '.78rem',
-                      color: 'rgba(255,245,232,.4)',
-                      lineHeight: 1.5,
-                      margin: 0,
-                    }}
-                  >
-                    {lang.region}
-                  </p>
-                </div>
+                </Link>
               ))}
             </div>
           </section>

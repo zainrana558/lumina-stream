@@ -19,6 +19,13 @@ export const metadata: Metadata = {
     title: 'Contact Lumovia — Support, Feedback & Bug Reports',
     description: 'Reach the Lumovia team for support, feature suggestions, or bug reports. We value community input and respond to all inquiries.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Contact Lumovia — Support, Feedback & Bug Reports',
+    description: 'Reach the Lumovia team for support, feature suggestions, or bug reports. We value community input and respond to all inquiries.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 

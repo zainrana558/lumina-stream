@@ -88,15 +88,15 @@ export default async function ComingSoonPage() {
           { '@type': 'Question', name: 'How often is the Coming Soon page updated?', acceptedAnswer: { '@type': 'Answer', text: 'The Coming Soon page revalidates every five minutes, pulling the latest upcoming movie data from TMDB. New titles and updated release dates appear automatically as studios finalize their schedules and TMDB processes the changes.' } },
         ],
       }) }} />
-      <Suspense>
-        <BrowseClient initialShows={shows} />
-      </Suspense>
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Your Guide to Upcoming Movie Releases</h1>
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
           The Coming Soon page is your definitive guide to every movie on the horizon. It pulls five pages of upcoming titles from TMDB and filters them to show only films with confirmed future release dates and available poster art. Each title is sorted by release date in ascending order, so the movies arriving soonest always appear at the top. Whether you are counting down to the next Marvel installment, anticipating an auteur director's latest project, or simply want to browse what Hollywood has lined up for the months ahead, this page keeps you informed. Updated every five minutes, the Coming Soon page automatically refreshes as studios lock in new dates and TMDB ingests the latest scheduling data, ensuring you never miss a premiere.
         </p>
       </section>
+      <Suspense>
+        <BrowseClient initialShows={shows} />
+      </Suspense>
     </>
   );
 }

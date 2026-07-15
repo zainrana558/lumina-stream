@@ -19,6 +19,13 @@ export const metadata: Metadata = {
     title: 'Popular Directors | Lumovia',
     description: 'Browse the top 60 most popular film and TV directors. Discover their profiles, best-known titles, and complete filmographies on Lumovia.',
     siteName: 'Lumovia',
+    images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Popular Directors | Lumovia',
+    description: 'Browse the top 60 most popular film and TV directors. Discover their profiles, best-known titles, and complete filmographies on Lumovia.',
+    images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 
