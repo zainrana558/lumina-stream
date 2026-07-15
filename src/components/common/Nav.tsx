@@ -59,22 +59,43 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
   const menuItems = [
     { key: 'home', label: 'Home' },
     { key: 'shows', label: 'Browse' },
+    { key: 'trending', label: 'Trending' },
     { key: 'genre', label: 'Genres' },
     { key: 'leaderboard', label: 'Leaderboard' },
     { key: 'watchlist', label: 'Watchlist' },
     { key: 'collections', label: 'Collections' },
     { key: 'activity', label: 'Activity' },
     { key: 'stats', label: 'Stats' },
+    { key: 'about', label: 'About' },
+    { key: 'contact', label: 'Contact' },
   ] as const;
+
+  const ROUTER_ONLY = new Set(['genre', 'leaderboard', 'trending', 'about', 'contact', 'faq', 'blog', 'news', 'actors', 'directors', 'studios', 'countries', 'languages', 'reviews', 'coming-soon', 'movies', 'tv-shows']);
+
+  const ROUTE_MAP: Record<string, string> = {
+    genre: '/genres',
+    leaderboard: '/leaderboard',
+    trending: '/trending',
+    about: '/about',
+    contact: '/contact',
+    faq: '/faq',
+    blog: '/blog',
+    news: '/news',
+    actors: '/actors',
+    directors: '/directors',
+    studios: '/studios',
+    countries: '/countries',
+    languages: '/languages',
+    reviews: '/reviews',
+    'coming-soon': '/coming-soon',
+    movies: '/movies',
+    'tv-shows': '/tv-shows',
+  };
 
   const handleMenuNav = (item: { key: string }) => {
     setMenuOpen(false);
-    if (item.key === 'genre') {
-      router.push('/genre/anime');
-      return;
-    }
-    if (item.key === 'leaderboard') {
-      router.push('/leaderboard');
+    if (ROUTER_ONLY.has(item.key)) {
+      router.push(ROUTE_MAP[item.key] || `/${item.key}`);
       return;
     }
     go(item.key);
@@ -98,8 +119,8 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
       </div>
 
       <div className="nav-links" style={{ display: 'flex', gap: 'clamp(1.2rem,2.5vw,2.5rem)', alignItems: 'center' }}>
-        {([['home', 'Home'], ['shows', 'Browse']] as const).map(([p, l]) => (
-          <span key={p} className={`nl${page === p ? ' on' : ''}`} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(p); } }} onClick={() => go(p)}>{l}</span>
+        {([['home', 'Home'], ['shows', 'Browse'], ['trending', 'Trending'], ['movies', 'Movies'], ['tv-shows', 'TV Shows']] as const).map(([p, l]) => (
+          <span key={p} className={`nl${page === p ? ' on' : ''}`} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(ROUTE_MAP[p] || `/${p}`); } }} onClick={() => router.push(ROUTE_MAP[p] || `/${p}`)}>{l}</span>
         ))}
         {/* Genre dropdown */}
         <div

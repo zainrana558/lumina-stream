@@ -5,33 +5,41 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 const FOOTER_SECTIONS = [
   ['Browse', [
+    { label: 'Trending', href: '/trending' },
     { label: 'Movies', href: '/movies' },
     { label: 'TV Shows', href: '/tv-shows' },
     { label: 'Top Rated', href: '/top-rated' },
     { label: 'New Releases', href: '/new-releases' },
+    { label: 'Coming Soon', href: '/coming-soon' },
     { label: 'Browse All', href: '/browse' },
     { label: 'Genres', href: '/genres' },
     { label: 'Seasonal Anime', href: '/seasonal' },
     { label: 'Release Calendar', href: '/release-calendar' },
     { label: 'Leaderboard', href: '/leaderboard' },
   ]],
-  ['Genres', GCARDS.map(g => ({ label: g.name, href: `/genre/${g.key}` }))],
-  ['Decades', [
-    { label: '2020s', href: '/decade/2020s' },
-    { label: '2010s', href: '/decade/2010s' },
-    { label: '2000s', href: '/decade/2000s' },
-    { label: '1990s', href: '/decade/1990s' },
-    { label: '1980s', href: '/decade/1980s' },
-    { label: `${CURRENT_YEAR}`, href: `/year/${CURRENT_YEAR}` },
-    { label: `${CURRENT_YEAR - 1}`, href: `/year/${CURRENT_YEAR - 1}` },
+  ['People', [
+    { label: 'Actors', href: '/actors' },
+    { label: 'Directors', href: '/directors' },
+    { label: 'Studios', href: '/studios' },
   ]],
+  ['Explore', [
+    { label: 'Countries', href: '/countries' },
+    { label: 'Languages', href: '/languages' },
+    { label: 'Reviews', href: '/reviews' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'News', href: '/news' },
+  ]],
+  ['Genres', GCARDS.map(g => ({ label: g.name, href: `/genre/${g.key}` }))],
   ['Account', [
     { label: 'Sign In', href: '/login' },
     { label: 'Register', href: '/signup' },
     { label: 'My List', href: '/watchlist' },
     { label: 'History', href: '/activity' },
   ]],
-  ['Legal', [
+  ['Info', [
+    { label: 'About', href: '/about' },
+    { label: 'FAQ', href: '/faq' },
+    { label: 'Contact', href: '/contact' },
     { label: 'Privacy Policy', href: '/privacy' },
     { label: 'Terms of Service', href: '/terms' },
     { label: 'Cookie Policy', href: '/cookies' },
