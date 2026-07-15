@@ -37,6 +37,18 @@ interface SeasonInfo {
   episode_count: number;
 }
 
+interface WriterEntry {
+  name: string;
+  job: string;
+}
+
+interface ReviewEntry {
+  author: string;
+  rating?: number | null;
+  content: string;
+  createdAt: string;
+}
+
 interface SeoContentProps {
   title: string;
   year?: string;
@@ -62,6 +74,16 @@ interface SeoContentProps {
   originalTitle?: string;
   originalLanguage?: string;
   popularity?: number;
+  directors?: string[];
+  writers?: WriterEntry[];
+  countries?: string[];
+  languages?: string[];
+  keywords?: string[];
+  budget?: number;
+  revenue?: number;
+  homepage?: string;
+  imdbId?: string;
+  reviews?: ReviewEntry[];
 }
 
 /** Genre-specific analysis text — data-driven, not generic filler */
@@ -99,7 +121,7 @@ function buildGenreAnalysis(title: string, genres: string[], mediaType: string, 
 
 /** Build a programmatic FAQ array for any title */
 function buildFaq(props: SeoContentProps): Array<{ q: string; a: string }> {
-  const { title, mediaType, genres, rating, runtime, seasons, episodes, year, overview, releaseDate, status, voteCount, originalLanguage, productionCompanies } = props;
+  const { title, mediaType, genres, rating, runtime, seasons, episodes, year, overview, releaseDate, status, voteCount, originalLanguage, productionCompanies, directors, writers } = props;
   const typeLabel = mediaType === 'movie' ? 'movie' : mediaType === 'anime' ? 'anime series' : 'TV series';
   const faq: Array<{ q: string; a: string }> = [];
 
@@ -182,6 +204,14 @@ function buildFaq(props: SeoContentProps): Array<{ q: string; a: string }> {
     a: `You can discover and explore ${title} on Lumovia — a free platform that provides the most comprehensive information about ${title} available online, including cast and crew details, user ratings from millions of TMDB and AniList users, trailer links, episode guides for TV series, and AI-powered similar title recommendations. No subscription or sign-up is required to browse.`,
   });
 
+  // Q10: Who directed it?
+  if (directors && directors.length > 0) {
+    faq.push({
+      q: `Who directed ${title}?`,
+      a: `${title} was directed by ${directors.join(', ')}.${writers && writers.length > 0 ? ` The screenplay was written by ${writers.slice(0, 3).map(w => w.name).join(', ')}.` : ''} Visit the Lumovia detail page for ${title} to explore the full cast and crew, watch trailers, and discover similar titles.`,
+    });
+  }
+
   return faq.slice(0, 4);
 }
 
@@ -213,6 +243,8 @@ export default function DetailSeoContent(props: SeoContentProps) {
     anilistId, rating, voteCount, runtime, seasons, episodes, status, contentRating,
     releaseDate, cast, similar, productionCompanies, seasonList,
     originalTitle, originalLanguage, popularity,
+    directors, writers, countries, languages, keywords,
+    budget, revenue, homepage, imdbId, reviews,
   } = props;
 
   const faq = buildFaq(props);
@@ -372,11 +404,91 @@ export default function DetailSeoContent(props: SeoContentProps) {
           </>
         )}
 
+        {/* Director */}
+        {directors && directors.length > 0 && (
+          <p>
+            <span style={{ color: 'rgba(255,245,232,.4)', fontSize: '.82rem' }}>Director: </span>
+            {directors.join(', ')}
+          </p>
+        )}
+
+        {/* Writers */}
+        {writers && writers.length > 0 && (
+          <p>
+            <span style={{ color: 'rgba(255,245,232,.4)', fontSize: '.82rem' }}>Writers: </span>
+            {writers.map(w => w.name).join(', ')}
+          </p>
+        )}
+
+        {/* Production Companies */}
         {productionCompanies && productionCompanies.length > 0 && (
           <p>
             <span style={{ color: 'rgba(255,245,232,.4)', fontSize: '.82rem' }}>Production: </span>
             {productionCompanies.join(', ')}
           </p>
+        )}
+
+        {/* Country */}
+        {countries && countries.length > 0 && (
+          <p>
+            <span style={{ color: 'rgba(255,245,232,.4)', fontSize: '.82rem' }}>Country: </span>
+            {countries.join(', ')}
+          </p>
+        )}
+
+        {/* Spoken Languages */}
+        {languages && languages.length > 0 && (
+          <p>
+            <span style={{ color: 'rgba(255,245,232,.4)', fontSize: '.82rem' }}>Languages: </span>
+            {languages.join(', ')}
+          </p>
+        )}
+
+        {/* Budget & Revenue (movies only) */}
+        {budget && budget > 0 && mediaType === 'movie' && (
+          <p>
+            <span style={{ color: 'rgba(255,245,232,.4)', fontSize: '.82rem' }}>Budget: </span>
+            {budget >= 1_000_000_000 ? `$${(budget / 1_000_000_000).toFixed(1)}B` : budget >= 1_000_000 ? `$${(budget / 1_000_000).toFixed(1)}M` : `$${budget.toLocaleString()}`}
+          </p>
+        )}
+        {revenue && revenue > 0 && mediaType === 'movie' && (
+          <p>
+            <span style={{ color: 'rgba(255,245,232,.4)', fontSize: '.82rem' }}>Revenue: </span>
+            {revenue >= 1_000_000_000 ? `$${(revenue / 1_000_000_000).toFixed(1)}B` : revenue >= 1_000_000 ? `$${(revenue / 1_000_000).toFixed(1)}M` : `$${revenue.toLocaleString()}`}
+          </p>
+        )}
+
+        {/* Keywords */}
+        {keywords && keywords.length > 0 && (
+          <>
+            <div className="section-label f-cinzel" style={{ marginTop: 16 }}>Keywords</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+              {keywords.slice(0, 15).map(kw => (
+                <Link key={kw} href={`/browse?genre=${encodeURIComponent(kw)}`} style={{
+                  display: 'inline-block', padding: '4px 10px', borderRadius: 6,
+                  fontSize: '.78rem', color: '#FFB347', textDecoration: 'none',
+                  background: 'rgba(255,179,71,.06)', border: '1px solid rgba(255,179,71,.15)',
+                }}>{kw}</Link>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* TMDB Reviews */}
+        {reviews && reviews.length > 0 && (
+          <>
+            <div className="section-label f-cinzel" style={{ marginTop: 16 }}>Reviews</div>
+            {reviews.slice(0, 2).map(rev => (
+              <div key={rev.author} style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 10, background: 'rgba(255,245,232,.02)', border: '1px solid rgba(255,245,232,.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: '.85rem', color: '#FFF5E8', fontWeight: 600 }}>{rev.author}</span>
+                  {rev.rating && <span style={{ fontSize: '.75rem', color: '#FFB347' }}>{rev.rating}/10</span>}
+                  <span style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.35)' }}>{new Date(rev.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</span>
+                </div>
+                <p style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{rev.content.replace(/<[^>]*>/g, '')}</p>
+              </div>
+            ))}
+          </>
         )}
 
         {similar.length > 0 && (
@@ -409,7 +521,17 @@ export default function DetailSeoContent(props: SeoContentProps) {
               View on TMDB
             </a>
           )}
-          {mediaType !== 'anime' && (
+          {mediaType !== 'anime' && imdbId && (
+            <a
+              href={`https://www.imdb.com/title/${imdbId}/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
+            >
+              IMDb
+            </a>
+          )}
+          {mediaType !== 'anime' && !imdbId && (
             <a
               href={`https://www.imdb.com/find/?q=${encodeURIComponent(title)}`}
               target="_blank"
@@ -417,6 +539,16 @@ export default function DetailSeoContent(props: SeoContentProps) {
               style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
             >
               Search on IMDb
+            </a>
+          )}
+          {homepage && (
+            <a
+              href={homepage}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', padding: '5px 12px', borderRadius: 8, fontSize: '.8rem', color: '#FFB347', textDecoration: 'none', background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)' }}
+            >
+              Official Website
             </a>
           )}
           <a

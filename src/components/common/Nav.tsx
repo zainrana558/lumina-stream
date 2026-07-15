@@ -285,10 +285,10 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                 aria-haspopup="true"
                 aria-label="User menu"
                 style={{
-                  width: 38, height: 38, borderRadius: '50%',
+                  width: 44, height: 44, borderRadius: '50%',
                   background: profile
                     ? `linear-gradient(135deg,${profile.avatar_url || '#8B78FF'},${profile.avatar_url || '#FF6B8A'})`
-                    : 'linear-gradient(135deg,rgba(255,179,71,.38),rgba(139,120,255,.38))',
+                    : 'linear-gradient(135deg,rgba(255,179,71,.38),rgba(139,120,255,.38))`,
                   border: '2px solid rgba(255,179,71,.38)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', fontSize: '.9rem',  fontWeight: 700, color: '#05020A',
@@ -327,7 +327,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                 aria-haspopup="true"
                 aria-label="Guest menu"
                 style={{
-                  width: 38, height: 38, borderRadius: '50%',
+                  width: 44, height: 44, borderRadius: '50%',
                   background: 'linear-gradient(135deg,rgba(255,179,71,.38),rgba(139,120,255,.38))',
                   border: '2px solid rgba(255,179,71,.38)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',

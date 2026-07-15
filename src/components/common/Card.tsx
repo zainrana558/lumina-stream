@@ -36,6 +36,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
       raf.current = undefined;
       const el = ref.current;
       if (!el) return;
+      el.style.willChange = 'transform';
       const rect = el.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width - 0.5;
       const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -52,6 +53,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
     const el = ref.current;
     if (el) {
       el.style.transform = 'perspective(750px) rotateY(0) rotateX(0) scale3d(1,1,1)';
+      el.style.willChange = 'auto';
       const sh = el.querySelector('.cshine');
       if (sh) (sh as HTMLElement).style.opacity = '0';
     }

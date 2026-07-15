@@ -7,12 +7,25 @@
  *
  * This loader preserves Next.js Image component benefits (lazy loading, blur placeholder,
  * responsive sizing via `sizes` prop, `fill` layout) while serving images directly from
- * the source CDN.
+ * the source CDN with width-appropriate TMDB size selection.
  */
 
 const TMDB_CDN = 'image.tmdb.org';
 const ANILIST_CDN = 's4.anilist.co';
 const YOUTUBE_CDN = 'img.youtube.com';
+
+// Map requested widths to the nearest TMDB poster size
+const TMDB_POSTER_SIZES = [92, 185, 342, 500, 780] as const;
+const TMDB_BACKDROP_SIZES = [300, 780, 1280] as const;
+
+function nearestTmdbSize(requested: number, sizes: readonly number[]): string {
+  // Find the smallest TMDB size >= requested width
+  for (const s of sizes) {
+    if (s >= requested) return `w${s}`;
+  }
+  // Fallback to largest
+  return `w${sizes[sizes.length - 1]}`;
+}
 
 export default function luminaImageLoader({
   src,
@@ -23,11 +36,15 @@ export default function luminaImageLoader({
   width: number;
   quality?: number;
 }): string {
-  // TMDB images: src already contains the size path (e.g., /t/p/w500/abc.jpg)
-  // The Next.js Image component passes the original src, so we just return it.
-  // TMDB handles its own optimization and caching.
+  // TMDB images: select appropriate size based on requested width
   if (src.includes(TMDB_CDN)) {
-    return src;
+    // Detect if it's a backdrop (original aspect ratio ~16:9) or poster (2:3)
+    const isBackdrop = src.includes('/t/p/w1280') || src.includes('/t/p/w780') || src.includes('/t/p/w300') || src.includes('/original');
+    const sizeSet = isBackdrop ? TMDB_BACKDROP_SIZES : TMDB_POSTER_SIZES;
+    const size = nearestTmdbSize(width, sizeSet);
+
+    // Replace the existing size in the URL
+    return src.replace(/\/t\/p\/w\d+/, `/t/p/${size}`);
   }
 
   // AniList images: served as-is from their CDN

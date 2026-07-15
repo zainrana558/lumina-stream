@@ -21,11 +21,11 @@ import { extractIdFromSlug, mediaUrl } from '@/lib/slug';
  */
 const getCachedTmdbDetails = cache(async (showId: number) => {
   const tryTv = async () => {
-    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/tv/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings' });
+    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/tv/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings,keywords,reviews,images' });
     return d.id ? { data: d, type: 'tv' as const } : null;
   };
   const tryMovie = async () => {
-    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/movie/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings' });
+    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/movie/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings,keywords,reviews,images' });
     return d.id ? { data: d, type: 'movie' as const } : null;
   };
 
@@ -65,16 +65,56 @@ interface TMDBShowData {
   status?: string;
 }
 
+interface TMDBCrewMember {
+  id: number;
+  name: string;
+  job: string;
+  department: string;
+  profile_path: string | null;
+}
+
+interface TMDBKeyword {
+  id: number;
+  name: string;
+}
+
+interface TMDBReview {
+  id: string;
+  author: string;
+  author_details: { name: string; username: string; avatar_path: string | null; rating: number | null };
+  content: string;
+  created_at: string;
+  url: string;
+}
+
+interface TMDBImage {
+  file_path: string;
+  iso_639_1?: string | null;
+  aspect_ratio: number;
+  vote_average: number;
+  vote_count: number;
+}
+
 interface TMDBDetails {
-  credits?: { cast: Array<{ id: number; name: string; character: string; profile_path: string | null }> };
+  credits?: { cast: Array<{ id: number; name: string; character: string; profile_path: string | null }>; crew: TMDBCrewMember[] };
   similar?: { results: TMDBShowData[] };
   videos?: { results: Array<{ id: string; key: string; name: string; type: string; site: string }> };
   seasons?: Array<{ season_number: number; name: string; episode_count: number }>;
   content_ratings?: { results: Array<{ iso_3166_1: string; rating: string }> };
-  production_companies?: Array<{ name: string }>;
+  production_companies?: Array<{ id: number; name: string; logo_path: string | null; origin_country: string }>
+  production_countries?: Array<{ iso_3166_1: string; name: string }>;
+  spoken_languages?: Array<{ iso_639_1: string; english_name: string; name: string }>;
   original_title?: string;
   original_language?: string;
+  original_name?: string;
   tagline?: string;
+  keywords?: { keywords: TMDBKeyword[] };
+  reviews?: { results: TMDBReview[]; total_pages: number; total_results: number };
+  images?: { backdrops: TMDBImage[]; posters: TMDBImage[]; logos: TMDBImage[] };
+  budget?: number;
+  revenue?: number;
+  homepage?: string;
+  imdb_id?: string;
 }
 
 export const revalidate = 600; // 10 min
@@ -350,6 +390,11 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
     height: 750,
   } : undefined;
 
+  // Extract director/writer names for JSON-LD
+  const crewData = fullData?.credits?.crew || [];
+  const directorNames = crewData.filter(c => c.job === 'Director').map(c => c.name);
+  const writerNames = crewData.filter(c => c.job === 'Writer' || c.job === 'Screenplay' || c.job === 'Novel' || c.job === 'Story').map(c => c.name);
+
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': mediaType === 'tv' ? 'TVSeries' : 'Movie',
@@ -372,6 +417,11 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
     } : {}),
     ...(genreNames.length ? { genre: genreNames.slice(0, 5) } : {}),
     ...(castNames.length ? { actor: castNames.map(n => ({ '@type': 'Person', name: n })) } : {}),
+    ...(directorNames.length ? { director: directorNames.map(n => ({ '@type': 'Person', name: n })) } : {}),
+    ...(writerNames.length ? { author: writerNames.slice(0, 3).map(n => ({ '@type': 'Person', name: n })) } : {}),
+    ...(fullData?.production_companies?.length ? { productionCompany: fullData.production_companies.slice(0, 3).map(pc => pc.name) } : {}),
+    ...(fullData?.production_countries?.length ? { countryOfOrigin: fullData.production_countries.map(c => c.name) } : {}),
+    ...(fullData?.keywords?.keywords?.length ? { keywords: fullData.keywords.keywords.slice(0, 10).map(k => k.name) } : {}),
   };
 
   // VideoObject schema for video rich results in Google
@@ -405,34 +455,59 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
         initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
         initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
+        initialCrew={fullData?.credits?.crew || []}
+        initialKeywords={fullData?.keywords?.keywords?.map(k => k.name) || []}
+        initialImages={fullData?.images || null}
+        initialReviews={fullData?.reviews?.results?.slice(0, 5) || []}
       />
       {/* SERVER-RENDERED SEO CONTENT — placed AFTER DetailsContent so the hero
           backdrop (the LCP element) is rendered first in the DOM */}
-      <DetailSeoContent
-        title={title}
-        year={year}
-        overview={rawData.overview || ''}
-        tagline={rawData.tagline}
-        genres={genreNames}
-        genreIds={genreIds}
-        mediaType={mediaType}
-        showId={showId}
-        rating={rawData.vote_average || undefined}
-        voteCount={rawData.vote_count}
-        runtime={rawData.runtime}
-        seasons={rawData.number_of_seasons}
-        episodes={rawData.number_of_episodes}
-        status={rawData.status}
-        contentRating={usRating}
-        releaseDate={releaseDate}
-        cast={fullData?.credits?.cast?.slice(0, 6) || []}
-        similar={(fullData?.similar?.results?.slice(0, 5) || []).map((r) => ({ id: r.id, title: r.title, name: r.name, vote_average: r.vote_average, release_date: r.release_date, first_air_date: r.first_air_date }))}
-        productionCompanies={fullData?.production_companies?.map(pc => pc.name)}
-        seasonList={fullData?.seasons}
-        originalTitle={rawData.original_title}
-        originalLanguage={rawData.original_language}
-        popularity={rawData.popularity}
-      />
+      {/* Extract crew data for SEO content */}
+      {(() => {
+        const crew = fullData?.credits?.crew || [];
+        const directors = crew.filter(c => c.job === 'Director').map(c => c.name);
+        const writers = crew.filter(c => c.job === 'Writer' || c.job === 'Screenplay' || c.job === 'Novel' || c.job === 'Story').map(c => ({ name: c.name, job: c.job }));
+        const countries = fullData?.production_countries?.map(c => c.name) || [];
+        const languages = fullData?.spoken_languages?.map(l => l.english_name || l.name) || [];
+        const keywords = fullData?.keywords?.keywords?.map(k => k.name) || [];
+        return (
+          <DetailSeoContent
+            title={title}
+            year={year}
+            overview={rawData.overview || ''}
+            tagline={rawData.tagline}
+            genres={genreNames}
+            genreIds={genreIds}
+            mediaType={mediaType}
+            showId={showId}
+            rating={rawData.vote_average || undefined}
+            voteCount={rawData.vote_count}
+            runtime={rawData.runtime}
+            seasons={rawData.number_of_seasons}
+            episodes={rawData.number_of_episodes}
+            status={rawData.status}
+            contentRating={usRating}
+            releaseDate={releaseDate}
+            cast={fullData?.credits?.cast?.slice(0, 6) || []}
+            similar={(fullData?.similar?.results?.slice(0, 5) || []).map((r) => ({ id: r.id, title: r.title, name: r.name, vote_average: r.vote_average, release_date: r.release_date, first_air_date: r.first_air_date }))}
+            productionCompanies={fullData?.production_companies?.map(pc => pc.name)}
+            seasonList={fullData?.seasons}
+            originalTitle={mediaType === 'movie' ? rawData.original_title : rawData.original_name}
+            originalLanguage={rawData.original_language}
+            popularity={rawData.popularity}
+            directors={directors.length > 0 ? directors : undefined}
+            writers={writers.length > 0 ? writers : undefined}
+            countries={countries.length > 0 ? countries : undefined}
+            languages={languages.length > 0 ? languages : undefined}
+            keywords={keywords.length > 0 ? keywords : undefined}
+            budget={rawData.budget}
+            revenue={rawData.revenue}
+            homepage={rawData.homepage}
+            imdbId={rawData.imdb_id}
+            reviews={fullData?.reviews?.results?.slice(0, 3).map(r => ({ author: r.author, rating: r.author_details?.rating, content: r.content, createdAt: r.created_at })) || []}
+          />
+        );
+      })()}
     </>
   );
 }

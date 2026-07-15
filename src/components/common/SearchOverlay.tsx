@@ -218,7 +218,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
               key={tab}
               className={`tab-btn${searchTab === tab ? ' on' : ''} f-cinzel`}
               onClick={() => { setSearchTab(tab); setResults([]); setPersonResults([]); setSearched(false); }}
-              style={{ padding: '10px clamp(14px,3vw,24px)', background: 'none', border: 'none', outline: 'none', color: searchTab === tab ? 'var(--gold)' : 'rgba(255,245,232,.35)', transition: 'color .22s',  fontSize: '.82rem', letterSpacing: '.06em', cursor: 'pointer' }}
+              style={{ padding: '10px clamp(14px,3vw,24px)', background: 'none', border: 'none', outline: 'none', color: searchTab === tab ? 'var(--gold)' : 'rgba(255,245,232,.35)', transition: 'color .22s',  fontSize: '.82rem', letterSpacing: '.06em', cursor: 'pointer', minHeight: 48, display: 'flex', alignItems: 'center' }}
             >
               {tab === 'shows' ? '🎬 Shows' : tab === 'anime' ? '🎌 Anime' : '👤 People'}
             </button>
@@ -329,11 +329,14 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
                       background: 'rgba(255,179,71,.08)',
                       border: '1px solid rgba(255,179,71,.18)',
                       borderRadius: 8,
-                      padding: '5px 16px',
+                      padding: '10px 18px',
                       color: '#FFB347',
                       fontSize: '.72rem',
                       cursor: 'pointer',
                       transition: 'background .2s',
+                      minHeight: 44,
+                      display: 'flex',
+                      alignItems: 'center',
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,179,71,.15)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,179,71,.08)'}
@@ -363,7 +366,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.45rem' }}>
               {recentSearches.slice(0, 8).map(term => (
-                <span key={term} className="gtag" onClick={() => handleInputChange(term)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '.6rem', padding: '4px 10px' }}>
+                <span key={term} className="gtag" onClick={() => handleInputChange(term)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '.6rem', padding: '8px 12px', minHeight: 36 }}>
                   {term}
                   <span onClick={(e) => removeSearchTerm(term, e)} style={{ opacity: 0.4, cursor: 'pointer', fontSize: '.55rem' }}>✕</span>
                 </span>

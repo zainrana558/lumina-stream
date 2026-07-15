@@ -92,12 +92,15 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
               key={t}
               onClick={() => handleChange('mediaType', t)}
               style={{
-                padding: '6px 14px',
+                padding: '10px 14px',
                 borderRadius: 8,
                 border: 'none',
                 fontSize: '.68rem',
                 
                 cursor: 'pointer',
+                minHeight: 44,
+                display: 'flex',
+                alignItems: 'center',
                 background: localFilters.mediaType === t ? 'var(--gold)' : 'transparent',
                 color: localFilters.mediaType === t ? '#05020A' : 'rgba(255,245,232,.4)',
                 fontWeight: localFilters.mediaType === t ? 700 : 400,
@@ -203,7 +206,7 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
               key={f.key}
               onClick={() => removeFilter(f.key)}
               className="gtag"
-              style={{ cursor: 'pointer', fontSize: '.6rem', padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              style={{ cursor: 'pointer', fontSize: '.6rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 36 }}
             >
               {f.label}
               <span style={{ opacity: 0.5 }}>✕</span>
@@ -214,7 +217,8 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               fontSize: '.6rem', color: '#FF6B8A', 
-              padding: '3px 8px',
+              padding: '8px 14px',
+              minHeight: 36,
             }}
           >
             Clear all

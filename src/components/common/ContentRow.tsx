@@ -70,7 +70,7 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {([['←', -1], ['→', 1]] as const).map(([a, d]) => (
-            <button key={a} className="btn-icon" onClick={() => scroll(d)} style={{ width: 30, height: 30, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{a}</button>
+            <button key={a} className="btn-icon" onClick={() => scroll(d)} aria-label={d < 0 ? 'Scroll left' : 'Scroll right'} style={{ width: 44, height: 44, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{a}</button>
           ))}
         </div>
       </div>

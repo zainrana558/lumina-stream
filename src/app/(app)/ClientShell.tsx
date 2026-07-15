@@ -307,9 +307,11 @@ function AppShell({ children }: { children: ReactNode }) {
 
       {/* Bottom sticky ad banner — only rendered when a banner ad network is configured */}
       {!pathname.startsWith('/details') && (
-        <Suspense fallback={null}>
-          <AdBanner id="ad-banner-bottom" width={728} height={90} />
-        </Suspense>
+        <div style={{ minHeight: 90 }}>
+          <Suspense fallback={<div style={{ minHeight: 90 }} />}>
+            <AdBanner id="ad-banner-bottom" width={728} height={90} />
+          </Suspense>
+        </div>
       )}
 
       {/* Notification permission prompt */}

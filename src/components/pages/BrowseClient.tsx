@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback, startTransition, useDeferredValue } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { MediaItem, SortKey, TMDBShow } from '@/types';
 import { GENRES_ALL, PORTAL_NAME_SET, TMDB_GENRE_NAME_MAP } from '@/styles/themes';
@@ -452,7 +452,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, isSearching, isMoodMode, searchPage, searchTotalPages, activeQuery, browseSource, animePage, animeShows.length, searchResults.length, moodConfig]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingMore, hasMore, isSearching, isMoodMode, searchPage, searchTotalPages, activeQuery, browseSource, animePage, moodConfig]);
 
   // Get the combined source list for browse mode
   const browseList = useMemo(() => {
@@ -464,8 +465,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     return [...tmdbUnique, ...animeShows];
   }, [browseSource, allShows, animeShows]);
 
-  // The list to display
-  const list = useMemo(() => {
+  // The list to display — use useDeferredValue for non-urgent sort/filter updates
+  const _list = useMemo(() => {
     const sortFn = (a: MediaItem, b: MediaItem): number => {
       switch (sort) {
         case 'r': return b.r - a.r;
@@ -481,6 +482,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       .filter(s => genre === 'All' || s.genre.some(g => g.toLowerCase() === genre.toLowerCase()))
       .sort(sortFn);
   }, [isSearching, searchResults, browseList, genre, sort]);
+
+  const list = useDeferredValue(_list);
 
   const genreCounts = useMemo(() => {
     const source = isSearching ? searchResults : browseList;

@@ -184,7 +184,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 /* ═══════════════════════════════════════════
    CARD (3D tilt)
    ═══════════════════════════════════════════ */
-.card{display:block;position:relative;border-radius:14px;overflow:hidden;cursor:pointer;transform-style:preserve-3d;will-change:transform;transition:transform .06s linear,box-shadow .3s ease;box-shadow:12px 12px 32px rgba(0,0,0,.88),-5px -5px 14px rgba(45,25,90,.3),inset 0 2px 0 rgba(255,255,255,.07),inset 0 -1.5px 0 rgba(0,0,0,.18),inset 1px 1px 3px rgba(0,0,0,.12),0 0 0 1px rgba(255,255,255,.04),0 0 0 2.5px rgba(0,0,0,.35)}
+.card{display:block;position:relative;border-radius:14px;overflow:hidden;cursor:pointer;transform-style:preserve-3d;transition:transform .06s linear,box-shadow .3s ease;box-shadow:12px 12px 32px rgba(0,0,0,.88),-5px -5px 14px rgba(45,25,90,.3),inset 0 2px 0 rgba(255,255,255,.07),inset 0 -1.5px 0 rgba(0,0,0,.18),inset 1px 1px 3px rgba(0,0,0,.12),0 0 0 1px rgba(255,255,255,.04),0 0 0 2.5px rgba(0,0,0,.35)}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;border-radius:14px 14px 0 0;background:linear-gradient(to bottom,rgba(255,255,255,.035) 0%,transparent 100%);z-index:5;pointer-events:none}
 .card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:30%;background:linear-gradient(to top,rgba(0,0,0,.15) 0%,transparent 100%);z-index:5;pointer-events:none;border-radius:0 0 14px 14px}
 .card:hover{box-shadow:18px 18px 48px rgba(0,0,0,.95),-6px -6px 16px rgba(45,25,90,.35),inset 0 2.5px 0 rgba(255,255,255,.08),inset 0 -1.5px 0 rgba(0,0,0,.18),inset 1px 1px 4px rgba(0,0,0,.1),0 0 0 1.5px rgba(255,179,71,.12),0 0 0 2.5px rgba(0,0,0,.35),0 0 40px rgba(255,179,71,.06)}
@@ -252,7 +252,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 /* ═══════════════════════════════════════════
    CHIPS & PROGRESS
    ═══════════════════════════════════════════ */
-.chip{cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1);font-family:var(--font-cinzel),serif;font-size:.72rem;font-weight:500;letter-spacing:.08em;padding:7px 18px;border-radius:8px;background:var(--s1);color:rgba(255,245,232,.5);box-shadow:4px 4px 10px rgba(0,0,0,.68),-2px -2px 5px rgba(45,25,90,.18),inset 0 1.5px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.1);border:none}
+.chip{cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1);font-family:var(--font-cinzel),serif;font-size:.72rem;font-weight:500;letter-spacing:.08em;padding:10px 18px;border-radius:8px;background:var(--s1);color:rgba(255,245,232,.5);box-shadow:4px 4px 10px rgba(0,0,0,.68),-2px -2px 5px rgba(45,25,90,.18),inset 0 1.5px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.1);border:none;min-height:44px;display:inline-flex;align-items:center}
 .chip.on{background:#090716;color:var(--gold);box-shadow:inset 4px 4px 10px rgba(0,0,0,.7),inset -2px -2px 5px rgba(35,20,75,.2),0 0 0 1px rgba(255,179,71,.35),0 0 18px rgba(255,179,71,.1)}
 .prog-bar{height:4px;border-radius:3px;overflow:hidden;background:#090716;box-shadow:inset 2px 2px 5px rgba(0,0,0,.7),inset -1px -1px 3px rgba(45,25,90,.18)}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--rose));border-radius:3px;box-shadow:0 0 8px rgba(255,179,71,.5)}
@@ -437,7 +437,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .tab-btn{padding:9px 14px;font-size:.68rem}
   .ep-row{padding:.7rem .8rem}
   .neo-card,.neo-raised{padding:.9rem 1rem!important}
-  .chip{padding:6px 14px;font-size:.66rem}
+  .chip{padding:10px 14px;font-size:.66rem;min-height:44px}
   .s-overlay{padding:3rem 1rem 1.5rem}
   .dropdown{min-width:180px}
   .dropdown .dd-item{padding:.65rem .9rem;font-size:.66rem}

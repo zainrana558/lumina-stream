@@ -43,12 +43,28 @@ interface Comment {
 
 interface FullDetails {
   id?: number;
-  credits?: { cast: TMDBCastMember[] };
+  credits?: { 
+    cast: TMDBCastMember[]; 
+    crew?: Array<{ id: number; name: string; job: string; department: string; profile_path: string | null }> 
+  };
   similar?: { results: TMDBShow[] };
   videos?: { results: Array<{ id: string; key: string; name: string; type: string; site: string }> };
   number_of_seasons?: number;
-  production_companies?: Array<{ name: string }>;
+  production_companies?: Array<{ id: number; name: string; logo_path: string | null; origin_country: string }>;
   content_ratings?: { results: Array<{ iso_3166_1: string; rating: string }> };
+  production_countries?: Array<{ iso_3166_1: string; name: string }>;
+  spoken_languages?: Array<{ iso_639_1: string; english_name: string; name: string }>;
+  original_title?: string;
+  original_name?: string;
+  original_language?: string;
+  tagline?: string;
+  keywords?: { keywords: Array<{ id: number; name: string }> };
+  images?: { backdrops: Array<{ file_path: string; iso_639_1?: string | null; aspect_ratio: number; vote_average: number }>; posters: Array<{ file_path: string; aspect_ratio: number }> };
+  reviews?: { results: Array<{ id: string; author: string; author_details: { name: string; username: string; avatar_path: string | null; rating: number | null }; content: string; created_at: string; url: string }>; total_results: number };
+  budget?: number;
+  revenue?: number;
+  homepage?: string;
+  imdb_id?: string;
 }
 
 interface DetailsContentProps {
@@ -57,13 +73,21 @@ interface DetailsContentProps {
   initialCredits?: TMDBCastMember[];
   initialSimilar?: MediaItem[];
   initialVideos?: Array<{ id?: string; key: string; name: string; site: string; type: string }>;
+  initialCrew?: Array<{ id: number; name: string; job: string; department: string; profile_path: string | null }>;
+  initialKeywords?: string[];
+  initialImages?: { backdrops: Array<{ file_path: string; iso_639_1?: string | null; aspect_ratio: number; vote_average: number }>; posters: Array<{ file_path: string; aspect_ratio: number }> } | null;
+  initialReviews?: Array<{ id: string; author: string; author_details: { name: string; username: string; avatar_path: string | null; rating: number | null }; content: string; created_at: string; url: string }>;
   /** Pre-selected season (from episode URL route) */
   defaultSeason?: number;
   /** Pre-selected episode (from episode URL route) */
   defaultEpisode?: number;
 }
 
-export default function DetailsContent({ showId, initialShow, initialCredits = [], initialSimilar = [], initialVideos = [], defaultSeason, defaultEpisode }: DetailsContentProps) {
+export default function DetailsContent({ 
+  showId, initialShow, initialCredits = [], initialSimilar = [], initialVideos = [], 
+  initialCrew = [], initialKeywords = [], initialImages = null, initialReviews = [],
+  defaultSeason, defaultEpisode 
+}: DetailsContentProps) {
   const router = useRouter();
   const { user, profile, openPip, triggerConfetti } = useApp();
 
@@ -82,6 +106,9 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   const [commentSending, setCommentSending] = useState(false);
 
   const [fullDetails, setFullDetails] = useState<FullDetails | null>(null);
+  const [tmdbReviews, setTmdbReviews] = useState(initialReviews);
+  const [galleryImages, setGalleryImages] = useState(initialImages);
+  const [keywords, setKeywords] = useState<string[]>(initialKeywords);
   const [seasonEpisodes, setSeasonEpisodes] = useState<TMDBSeasonEpisode[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [loadingSeason, setLoadingSeason] = useState(false);
@@ -131,7 +158,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   }, [playing]);
 
   // Keyboard shortcuts (only active when player is open) — must be before early return
-  const DETAIL_TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
+  const DETAIL_TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['gallery', 'Gallery'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
 
   /** Update the URL to reflect the current season/episode for SEO crawlability. */
   const syncEpisodeUrl = useCallback((s: number, e: number) => {
@@ -169,14 +196,12 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
   // If show came from SSR, seed fullDetails with initial credits/similar/videos
   useEffect(() => {
     if (initialShow && !fullDetails) {
-      /* eslint-disable react-hooks/set-state-in-effect -- seed SSR data into state */
       setFullDetails({
         id: initialShow.id,
-        credits: initialCredits.length > 0 ? { cast: initialCredits } : undefined,
+        credits: initialCredits.length > 0 ? { cast: initialCredits, crew: initialCrew.length > 0 ? initialCrew : undefined } : undefined,
         similar: initialSimilar.length > 0 ? { results: initialSimilar as unknown as TMDBShow[] } : undefined,
         videos: initialVideos.length > 0 ? { results: initialVideos.map(v => ({ ...v, id: v.id || '' })) } : undefined,
       });
-      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [initialShow?.id]);
 
@@ -219,10 +244,13 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
       // Bug #29: Respect URL-driven defaults instead of always resetting to S1E1
       setSeason(defaultSeason || 1); setEpIdx(defaultEpisode || 1); setLoadingDetails(true);
       try {
-        const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${id}&append_to_response=credits,similar,videos,content_ratings`, { signal: controller.signal });
+        const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${id}&append_to_response=credits,similar,videos,content_ratings,keywords,reviews,images`, { signal: controller.signal });
         const data = await res.json();
         if (!cancelled) {
           setFullDetails(data);
+          if (data.reviews?.results) setTmdbReviews(data.reviews.results.slice(0, 5));
+          if (data.images) setGalleryImages(data.images);
+          if (data.keywords?.keywords) setKeywords(data.keywords.keywords.map((k: { name: string }) => k.name));
           // Fallback: if append_to_response didn't return videos, fetch separately
           if (!data.videos?.results?.length) {
             fetch(`/api/tmdb?endpoint=/${mediaType}/${id}/videos`, { signal: controller.signal })
@@ -567,7 +595,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
     || fullDetails?.content_ratings?.results?.[0]?.rating
     || null;
 
-  const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
+  const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['gallery', 'Gallery'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
 
   const handlePostComment = async () => {
     if (!user || !profile || !commentText.trim() || !show) return;
@@ -810,23 +838,96 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
           <section aria-label="Details">
             <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>DETAILS</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 14 }}>
-            {([
-              ['Studio', fullDetails?.production_companies?.[0]?.name || 'Dream Weaver Studio'],
-              ['Release', show.yr],
-              ['Status', show.st],
-              ['Rating', `${show.r} / 10`],
-              ['Genres', show.genre.join(', ')],
-              ['Seasons', show.media_type === 'tv' ? (fullDetails?.number_of_seasons || (show._isAnilist ? '1' : '...')) : 'N/A'],
-              ['Runtime', show.media_type === 'movie' ? `${show.eps} min` : `${epData[0]?.dur || '23m'} / ep`],
-            ] as const).map(([k, v], i) => (
-              <div key={k} className="neo-card" style={{ padding: '14px 16px', borderRadius: 12, animation: `card-in .4s ${i * 0.045}s both` }}>
-                <div className="f-cinzel" style={{  fontSize: '.62rem', color: 'rgba(255,245,232,.32)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 7 }}>{k}</div>
-                <div className="f-crimson" style={{  fontSize: '1rem', color: 'rgba(255,245,232,.78)', fontWeight: 600 }}>{v}</div>
-              </div>
-            ))}
+            {(() => {
+              const crew = fullDetails?.credits?.crew || [];
+              const directors = crew.filter(c => c.job === 'Director').map(c => c.name);
+              const writers = crew.filter(c => c.job === 'Writer' || c.job === 'Screenplay' || c.job === 'Novel' || c.job === 'Story').map(c => c.name);
+              const companies = fullDetails?.production_companies?.map(pc => pc.name).filter(Boolean) || [];
+              const countries = fullDetails?.production_countries?.map(c => c.name) || [];
+              const langs = fullDetails?.spoken_languages?.map(l => l.english_name || l.name) || [];
+              const oTitle = fullDetails?.original_title || fullDetails?.original_name || '';
+              const oLang = fullDetails?.original_language;
+
+              const formatCurrency = (n?: number) => {
+                if (!n) return 'N/A';
+                if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
+                if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+                if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+                return `$${n}`;
+              };
+
+              const langNames: Record<string, string> = { en: 'English', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', pt: 'Portuguese', hi: 'Hindi', th: 'Thai', ar: 'Arabic', tr: 'Turkish', ru: 'Russian', pl: 'Polish', sv: 'Swedish', da: 'Danish', no: 'Norwegian', nl: 'Dutch', cs: 'Czech', ta: 'Tamil', te: 'Telugu', bn: 'Bengali', id: 'Indonesian', ms: 'Malay', vi: 'Vietnamese', uk: 'Ukrainian' };
+
+              const detailsGrid: [string, string][] = [
+                ['Director', directors.length > 0 ? directors.join(', ') : 'N/A'],
+                ['Writers', writers.length > 0 ? writers.join(', ') : 'N/A'],
+                ['Studio', companies.length > 0 ? companies.join(', ') : 'N/A'],
+                ['Release', show.yr],
+                ['Status', show.st],
+                ['Rating', `${show.r} / 10`],
+                ['Genres', show.genre.join(', ')],
+                ...(show.media_type === 'tv' ? [['Seasons', fullDetails?.number_of_seasons || (show._isAnilist ? '1' : '...')]] : []),
+                ...(show.media_type === 'movie' ? [['Runtime', `${show.eps} min`]] : [['Runtime', `${fullDetails?.number_of_seasons ? '...' : epData[0]?.dur || '23m'} / ep`]]),
+                ['Country', countries.length > 0 ? countries.join(', ') : 'N/A'],
+                ['Language', langs.length > 0 ? langs.join(', ') : (oLang ? (langNames[oLang] || oLang.toUpperCase()) : 'N/A')],
+                ...(oTitle && oTitle !== show.title ? [['Original Title', oTitle]] : []),
+                ...(oLang && oLang !== 'en' ? [['Original Language', langNames[oLang] || oLang.toUpperCase()]] : []),
+                ...(show.media_type === 'movie' ? [['Budget', formatCurrency(fullDetails?.budget)]] : []),
+                ...(show.media_type === 'movie' ? [['Revenue', formatCurrency(fullDetails?.revenue)]] : []),
+              ];
+
+              return detailsGrid.map(([k, v], i) => (
+                <div key={k} className="neo-card" style={{ padding: '14px 16px', borderRadius: 12, animation: `card-in .4s ${i * 0.045}s both` }}>
+                  <div className="f-cinzel" style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.32)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 7 }}>{k}</div>
+                  <div className="f-crimson" style={{ fontSize: '1rem', color: 'rgba(255,245,232,.78)', fontWeight: 600 }}>{v}</div>
+                </div>
+              ));
+            })()}
           </div>
           </section>
-          <section aria-label="Cast" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+          {/* Keywords section */}
+          {keywords.length > 0 && (
+            <section aria-label="Keywords" style={{ marginTop: '1.5rem' }}>
+              <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>KEYWORDS</h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {keywords.slice(0, 15).map(kw => (
+                  <Link key={kw} href={`/browse?genre=${encodeURIComponent(kw)}`} style={{
+                    display: 'inline-block', padding: '5px 12px', borderRadius: 8,
+                    fontSize: '.78rem', color: '#FFF5E8', textDecoration: 'none',
+                    background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)',
+                    transition: 'all .22s',
+                  }}>{kw}</Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* TMDB User Reviews section */}
+          {tmdbReviews.length > 0 && (
+            <section aria-label="TMDB Reviews" style={{ marginTop: '1.5rem' }}>
+              <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>TMDB REVIEWS</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {tmdbReviews.slice(0, 3).map(rev => (
+                  <div key={rev.id} className="neo-card" style={{ padding: '1.2rem 1.4rem', borderRadius: 12, animation: 'card-in .4s ease both' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '.6rem' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: rev.author_details?.avatar_path ? `url(https://image.tmdb.org/t/p/w185${rev.author_details.avatar_path}) center/cover no-repeat` : `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.85rem', boxShadow: `0 0 0 1.5px ${s.acc}40`, flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div className="f-cinzel" style={{ fontSize: '.82rem', color: '#FFF5E8' }}>{rev.author_details?.name || rev.author}</div>
+                        <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.35)' }}>
+                          {rev.author_details?.rating ? <span style={{ color: s.acc }}>{rev.author_details.rating}/10</span> : ''}
+                          {' '}{new Date(rev.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </div>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.6)', lineHeight: 1.7, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{rev.content.replace(/<[^>]*>/g, '')}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section aria-label="Cast" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
             <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.25rem' }}>CAST</h2>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             {castList.map((c, i) => (
@@ -839,7 +940,7 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.9rem', boxShadow: `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px ${s.acc}40` }}>🌸</div>
                 )}
                 <div>
-                  <div className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{c.name}</div>
+                  <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{c.name}</div>
                   <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)' }}>{c.character || 'Actor'}</div>
                 </div>
               </Link>
@@ -850,59 +951,64 @@ export default function DetailsContent({ showId, initialShow, initialCredits = [
             <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>EXTERNAL LINKS</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {!show._isAnilist && (
-                <a
-                  href={`https://www.themoviedb.org/${show.media_type === 'movie' ? 'movie' : 'tv'}/${show.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="neo-card"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
-                >
+                <a href={`https://www.themoviedb.org/${show.media_type === 'movie' ? 'movie' : 'tv'}/${show.id}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
                   <span style={{ fontSize: '1rem' }}>🎬</span> TMDB
                 </a>
               )}
-              {!show._isAnilist && (
-                <a
-                  href={`https://www.imdb.com/find/?q=${encodeURIComponent(show.title)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="neo-card"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
-                >
+              {!show._isAnilist && fullDetails?.imdb_id && (
+                <a href={`https://www.imdb.com/title/${fullDetails.imdb_id}/`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
+                  <span style={{ fontSize: '1rem' }}>📍</span> IMDb
+                </a>
+              )}
+              {!show._isAnilist && !fullDetails?.imdb_id && (
+                <a href={`https://www.imdb.com/find/?q=${encodeURIComponent(show.title)}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
                   <span style={{ fontSize: '1rem' }}>📍</span> IMDb
                 </a>
               )}
               {show._isAnilist && (
-                <a
-                  href={`https://anilist.co/anime/${toAnilistId(show.id)}/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="neo-card"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
-                >
+                <a href={`https://anilist.co/anime/${toAnilistId(show.id)}/`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
                   <span style={{ fontSize: '1rem' }}>🎌</span> AniList
                 </a>
               )}
-              <a
-                href={`https://www.google.com/search?q=${encodeURIComponent(show.title + (show.yr ? ` ${show.yr}` : ''))}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="neo-card"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
-              >
+              {fullDetails?.homepage && (
+                <a href={fullDetails.homepage} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
+                  <span style={{ fontSize: '1rem' }}>🌐</span> Official
+                </a>
+              )}
+              <a href={`https://www.google.com/search?q=${encodeURIComponent(show.title + (show.yr ? ` ${show.yr}` : ''))}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
                 <span style={{ fontSize: '1rem' }}>🔍</span> Google
               </a>
-              <a
-                href={`https://en.wikipedia.org/wiki/${encodeURIComponent(show.title.replace(/ /g, '_'))}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="neo-card"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}
-              >
+              <a href={`https://en.wikipedia.org/wiki/${encodeURIComponent(show.title.replace(/ /g, '_'))}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
                 <span style={{ fontSize: '1rem' }}>📖</span> Wikipedia
               </a>
             </div>
           </section>
           </>
+        )}
+
+        {tab === 'gallery' && (
+          <section aria-label="Gallery">
+            <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>GALLERY</h2>
+            {galleryImages?.backdrops && galleryImages.backdrops.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: '.75rem' }}>
+                {galleryImages.backdrops.slice(0, 12).map((img, i) => (
+                  <div key={img.file_path} style={{ position: 'relative', paddingTop: `${(100 / (img.aspect_ratio || 1.78)).toFixed(1)}%`, borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)', animation: `card-in .42s ${i * 0.05}s both` }}>
+                    <img
+                      src={`https://image.tmdb.org/t/p/w780${img.file_path}`}
+                      alt={`${show.title} gallery image ${i + 1}`}
+                      loading="lazy"
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.3)', fontSize: '.82rem', letterSpacing: '.1em' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '.8rem', opacity: .4 }}>🖼️</div>
+                No gallery images available
+              </div>
+            )}
+          </section>
         )}
 
         {tab === 'trailers' && (

@@ -347,17 +347,14 @@ function GenrePortalCard({
         }}
       >
         {backdropUrl && (
-          <img
+          <Image
             src={backdropUrl}
             alt=""
             aria-hidden="true"
+            fill
             loading="lazy"
-            decoding="async"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
               objectFit: 'cover',
             }}
           />
