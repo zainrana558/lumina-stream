@@ -2,10 +2,9 @@
  * Upstash Redis cache for TMDB API responses & other expensive queries
  *
  * Reduces upstream API calls by caching responses:
- * - Trending/popular: 15 min TTL
- * - Search results: 15 min TTL
- * - Details/seasons: 3 hour TTL
- * - Discover/genre: 30 min TTL
+ * - Trending/popular/discover: 24h TTL (TMDB updates daily at most)
+ * - Details/seasons/credits/videos: 24h TTL
+ * - Search results: 1h TTL (users expect fresh results)
  * - Stats (per-user): 5 min TTL
  *
  * Uses Upstash free tier (10K commands/day).
@@ -21,22 +20,23 @@ import { getRedis } from '@/lib/redis';
 const CACHE_VERSION = 'v4';
 
 // ---- TTL presets (in seconds) ----
-// Kept short so content stays fresh and up-to-date.
-// TMDB trending/discover data changes frequently (daily).
+// TMDB data changes at most once daily. Long TTLs dramatically reduce
+// Worker/TMDB calls while keeping content fresh enough for users.
+// Search stays shorter so users see fresh results.
 export const CACHE_TTL = {
-  trending:     1 * 60 * 60,   // 1 hour (was 15 min — reduces Worker calls significantly)
-  popular:      2 * 60 * 60,   // 2 hours (was 30 min)
-  search:       30 * 60,       // 30 min (was 15 min)
-  details:      3 * 60 * 60,   // 3 hours
-  season:       3 * 60 * 60,   // 3 hours
-  discover:     2 * 60 * 60,   // 2 hours (was 30 min)
-  genre:        6 * 60 * 60,   // 6 hours (genre list rarely changes)
-  credits:      3 * 60 * 60,   // 3 hours
-  videos:       3 * 60 * 60,   // 3 hours
-  stats:        5 * 60,        // 5 min (per-user stats)
-  leaderboard:  30 * 60,       // 30 min (global leaderboard, aggregated data)
+  trending:     24 * 60 * 60,  // 24h — TMDB trending updates once daily
+  popular:      24 * 60 * 60,  // 24h — popular lists barely change
+  search:       1 * 60 * 60,   // 1h — users expect somewhat fresh search
+  details:      24 * 60 * 60,  // 24h — movie/show details are stable
+  season:       24 * 60 * 60,  // 24h — season data rarely changes
+  discover:     24 * 60 * 60,  // 24h — discover results update slowly
+  genre:        24 * 60 * 60,  // 24h — genre list is essentially static
+  credits:      24 * 60 * 60,  // 24h — cast/crew don't change
+  videos:       24 * 60 * 60,  // 24h — trailer links are stable
+  stats:        5 * 60,        // 5 min (per-user stats — keep short)
+  leaderboard:  2 * 60 * 60,   // 2h — global leaderboard
   reminders:    10 * 60,       // 10 min (episode reminder checks)
-  warm:         6 * 60 * 60,   // 6 hours — full genre warm lists (stable, pre-warmed catalogs)
+  warm:         24 * 60 * 60,  // 24h — pre-warmed catalogs
 } as const;
 
 // Explicit type to avoid inference issues with computed values + as const

@@ -204,7 +204,7 @@ async function getTMDBData() {
   }
 }
 
-export const revalidate = 300; // 5 min ISR — avoids 130+ API calls at build time
+export const revalidate = 3600; // 1h ISR — Redis caches for 24h, this controls edge revalidation
 
 export const metadata: Metadata = {
   title: 'Lumovia — Free Movies, TV Shows & Anime',
