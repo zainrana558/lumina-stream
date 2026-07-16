@@ -862,7 +862,7 @@ export default function DetailsContent({
                 ['Director', directors.length > 0 ? directors.join(', ') : 'N/A'],
                 ['Writers', writers.length > 0 ? writers.join(', ') : 'N/A'],
                 ['Studio', companies.length > 0 ? companies.join(', ') : 'N/A'],
-                ['Release', show.yr],
+                ['Release', String(show.yr)],
                 ['Status', show.st],
                 ['Rating', `${show.r} / 10`],
                 ['Genres', show.genre.join(', ')],
