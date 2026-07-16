@@ -26,7 +26,7 @@ const CACHE_VERSION = 'v4';
 export const CACHE_TTL = {
   trending:     24 * 60 * 60,  // 24h — TMDB trending updates once daily
   popular:      24 * 60 * 60,  // 24h — popular lists barely change
-  search:       1 * 60 * 60,   // 1h — users expect somewhat fresh search
+  search:       6 * 60 * 60,   // 6h — search results don't change minute-to-minute
   details:      24 * 60 * 60,  // 24h — movie/show details are stable
   season:       24 * 60 * 60,  // 24h — season data rarely changes
   discover:     24 * 60 * 60,  // 24h — discover results update slowly

@@ -17,29 +17,30 @@
 const TMDB_ORIGIN = 'https://api.themoviedb.org/3';
 
 // TTL by endpoint pattern (seconds)
+const DAY = 86400;
+
 function tmdbTtl(path) {
-  if (path.includes('/trending')) return 900;
-  if (path.includes('/search/')) return 900;
-  if (path.includes('/genre/') && path.includes('/list')) return 21600;
-  if (path.includes('/discover/')) return 1800;
-  if (path.includes('/season/')) return 10800;
-  if (path.includes('/recommendations')) return 3600;
-  if (path.includes('/videos')) return 10800;
-  if (path.includes('/credits')) return 10800;
-  if (/\/(movie|tv)\/\d+$/.test(path)) return 10800;
-  return 1800;
+  // Match Redis CACHE_TTL values — both layers should agree on staleness
+  if (path.includes('/search/'))  return 3600;       // 1h — search stays fresh
+  if (path.includes('/trending')) return DAY;         // 24h — TMDB updates once daily
+  if (path.includes('/genre/') && path.includes('/list')) return DAY; // 24h — static
+  if (path.includes('/discover/')) return DAY;        // 24h — popularity barely shifts
+  if (path.includes('/season/'))  return DAY;         // 24h — episode data stable
+  if (path.includes('/recommendations')) return DAY;  // 24h
+  if (path.includes('/videos'))   return DAY;         // 24h — trailers don't change
+  if (path.includes('/credits'))  return DAY;         // 24h — cast stable
+  if (/\/(movie|tv)\/\d+$/.test(path)) return DAY;  // 24h — detail pages
+  if (path.includes('/popular') || path.includes('/top_rated') ||
+      path.includes('/now_playing') || path.includes('/upcoming') ||
+      path.includes('/airing_today') || path.includes('/on_the_air')) return DAY;
+  return DAY; // safe default
 }
 
-// AniList TTL by query characteristics
+// AniList TTL by query characteristics — match Redis 24h policy
 function anilistTtl(query, variables = {}) {
-  if (variables.search) return 600;
-  if (query.includes('TRENDING_DESC') && !query.includes('POPULARITY_DESC')) return 900;
-  if ((variables.sort || '').includes('SCORE_DESC')) return 1800;
-  if (variables.status === 'RELEASING') return 900;
-  if (variables.status === 'NOT_YET_RELEASED') return 3600;
-  if (variables.season) return 1800;
-  if (variables.id) return 10800;
-  return 1800;
+  if (variables.search) return 3600;          // 1h — search results
+  if (variables.id)     return DAY;           // 24h — detail pages
+  return DAY;                                 // 24h — all list/trending/seasonal
 }
 
 // Simple string hash for AniList cache keys
