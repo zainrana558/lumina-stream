@@ -7,6 +7,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { tmdbFetchRaw } from '@/lib/tmdb/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { getFeaturedArticles, getRemainingArticles } from '@/content/blog-articles';
 
 export const revalidate = 3600;
 
@@ -56,6 +57,8 @@ async function getPopularShows() {
 export default async function BlogIndexPage() {
   const shows = await getPopularShows();
   const blogUrl = `${CANONICAL_BASE}/blog`;
+  const featuredArticles = getFeaturedArticles();
+  const remainingArticles = getRemainingArticles();
 
   return (
     <div style={{
@@ -115,6 +118,149 @@ export default async function BlogIndexPage() {
         </h1>
         <p style={{ color: 'rgba(255,245,232,.5)', fontSize: '.9rem', maxWidth: 700, margin: '0 auto', lineHeight: 1.7 }}>
           Your ultimate guide to discovering what to watch next. Each guide provides detailed information about movies and TV shows including plot summaries, cast and crew details, ratings from millions of users on TMDB and AniList, episode guides for TV series, and curated recommendations. Whether you are looking for the latest blockbusters, trending anime, classic horror films, or hidden gem dramas, our blog covers it all. Updated multiple times per hour with the freshest content from The Movie Database and AniList.
+        </p>
+      </div>
+
+      {/* Featured Articles */}
+      <div style={{ marginBottom: 56 }}>
+        <h2 style={{
+          fontSize: 'clamp(1rem, 2vw, 1.4rem)',
+          color: '#FFF5E8',
+          fontWeight: 700,
+          marginBottom: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}>
+          <span style={{
+            display: 'inline-block',
+            padding: '3px 10px',
+            borderRadius: 6,
+            background: 'rgba(255,179,71,.15)',
+            color: '#FFB347',
+            fontSize: '.6rem',
+            fontWeight: 600,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+          }}>Editor's Picks</span>
+          Featured Articles
+        </h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+          gap: 20,
+        }}>
+          {featuredArticles.map((article) => (
+            <Link
+              key={article.slug}
+              href={`/blog/${article.slug}`}
+              style={{
+                textDecoration: 'none',
+                color: 'inherit',
+                borderRadius: 12,
+                overflow: 'hidden',
+                background: 'rgba(255,255,255,.04)',
+                border: '1px solid rgba(255,255,255,.08)',
+                transition: 'transform .2s, border-color .2s',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <div style={{
+                height: 140,
+                background: 'linear-gradient(135deg, #1a1030 0%, #2a1a40 50%, #1a2040 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+              }}>
+                <span style={{
+                  fontSize: '2rem',
+                  opacity: 0.15,
+                  position: 'absolute',
+                }}>
+                  {article.category === 'Sci-Fi' ? '🚀' :
+                   article.category === 'Anime' ? '⚡' :
+                   article.category === 'TV Shows' ? '📺' :
+                   article.category === 'Industry' ? '📡' :
+                   article.category === 'Directors' ? '🎬' :
+                   article.category === 'Awards' ? '🏆' :
+                   article.category === 'Guides' ? '📖' :
+                   article.category === 'Crime' ? '🔍' :
+                   article.category === 'Family' ? '👨‍👩‍👧‍👦' :
+                   article.category === 'Horror' ? '👻' :
+                   article.category === 'Romance' ? '❤️' : '📝'}
+                </span>
+                <span style={{
+                  display: 'inline-block',
+                  padding: '4px 12px',
+                  borderRadius: 20,
+                  background: 'rgba(255,179,71,.2)',
+                  color: '#FFB347',
+                  fontSize: '.6rem',
+                  fontWeight: 600,
+                  letterSpacing: '.06em',
+                  textTransform: 'uppercase',
+                  zIndex: 1,
+                }}>
+                  {article.category}
+                </span>
+              </div>
+              <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{
+                  fontSize: '.6rem',
+                  color: 'rgba(255,245,232,.35)',
+                  marginBottom: 6,
+                  display: 'flex',
+                  gap: 12,
+                }}>
+                  <span>{article.date}</span>
+                  <span>{article.readTime}</span>
+                </div>
+                <h3 style={{
+                  fontSize: '.9rem',
+                  color: '#FFF5E8',
+                  margin: '0 0 8px',
+                  fontWeight: 600,
+                  lineHeight: 1.35,
+                }}>
+                  {article.title}
+                </h3>
+                <p style={{
+                  fontSize: '.75rem',
+                  color: 'rgba(255,245,232,.4)',
+                  margin: '0 0 12px',
+                  lineHeight: 1.5,
+                  flex: 1,
+                }}>
+                  {article.description.length > 120
+                    ? article.description.slice(0, 120) + '...'
+                    : article.description}
+                </p>
+                <span style={{
+                  fontSize: '.7rem',
+                  color: '#FFB347',
+                  fontWeight: 600,
+                }}>
+                  Read More →
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Auto-Generated Content Header */}
+      <div style={{
+        borderBottom: '1px solid rgba(255,255,255,.06)',
+        paddingBottom: 16,
+        marginBottom: 24,
+      }}>
+        <h2 style={{ fontSize: 'clamp(1rem, 1.5vw, 1.2rem)', color: '#FFF5E8', fontWeight: 600 }}>
+          Popular Titles
+        </h2>
+        <p style={{ color: 'rgba(255,245,232,.35)', fontSize: '.8rem', margin: '4px 0 0' }}>
+          Browse detailed guides for trending movies and TV shows
         </p>
       </div>
 
@@ -185,6 +331,98 @@ export default async function BlogIndexPage() {
           );
         })}
       </div>
+
+      {/* More Articles */}
+      {remainingArticles.length > 0 && (
+        <div style={{ marginTop: 56 }}>
+          <h2 style={{
+            fontSize: 'clamp(1rem, 1.5vw, 1.2rem)',
+            color: '#FFF5E8',
+            marginBottom: 20,
+            fontWeight: 600,
+          }}>
+            More Articles
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+            gap: 20,
+          }}>
+            {remainingArticles.map((article) => (
+              <Link
+                key={article.slug}
+                href={`/blog/${article.slug}`}
+                style={{
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  background: 'rgba(255,255,255,.03)',
+                  border: '1px solid rgba(255,255,255,.06)',
+                  transition: 'transform .2s, border-color .2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 8,
+                  }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '2px 8px',
+                      borderRadius: 12,
+                      background: 'rgba(255,179,71,.12)',
+                      color: '#FFB347',
+                      fontSize: '.55rem',
+                      fontWeight: 600,
+                      letterSpacing: '.06em',
+                      textTransform: 'uppercase',
+                    }}>
+                      {article.category}
+                    </span>
+                    <span style={{
+                      fontSize: '.6rem',
+                      color: 'rgba(255,245,232,.3)',
+                    }}>
+                      {article.readTime}
+                    </span>
+                  </div>
+                  <h3 style={{
+                    fontSize: '.85rem',
+                    color: '#FFF5E8',
+                    margin: '0 0 8px',
+                    fontWeight: 600,
+                    lineHeight: 1.35,
+                  }}>
+                    {article.title}
+                  </h3>
+                  <p style={{
+                    fontSize: '.7rem',
+                    color: 'rgba(255,245,232,.35)',
+                    margin: '0 0 10px',
+                    lineHeight: 1.5,
+                    flex: 1,
+                  }}>
+                    {article.description.length > 100
+                      ? article.description.slice(0, 100) + '...'
+                      : article.description}
+                  </p>
+                  <div style={{
+                    fontSize: '.6rem',
+                    color: 'rgba(255,245,232,.25)',
+                  }}>
+                    {article.date}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
         {/* Explore More — internal links for crawl density */}
         <div style={{ marginTop: 56, borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 40 }}>

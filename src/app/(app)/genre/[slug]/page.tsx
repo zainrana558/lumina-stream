@@ -24,6 +24,17 @@ const COMPONENT_MAP: Record<string, React.ComponentType<{ initialShows: MediaIte
   fantasy: FantasyThemedPage,
 };
 
+// ─── Related genres for cross-linking ──────────────────────────────────────────
+
+const RELATED_GENRES: Record<string, string[]> = {
+  anime: ['cartoon', 'fantasy', 'romance', 'action', 'adventure'],
+  cartoon: ['anime', 'fantasy', 'comedy', 'family', 'adventure'],
+  horror: ['mystery', 'thriller', 'fantasy', 'action'],
+  romance: ['fantasy', 'anime', 'drama', 'comedy'],
+  mystery: ['horror', 'thriller', 'crime', 'drama'],
+  fantasy: ['anime', 'horror', 'romance', 'adventure', 'sci-fi'],
+};
+
 // ─── SEO metadata ───────────────────────────────────────────────────────────
 
 const siteUrl = CANONICAL_BASE;
@@ -225,6 +236,37 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
         ],
       }) }} />
       <Component initialShows={shows} />
+      {(() => {
+        const related = RELATED_GENRES[slug] || [];
+        if (related.length === 0) return null;
+        return (
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem 1.5rem' }}>
+            <div className="f-cinzel" style={{ fontSize: '.88rem', color: '#FFB347', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 16 }}>
+              Explore More Genres
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {related.map(g => {
+                const cfg = PORTAL_GENRE_MAP[g];
+                if (!cfg) return null;
+                return (
+                  <a key={g} href={`/genre/${g}`} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '12px 18px', borderRadius: 12,
+                    textDecoration: 'none', color: '#FFF5E8',
+                    background: 'rgba(255,245,232,.04)',
+                    border: '1px solid rgba(255,245,232,.08)',
+                    fontSize: '.82rem',
+                    transition: 'background .2s, border-color .2s',
+                  }}>
+                    <span style={{ fontSize: '1.1rem' }}>{cfg.em}</span>
+                    <span>{cfg.name}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
       <div style={{
         maxWidth: 1200, margin: '0 auto',
         padding: '60px 20px 60px',

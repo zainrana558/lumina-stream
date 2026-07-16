@@ -22,6 +22,7 @@ const SUB_SITEMAPS = [
   'blog.xml',
   'images.xml',
   'videos.xml',
+  'guides.xml',
 ] as const;
 
 export async function GET() {

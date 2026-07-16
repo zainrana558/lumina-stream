@@ -3,6 +3,7 @@ import { tmdbSitemapFetch } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { fallbackUrl } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
+import { blogArticles } from '@/content/blog-articles';
 
 let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
@@ -36,6 +37,13 @@ export async function GET() {
 
     const seen = new Set<string>();
     const urls: string[] = [];
+
+    // Add curated blog articles first with higher priority
+    for (const article of blogArticles) {
+      const slug = article.slug;
+      seen.add(slug);
+      urls.push(`<url>\n  <loc>${CANONICAL_BASE}/blog/${slug}</loc>\n  <lastmod>${article.date}</lastmod>\n  <priority>0.8</priority>\n</url>`);
+    }
 
     for (const r of [movies, tv, topRated, trending]) {
       if (!r?.results) continue;

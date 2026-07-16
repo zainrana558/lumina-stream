@@ -19,6 +19,8 @@ import { CANONICAL_BASE, SITE_NAME } from '@/lib/seo/constants';
 import BlogPost from './BlogPost';
 import { stripHtml } from '@/lib/seo/metadata';
 import { isAnilistId, toAnilistId } from '@/types';
+import { getArticleBySlug, blogArticles } from '@/content/blog-articles';
+import type { BlogArticle } from '@/content/blog-articles';
 
 export const revalidate = 3600; // 1 hour
 
@@ -168,6 +170,34 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+
+  // Check for curated article first
+  const curated = getArticleBySlug(slug);
+  if (curated) {
+    const title = curated.title;
+    const description = curated.description;
+    const pageUrl = `${CANONICAL_BASE}/blog/${slug}`;
+    return {
+      title,
+      description: description.slice(0, 160),
+      alternates: { canonical: pageUrl },
+      openGraph: {
+        title,
+        description: description.slice(0, 160),
+        type: 'article',
+        url: pageUrl,
+        siteName: SITE_NAME,
+        publishedTime: curated.date,
+        tags: curated.tags,
+      },
+      twitter: {
+        card: 'summary_large_image' as const,
+        title,
+        description: description.slice(0, 160),
+      },
+    };
+  }
+
   const show = await fetchShowData(slug);
 
   if (!show) {
@@ -200,6 +230,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogSlugPage({ params }: Props) {
   const { slug } = await params;
+
+  // Check for curated article first
+  const curated = getArticleBySlug(slug);
+  if (curated) {
+    return <CuratedArticlePage article={curated} />;
+  }
+
   const show = await fetchShowData(slug);
 
   if (!show) notFound();
@@ -285,6 +322,96 @@ export default async function BlogSlugPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <BlogPost show={show} content={content} />
+    </>
+  );
+}
+
+// ═══ Curated Article Page ═══
+function CuratedArticlePage({ article }: { article: BlogArticle }) {
+  const pageUrl = `${CANONICAL_BASE}/blog/${article.slug}`;
+
+  const showData = {
+    id: 0,
+    title: article.title,
+    year: article.date.slice(0, 4),
+    overview: article.description,
+    genres: article.category,
+    rating: '-',
+    type: 'movie' as const,
+    poster: null,
+    backdrop: null,
+  };
+
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: article.description,
+    datePublished: article.date,
+    dateModified: article.date,
+    author: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: CANONICAL_BASE,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: CANONICAL_BASE,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${CANONICAL_BASE}/logo.svg`,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': pageUrl,
+    },
+    keywords: article.tags.join(', '),
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: CANONICAL_BASE },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${CANONICAL_BASE}/blog` },
+      { '@type': 'ListItem', position: 3, name: article.title, item: pageUrl },
+    ],
+  };
+
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `What is "${article.title}" about?`,
+        acceptedAnswer: { '@type': 'Answer', text: article.description },
+      },
+      {
+        '@type': 'Question',
+        name: 'Where can I find more articles like this?',
+        acceptedAnswer: { '@type': 'Answer', text: 'Browse the Lumovia blog for more curated articles, streaming guides, movie reviews, and recommendations across all genres.' },
+      },
+    ],
+  };
+
+  const curatedContent = `<article class="blog-content">
+${article.content}
+<div class="cta-block" style="margin-top:32px;padding:24px;border-radius:12px;background:linear-gradient(135deg,rgba(255,179,71,.1),rgba(139,120,255,.1));border:1px solid rgba(255,179,71,.2);text-align:center">
+  <p style="font-size:1.1rem;font-weight:700;color:#FFB347;margin:0 0 8px">🎬 Explore More on Lumovia</p>
+  <p style="margin:0 0 16px;color:rgba(255,245,232,.7)">Discover thousands of movies, TV shows, and anime — completely free.</p>
+  <a href="/browse" style="display:inline-block;padding:12px 32px;border-radius:50px;background:linear-gradient(175deg,#FFE566,#FFB347,#E07200);color:#05020A;font-weight:700;text-decoration:none;font-size:.9rem">▶ Browse Catalog</a>
+</div>
+</article>`;
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <BlogPost show={showData} content={curatedContent} />
     </>
   );
 }

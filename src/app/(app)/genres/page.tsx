@@ -455,6 +455,25 @@ export default async function GenresPage() {
           ))}
         </div>
 
+        {/* Browse by Type */}
+        <div style={{ marginTop: 40, marginBottom: 24 }}>
+          <div className="f-cinzel" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)', color: '#FFF5E8', marginBottom: 16 }}>
+            Browse by Type
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12 }}>
+            {['Action', 'Adventure', 'Comedy', 'Drama', 'Sci-Fi', 'Thriller'].map(g => (
+              <a key={g} href={`/browse?genre=${g}`} style={{
+                display: 'block', padding: '16px 18px', borderRadius: 12,
+                textDecoration: 'none', color: '#FFF5E8',
+                background: 'rgba(255,245,232,.04)',
+                border: '1px solid rgba(255,245,232,.08)',
+                fontSize: '.88rem',
+                transition: 'background .2s, border-color .2s',
+              }}>{g}</a>
+            ))}
+          </div>
+        </div>
+
         {/* Genre FAQ */}
         <h2 className="f-cinzel" style={{
           fontSize: 'clamp(1.1rem, 1.8vw, 1.4rem)',

@@ -39,6 +39,8 @@ export default function robots(): MetadataRoute.Robots {
           '/dmca',
           '/cookies',
           '/disclaimer',
+          '/guide/',
+          '/guides',
         ],
         disallow: [
           '/api/',
