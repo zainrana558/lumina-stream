@@ -49,6 +49,14 @@ interface ReviewEntry {
   createdAt: string;
 }
 
+interface CrewMember {
+  id: number;
+  name: string;
+  job: string;
+  department: string;
+  profile_path: string | null;
+}
+
 interface SeoContentProps {
   title: string;
   year?: string;
@@ -75,6 +83,7 @@ interface SeoContentProps {
   originalLanguage?: string;
   popularity?: number;
   directors?: string[];
+  directorIds?: number[];
   writers?: WriterEntry[];
   countries?: string[];
   languages?: string[];
@@ -84,6 +93,7 @@ interface SeoContentProps {
   homepage?: string;
   imdbId?: string;
   reviews?: ReviewEntry[];
+  trailerKey?: string;
 }
 
 /** Genre-specific analysis text — data-driven, not generic filler */
@@ -243,8 +253,8 @@ export default function DetailSeoContent(props: SeoContentProps) {
     anilistId, rating, voteCount, runtime, seasons, episodes, status, contentRating,
     releaseDate, cast, similar, productionCompanies, seasonList,
     originalTitle, originalLanguage, popularity,
-    directors, writers, countries, languages, keywords,
-    budget, revenue, homepage, imdbId, reviews,
+    directors, directorIds, writers, countries, languages, keywords,
+    budget, revenue, homepage, imdbId, reviews, trailerKey,
   } = props;
 
   const faq = buildFaq(props);
@@ -404,11 +414,22 @@ export default function DetailSeoContent(props: SeoContentProps) {
           </>
         )}
 
-        {/* Director */}
+        {/* Director — linked to person pages for internal linking */}
         {directors && directors.length > 0 && (
           <p>
             <span style={{ color: 'rgba(255,245,232,.4)', fontSize: '.82rem' }}>Director: </span>
-            {directors.join(', ')}
+            {directors.map((d, i) => {
+              const did = directorIds?.[i];
+              return did ? (
+                <a key={`${d}-${did}`} href={personUrl(did, d)} style={{ color: '#FFB347', textDecoration: 'none' }}>{d}</a>
+              ) : (
+                <span key={d}>{d}</span>
+              );
+            }).reduce<React.ReactNode[]>((acc, el, i) => {
+              if (i > 0) acc.push(<span key={`sep-${i}`}>, </span>);
+              acc.push(el);
+              return acc;
+            }, [])}
           </p>
         )}
 
@@ -508,6 +529,14 @@ export default function DetailSeoContent(props: SeoContentProps) {
           </>
         )}
 
+        {/* Reviews link — internal linking to reviews page */}
+        {mediaType !== 'anime' && (
+          <p style={{ marginTop: 16, fontSize: '.85rem', color: 'rgba(255,245,232,.45)', lineHeight: 1.7 }}>
+            Read more {mediaType === 'movie' ? 'movie' : 'TV show'} reviews and ratings on the{' '}
+            <Link href="/reviews" style={{ color: '#FFB347', textDecoration: 'none' }}>Lumovia Reviews</Link> page.
+          </p>
+        )}
+
         {/* External links — important for SEO (Google requires external links) */}
         <div className="section-label f-cinzel" style={{ marginTop: 28 }}>External Sources</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
@@ -593,12 +622,15 @@ export default function DetailSeoContent(props: SeoContentProps) {
           <Link href="/browse">Browse All</Link>
           <Link href="/movies">Movies</Link>
           <Link href="/tv-shows">TV Shows</Link>
+          <Link href="/actors">Actors</Link>
+          <Link href="/directors">Directors</Link>
           <Link href="/top-rated">Top Rated</Link>
           <Link href="/new-releases">New Releases</Link>
           <Link href="/seasonal">Seasonal Anime</Link>
           <Link href="/leaderboard">Leaderboard</Link>
           <Link href="/release-calendar">Release Calendar</Link>
           <Link href="/genres">All Genres</Link>
+          <Link href="/reviews">Reviews</Link>
           {decadeInfo && <Link href={decadeInfo.href}>{decadeInfo.label} Collection</Link>}
           {year && <Link href={`/year/${year}`}>{year} Releases</Link>}
           {genres.slice(0, 3).map((g, i) => {
@@ -608,6 +640,10 @@ export default function DetailSeoContent(props: SeoContentProps) {
           })}
           {genres.filter(g => !portalGenreMap[genreIds?.[genres.indexOf(g)] ?? -1]).slice(0, 2).map(g => (
             <Link key={`browse-${g}`} href={`/browse?genre=${encodeURIComponent(g)}`}>{g}</Link>
+          ))}
+          {/* Director links for internal linking */}
+          {directors && directors.length > 0 && directorIds && directorIds.length > 0 && directors.map((d, i) => (
+            <Link key={`director-${directorIds[i]}`} href={personUrl(directorIds[i], d)}>{d} — Director</Link>
           ))}
         </nav>
       </article>

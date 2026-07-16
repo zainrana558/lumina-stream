@@ -280,18 +280,39 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
         };
 
         // Build VideoObject with trailer
-        const trailerUrl = data.trailer?.site === 'youtube' ? `https://www.youtube.com/watch?v=${data.trailer.id}` : undefined;
-        videoJsonLd = cover ? {
+        const trailerKey = data.trailer?.id;
+        const trailerSite = data.trailer?.site;
+        const trailerUrl = trailerSite === 'youtube' ? `https://www.youtube.com/watch?v=${trailerKey}` : undefined;
+        const trailerEmbedUrl = trailerSite === 'youtube' ? `https://www.youtube.com/embed/${trailerKey}?rel=0&modestbranding=1` : undefined;
+        const trailerThumbnail = trailerSite === 'youtube' && trailerKey
+          ? `https://img.youtube.com/vi/${trailerKey}/maxresdefault.jpg`
+          : cover;
+        const trailerDescription = data.trailer?.id
+          ? `Watch the official ${title} trailer. ${description}`
+          : description;
+
+        videoJsonLd = trailerThumbnail ? {
           '@context': 'https://schema.org',
           '@type': 'VideoObject',
-          name: title,
-          description,
-          thumbnailUrl: cover,
+          name: `${title} Trailer`,
+          description: trailerDescription,
+          thumbnailUrl: trailerThumbnail,
+          thumbnail: {
+            '@type': 'ImageObject',
+            url: trailerThumbnail,
+            width: 1280,
+            height: 720,
+          },
           uploadDate: releaseDate || new Date().toISOString().split('T')[0],
           contentUrl: `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}`,
-          embedUrl: `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}`,
-          ...(trailerUrl ? { embedUrl: trailerUrl } : {}),
+          embedUrl: trailerEmbedUrl || `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}`,
           ...(data.duration ? { duration: `PT${data.duration}M` } : {}),
+          ...(trailerKey ? {
+            interactionStatistic: {
+              '@type': 'InteractionCounter',
+              interactionType: { '@type': 'WatchAction' },
+            },
+          } : {}),
         } : null;
 
         // Build season list for anime (AniList uses seasons, we show as Season 1)
@@ -425,16 +446,42 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
   };
 
   // VideoObject schema for video rich results in Google
-  const videoJsonLd: Record<string, unknown> | null = rawData.backdrop_path ? {
+  // Enhanced with thumbnailUrl, description, duration, and proper embedUrl
+  const firstTrailer = fullData?.videos?.results?.find((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube');
+  const videoThumbnailUrl = firstTrailer?.key
+    ? `https://img.youtube.com/vi/${firstTrailer.key}/maxresdefault.jpg`
+    : rawData.backdrop_path
+      ? `https://image.tmdb.org/t/p/w1280${rawData.backdrop_path}`
+      : undefined;
+  const videoEmbedUrl = firstTrailer?.key
+    ? `https://www.youtube.com/embed/${firstTrailer.key}?rel=0&modestbranding=1`
+    : undefined;
+  const videoDescription = firstTrailer?.name
+    ? `Watch the ${firstTrailer.type?.toLowerCase() || 'trailer'} for ${title}. ${description}`
+    : description;
+
+  const videoJsonLd: Record<string, unknown> | null = videoThumbnailUrl ? {
     '@context': 'https://schema.org',
     '@type': 'VideoObject',
-    name: title,
-    description,
-    thumbnailUrl: `https://image.tmdb.org/t/p/w1280${rawData.backdrop_path}`,
+    name: firstTrailer?.name || `${title} Trailer`,
+    description: videoDescription,
+    thumbnailUrl: videoThumbnailUrl,
+    thumbnail: {
+      '@type': 'ImageObject',
+      url: videoThumbnailUrl,
+      width: 1280,
+      height: 720,
+    },
     uploadDate: releaseDate || new Date().toISOString().split('T')[0],
     contentUrl: `${SITE_URL}${mediaUrl(showId, title, mediaType, year)}`,
-    embedUrl: `${SITE_URL}${mediaUrl(showId, title, mediaType, year)}`,
+    embedUrl: videoEmbedUrl || `${SITE_URL}${mediaUrl(showId, title, mediaType, year)}`,
     ...(rawData.runtime ? { duration: `PT${rawData.runtime}M` } : {}),
+    ...(firstTrailer?.key ? {
+      interactionStatistic: {
+        '@type': 'InteractionCounter',
+        interactionType: { '@type': 'WatchAction' },
+      },
+    } : {}),
   } : null;
 
   return (
@@ -466,10 +513,12 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
       {(() => {
         const crew = fullData?.credits?.crew || [];
         const directors = crew.filter(c => c.job === 'Director').map(c => c.name);
+        const directorIdList = crew.filter(c => c.job === 'Director').map(c => c.id);
         const writers = crew.filter(c => c.job === 'Writer' || c.job === 'Screenplay' || c.job === 'Novel' || c.job === 'Story').map(c => ({ name: c.name, job: c.job }));
         const countries = fullData?.production_countries?.map(c => c.name) || [];
         const languages = fullData?.spoken_languages?.map(l => l.english_name || l.name) || [];
         const keywords = fullData?.keywords?.keywords?.map(k => k.name) || [];
+        const trailer = fullData?.videos?.results?.find((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube');
         return (
           <DetailSeoContent
             title={title}
@@ -496,6 +545,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
             originalLanguage={rawData.original_language}
             popularity={rawData.popularity}
             directors={directors.length > 0 ? directors : undefined}
+            directorIds={directorIdList.length > 0 ? directorIdList : undefined}
             writers={writers.length > 0 ? writers : undefined}
             countries={countries.length > 0 ? countries : undefined}
             languages={languages.length > 0 ? languages : undefined}
@@ -505,6 +555,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
             homepage={rawData.homepage}
             imdbId={rawData.imdb_id}
             reviews={fullData?.reviews?.results?.slice(0, 3).map(r => ({ author: r.author, rating: r.author_details?.rating, content: r.content, createdAt: r.created_at })) || []}
+            trailerKey={trailer?.key}
           />
         );
       })()}

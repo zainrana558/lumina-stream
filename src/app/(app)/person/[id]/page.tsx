@@ -343,12 +343,16 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             { label: 'Browse All', href: '/browse' },
             { label: 'Movies', href: '/movies' },
             { label: 'TV Shows', href: '/tv-shows' },
+            { label: 'Actors', href: '/actors' },
+            { label: 'Directors', href: '/directors' },
             { label: 'Top Rated', href: '/top-rated' },
             { label: 'New Releases', href: '/new-releases' },
             { label: 'Seasonal Anime', href: '/seasonal' },
             { label: 'Leaderboard', href: '/leaderboard' },
             { label: 'All Genres', href: '/genres' },
             { label: 'Release Calendar', href: '/release-calendar' },
+            { label: 'News', href: '/news' },
+            { label: 'Reviews', href: '/reviews' },
           ].map(link => (
             <a key={link.href} href={link.href} style={{
               display: 'inline-block', padding: '6px 14px', borderRadius: 8,
@@ -357,6 +361,27 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             }}>{link.label}</a>
           ))}
         </nav>
+
+        {/* Context-aware internal links: link to co-stars */}
+        {knownFor.length > 0 && (
+          <nav aria-label="Known for titles" style={{ marginTop: 16 }}>
+            <div className="f-cinzel" style={{ fontSize: '.78rem', color: 'rgba(255,245,232,.4)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
+              Featured In
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {knownFor.slice(0, 6).map(k => (
+                <a key={k.id} href={mediaUrl(k.id, k.title, k.mediaType, k.year)} style={{
+                  display: 'inline-block', padding: '5px 12px', borderRadius: 8,
+                  fontSize: '.78rem', color: '#FFF5E8', textDecoration: 'none',
+                  background: 'rgba(255,245,232,.04)', border: '1px solid rgba(255,245,232,.08)',
+                  transition: 'background .2s, border-color .2s',
+                }}>
+                  {k.title}{k.year ? ` (${k.year})` : ''}
+                </a>
+              ))}
+            </div>
+          </nav>
+        )}
       </section>
     </>
   );

@@ -752,10 +752,13 @@ export default function DetailsContent({
                 />
               ) : (
                 <>
-                  <img
+                  <Image
                     src={getYoutubeThumbnail(trailerList[0].key, 'maxresdefault')}
-                    alt={`${show.title} trailer thumbnail`}
-                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                    alt={`${show.title} official trailer — click to play HD video`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 80vw"
+                    priority={false}
+                    style={{ objectFit: 'cover' }}
                   />
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.35)' }}>
                     <div style={{ width: 68, height: 48, borderRadius: 12, background: 'rgba(255,179,71,.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(255,140,0,.5)' }}>
@@ -904,7 +907,7 @@ export default function DetailsContent({
                     <div key={edge.node.id} className="neo-card" style={{ padding: '13px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .42s ${i * 0.06}s both` }}>
                       {edge.node.image?.medium ? (
                         <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', boxShadow: `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px ${s.acc}40` }}>
-                          <img src={edge.node.image.medium} alt={edge.node.name?.full || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <Image src={edge.node.image.medium} alt={`${edge.node.name?.full || 'Staff member'} — ${edge.role || 'staff'} for ${show.title}`} width={40} height={40} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                       ) : (
                         <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.9rem', boxShadow: `0 0 0 1.5px ${s.acc}40` }}>👤</div>
@@ -931,7 +934,7 @@ export default function DetailsContent({
                         <div style={{ display: 'flex', alignItems: 'center', gap: '.7rem', marginBottom: 6 }}>
                           {edge.node.image?.medium ? (
                             <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, boxShadow: `0 0 0 1px ${s.acc}30` }}>
-                              <img src={edge.node.image.medium} alt={edge.node.name?.full || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <Image src={edge.node.image.medium} alt={`${edge.node.name?.full || 'Character'} in ${show.title}`} width={36} height={36} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
                           ) : (
                             <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem', flexShrink: 0 }}>👤</div>
@@ -945,7 +948,7 @@ export default function DetailsContent({
                           <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', paddingLeft: '.3rem' }}>
                             {va.image?.medium ? (
                               <div style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, opacity: .7 }}>
-                                <img src={va.image.medium} alt={va.name?.full || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <Image src={va.image.medium} alt={`${va.name?.full || 'Voice actor'} — Japanese voice cast for ${show.title}`} width={22} height={22} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               </div>
                             ) : null}
                             <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.4)' }}>
@@ -973,7 +976,7 @@ export default function DetailsContent({
                       <Link key={rel.id} href={`/anime/${encodeURIComponent(title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 120))}-${rel.id + 100000000}`} className="neo-card" style={{ display: 'flex', gap: '1rem', padding: 14, borderRadius: 12, textDecoration: 'none', color: 'inherit', animation: `card-in .42s ${i * 0.05}s both` }}>
                         {cover ? (
                           <div style={{ width: 60, height: 85, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#0C091A' }}>
-                            <img src={cover} alt={title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <Image src={cover} alt={`${title} — ${edge.relationType.replace(/_/g, ' ')} of ${show.title}`} width={60} height={85} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                         ) : (
                           <div style={{ width: 60, height: 85, borderRadius: 8, flexShrink: 0, background: 'linear-gradient(135deg,#1E1838,#0C091A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', opacity: .4 }}>🎬</div>
@@ -1000,7 +1003,7 @@ export default function DetailsContent({
                   </a>
                   {anilistDetail.externalLinks.slice(0, 10).map((link, i) => (
                     <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                      {link.iconUrl ? <img src={link.iconUrl} alt="" style={{ width: 16, height: 16, borderRadius: 2 }} loading="lazy" /> : <span style={{ fontSize: '1rem' }}>🔗</span>}
+                      {link.iconUrl ? <img src={link.iconUrl} alt={`${link.site} icon`} width={16} height={16} style={{ width: 16, height: 16, borderRadius: 2 }} loading="lazy" /> : <span style={{ fontSize: '1rem' }}>🔗</span>}
                       {link.site}
                     </a>
                   ))}
@@ -1075,7 +1078,7 @@ export default function DetailsContent({
                 {fullDetails.watch_providers.results.US.map((prov) => (
                   <div key={prov.provider_id} className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12 }}>
                     {prov.logo_path ? (
-                      <img src={`https://image.tmdb.org/t/p/w45${prov.logo_path}`} alt={prov.provider_name} style={{ width: 28, height: 28, borderRadius: 4 }} loading="lazy" />
+                      <img src={`https://image.tmdb.org/t/p/w45${prov.logo_path}`} alt={`${prov.provider_name} streaming service logo`} width={28} height={28} style={{ width: 28, height: 28, borderRadius: 4 }} loading="lazy" />
                     ) : (
                       <div style={{ width: 28, height: 28, borderRadius: 4, background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem' }}>📺</div>
                     )}
@@ -1193,11 +1196,13 @@ export default function DetailsContent({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: '.75rem' }}>
                 {galleryImages.backdrops.slice(0, 12).map((img, i) => (
                   <div key={img.file_path} style={{ position: 'relative', paddingTop: `${(100 / (img.aspect_ratio || 1.78)).toFixed(1)}%`, borderRadius: 12, overflow: 'hidden', background: '#0C091A', boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)', animation: `card-in .42s ${i * 0.05}s both` }}>
-                    <img
+                    <Image
                       src={`https://image.tmdb.org/t/p/w780${img.file_path}`}
-                      alt={`${show.title} gallery image ${i + 1}`}
+                      alt={`${show.title} behind-the-scenes scene ${i + 1} — ${img.iso_639_1 ? `language: ${img.iso_639_1}` : 'production still'}`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       loading="lazy"
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{ objectFit: 'cover' }}
                     />
                   </div>
                 ))}

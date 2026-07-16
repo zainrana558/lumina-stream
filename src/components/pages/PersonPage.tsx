@@ -244,7 +244,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))', gap: 10 }}>
               {person.images.profiles.slice(0, 12).map((img, i) => (
                 <div key={img.file_path} style={{ position: 'relative', paddingTop: '150%', borderRadius: 10, overflow: 'hidden', background: '#0C091A', animation: `card-in .42s ${i * 0.05}s both` }}>
-                  <img src={`https://image.tmdb.org/t/p/w342${img.file_path}`} alt={`${person.name} photo ${i + 1}`} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={`https://image.tmdb.org/t/p/w342${img.file_path}`} alt={`${person.name} photo ${i + 1} — portrait`} fill sizes="(max-width: 768px) 33vw, 120px" loading="lazy" style={{ position: 'absolute', inset: 0, objectFit: 'cover' }} />
                 </div>
               ))}
             </div>

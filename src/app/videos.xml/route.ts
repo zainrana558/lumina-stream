@@ -96,7 +96,9 @@ export async function GET() {
       const pageUrl = `${CANONICAL_BASE}${mediaUrl(item.id, item.title || item.name || '', mediaType, (item.release_date || item.first_air_date)?.slice(0, 4))}`;
 
       const vid = ytVideos[0];
-      urls.push(`<url>\n<loc>${pageUrl}</loc>\n<lastmod>${now}</lastmod>\n<video:video>\n<video:thumbnail_loc>${pageUrl}</video:thumbnail_loc>\n<video:title>${title} - ${escXml(vid.name)}</video:title>\n<video:description>Watch the ${vid.type.toLowerCase()} for ${title}${year ? ` (${year})` : ''} on Lumovia</video:description>\n<video:content_loc>https://www.youtube.com/watch?v=${vid.key}</video:content_loc>\n<video:player_loc>https://www.youtube.com/embed/${vid.key}</video:player_loc>\n<video:publication_date>${now}</video:publication_date>\n<video:family_friendly>yes</video:family_friendly>\n<video:live>no</video:live>\n</video:video>\n</url>`);
+      const thumbnailUrl = `https://img.youtube.com/vi/${vid.key}/maxresdefault.jpg`;
+      const thumbnailFallback = `https://img.youtube.com/vi/${vid.key}/hqdefault.jpg`;
+      urls.push(`<url>\n<loc>${pageUrl}</loc>\n<lastmod>${now}</lastmod>\n<video:video>\n<video:thumbnail_loc>${escXml(thumbnailUrl)}</video:thumbnail_loc>\n<video:title>${title} - ${escXml(vid.name)}</video:title>\n<video:description>Watch the ${vid.type.toLowerCase()} for ${title}${year ? ` (${year})` : ''} on Lumovia. ${title} is available to explore with cast details, ratings, episode guides, and similar title recommendations.</video:description>\n<video:content_loc>https://www.youtube.com/watch?v=${vid.key}</video:content_loc>\n<video:player_loc>https://www.youtube.com/embed/${vid.key}?rel=0&modestbranding=1</video:player_loc>\n<video:publication_date>${item.release_date || item.first_air_date || now}</video:publication_date>\n<video:family_friendly>yes</video:family_friendly>\n<video:live>no</video:live>\n</video:video>\n</url>`);
     }
 
     const body = urls.length > 0 ? urls.join('\n\n') : fallbackUrl(CANONICAL_BASE, now);

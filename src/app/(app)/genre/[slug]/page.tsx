@@ -286,8 +286,13 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
           {[
             { label: 'All Genres', href: '/genres' },
             { label: 'Browse All', href: '/browse' },
-            { label: 'Top Rated', href: '/top-rated' },
+            { label: 'Top Movies', href: '/top-rated' },
             { label: 'New Releases', href: '/new-releases' },
+            { label: 'Top Actors', href: '/actors' },
+            { label: 'Directors', href: '/directors' },
+            { label: 'TV Shows', href: '/tv-shows' },
+            { label: 'Movies', href: '/movies' },
+            { label: 'Reviews', href: '/reviews' },
             ...PORTAL_SLUGS.filter(s => s !== slug).map(s => ({
               label: PORTAL_GENRE_MAP[s]?.name || s,
               href: `/genre/${s}`,
