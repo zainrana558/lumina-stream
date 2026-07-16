@@ -29,12 +29,12 @@ interface TMDBVideo {
   type: string;
 }
 
-function getAuthHeaders(): Record<string, string> {
+function getAuthHeaders(): { headers: Record<string, string>; apiKey?: string } {
   const token = process.env.TMDB_BEARER_TOKEN;
   const key = process.env.TMDB_API_KEY;
-  if (token) return { Authorization: `Bearer ${token}` };
-  if (key) return { Authorization: `Bearer ${key}` };
-  return {};
+  if (token) return { headers: { Authorization: `Bearer ${token}` } };
+  if (key) return { headers: {}, apiKey: key };
+  return { headers: {} };
 }
 
 /**
@@ -73,10 +73,12 @@ export async function GET() {
     const videoEntries = await Promise.allSettled(
       topItems.map(async (item) => {
         const mt = item.media_type === 'tv' ? 'tv' : 'movie';
+        const { headers, apiKey } = getAuthHeaders();
         const sp = new URLSearchParams({ language: 'en-US' });
+        if (apiKey) sp.set('api_key', apiKey);
         const url = `${TMDB_BASE}/${mt}/${item.id}/videos?${sp}`;
         try {
-          const res = await fetch(url, { headers: getAuthHeaders(), signal: AbortSignal.timeout(6000) });
+          const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
           if (!res.ok) return null;
           const data = await res.json() as { results: TMDBVideo[] };
           const ytVideos = (data.results || []).filter(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));

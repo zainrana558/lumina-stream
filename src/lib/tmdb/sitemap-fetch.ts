@@ -10,14 +10,22 @@
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 
-function getAuth(): { headers: Record<string, string> } {
+/**
+ * Build auth headers and optional api_key param.
+ * TMDB Bearer tokens go in Authorization header.
+ * TMDB API keys go in the query string (api_key=xxx).
+ */
+function getAuth(): { headers: Record<string, string>; apiKey?: string } {
   const headers: Record<string, string> = {};
   const token = process.env.TMDB_BEARER_TOKEN;
   const key = process.env.TMDB_API_KEY;
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-  } else if (key) {
-    headers['Authorization'] = `Bearer ${key}`;
+    return { headers };
+  }
+  if (key) {
+    // TMDB API keys must be passed as query param, NOT as Bearer token
+    return { headers, apiKey: key };
   }
   return { headers };
 }
@@ -36,9 +44,10 @@ export async function tmdbSitemapFetch<T>(
   endpoint: string,
   params: Record<string, string> = {}
 ): Promise<TmdbListResult<T> | null> {
+  const { headers, apiKey } = getAuth();
   const sp = new URLSearchParams({ language: 'en-US', ...params });
+  if (apiKey) sp.set('api_key', apiKey);
   const url = `${TMDB_BASE}${endpoint}?${sp}`;
-  const { headers } = getAuth();
 
   try {
     const res = await fetch(url, {
