@@ -1,5 +1,5 @@
 import { CANONICAL_BASE, TMDB_IMAGE_BASE } from '@/lib/seo/constants';
-import { tmdbFetchPages, tmdbSitemapFetch } from '@/lib/tmdb/sitemap-fetch';
+import { tmdbFetchPages } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { mediaUrl } from '@/lib/slug';
 import { fallbackUrl, escXml } from '@/lib/escXml';
@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000;
-const CACHE_NAME = 'images';
+const CACHE_NAME = 'images-v2';
 
 interface TMDBMediaItem {
   id: number;
@@ -22,10 +22,6 @@ interface TMDBMediaItem {
   popularity: number;
 }
 
-/**
- * Images sitemap — Google Image sitemap extension.
- * Namespace: xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
- */
 export async function GET() {
   const cacheHeaders = { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' };
 
@@ -55,26 +51,26 @@ export async function GET() {
     all.sort((a, b) => b.popularity - a.popularity);
     const capped = all.slice(0, 2000);
 
-    const urls = capped.map(item => {
+    const entries = capped.map(item => {
       const title = escXml(item.title || item.name || 'Untitled');
-      const year = (item.release_date || item.first_air_date)?.slice(0, 4) || 'N/A';
+      const year = (item.release_date || item.first_air_date)?.slice(0, 4) || '';
       const mediaType = item.media_type === 'tv' ? 'tv' : 'movie';
       const pageUrl = `${CANONICAL_BASE}${mediaUrl(item.id, item.title || item.name || '', mediaType, (item.release_date || item.first_air_date)?.slice(0, 4))}`;
 
       const images: string[] = [];
       if (item.poster_path) {
-        images.push(`    <image:image>\n      <image:loc>${TMDB_IMAGE_BASE}/w780${item.poster_path}</image:loc>\n      <image:title>${title} (${year}) - Poster</image:title>\n      <image:caption>Official poster for ${title}</image:caption>\n    </image:image>`);
+        images.push(`<image:image>\n<image:loc>${TMDB_IMAGE_BASE}/w780${item.poster_path}</image:loc>\n<image:title>${title}${year ? ` (${year})` : ''} - Poster</image:title>\n<image:caption>Official poster for ${title}</image:caption>\n</image:image>`);
       }
       if (item.backdrop_path) {
-        images.push(`    <image:image>\n      <image:loc>${TMDB_IMAGE_BASE}/w1280${item.backdrop_path}</image:loc>\n      <image:title>${title} (${year}) - Backdrop</image:title>\n      <image:caption>Backdrop image for ${title}</image:caption>\n    </image:image>`);
+        images.push(`<image:image>\n<image:loc>${TMDB_IMAGE_BASE}/w1280${item.backdrop_path}</image:loc>\n<image:title>${title}${year ? ` (${year})` : ''} - Backdrop</image:title>\n<image:caption>Backdrop image for ${title}</image:caption>\n</image:image>`);
       }
 
       if (images.length === 0) return null;
-      return `  <url>\n    <loc>${pageUrl}</loc>\n    <lastmod>${now}</lastmod>\n${images.join('\n')}\n  </url>`;
-    }).filter(Boolean).join('\n');
+      return `<url>\n<loc>${pageUrl}</loc>\n<lastmod>${now}</lastmod>\n${images.join('\n')}\n</url>`;
+    }).filter(Boolean).join('\n\n');
 
-    const body = urls || fallbackUrl(CANONICAL_BASE, now);
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>`;
+    const body = entries || fallbackUrl(CANONICAL_BASE, now);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n\n${body}\n\n</urlset>`;
 
     inMemoryXml = xml; inMemoryAt = Date.now();
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
@@ -84,6 +80,6 @@ export async function GET() {
     console.error('[images.xml]', err);
     const now2 = new Date().toISOString().split('T')[0];
     const fb = fallbackUrl(CANONICAL_BASE, now2);
-    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n\n${fb}\n\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

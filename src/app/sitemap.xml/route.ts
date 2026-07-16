@@ -10,6 +10,7 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
  */
 
 const SUB_SITEMAPS = [
+  'pages.xml',
   'movies.xml',
   'tvshows.xml',
   'anime.xml',
@@ -27,13 +28,13 @@ export async function GET() {
   const now = new Date().toISOString().split('T')[0];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
+
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
 ${SUB_SITEMAPS.map(
-  (s) => `  <sitemap>
-    <loc>${CANONICAL_BASE}/${s}</loc>
-    <lastmod>${now}</lastmod>
-  </sitemap>`
-).join('\n')}
+  (s) => `<sitemap>\n<loc>${CANONICAL_BASE}/${s}</loc>\n<lastmod>${now}</lastmod>\n</sitemap>`
+).join('\n\n')}
+
 </sitemapindex>`;
 
   return new NextResponse(xml, {

@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000;
-const CACHE_NAME = 'blog';
+const CACHE_NAME = 'blog-v2';
 
 function slugify(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
@@ -45,12 +45,12 @@ export async function GET() {
         const slug = slugify(title);
         if (seen.has(slug)) continue;
         seen.add(slug);
-        urls.push(`  <url>\n    <loc>${CANONICAL_BASE}/blog/${slug}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.5</priority>\n  </url>`);
+        urls.push(`<url>\n<loc>${CANONICAL_BASE}/blog/${slug}</loc>\n<lastmod>${now}</lastmod>\n</url>`);
       }
     }
 
-    const body = urls.length > 0 ? urls.join('\n') : fallbackUrl(CANONICAL_BASE, now);
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>`;
+    const body = urls.length > 0 ? urls.join('\n\n') : fallbackUrl(CANONICAL_BASE, now);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n\n${body}\n\n</urlset>`;
 
     inMemoryXml = xml; inMemoryAt = Date.now();
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
@@ -60,6 +60,6 @@ export async function GET() {
     console.error('[blog.xml]', err);
     const now2 = new Date().toISOString().split('T')[0];
     const fb = fallbackUrl(CANONICAL_BASE, now2);
-    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n\n${fb}\n\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

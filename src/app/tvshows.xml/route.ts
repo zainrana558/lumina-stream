@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000;
-const CACHE_NAME = 'tvshows';
+const CACHE_NAME = 'tvshows-v2';
 
 interface TMDBItem {
   id: number;
@@ -49,12 +49,13 @@ export async function GET() {
     all.sort((a, b) => b.popularity - a.popularity);
     const capped = all.slice(0, 5000);
 
-    const urls = capped.map(item =>
-      `  <url>\n    <loc>${CANONICAL_BASE}${mediaUrl(item.id, item.title || item.name || '', 'tv', item.first_air_date?.slice(0, 4))}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`
-    ).join('\n');
+    const urls = capped.map(item => {
+      const loc = `${CANONICAL_BASE}${mediaUrl(item.id, item.title || item.name || '', 'tv', item.first_air_date?.slice(0, 4))}`;
+      return `<url>\n<loc>${loc}</loc>\n<lastmod>${now}</lastmod>\n</url>`;
+    }).join('\n\n');
 
     const body = urls || fallbackUrl(CANONICAL_BASE, now);
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>`;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n\n${body}\n\n</urlset>`;
 
     inMemoryXml = xml; inMemoryAt = Date.now();
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
@@ -64,6 +65,6 @@ export async function GET() {
     console.error('[tvshows.xml]', err);
     const now2 = new Date().toISOString().split('T')[0];
     const fb = fallbackUrl(CANONICAL_BASE, now2);
-    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n\n${fb}\n\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

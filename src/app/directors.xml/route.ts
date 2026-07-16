@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000;
-const CACHE_NAME = 'directors';
+const CACHE_NAME = 'directors-v2';
 
 interface TMDBPerson {
   id: number;
@@ -19,11 +19,8 @@ interface TMDBPerson {
   known_for: unknown[];
 }
 
-/**
- * Directors sitemap — people with known_for_department "Directing".
- */
 export async function GET() {
-  const cacheHeaders = { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400' };
+  const cacheHeaders = { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' };
 
   if (inMemoryXml && Date.now() - inMemoryAt < SITEMAP_TTL) {
     return new NextResponse(inMemoryXml, { headers: cacheHeaders });
@@ -52,12 +49,13 @@ export async function GET() {
       return p.known_for_department === 'Directing';
     });
 
-    const urls = directors.map(p =>
-      `  <url>\n    <loc>${CANONICAL_BASE}${personUrl(p.id, p.name)}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.7</priority>\n  </url>`
-    ).join('\n');
+    const urls = directors.map(p => {
+      const loc = `${CANONICAL_BASE}${personUrl(p.id, p.name)}`;
+      return `<url>\n<loc>${loc}</loc>\n<lastmod>${now}</lastmod>\n</url>`;
+    }).join('\n\n');
 
     const body = urls || fallbackUrl(CANONICAL_BASE, now);
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>`;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n\n${body}\n\n</urlset>`;
 
     inMemoryXml = xml; inMemoryAt = Date.now();
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
@@ -66,6 +64,6 @@ export async function GET() {
   } catch (err) {
     console.error('[directors.xml]', err);
     const fb = fallbackUrl(CANONICAL_BASE, now);
-    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n\n${fb}\n\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

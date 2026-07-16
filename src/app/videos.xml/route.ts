@@ -1,5 +1,5 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
-import { tmdbFetchPages, tmdbSitemapFetch } from '@/lib/tmdb/sitemap-fetch';
+import { tmdbFetchPages } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { mediaUrl } from '@/lib/slug';
 import { fallbackUrl, escXml } from '@/lib/escXml';
@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000;
-const CACHE_NAME = 'videos';
+const CACHE_NAME = 'videos-v2';
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 
@@ -37,10 +37,6 @@ function getAuthHeaders(): { headers: Record<string, string>; apiKey?: string } 
   return { headers: {} };
 }
 
-/**
- * Videos sitemap — Google Video sitemap extension.
- * Namespace: xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"
- */
 export async function GET() {
   const cacheHeaders = { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' };
 
@@ -69,7 +65,6 @@ export async function GET() {
     items.sort((a, b) => b.popularity - a.popularity);
     const topItems = items.slice(0, 200);
 
-    // Fetch videos for each item (parallel, tolerant of failures)
     const videoEntries = await Promise.allSettled(
       topItems.map(async (item) => {
         const mt = item.media_type === 'tv' ? 'tv' : 'movie';
@@ -96,17 +91,16 @@ export async function GET() {
       if (ytVideos.length === 0) continue;
 
       const title = escXml(item.title || item.name || 'Untitled');
-      const year = (item.release_date || item.first_air_date)?.slice(0, 4) || 'N/A';
+      const year = (item.release_date || item.first_air_date)?.slice(0, 4) || '';
       const mediaType = item.media_type === 'tv' ? 'tv' : 'movie';
       const pageUrl = `${CANONICAL_BASE}${mediaUrl(item.id, item.title || item.name || '', mediaType, (item.release_date || item.first_air_date)?.slice(0, 4))}`;
 
       const vid = ytVideos[0];
-      const videoXml = `  <url>\n    <loc>${pageUrl}</loc>\n    <lastmod>${now}</lastmod>\n    <video:video>\n      <video:thumbnail_loc>${pageUrl}</video:thumbnail_loc>\n      <video:title>${title} - ${escXml(vid.name)}</video:title>\n      <video:description>Watch the ${vid.type.toLowerCase()} for ${title} (${year}) on Lumovia</video:description>\n      <video:content_loc>https://www.youtube.com/watch?v=${vid.key}</video:content_loc>\n      <video:player_loc>https://www.youtube.com/embed/${vid.key}</video:player_loc>\n      <video:publication_date>${now}</video:publication_date>\n      <video:family_friendly>yes</video:family_friendly>\n      <video:live>no</video:live>\n    </video:video>\n  </url>`;
-      urls.push(videoXml);
+      urls.push(`<url>\n<loc>${pageUrl}</loc>\n<lastmod>${now}</lastmod>\n<video:video>\n<video:thumbnail_loc>${pageUrl}</video:thumbnail_loc>\n<video:title>${title} - ${escXml(vid.name)}</video:title>\n<video:description>Watch the ${vid.type.toLowerCase()} for ${title}${year ? ` (${year})` : ''} on Lumovia</video:description>\n<video:content_loc>https://www.youtube.com/watch?v=${vid.key}</video:content_loc>\n<video:player_loc>https://www.youtube.com/embed/${vid.key}</video:player_loc>\n<video:publication_date>${now}</video:publication_date>\n<video:family_friendly>yes</video:family_friendly>\n<video:live>no</video:live>\n</video:video>\n</url>`);
     }
 
-    const body = urls.length > 0 ? urls.join('\n') : fallbackUrl(CANONICAL_BASE, now);
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${body}\n</urlset>`;
+    const body = urls.length > 0 ? urls.join('\n\n') : fallbackUrl(CANONICAL_BASE, now);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n\n${body}\n\n</urlset>`;
 
     inMemoryXml = xml; inMemoryAt = Date.now();
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
@@ -116,6 +110,6 @@ export async function GET() {
     console.error('[videos.xml]', err);
     const now2 = new Date().toISOString().split('T')[0];
     const fb = fallbackUrl(CANONICAL_BASE, now2);
-    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n\n${fb}\n\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

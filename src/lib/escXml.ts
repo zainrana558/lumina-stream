@@ -10,5 +10,5 @@ export function escXml(s: string): string {
 
 /** Fallback URL entry for sitemaps when API data is unavailable. */
 export function fallbackUrl(base: string, now: string): string {
-  return `  <url>\n    <loc>${base}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>`;
+  return `\n<url>\n<loc>${base}</loc>\n<lastmod>${now}</lastmod>\n</url>`;
 }
