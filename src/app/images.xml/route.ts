@@ -65,7 +65,6 @@ export async function GET() {
       const title = item.title || item.name || 'Untitled';
       const year = (item.release_date || item.first_air_date)?.slice(0, 4);
       const pageUrl = `${CANONICAL_BASE}${mediaUrl(item.id, title, item.media_type, year)}`;
-      const mt = item.media_type === 'tv' ? 'tv' : 'movie';
 
       const images: string[] = [];
       if (item.poster_path) {

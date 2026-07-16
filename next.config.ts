@@ -24,12 +24,7 @@ const nextConfig: NextConfig = {
     },
   },
   async rewrites() {
-    return {
-      beforeFiles: [
-        // /sitemap.xml must use beforeFiles — Next.js reserves this path
-        { source: '/sitemap.xml', destination: '/_sitemap-index' },
-      ],
-      afterFiles: [
+    return [
       // ── Clean slug routes → internal ID-based routes ──────────────────
       // The slug contains a trailing numeric ID (e.g., inception-2010-27205).
       // Next.js rewrites extract it and map to /details/[id].
@@ -52,8 +47,7 @@ const nextConfig: NextConfig = {
       { source: '/language/:slug/:page', destination: '/browse?language=:slug&page=:page' },
       // /studio/warner-bros → /browse?q=Warner+Bros
       { source: '/studio/:slug', destination: '/browse?q=:slug' },
-      ],
-    };
+    ];
   },
   async headers() {
     return [

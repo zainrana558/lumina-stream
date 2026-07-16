@@ -44,7 +44,7 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/leaderboard") ||
     pathname.startsWith("/release-calendar") ||
     pathname === "/sitemap.xml" ||
-    pathname.startsWith("/sitemap-") ||
+    pathname.endsWith(".xml") ||
     pathname === "/robots.txt" ||
     pathname === "/google08ae0ae380a50693.html"
   );
