@@ -47,6 +47,8 @@ const nextConfig: NextConfig = {
       { source: '/language/:slug/:page', destination: '/browse?language=:slug&page=:page' },
       // /studio/warner-bros → /browse?q=Warner+Bros
       { source: '/studio/:slug', destination: '/browse?q=:slug' },
+      // /sitemap.xml → sitemap index (Next.js reserves sitemap.xml for its own handler)
+      { source: '/sitemap.xml', destination: '/_sitemap-index' },
     ];
   },
   async headers() {

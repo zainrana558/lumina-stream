@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
 /**
- * Sitemap Index — single entry point for Google.
+ * Sitemap Index — serves proper <sitemapindex> XML.
+ * Accessed via rewrite: /sitemap.xml → /_sitemap-index
  *
- * When Google fetches /sitemap.xml, it discovers ALL sub-sitemaps.
  * Each sub-sitemap is cached for 24 hours (L1 in-memory + L2 filesystem + CDN),
- * so only the FIRST user request triggers API calls. All subsequent requests
- * within 24 hours serve from cache with zero API calls.
+ * so only the FIRST request triggers API calls.
  */
 
 const SUB_SITEMAPS = [
