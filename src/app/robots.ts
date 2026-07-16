@@ -29,6 +29,8 @@ export default function robots(): MetadataRoute.Robots {
           '/top-rated',
           '/new-releases',
           '/genres',
+          '/news',
+          '/reviews',
           '/about',
           '/decade/',
           '/year/',

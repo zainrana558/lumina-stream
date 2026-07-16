@@ -5,23 +5,23 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
  * Sitemap Index — single entry point for Google.
  *
  * When Google fetches /sitemap.xml, it discovers ALL sub-sitemaps.
- * No need for Google to read robots.txt to find them (though robots.txt
- * also lists this index for belt-and-suspenders).
- *
- * Sub-sitemaps:
- *   - sitemap-static.xml  → core pages, genres, decades, years, legal
- *   - sitemap-details.xml → /movie/[slug], /tv/[slug], /anime/[slug]
- *   - sitemap-episodes.xml → /movie/[slug]/season/[s]/episode/[e], /tv/[slug]/season/[s]/episode/[e]
- *   - sitemap-people.xml  → /actor/[slug]
- *   - sitemap-blog.xml    → /blog/[slug] (SEO blog posts)
+ * Each sub-sitemap is cached for 24 hours (L1 in-memory + L2 filesystem + CDN),
+ * so only the FIRST user request triggers API calls. All subsequent requests
+ * within 24 hours serve from cache with zero API calls.
  */
 
 const SUB_SITEMAPS = [
-  'sitemap-static.xml',
-  'sitemap-details.xml',
-  'sitemap-episodes.xml',
-  'sitemap-people.xml',
-  'sitemap-blog.xml',
+  'movies.xml',
+  'tvshows.xml',
+  'anime.xml',
+  'genres.xml',
+  'actors.xml',
+  'directors.xml',
+  'news.xml',
+  'reviews.xml',
+  'blog.xml',
+  'images.xml',
+  'videos.xml',
 ] as const;
 
 export async function GET() {
