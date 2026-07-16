@@ -18,29 +18,32 @@ import { extractIdFromSlug, mediaUrl } from '@/lib/slug';
  * Cached TMDB detail fetch — shared between generateMetadata() and the page component.
  * Without this, Next.js calls BOTH in the same request, doubling the TMDB calls.
  * React.cache() deduplicates identical calls within a single RSC render.
+ *
+ * mediaTypeHint comes from the URL prefix (/movie, /tv) via the ?mt= rewrite param.
+ * When present, only one TMDB call is made. Without it, we try tv first then movie
+ * sequentially (not parallel) to avoid generating 4xx errors on the wrong type.
  */
-const getCachedTmdbDetails = cache(async (showId: number) => {
+const getCachedTmdbDetails = cache(async (showId: number, mediaTypeHint?: 'movie' | 'tv') => {
+  const APPEND = 'credits,similar,videos,content_ratings,keywords,reviews,images';
+
   const tryTv = async () => {
-    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/tv/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings,keywords,reviews,images' });
+    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/tv/${showId}`, { append_to_response: APPEND });
     return d.id ? { data: d, type: 'tv' as const } : null;
   };
   const tryMovie = async () => {
-    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/movie/${showId}`, { append_to_response: 'credits,similar,videos,content_ratings,keywords,reviews,images' });
+    const d = await tmdbFetch<TMDBShowData & TMDBDetails>(`/movie/${showId}`, { append_to_response: APPEND });
     return d.id ? { data: d, type: 'movie' as const } : null;
   };
 
-  const [tvResult, movieResult] = await Promise.all([
-    tryTv().catch(() => null),
-    tryMovie().catch(() => null),
-  ]);
+  // Fast path: we know the type from the URL prefix — single fetch, zero 4xx
+  if (mediaTypeHint === 'tv') return tryTv().catch(() => null);
+  if (mediaTypeHint === 'movie') return tryMovie().catch(() => null);
 
-  let result: { data: TMDBShowData & TMDBDetails; type: 'tv' | 'movie' } | null = null;
-  if (tvResult && movieResult) {
-    result = tvResult.data.popularity >= movieResult.data.popularity ? tvResult : movieResult;
-  } else {
-    result = tvResult || movieResult;
-  }
-  return result;
+  // Fallback (direct /details/:id URL without prefix): try tv first, then movie
+  // Sequential avoids sending a guaranteed-404 request to the wrong type
+  const tv = await tryTv().catch(() => null);
+  if (tv) return tv;
+  return tryMovie().catch(() => null);
 });
 
 interface TMDBShowData {
@@ -119,9 +122,10 @@ interface TMDBDetails {
 
 export const revalidate = 600; // 10 min
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id: rawSlug } = await params;
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ mt?: string }> }): Promise<Metadata> {
+  const [{ id: rawSlug }, { mt }] = await Promise.all([params, searchParams]);
   const showId = extractIdFromSlug(rawSlug) || Number(rawSlug);
+  const mediaTypeHint = mt === 'movie' ? 'movie' : mt === 'tv' ? 'tv' : undefined;
 
   // ── AniList route ──
   if (isAnilistId(showId)) {
@@ -156,7 +160,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   // ── TMDB route ──
   try {
-    const result = await getCachedTmdbDetails(showId);
+    const result = await getCachedTmdbDetails(showId, mediaTypeHint);
 
     if (!result?.data?.id) {
       return {
@@ -201,9 +205,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 }
 
-export default async function DetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: rawSlug } = await params;
+export default async function DetailsPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ mt?: string }> }) {
+  const [{ id: rawSlug }, { mt }] = await Promise.all([params, searchParams]);
   const showId = extractIdFromSlug(rawSlug) || Number(rawSlug);
+  const mediaTypeHint = mt === 'movie' ? 'movie' : mt === 'tv' ? 'tv' : undefined;
 
   // ── AniList route: ID >= ANILIST_ID_OFFSET ──
   if (isAnilistId(showId)) {
@@ -376,7 +381,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
 
   try {
     // Reuses the SAME cached result from generateMetadata (React.cache dedup)
-    const result = await getCachedTmdbDetails(showId);
+    const result = await getCachedTmdbDetails(showId, mediaTypeHint);
     if (result) {
       mediaType = result.type;
       fullData = result.data;

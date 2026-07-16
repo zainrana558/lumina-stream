@@ -240,7 +240,8 @@ export default function DetailsContent({
     if (show._isAnilist) return;
     const mediaType = show.media_type || 'tv';
     const id = show.id;
-    // Skip if we already have videos from SSR seed (the critical trailer data)
+    // Skip if SSR already provided videos (prop check avoids race with seed useEffect)
+    if (initialVideos.length > 0) return;
     if (fullDetails?.videos?.results?.length) return;
     let cancelled = false;
     const controller = new AbortController();

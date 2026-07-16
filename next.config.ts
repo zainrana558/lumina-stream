@@ -30,11 +30,11 @@ const nextConfig: NextConfig = {
       // Next.js rewrites extract it and map to /details/[id].
       //
       // /movie/inception-2010-27205 → /details/27205
-      { source: '/movie/:slug', destination: '/details/:slug' },
-      // /tv/breaking-bad-2008-1396 → /details/1396
-      { source: '/tv/:slug', destination: '/details/:slug' },
-      // /anime/one-piece-1999-100000164 → /details/100000164
-      { source: '/anime/:slug', destination: '/details/:slug' },
+      { source: '/movie/:slug', destination: '/details/:slug?mt=movie' },
+      // /tv/breaking-bad-2008-1396 → /details/1396?mt=tv
+      { source: '/tv/:slug', destination: '/details/:slug?mt=tv' },
+      // /anime/one-piece-1999-100000164 → /details/100000164?mt=anime
+      { source: '/anime/:slug', destination: '/details/:slug?mt=anime' },
       // /actor/leonardo-dicaprio-287 → /person/287
       { source: '/actor/:slug', destination: '/person/:slug' },
       // /country/japan → /browse?country=JP

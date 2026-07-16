@@ -38,6 +38,8 @@ async function tmdbProxyFetch(endpoint: string, params: URLSearchParams) {
     fetchUrl = `${API_CACHE_URL}/tmdb${endpoint}?${params}`;
     if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
     else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
+    const workerKey = process.env.WORKER_KEY;
+    if (workerKey) headers['X-Worker-Key'] = workerKey;
   } else {
     // Direct TMDB
     if (env.TMDB_BEARER_TOKEN) {

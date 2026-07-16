@@ -98,6 +98,9 @@ function buildTmdbRequest(endpoint: string, params: Record<string, string>) {
     } else if (env.TMDB_API_KEY) {
       headers['X-TMDB-Key'] = env.TMDB_API_KEY;
     }
+    // Worker key prevents public abuse of the api-cache endpoint
+    const workerKey = process.env.WORKER_KEY;
+    if (workerKey) headers['X-Worker-Key'] = workerKey;
     return { url: cacheUrl, headers };
   }
 

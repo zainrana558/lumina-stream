@@ -12,3 +12,8 @@ enabled = true
 # Recommended: set TMDB_BEARER_TOKEN here AND in Vercel.
 # Then Vercel sends it via header, worker forwards to TMDB.
 # If header is missing, worker falls back to its own secret.
+# Worker key — prevents public abuse of this endpoint.
+# Set via: wrangler secret put WORKER_KEY
+# Also set WORKER_KEY in Vercel env vars so Vercel sends it with each request.
+# [vars]
+# WORKER_KEY = "set-via-wrangler-secret-put"

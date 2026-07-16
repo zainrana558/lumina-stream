@@ -63,14 +63,23 @@ function json(data, status = 200, extra = {}) {
   });
 }
 
-async function handleTmdb(request, url, ctx) {
+async function handleTmdb(request, url, ctx, env) {
   if (request.method !== 'GET') {
     return json({ error: 'Only GET for TMDB' }, 405);
   }
 
-  // Auth from Vercel via header
-  const bearer = request.headers.get('x-tmdb-auth');
-  const apiKey = request.headers.get('x-tmdb-key');
+  // Verify caller is our Vercel app (not public abuse)
+  const workerKey = env?.WORKER_KEY;
+  if (workerKey) {
+    const sentKey = request.headers.get('x-worker-key');
+    if (sentKey !== workerKey) {
+      return json({ error: 'Unauthorized' }, 403);
+    }
+  }
+
+  // Auth from Vercel via header; fall back to worker's own secrets
+  const bearer = request.headers.get('x-tmdb-auth') || env?.TMDB_BEARER_TOKEN;
+  const apiKey = request.headers.get('x-tmdb-key') || env?.TMDB_API_KEY;
 
   // Build target URL
   const tmdbPath = url.pathname.slice('/tmdb/'.length);
@@ -202,7 +211,7 @@ export default {
     }
 
     if (path === '/health') return json({ ok: true, service: 'api-cache', version: 2 });
-    if (path.startsWith('/tmdb/')) return handleTmdb(request, url, ctx);
+    if (path.startsWith('/tmdb/')) return handleTmdb(request, url, ctx, env);
     if (path === '/anilist') return handleAnilist(request, ctx);
 
     return json({ error: 'Not found. Use /tmdb/... or /anilist' }, 404);
