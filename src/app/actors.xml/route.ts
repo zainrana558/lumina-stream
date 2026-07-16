@@ -1,5 +1,5 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
-import { tmdbFetch, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
+import { tmdbFetchPages } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { personUrl } from '@/lib/slug';
 import { fallbackUrl } from '@/lib/escXml';
@@ -9,6 +9,15 @@ let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000;
 const CACHE_NAME = 'actors';
+
+interface TMDBPerson {
+  id: number;
+  name: string;
+  popularity: number;
+  adult: boolean;
+  known_for_department: string;
+  known_for: unknown[];
+}
 
 /**
  * Actors sitemap — trending + popular people from TMDB.
@@ -26,31 +35,23 @@ export async function GET() {
   const now = new Date().toISOString().split('T')[0];
 
   try {
+    const [trending, popular] = await Promise.all([
+      tmdbFetchPages<TMDBPerson>('/trending/person/week', 5),
+      tmdbFetchPages<TMDBPerson>('/person/popular', 5),
+    ]);
+
     const peopleMap = new Map<number, TMDBPerson>();
-
-    const work = [
-      ...Array.from({ length: 5 }, (_, i) => tmdbFetch<TMDBListResponse<TMDBPerson>>('/trending/person/week', { page: String(i + 1) })),
-      ...Array.from({ length: 5 }, (_, i) => tmdbFetch<TMDBListResponse<TMDBPerson>>('/person/popular', { page: String(i + 1) })),
-    ];
-
-    const results = await Promise.allSettled(work);
-    for (const r of results) {
-      if (r.status === 'fulfilled') {
-        for (const p of r.value.results) {
-          const existing = peopleMap.get(p.id);
-          if (!existing || p.popularity > existing.popularity) peopleMap.set(p.id, p);
-        }
-      }
+    for (const p of [...trending, ...popular]) {
+      const existing = peopleMap.get(p.id);
+      if (!existing || p.popularity > existing.popularity) peopleMap.set(p.id, p);
     }
 
-    const filtered = Array.from(peopleMap.values()).filter(p => {
+    const actors = Array.from(peopleMap.values()).filter(p => {
       if (p.adult) return false;
-      if (!p.known_for || p.known_for.length === 0) return false;
+      if (!p.known_for?.length) return false;
       if (p.popularity < 1.0) return false;
-      return true;
+      return p.known_for_department === 'Acting';
     });
-
-    const actors = filtered.filter(p => p.known_for_department === 'Acting');
 
     const urls = actors.map(p =>
       `  <url>\n    <loc>${CANONICAL_BASE}${personUrl(p.id, p.name)}</loc>\n    <lastmod>${now}</lastmod>\n    <priority>0.7</priority>\n  </url>`
@@ -63,7 +64,8 @@ export async function GET() {
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
     return new NextResponse(xml, { headers: cacheHeaders });
-  } catch {
+  } catch (err) {
+    console.error('[actors.xml]', err);
     const fb = fallbackUrl(CANONICAL_BASE, now);
     return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }

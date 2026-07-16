@@ -1,5 +1,5 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
-import { tmdbFetchRaw } from '@/lib/tmdb/server';
+import { tmdbSitemapFetch } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { fallbackUrl } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
@@ -27,19 +27,19 @@ export async function GET() {
   const now = new Date().toISOString().split('T')[0];
 
   try {
-    const [movies, tv, topRated, trending] = await Promise.allSettled([
-      tmdbFetchRaw<{ results: TMDBItem[] }>('/movie/popular?language=en-US'),
-      tmdbFetchRaw<{ results: TMDBItem[] }>('/tv/popular?language=en-US'),
-      tmdbFetchRaw<{ results: TMDBItem[] }>('/movie/top_rated?language=en-US'),
-      tmdbFetchRaw<{ results: TMDBItem[] }>('/trending/all/week?language=en-US'),
+    const [movies, tv, topRated, trending] = await Promise.all([
+      tmdbSitemapFetch<TMDBItem>('/movie/popular'),
+      tmdbSitemapFetch<TMDBItem>('/tv/popular'),
+      tmdbSitemapFetch<TMDBItem>('/movie/top_rated'),
+      tmdbSitemapFetch<TMDBItem>('/trending/all/week'),
     ]);
 
     const seen = new Set<string>();
     const urls: string[] = [];
 
     for (const r of [movies, tv, topRated, trending]) {
-      if (r.status !== 'fulfilled') continue;
-      for (const item of r.value?.results || []) {
+      if (!r?.results) continue;
+      for (const item of r.results) {
         const title = item.title || item.name;
         if (!title) continue;
         const slug = slugify(title);
@@ -56,9 +56,10 @@ export async function GET() {
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
     return new NextResponse(xml, { headers: cacheHeaders });
-  } catch {
-    const now = new Date().toISOString().split('T')[0];
-    const fb = fallbackUrl(CANONICAL_BASE, now);
+  } catch (err) {
+    console.error('[blog.xml]', err);
+    const now2 = new Date().toISOString().split('T')[0];
+    const fb = fallbackUrl(CANONICAL_BASE, now2);
     return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

@@ -1,5 +1,5 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
-import { tmdbFetch } from '@/lib/tmdb/server';
+import { tmdbFetchPages } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { mediaUrl } from '@/lib/slug';
 import { fallbackUrl } from '@/lib/escXml';
@@ -14,60 +14,39 @@ interface TMDBItem {
   id: number;
   title?: string;
   name?: string;
-  media_type?: string;
   release_date?: string;
-  first_air_date?: string;
   popularity: number;
-}
-
-async function fetchPages(endpoint: string, maxPages: number): Promise<TMDBItem[]> {
-  const items: TMDBItem[] = [];
-  const seen = new Set<number>();
-  for (let p = 1; p <= maxPages; p++) {
-    try {
-      const data = await tmdbFetch<{ results: TMDBItem[] }>(`${endpoint}&page=${p}`);
-      for (const item of data?.results || []) {
-        if (item.id && !seen.has(item.id)) { seen.add(item.id); items.push(item); }
-      }
-    } catch { /* continue */ }
-  }
-  return items;
 }
 
 export async function GET() {
   const cacheHeaders = { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200' };
 
-  // L1: In-memory
   if (inMemoryXml && Date.now() - inMemoryAt < SITEMAP_TTL) {
     return new NextResponse(inMemoryXml, { headers: cacheHeaders });
   }
-  // L2: Filesystem
   const fsCache = await getSitemapCache(CACHE_NAME);
   if (fsCache) { inMemoryXml = fsCache; inMemoryAt = Date.now(); return new NextResponse(fsCache, { headers: cacheHeaders }); }
 
   const now = new Date().toISOString().split('T')[0];
 
   try {
-    const [popular, topRated, nowPlaying, upcoming, trending] = await Promise.allSettled([
-      fetchPages('/movie/popular?language=en-US', 5),
-      fetchPages('/movie/top_rated?language=en-US', 5),
-      fetchPages('/movie/now_playing?language=en-US', 2),
-      fetchPages('/movie/upcoming?language=en-US', 2),
-      fetchPages('/trending/movie/week?language=en-US', 3),
+    const [popular, topRated, nowPlaying, upcoming, trending] = await Promise.all([
+      tmdbFetchPages<TMDBItem>('/movie/popular', 5, { region: 'US' }),
+      tmdbFetchPages<TMDBItem>('/movie/top_rated', 5),
+      tmdbFetchPages<TMDBItem>('/movie/now_playing', 2, { region: 'US' }),
+      tmdbFetchPages<TMDBItem>('/movie/upcoming', 2, { region: 'US' }),
+      tmdbFetchPages<TMDBItem>('/trending/movie/week', 3),
     ]);
 
-    // Deduplicate
+    // Deduplicate by id
     const seen = new Set<number>();
     const all: TMDBItem[] = [];
-    for (const r of [popular, topRated, nowPlaying, upcoming, trending]) {
-      if (r.status === 'fulfilled') {
-        for (const item of r.value) {
-          if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
-        }
+    for (const batch of [popular, topRated, nowPlaying, upcoming, trending]) {
+      for (const item of batch) {
+        if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
       }
     }
 
-    // Sort by popularity descending, cap at 5000
     all.sort((a, b) => b.popularity - a.popularity);
     const capped = all.slice(0, 5000);
 
@@ -82,9 +61,10 @@ export async function GET() {
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
     return new NextResponse(xml, { headers: cacheHeaders });
-  } catch {
-    const now = new Date().toISOString().split('T')[0];
-    const fb = fallbackUrl(CANONICAL_BASE, now);
+  } catch (err) {
+    console.error('[movies.xml]', err);
+    const now2 = new Date().toISOString().split('T')[0];
+    const fb = fallbackUrl(CANONICAL_BASE, now2);
     return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

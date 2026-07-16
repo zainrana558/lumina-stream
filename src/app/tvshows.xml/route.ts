@@ -1,5 +1,5 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
-import { tmdbFetch } from '@/lib/tmdb/server';
+import { tmdbFetchPages } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { mediaUrl } from '@/lib/slug';
 import { fallbackUrl } from '@/lib/escXml';
@@ -14,24 +14,8 @@ interface TMDBItem {
   id: number;
   title?: string;
   name?: string;
-  media_type?: string;
-  release_date?: string;
   first_air_date?: string;
   popularity: number;
-}
-
-async function fetchPages(endpoint: string, maxPages: number): Promise<TMDBItem[]> {
-  const items: TMDBItem[] = [];
-  const seen = new Set<number>();
-  for (let p = 1; p <= maxPages; p++) {
-    try {
-      const data = await tmdbFetch<{ results: TMDBItem[] }>(`${endpoint}&page=${p}`);
-      for (const item of data?.results || []) {
-        if (item.id && !seen.has(item.id)) { seen.add(item.id); items.push(item); }
-      }
-    } catch { /* continue */ }
-  }
-  return items;
 }
 
 export async function GET() {
@@ -46,21 +30,19 @@ export async function GET() {
   const now = new Date().toISOString().split('T')[0];
 
   try {
-    const [popular, topRated, onTheAir, airingToday, trending] = await Promise.allSettled([
-      fetchPages('/tv/popular?language=en-US', 5),
-      fetchPages('/tv/top_rated?language=en-US', 5),
-      fetchPages('/tv/on_the_air?language=en-US', 3),
-      fetchPages('/tv/airing_today?language=en-US', 2),
-      fetchPages('/trending/tv/week?language=en-US', 3),
+    const [popular, topRated, onTheAir, airingToday, trending] = await Promise.all([
+      tmdbFetchPages<TMDBItem>('/tv/popular', 5),
+      tmdbFetchPages<TMDBItem>('/tv/top_rated', 5),
+      tmdbFetchPages<TMDBItem>('/tv/on_the_air', 3),
+      tmdbFetchPages<TMDBItem>('/tv/airing_today', 2),
+      tmdbFetchPages<TMDBItem>('/trending/tv/week', 3),
     ]);
 
     const seen = new Set<number>();
     const all: TMDBItem[] = [];
-    for (const r of [popular, topRated, onTheAir, airingToday, trending]) {
-      if (r.status === 'fulfilled') {
-        for (const item of r.value) {
-          if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
-        }
+    for (const batch of [popular, topRated, onTheAir, airingToday, trending]) {
+      for (const item of batch) {
+        if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
       }
     }
 
@@ -78,9 +60,10 @@ export async function GET() {
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
     return new NextResponse(xml, { headers: cacheHeaders });
-  } catch {
-    const now = new Date().toISOString().split('T')[0];
-    const fb = fallbackUrl(CANONICAL_BASE, now);
+  } catch (err) {
+    console.error('[tvshows.xml]', err);
+    const now2 = new Date().toISOString().split('T')[0];
+    const fb = fallbackUrl(CANONICAL_BASE, now2);
     return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }
