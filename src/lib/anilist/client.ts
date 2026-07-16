@@ -28,6 +28,8 @@ export interface AniListDate {
   day: number | null;
 }
 
+export type AniListSource = 'MANGA' | 'LIGHT_NOVEL' | 'VISUAL_NOVEL' | 'VIDEO_GAME' | 'OTHER' | 'ORIGINAL' | 'NOVEL' | 'ONE_SHOT' | 'DOUJINSHI' | 'ANIME' | 'WEB_NOVEL' | 'WEB_MANGA' | 'MUSIC' | 'GAME' | 'MIXED_MEDIA' | 'PICTURE_BOOK' | 'COMIC';
+
 export interface AniListMedia {
   id: number;
   idMal: number | null;
@@ -43,10 +45,12 @@ export interface AniListMedia {
   startDate: AniListDate | null;
   endDate: AniListDate | null;
   season: AniListSeason | null;
+  seasonYear: number | null;
   episodes: number | null;
   duration: number | null;
   chapters: number | null;
   volumes: number | null;
+  source: AniListSource | null;
   coverImage: {
     extraLarge: string | null;
     large: string | null;
@@ -55,6 +59,7 @@ export interface AniListMedia {
   } | null;
   bannerImage: string | null;
   genres: string[];
+  synonyms: string[];
   tags: Array<{
     name: string;
     rank: number | null;
@@ -65,6 +70,65 @@ export interface AniListMedia {
       id: number;
       name: string;
       isAnimationStudio: boolean;
+    }>;
+  };
+  staff: {
+    edges: Array<{
+      node: {
+        id: number;
+        name: {
+          full: string | null;
+          native: string | null;
+        };
+        image: {
+          medium: string | null;
+        } | null;
+      };
+      role: string;
+    }>;
+  };
+  characters: {
+    edges: Array<{
+      node: {
+        id: number;
+        name: {
+          full: string | null;
+          native: string | null;
+        };
+        image: {
+          medium: string | null;
+        } | null;
+      };
+      role: string;
+      voiceActors: Array<{
+        id: number;
+        name: {
+          full: string | null;
+          native: string | null;
+        };
+        languageV2: string;
+        image: {
+          medium: string | null;
+        } | null;
+      }>;
+    }>;
+  };
+  relations: {
+    edges: Array<{
+      relationType: string;
+      node: {
+        id: number;
+        title: {
+          romaji: string | null;
+          english: string | null;
+          native: string | null;
+        };
+        format: AniListMediaFormat | null;
+        coverImage: {
+          extraLarge: string | null;
+          large: string | null;
+        } | null;
+      };
     }>;
   };
   meanScore: number | null;
@@ -86,6 +150,9 @@ export interface AniListMedia {
     site: string;
     url: string;
     icon: string | null;
+    type: string;
+    color: string | null;
+    iconUrl: string | null;
   }>;
 }
 
@@ -143,6 +210,7 @@ const MEDIA_DETAIL_FRAGMENT = `
   coverImage { extraLarge large medium color }
   bannerImage
   genres
+  synonyms
   tags { name rank isMediaSpoiler }
   episodes
   duration
@@ -151,13 +219,18 @@ const MEDIA_DETAIL_FRAGMENT = `
   trending
   favourites
   season
+  seasonYear
   startDate { year month day }
   endDate { year month day }
   nextAiringEpisode { airingAt episode timeUntilAiring }
+  source
   studios { nodes { name isAnimationStudio } }
+  staff(perPage: 12) { edges { node { id name { full native } image { medium } } role } }
+  characters(perPage: 15) { edges { node { id name { full native } image { medium } } role voiceActors(languageV2: Japanese, perPage: 1) { id name { full native } languageV2 image { medium } } } }
+  relations { edges { relationType node { id title { romaji english native } format coverImage { extraLarge large } } } }
   siteUrl
   trailer { id site thumbnail }
-  externalLinks { site url icon }
+  externalLinks { site url icon type color iconUrl }
 `;
 
 // ---- Rate limiting (90 req/min) ----

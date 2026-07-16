@@ -62,6 +62,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     birthday: string | null; deathday: string | null; place_of_birth: string | null;
     homepage: string | null; also_known_as: string[]; known_for_department: string;
     combined_credits?: { cast: Array<{ id: number; title?: string; name?: string; poster_path: string | null; backdrop_path: string | null; media_type: 'movie' | 'tv'; character?: string; job?: string; department?: string; episode_count?: number; vote_average?: number; release_date?: string; first_air_date?: string; genre_ids?: number[]; popularity?: number; overview?: string }>; crew: Array<{ id: number; title?: string; name?: string; poster_path: string | null; media_type: 'movie' | 'tv'; job?: string; department?: string; popularity?: number }> };
+    images?: { profiles: Array<{ file_path: string; aspect_ratio: number; vote_average: number }> };
   };
   let data: PersonData | null = null;
   let notFound = false;
@@ -108,7 +109,8 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
           popularity?: number;
         }>;
       };
-    }>(`/person/${personId}`, { append_to_response: 'combined_credits' });
+      images?: { profiles: Array<{ file_path: string; aspect_ratio: number; vote_average: number }> };
+    }>(`/person/${personId}`, { append_to_response: 'combined_credits,images' });
   } catch {
     notFound = true;
   }

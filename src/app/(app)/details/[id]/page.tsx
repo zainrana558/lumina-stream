@@ -309,7 +309,7 @@ export default async function DetailsPage({ params }: { params: Promise<{ id: st
                 { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}` },
               ],
             }) }} />
-            <DetailsContent showId={showId} initialShow={show} />
+            <DetailsContent showId={showId} initialShow={show} initialAnilistDetail={anilistData} />
             {/* SERVER-RENDERED SEO CONTENT for AniList anime — placed AFTER DetailsContent
                 so the hero backdrop (LCP element) renders first, improving LCP */}
             {show && (

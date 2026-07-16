@@ -40,6 +40,7 @@ interface PersonData {
     cast: PersonCredit[];
     crew: PersonCredit[];
   };
+  images?: { profiles: Array<{ file_path: string; aspect_ratio: number; vote_average: number }> };
 }
 
 const TMDB_GENRE_ID_MAP: Record<number, string> = {
@@ -81,7 +82,8 @@ type FilterTab = 'all' | 'cast' | 'crew';
 export default function PersonPageClient({ person }: { person: PersonData }) {
   const router = useRouter();
   const [bioExpanded, setBioExpanded] = useState(false);
-  const [filter, setFilter] = useState<FilterTab>('all');
+  const isDirector = person.known_for_department === 'Directing';
+  const [filter, setFilter] = useState<FilterTab>(isDirector ? 'crew' : 'all');
   const [sortBy, setSortBy] = useState<'popularity' | 'year'>('popularity');
 
   const allCredits = useMemo(() => {
@@ -235,6 +237,20 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
           </div>
         )}
 
+        {/* Photos */}
+        {person.images?.profiles && person.images.profiles.length > 0 && (
+          <div className="neo-raised" style={{ padding: '1.2rem 1.5rem', borderRadius: 16, marginBottom: '1.5rem' }}>
+            <h3 className="f-cinzel" style={{ fontSize: '.68rem', letterSpacing: '.14em', color: '#FFB347', marginBottom: '.65rem' }}>PHOTOS</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))', gap: 10 }}>
+              {person.images.profiles.slice(0, 12).map((img, i) => (
+                <div key={img.file_path} style={{ position: 'relative', paddingTop: '150%', borderRadius: 10, overflow: 'hidden', background: '#0C091A', animation: `card-in .42s ${i * 0.05}s both` }}>
+                  <img src={`https://image.tmdb.org/t/p/w342${img.file_path}`} alt={`${person.name} photo ${i + 1}`} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Known For */}
         {knownFor.length > 0 && (
           <div style={{ marginBottom: '2.5rem' }}>
@@ -254,6 +270,40 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
           </div>
         )}
 
+        {/* Upcoming Projects */}
+        {(() => {
+          const now = new Date();
+          const upcoming = allCredits.filter(c => {
+            const date = c.release_date || c.first_air_date || '';
+            if (!date) return false;
+            return new Date(date) > now;
+          }).sort((a, b) => {
+            const aDate = a.release_date || a.first_air_date || '';
+            const bDate = b.release_date || b.first_air_date || '';
+            return aDate.localeCompare(bDate);
+          }).slice(0, 6);
+
+          if (upcoming.length === 0) return null;
+          const upcomingItems = upcoming.map(creditToMediaItem);
+          return (
+            <div style={{ marginBottom: '2.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div>
+                  <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.5)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5 }}>Coming soon</div>
+                  <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>📅 Upcoming Projects</div>
+                </div>
+              </div>
+              <div className="hide-scroll" style={{ display: 'flex', gap: 14, padding: '6px 0', overflowX: 'auto', overflowY: 'visible' }}>
+                {upcomingItems.map((item, i) => (
+                  <div key={item.id} style={{ animation: `card-in .45s ${i * 0.045}s both`, minWidth: 140, flexShrink: 0 }}>
+                    <Card show={item} sz="md" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Full Filmography */}
         {allCredits.length > 0 && (
           <div>
@@ -266,17 +316,21 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
               </div>
               <div style={{ display: 'flex', gap: '.5rem' }}>
                 {/* Filter tabs */}
-                {(['all', 'cast', 'crew'] as const).map(t => (
-                  <button className="f-cinzel" key={t} onClick={() => setFilter(t)} style={{
-                    padding: '6px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                    fontSize: '.68rem',  fontWeight: 600,
-                    background: filter === t ? 'var(--gold)' : '#090716',
-                    color: filter === t ? '#05020A' : 'rgba(255,245,232,.4)',
-                    boxShadow: filter === t ? '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22)' : 'inset 2px 2px 6px rgba(0,0,0,.6),inset -1px -1px 3px rgba(35,20,75,.15)',
-                    transition: 'all .22s',
-                    textTransform: 'capitalize',
-                  }}>{t}</button>
-                ))}
+                {(['all', 'cast', isDirector ? 'Directed' : 'crew'] as const).map(t => {
+                  const val = t === 'Directed' ? 'crew' : t;
+                  const isActive = filter === val;
+                  return (
+                    <button className="f-cinzel" key={t} onClick={() => setFilter(val as FilterTab)} style={{
+                      padding: '6px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                      fontSize: '.68rem', fontWeight: 600,
+                      background: isActive ? 'var(--gold)' : '#090716',
+                      color: isActive ? '#05020A' : 'rgba(255,245,232,.4)',
+                      boxShadow: isActive ? '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22)' : 'inset 2px 2px 6px rgba(0,0,0,.6),inset -1px -1px 3px rgba(35,20,75,.15)',
+                      transition: 'all .22s',
+                      textTransform: 'capitalize',
+                    }}>{t}</button>
+                  );
+                })}
                 <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'popularity' | 'year')} className="neo-select" style={{ maxWidth: 120 }}>
                   <option value="popularity" style={{ background: '#0C091A' }}>Popularity</option>
                   <option value="year" style={{ background: '#0C091A' }}>Newest</option>

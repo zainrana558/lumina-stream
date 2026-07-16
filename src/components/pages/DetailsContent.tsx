@@ -15,6 +15,7 @@ import { useWakeLock } from '@/hooks/useWakeLock';
 import { vibrateMedium, vibrateLong } from '@/lib/haptics';
 import { getTmdbImageUrl, getBackdropUrl, getYoutubeThumbnail } from '@/lib/images';
 import { personUrl } from '@/lib/slug';
+import type { AniListMedia } from '@/lib/anilist/client';
 import TrailerModal from '@/components/common/TrailerModal';
 import IntelligentPlayer from '@/components/common/IntelligentPlayer';
 import LegalDisclaimerBanner from '@/components/common/LegalDisclaimerBanner';
@@ -65,6 +66,7 @@ interface FullDetails {
   revenue?: number;
   homepage?: string;
   imdb_id?: string;
+  watch_providers?: { results: Record<string, Array<{ provider_id: number; provider_name: string; logo_path: string | null }>> };
 }
 
 interface DetailsContentProps {
@@ -81,12 +83,13 @@ interface DetailsContentProps {
   defaultSeason?: number;
   /** Pre-selected episode (from episode URL route) */
   defaultEpisode?: number;
+  initialAnilistDetail?: AniListMedia | null;
 }
 
 export default function DetailsContent({ 
   showId, initialShow, initialCredits = [], initialSimilar = [], initialVideos = [], 
   initialCrew = [], initialKeywords = [], initialImages = null, initialReviews = [],
-  defaultSeason, defaultEpisode 
+  defaultSeason, defaultEpisode, initialAnilistDetail
 }: DetailsContentProps) {
   const router = useRouter();
   const { user, profile, openPip, triggerConfetti } = useApp();
@@ -106,6 +109,7 @@ export default function DetailsContent({
   const [commentSending, setCommentSending] = useState(false);
 
   const [fullDetails, setFullDetails] = useState<FullDetails | null>(null);
+  const [anilistDetail, setAnilistDetail] = useState<AniListMedia | null>(initialAnilistDetail || null);
   const [tmdbReviews, setTmdbReviews] = useState(initialReviews);
   const [galleryImages, setGalleryImages] = useState(initialImages);
   const [keywords, setKeywords] = useState<string[]>(initialKeywords);
@@ -244,7 +248,7 @@ export default function DetailsContent({
       // Bug #29: Respect URL-driven defaults instead of always resetting to S1E1
       setSeason(defaultSeason || 1); setEpIdx(defaultEpisode || 1); setLoadingDetails(true);
       try {
-        const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${id}&append_to_response=credits,similar,videos,content_ratings,keywords,reviews,images`, { signal: controller.signal });
+        const res = await fetch(`/api/tmdb?endpoint=/${mediaType}/${id}&append_to_response=credits,similar,videos,content_ratings,keywords,reviews,images,watch/providers`, { signal: controller.signal });
         const data = await res.json();
         if (!cancelled) {
           setFullDetails(data);
@@ -835,6 +839,182 @@ export default function DetailsContent({
 
         {tab === 'details' && (
           <>
+          {/* ANIME-SPECIFIC DETAILS */}
+          {show._isAnilist && anilistDetail && (
+            <>
+            <section aria-label="Anime Information" style={{ marginBottom: '1.5rem' }}>
+              <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>ANIME INFORMATION</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 14 }}>
+                {(() => {
+                  const d = anilistDetail;
+                  const seasonNames: Record<string, string> = { WINTER: 'Winter', SPRING: 'Spring', SUMMER: 'Summer', FALL: 'Fall' };
+                  const sourceNames: Record<string, string> = { MANGA: 'Manga', LIGHT_NOVEL: 'Light Novel', VISUAL_NOVEL: 'Visual Novel', VIDEO_GAME: 'Video Game', ORIGINAL: 'Original', NOVEL: 'Novel', ONE_SHOT: 'One Shot', WEB_NOVEL: 'Web Novel', WEB_MANGA: 'Web Manga', MUSIC: 'Music', GAME: 'Game', MIXED_MEDIA: 'Mixed Media', OTHER: 'Other', DOUJINSHI: 'Doujinshi', PICTURE_BOOK: 'Picture Book', COMIC: 'Comic', ANIME: 'Anime' };
+                  const animStudios = d.studios?.nodes?.filter(st => st.isAnimationStudio).map(st => st.name) || [];
+                  const allStudios = d.studios?.nodes?.map(st => st.name) || [];
+                  const startDate = d.startDate;
+                  const endDate = d.endDate;
+                  const formatDate = (date: { year: number | null; month: number | null; day: number | null } | null) => {
+                    if (!date?.year) return 'TBA';
+                    const parts = [date.year, date.month ? String(date.month).padStart(2, '0') : null, date.day ? String(date.day).padStart(2, '0') : null].filter(Boolean);
+                    return parts.join('-');
+                  };
+
+                  const seasonStr = d.season ? `${seasonNames[d.season] || d.season} ${d.seasonYear || d.startDate?.year || ''}`.trim() : 'N/A';
+                  const airDatesStr = (() => {
+                    const start = formatDate(startDate);
+                    if (endDate?.year) return start + ' → ' + formatDate(endDate);
+                    if (startDate?.year) return start + ' → Present';
+                    return start;
+                  })();
+
+                  const animeGrid: [string, string][] = [
+                    ['Japanese Title', d.title.native || 'N/A'],
+                    ['English Title', d.title.english || 'N/A'],
+                    ['Romaji', d.title.romaji || 'N/A'],
+                    ['Studio', animStudios.length > 0 ? animStudios.join(', ') : (allStudios.length > 0 ? allStudios.join(', ') : 'N/A')],
+                    ['Season', seasonStr],
+                    ['Episodes', d.episodes ? String(d.episodes) : 'N/A'],
+                    ['Duration', d.duration ? `${d.duration} min/ep` : 'N/A'],
+                    ['Air Dates', airDatesStr || 'N/A'],
+                    ['Source', d.source ? (sourceNames[d.source] || d.source) : 'N/A'],
+                    ['Status', d.status ? d.status.replace(/_/g, ' ') : 'N/A'],
+                    ['Rating', d.meanScore ? `${(d.meanScore / 10).toFixed(1)} / 10` : 'N/A'],
+                    ['Genres', d.genres?.join(', ') || 'N/A'],
+                    ['Format', d.format ? d.format.replace(/_/g, ' ') : 'N/A'],
+                    ['Popularity', d.popularity ? d.popularity.toLocaleString() : 'N/A'],
+                    ['Favourites', d.favourites ? d.favourites.toLocaleString() : 'N/A'],
+                  ];
+
+                  return animeGrid.map(([k, v], i) => (
+                    <div key={k} className="neo-card" style={{ padding: '14px 16px', borderRadius: 12, animation: `card-in .4s ${i * 0.04}s both` }}>
+                      <div className="f-cinzel" style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.32)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 7 }}>{k}</div>
+                      <div className="f-crimson" style={{ fontSize: '1rem', color: 'rgba(255,245,232,.78)', fontWeight: 600 }}>{v}</div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </section>
+
+            {/* STAFF SECTION */}
+            {anilistDetail.staff?.edges && anilistDetail.staff.edges.length > 0 && (
+              <section aria-label="Staff" style={{ marginTop: '1.5rem' }}>
+                <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>STAFF</h2>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  {anilistDetail.staff.edges.slice(0, 12).map((edge, i) => (
+                    <div key={edge.node.id} className="neo-card" style={{ padding: '13px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .42s ${i * 0.06}s both` }}>
+                      {edge.node.image?.medium ? (
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', boxShadow: `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px ${s.acc}40` }}>
+                          <img src={edge.node.image.medium} alt={edge.node.name?.full || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      ) : (
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.9rem', boxShadow: `0 0 0 1.5px ${s.acc}40` }}>👤</div>
+                      )}
+                      <div>
+                        <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{edge.node.name?.full || 'Unknown'}</div>
+                        <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)' }}>{edge.role || 'Staff'}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* CHARACTERS & VOICE ACTORS SECTION */}
+            {anilistDetail.characters?.edges && anilistDetail.characters.edges.length > 0 && (
+              <section aria-label="Characters" style={{ marginTop: '1.5rem' }}>
+                <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>CHARACTERS &amp; VOICE ACTORS</h2>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  {anilistDetail.characters.edges.slice(0, 15).map((edge, i) => {
+                    const va = edge.voiceActors?.[0];
+                    return (
+                      <div key={edge.node.id} className="neo-card" style={{ padding: '13px 16px', borderRadius: 12, minWidth: 180, maxWidth: 240, animation: `card-in .42s ${i * 0.05}s both` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '.7rem', marginBottom: 6 }}>
+                          {edge.node.image?.medium ? (
+                            <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, boxShadow: `0 0 0 1px ${s.acc}30` }}>
+                              <img src={edge.node.image.medium} alt={edge.node.name?.full || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                          ) : (
+                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem', flexShrink: 0 }}>👤</div>
+                          )}
+                          <div style={{ minWidth: 0 }}>
+                            <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{edge.node.name?.full || 'Unknown'}</div>
+                            <div style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.35)' }}>{edge.role || 'Main'}</div>
+                          </div>
+                        </div>
+                        {va && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', paddingLeft: '.3rem' }}>
+                            {va.image?.medium ? (
+                              <div style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, opacity: .7 }}>
+                                <img src={va.image.medium} alt={va.name?.full || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                            ) : null}
+                            <div style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.4)' }}>
+                              <span style={{ color: s.acc }}>VA:</span> {va.name?.full || 'Unknown'}{va.languageV2 ? ` (${va.languageV2})` : ''}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* RELATED ANIME (Sequels, Prequels, Spin-offs) */}
+            {anilistDetail.relations?.edges && anilistDetail.relations.edges.length > 0 && (
+              <section aria-label="Related Anime" style={{ marginTop: '1.5rem' }}>
+                <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>RELATED ANIME</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 12 }}>
+                  {anilistDetail.relations.edges.map((edge, i) => {
+                    const rel = edge.node;
+                    const title = rel.title?.english || rel.title?.romaji || rel.title?.native || 'Unknown';
+                    const cover = rel.coverImage?.extraLarge || rel.coverImage?.large;
+                    return (
+                      <Link key={rel.id} href={`/anime/${encodeURIComponent(title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 120))}-${rel.id + 100000000}`} className="neo-card" style={{ display: 'flex', gap: '1rem', padding: 14, borderRadius: 12, textDecoration: 'none', color: 'inherit', animation: `card-in .42s ${i * 0.05}s both` }}>
+                        {cover ? (
+                          <div style={{ width: 60, height: 85, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#0C091A' }}>
+                            <img src={cover} alt={title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        ) : (
+                          <div style={{ width: 60, height: 85, borderRadius: 8, flexShrink: 0, background: 'linear-gradient(135deg,#1E1838,#0C091A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', opacity: .4 }}>🎬</div>
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
+                          <div style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.35)', marginBottom: 2 }}>{edge.relationType.replace(/_/g, ' ')}</div>
+                          {rel.format && <div style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.25)' }}>{rel.format.replace(/_/g, ' ')}</div>}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* EXTERNAL LINKS (streaming services, etc.) */}
+            {anilistDetail.externalLinks && anilistDetail.externalLinks.length > 0 && (
+              <section aria-label="External Links" style={{ marginTop: '1.5rem' }}>
+                <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>EXTERNAL LINKS</h2>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  <a href={anilistDetail.siteUrl} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
+                    <span style={{ fontSize: '1rem' }}>🎌</span> AniList
+                  </a>
+                  {anilistDetail.externalLinks.slice(0, 10).map((link, i) => (
+                    <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
+                      {link.iconUrl ? <img src={link.iconUrl} alt="" style={{ width: 16, height: 16, borderRadius: 2 }} loading="lazy" /> : <span style={{ fontSize: '1rem' }}>🔗</span>}
+                      {link.site}
+                    </a>
+                  ))}
+                  <a href={`https://www.google.com/search?q=${encodeURIComponent(show.title + ' anime')}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
+                    <span style={{ fontSize: '1rem' }}>🔍</span> Google
+                  </a>
+                </div>
+              </section>
+            )}
+            </>
+          )}
+
+          {/* GENERIC (NON-ANIME) DETAILS */}
+          {!show._isAnilist && (
           <section aria-label="Details">
             <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>DETAILS</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 14 }}>
@@ -866,8 +1046,8 @@ export default function DetailsContent({
                 ['Status', show.st],
                 ['Rating', `${show.r} / 10`],
                 ['Genres', show.genre.join(', ')],
-                ...(show.media_type === 'tv' ? ([['Seasons', String(fullDetails?.number_of_seasons || (show._isAnilist ? '1' : '...'))]] as [string, string][]) : []),
-                ...(show.media_type === 'movie' ? ([['Runtime', `${show.eps} min`]] as [string, string][]) : ([['Runtime', `${fullDetails?.number_of_seasons ? '...' : epData[0]?.dur || '23m'} / ep`]] as [string, string][])),
+                ...(show.media_type === 'tv' ? ([['Seasons', String(fullDetails?.number_of_seasons || '...')]] as [string, string][]) : []),
+                ...(show.media_type === 'movie' ? ([['Runtime', `${show.eps} min`]] as [string, string][]) : ([['Runtime', `${epData[0]?.dur || '23m'} / ep`]] as [string, string][])),
                 ['Country', countries.length > 0 ? countries.join(', ') : 'N/A'],
                 ['Language', langs.length > 0 ? langs.join(', ') : (oLang ? (langNames[oLang] || oLang.toUpperCase()) : 'N/A')],
                 ...(oTitle && oTitle !== show.title ? ([['Original Title', oTitle]] as [string, string][]) : []),
@@ -885,6 +1065,26 @@ export default function DetailsContent({
             })()}
           </div>
           </section>
+          )}
+
+          {/* STREAMING PLATFORMS (TV shows only, non-anime) */}
+          {!show._isAnilist && show.media_type === 'tv' && fullDetails?.watch_providers?.results?.US && (
+            <section aria-label="Streaming Platforms" style={{ marginTop: '1.5rem' }}>
+              <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>STREAMING PLATFORMS</h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                {fullDetails.watch_providers.results.US.map((prov) => (
+                  <div key={prov.provider_id} className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12 }}>
+                    {prov.logo_path ? (
+                      <img src={`https://image.tmdb.org/t/p/w45${prov.logo_path}`} alt={prov.provider_name} style={{ width: 28, height: 28, borderRadius: 4 }} loading="lazy" />
+                    ) : (
+                      <div style={{ width: 28, height: 28, borderRadius: 4, background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem' }}>📺</div>
+                    )}
+                    <span className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8' }}>{prov.provider_name}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Keywords section */}
           {keywords.length > 0 && (
