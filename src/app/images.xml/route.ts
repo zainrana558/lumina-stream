@@ -2,6 +2,7 @@ import { CANONICAL_BASE, TMDB_IMAGE_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBMediaItem } from '@/lib/tmdb/server';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { mediaUrl } from '@/lib/slug';
+import { fallbackUrl, escXml } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
 
 let inMemoryXml: string | null = null;
@@ -62,29 +63,32 @@ export async function GET() {
     const capped = all.slice(0, 2000);
 
     const urls = capped.map(item => {
-      const title = item.title || item.name || 'Untitled';
-      const year = (item.release_date || item.first_air_date)?.slice(0, 4);
-      const pageUrl = `${CANONICAL_BASE}${mediaUrl(item.id, title, item.media_type, year)}`;
+      const title = escXml(item.title || item.name || 'Untitled');
+      const year = (item.release_date || item.first_air_date)?.slice(0, 4) || 'N/A';
+      const pageUrl = `${CANONICAL_BASE}${mediaUrl(item.id, item.title || item.name || '', item.media_type, (item.release_date || item.first_air_date)?.slice(0, 4))}`;
 
       const images: string[] = [];
       if (item.poster_path) {
-        images.push(`    <image:image>\n      <image:loc>${TMDB_IMAGE_BASE}/w780${item.poster_path}</image:loc>\n      <image:title>${title} (${year || 'N/A'}) - Poster</image:title>\n      <image:caption>Official poster for ${title}</image:caption>\n    </image:image>`);
+        images.push(`    <image:image>\n      <image:loc>${TMDB_IMAGE_BASE}/w780${item.poster_path}</image:loc>\n      <image:title>${title} (${year}) - Poster</image:title>\n      <image:caption>Official poster for ${title}</image:caption>\n    </image:image>`);
       }
       if (item.backdrop_path) {
-        images.push(`    <image:image>\n      <image:loc>${TMDB_IMAGE_BASE}/w1280${item.backdrop_path}</image:loc>\n      <image:title>${title} (${year || 'N/A'}) - Backdrop</image:title>\n      <image:caption>Backdrop image for ${title}</image:caption>\n    </image:image>`);
+        images.push(`    <image:image>\n      <image:loc>${TMDB_IMAGE_BASE}/w1280${item.backdrop_path}</image:loc>\n      <image:title>${title} (${year}) - Backdrop</image:title>\n      <image:caption>Backdrop image for ${title}</image:caption>\n    </image:image>`);
       }
 
       if (images.length === 0) return null;
       return `  <url>\n    <loc>${pageUrl}</loc>\n    <lastmod>${now}</lastmod>\n${images.join('\n')}\n  </url>`;
     }).filter(Boolean).join('\n');
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls}\n</urlset>`;
+    const body = urls || fallbackUrl(CANONICAL_BASE, now);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>`;
 
     inMemoryXml = xml; inMemoryAt = Date.now();
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
     return new NextResponse(xml, { headers: cacheHeaders });
   } catch {
-    return new NextResponse('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n</urlset>', { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
+    const now = new Date().toISOString().split('T')[0];
+    const fb = fallbackUrl(CANONICAL_BASE, now);
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

@@ -3,6 +3,7 @@ import { browseAllAnime, getTrendingAnime, getTopRatedAnime, getPopularAnime, ge
 import { ANILIST_ID_OFFSET } from '@/types';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { mediaUrl } from '@/lib/slug';
+import { fallbackUrl } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
 
 let inMemoryXml: string | null = null;
@@ -64,13 +65,16 @@ export async function GET() {
       `  <url>\n    <loc>${CANONICAL_BASE}${mediaUrl(item.id, item.title, 'tv', item.year, true)}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`
     ).join('\n');
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+    const body = urls || fallbackUrl(CANONICAL_BASE, now);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>`;
 
     inMemoryXml = xml; inMemoryAt = Date.now();
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
     return new NextResponse(xml, { headers: cacheHeaders });
   } catch {
-    return new NextResponse('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>', { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
+    const now = new Date().toISOString().split('T')[0];
+    const fb = fallbackUrl(CANONICAL_BASE, now);
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

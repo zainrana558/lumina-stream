@@ -1,6 +1,7 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetchRaw } from '@/lib/tmdb/server';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
+import { fallbackUrl } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
 
 let inMemoryXml: string | null = null;
@@ -48,13 +49,16 @@ export async function GET() {
       }
     }
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>`;
+    const body = urls.length > 0 ? urls.join('\n') : fallbackUrl(CANONICAL_BASE, now);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>`;
 
     inMemoryXml = xml; inMemoryAt = Date.now();
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
     return new NextResponse(xml, { headers: cacheHeaders });
   } catch {
-    return new NextResponse('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>', { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
+    const now = new Date().toISOString().split('T')[0];
+    const fb = fallbackUrl(CANONICAL_BASE, now);
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
 }

@@ -2,6 +2,7 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBMediaItem } from '@/lib/tmdb/server';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
 import { mediaUrl } from '@/lib/slug';
+import { fallbackUrl, escXml } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
 
 let inMemoryXml: string | null = null;
@@ -88,27 +89,26 @@ export async function GET() {
     for (const entry of videoEntries) {
       if (entry.status !== 'fulfilled' || entry.value.ytVideos.length === 0) continue;
       const { item, ytVideos } = entry.value;
-      const title = item.title || item.name || 'Untitled';
-      const year = (item.release_date || item.first_air_date)?.slice(0, 4);
-      const pageUrl = `${CANONICAL_BASE}${mediaUrl(item.id, title, item.media_type, year)}`;
+      const title = escXml(item.title || item.name || 'Untitled');
+      const year = (item.release_date || item.first_air_date)?.slice(0, 4) || 'N/A';
+      const pageUrl = `${CANONICAL_BASE}${mediaUrl(item.id, item.title || item.name || '', item.media_type, (item.release_date || item.first_air_date)?.slice(0, 4))}`;
 
       // Only include the first (best) trailer/teaser per item to keep sitemap manageable
       const vid = ytVideos[0];
-      const videoXml = `  <url>\n    <loc>${pageUrl}</loc>\n    <lastmod>${now}</lastmod>\n    <video:video>\n      <video:thumbnail_loc>${pageUrl}</video:thumbnail_loc>\n      <video:title>${escXml(title)} - ${escXml(vid.name)}</video:title>\n      <video:description>Watch the ${vid.type.toLowerCase()} for ${escXml(title)} (${year || 'N/A'}) on Lumovia</video:description>\n      <video:content_loc>https://www.youtube.com/watch?v=${vid.key}</video:content_loc>\n      <video:player_loc>https://www.youtube.com/embed/${vid.key}</video:player_loc>\n      <video:publication_date>${now}</video:publication_date>\n      <video:family_friendly>yes</video:family_friendly>\n      <video:live>no</video:live>\n    </video:video>\n  </url>`;
+      const videoXml = `  <url>\n    <loc>${pageUrl}</loc>\n    <lastmod>${now}</lastmod>\n    <video:video>\n      <video:thumbnail_loc>${pageUrl}</video:thumbnail_loc>\n      <video:title>${title} - ${escXml(vid.name)}</video:title>\n      <video:description>Watch the ${vid.type.toLowerCase()} for ${title} (${year}) on Lumovia</video:description>\n      <video:content_loc>https://www.youtube.com/watch?v=${vid.key}</video:content_loc>\n      <video:player_loc>https://www.youtube.com/embed/${vid.key}</video:player_loc>\n      <video:publication_date>${now}</video:publication_date>\n      <video:family_friendly>yes</video:family_friendly>\n      <video:live>no</video:live>\n    </video:video>\n  </url>`;
       urls.push(videoXml);
     }
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${urls.join('\n')}\n</urlset>`;
+    const body = urls.length > 0 ? urls.join('\n') : fallbackUrl(CANONICAL_BASE, now);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${body}\n</urlset>`;
 
     inMemoryXml = xml; inMemoryAt = Date.now();
     setSitemapCache(CACHE_NAME, xml).catch(() => {});
 
     return new NextResponse(xml, { headers: cacheHeaders });
   } catch {
-    return new NextResponse('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n</urlset>', { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
+    const now = new Date().toISOString().split('T')[0];
+    const fb = fallbackUrl(CANONICAL_BASE, now);
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${fb}\n</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, s-maxage=300' } });
   }
-}
-
-function escXml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
