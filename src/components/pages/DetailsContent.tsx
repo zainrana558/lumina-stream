@@ -866,14 +866,14 @@ export default function DetailsContent({
                 ['Status', show.st],
                 ['Rating', `${show.r} / 10`],
                 ['Genres', show.genre.join(', ')],
-                ...(show.media_type === 'tv' ? [['Seasons', fullDetails?.number_of_seasons || (show._isAnilist ? '1' : '...')]] : []),
-                ...(show.media_type === 'movie' ? [['Runtime', `${show.eps} min`]] : [['Runtime', `${fullDetails?.number_of_seasons ? '...' : epData[0]?.dur || '23m'} / ep`]]),
+                ...(show.media_type === 'tv' ? ([['Seasons', String(fullDetails?.number_of_seasons || (show._isAnilist ? '1' : '...'))]] as [string, string][]) : []),
+                ...(show.media_type === 'movie' ? ([['Runtime', `${show.eps} min`]] as [string, string][]) : ([['Runtime', `${fullDetails?.number_of_seasons ? '...' : epData[0]?.dur || '23m'} / ep`]] as [string, string][])),
                 ['Country', countries.length > 0 ? countries.join(', ') : 'N/A'],
                 ['Language', langs.length > 0 ? langs.join(', ') : (oLang ? (langNames[oLang] || oLang.toUpperCase()) : 'N/A')],
-                ...(oTitle && oTitle !== show.title ? [['Original Title', oTitle]] : []),
-                ...(oLang && oLang !== 'en' ? [['Original Language', langNames[oLang] || oLang.toUpperCase()]] : []),
-                ...(show.media_type === 'movie' ? [['Budget', formatCurrency(fullDetails?.budget)]] : []),
-                ...(show.media_type === 'movie' ? [['Revenue', formatCurrency(fullDetails?.revenue)]] : []),
+                ...(oTitle && oTitle !== show.title ? ([['Original Title', oTitle]] as [string, string][]) : []),
+                ...(oLang && oLang !== 'en' ? ([['Original Language', langNames[oLang] || oLang.toUpperCase()]] as [string, string][]) : []),
+                ...(show.media_type === 'movie' ? ([['Budget', formatCurrency(fullDetails?.budget)]] as [string, string][]) : []),
+                ...(show.media_type === 'movie' ? ([['Revenue', formatCurrency(fullDetails?.revenue)]] as [string, string][]) : []),
               ];
 
               return detailsGrid.map(([k, v], i) => (
