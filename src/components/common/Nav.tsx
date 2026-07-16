@@ -104,6 +104,10 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
     go(item.key);
   };
 
+  const avatarBg = profile
+    ? `linear-gradient(135deg,${profile.avatar_url || '#8B78FF'},${profile.avatar_url || '#FF6B8A'})`
+    : 'linear-gradient(135deg,rgba(255,179,71,.38),rgba(139,120,255,.38))';
+
   return (
     <nav className="nav" aria-label="Main navigation">
       <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(.6rem,2vw,1.2rem)' }}>
@@ -286,9 +290,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                 aria-label="User menu"
                 style={{
                   width: 44, height: 44, borderRadius: '50%',
-                  background: profile
-                    ? `linear-gradient(135deg,${profile.avatar_url || '#8B78FF'},${profile.avatar_url || '#FF6B8A'})`
-                    : 'linear-gradient(135deg,rgba(255,179,71,.38),rgba(139,120,255,.38))`,
+                  background: avatarBg,
                   border: '2px solid rgba(255,179,71,.38)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', fontSize: '.9rem',  fontWeight: 700, color: '#05020A',
