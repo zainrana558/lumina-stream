@@ -5,6 +5,21 @@ export default function robots(): MetadataRoute.Robots {
 
   return {
     rules: [
+      // Block aggressive SEO/scraper bots that burn API quota
+      { userAgent: 'AhrefsBot',       disallow: '/' },
+      { userAgent: 'SemrushBot',      disallow: '/' },
+      { userAgent: 'MJ12bot',         disallow: '/' },
+      { userAgent: 'DotBot',          disallow: '/' },
+      { userAgent: 'BLEXBot',         disallow: '/' },
+      { userAgent: 'PetalBot',        disallow: '/' },
+      { userAgent: 'YandexBot',       disallow: '/' },
+      { userAgent: 'Baiduspider',     disallow: '/' },
+      { userAgent: 'Bytespider',      disallow: '/' },
+      { userAgent: 'GPTBot',          disallow: '/' },
+      { userAgent: 'ClaudeBot',       disallow: '/' },
+      { userAgent: 'anthropic-ai',    disallow: '/' },
+      { userAgent: 'CCBot',           disallow: '/' },
+      { userAgent: 'DataForSeoBot',   disallow: '/' },
       {
         userAgent: '*',
         allow: [
@@ -57,6 +72,7 @@ export default function robots(): MetadataRoute.Robots {
           '/activity',
           '/year-in-review',
         ],
+        crawlDelay: 10,
       },
     ],
     sitemap: [
