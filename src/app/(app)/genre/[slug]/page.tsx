@@ -84,7 +84,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export const revalidate = 600; // 10 min ISR
+export const revalidate = 86400; // 24h — movie/show details rarely change
 
 // ─── Static params for build-time generation ────────────────────────────────
 

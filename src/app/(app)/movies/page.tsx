@@ -6,7 +6,7 @@ import { tmdbToMedia } from '@/types';
 import type { Metadata } from 'next';
 import BrowseClient from '@/components/pages/BrowseClient';
 
-export const revalidate = 300;
+export const revalidate = 86400; // 24h — TMDB data changes at most daily
 
 const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/movies`;

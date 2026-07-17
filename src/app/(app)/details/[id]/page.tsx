@@ -120,7 +120,7 @@ interface TMDBDetails {
   imdb_id?: string;
 }
 
-export const revalidate = 600; // 10 min
+export const revalidate = 86400; // 24h — movie/show details rarely change
 
 export async function generateMetadata({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ mt?: string }> }): Promise<Metadata> {
   const [{ id: rawSlug }, { mt }] = await Promise.all([params, searchParams]);

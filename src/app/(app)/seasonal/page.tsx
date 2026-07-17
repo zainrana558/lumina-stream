@@ -5,7 +5,7 @@ import type { AniListMedia } from '@/lib/anilist/client';
 import type { Metadata } from 'next';
 import SeasonalClient from './SeasonalClient';
 
-export const revalidate = 600;
+export const revalidate = 86400; // 24h — TMDB data changes at most daily
 
 const siteUrl = CANONICAL_BASE;
 const seasonalUrl = `${siteUrl}/seasonal`;

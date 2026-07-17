@@ -6,7 +6,7 @@ import type { TMDBShow } from '@/types';
 import { tmdbToMedia } from '@/types';
 import type { Metadata } from 'next';
 
-export const revalidate = 300;
+export const revalidate = 86400; // 24h — TMDB data changes at most daily
 
 const siteUrl = CANONICAL_BASE;
 const browseUrl = `${siteUrl}/browse`;

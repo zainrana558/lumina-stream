@@ -12,7 +12,7 @@ import {
 } from '@/lib/seo/metadata';
 import { extractIdFromSlug, mediaUrl } from '@/lib/slug';
 
-export const revalidate = 600; // 10 min
+export const revalidate = 86400; // 24h
 
 interface TMDBSeasonEpisode {
   id: number;
