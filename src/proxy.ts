@@ -43,6 +43,19 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/seasonal") ||
     pathname.startsWith("/leaderboard") ||
     pathname.startsWith("/release-calendar") ||
+    pathname.startsWith("/trending") ||
+    pathname.startsWith("/actors") ||
+    pathname.startsWith("/directors") ||
+    pathname.startsWith("/studios") ||
+    pathname.startsWith("/countries") ||
+    pathname.startsWith("/languages") ||
+    pathname.startsWith("/reviews") ||
+    pathname.startsWith("/news") ||
+    pathname.startsWith("/guides") ||
+    pathname.startsWith("/guide/") ||
+    pathname.startsWith("/coming-soon") ||
+    pathname.startsWith("/faq") ||
+    pathname.startsWith("/contact") ||
     pathname === "/sitemap.xml" ||
     pathname.endsWith(".xml") ||
     pathname === "/robots.txt" ||
