@@ -74,20 +74,59 @@ async function cacheKey(category: CacheCategory, key: string): Promise<string> {
   return full;
 }
 
+// ─── L1: in-process memory cache ─────────────────────────────────────────
+// This deployment is a single long-lived Node process (not Vercel's many
+// ephemeral isolates), so a plain module-level Map stays warm and serves
+// repeat reads in ~0ms — no Upstash round-trip (which is ~140ms from this
+// box) and no command spend. Redis stays as the L2 that survives a restart
+// and (if it ever scales out) is shared. Bounded by entry count; a restart
+// or CACHE_VERSION bump clears it.
+interface L1Entry { v: unknown; exp: number }
+const L1 = new Map<string, L1Entry>();
+const L1_MAX = 6000;
+const L1_TTL_CAP = 6 * 60 * 60; // don't hold anything in RAM longer than 6h
+
+function l1Get(k: string): unknown | undefined {
+  const e = L1.get(k);
+  if (!e) return undefined;
+  if (Date.now() > e.exp) { L1.delete(k); return undefined; }
+  // refresh LRU position
+  L1.delete(k); L1.set(k, e);
+  return e.v;
+}
+
+function l1Set(k: string, v: unknown, ttlSec: number): void {
+  if (L1.size >= L1_MAX) {
+    // evict ~2% oldest
+    let n = Math.ceil(L1_MAX * 0.02);
+    for (const key of L1.keys()) { L1.delete(key); if (--n <= 0) break; }
+  }
+  L1.set(k, { v, exp: Date.now() + Math.min(ttlSec, L1_TTL_CAP) * 1000 });
+}
+
+export function l1Stats() { return { size: L1.size, max: L1_MAX }; }
+
 /**
- * Try to get a cached value from Redis
+ * Try to get a cached value: L1 memory first, then Redis (populating L1).
  */
 export async function getCached<T>(
   category: CacheCategory,
   key: string
 ): Promise<T | null> {
+  const fullKey = await cacheKey(category, key);
+
+  const hot = l1Get(fullKey);
+  if (hot !== undefined) return hot as T;
+
   const client = getRedis();
   if (!client) return null;
-
   try {
-    const fullKey = await cacheKey(category, key);
     const result = await client.get<string>(fullKey);
-    if (result) return JSON.parse(result) as T;
+    if (result) {
+      const parsed = JSON.parse(result) as T;
+      l1Set(fullKey, parsed, CACHE_TTL[category]);
+      return parsed;
+    }
     return null;
   } catch {
     return null; // Cache miss = fetch from source
@@ -95,22 +134,21 @@ export async function getCached<T>(
 }
 
 /**
- * Store a value in Redis cache
+ * Store a value in both L1 memory and Redis.
  */
 export async function setCache<T>(
   category: CacheCategory,
   key: string,
   data: T
 ): Promise<void> {
+  const fullKey = await cacheKey(category, key);
+  const ttl = CACHE_TTL[category];
+  l1Set(fullKey, data, ttl);
+
   const client = getRedis();
   if (!client) return;
-
   try {
-    const fullKey = await cacheKey(category, key);
-    const ttl = CACHE_TTL[category];
-    await client.set(fullKey, JSON.stringify(data) as unknown as typeof data, {
-      ex: ttl,
-    });
+    await client.set(fullKey, JSON.stringify(data) as unknown as typeof data, { ex: ttl });
   } catch {
     // Cache write failure = non-critical, ignore
   }
@@ -165,19 +203,33 @@ export async function fetchBatchWithCache<T>(
   const client = getRedis();
   const keys = await Promise.all(entries.map(e => cacheKey(e.category, e.key)));
 
-  // Try batch read from Redis
-  let cachedValues: (string | null)[] | null = null;
-  if (client) {
+  // L1 memory first — pull what we can from RAM, only MGET the rest.
+  const cachedValues: (string | null)[] = new Array(entries.length).fill(null);
+  const need: number[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const hot = l1Get(keys[i]);
+    if (hot !== undefined) cachedValues[i] = JSON.stringify(hot);
+    else need.push(i);
+  }
+
+  if (client && need.length > 0) {
     try {
-      cachedValues = await client.mget<string[]>(...keys);
+      const got = await client.mget<string[]>(...need.map(i => keys[i]));
+      need.forEach((i, j) => {
+        const raw = got[j];
+        if (raw) {
+          cachedValues[i] = raw;
+          try { l1Set(keys[i], JSON.parse(raw), CACHE_TTL[entries[i].category]); } catch { /* */ }
+        }
+      });
     } catch {
-      // Pipeline failed — fall through to individual fetches
+      // Pipeline failed — misses just get fetched below
     }
   }
 
   const results: BatchResult<T>[] = [];
 
-  if (cachedValues) {
+  {
     // Process results: parse hits, queue misses for fetching
     const misses: number[] = [];
     const missFetchers: Array<() => Promise<T>> = [];
@@ -210,8 +262,4 @@ export async function fetchBatchWithCache<T>(
 
     return results;
   }
-
-  // No Redis — fetch all individually (fallback)
-  const allData = await Promise.all(entries.map(e => e.fetcher()));
-  return allData.map(data => ({ data, hit: false }));
 }
