@@ -160,8 +160,13 @@ export default {
 async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
   const incomingUrl = new URL(request.url);
   const targetUrl   = new URL(request.url);
-  targetUrl.hostname = VERCEL_HOST;
-  targetUrl.protocol = 'https:';
+  const _origin     = new URL(VERCEL_ORIGIN);
+  targetUrl.hostname = _origin.hostname;
+  // Respect the origin's scheme + port. A bare-IP origin over CF triggers
+  // error 1003 ("Direct IP Access Not Allowed"), so use a real hostname
+  // (e.g. an sslip.io name) even when the box only speaks HTTP on :80.
+  targetUrl.protocol = _origin.protocol;
+  targetUrl.port     = _origin.port;
 
   const pathname = incomingUrl.pathname;
 

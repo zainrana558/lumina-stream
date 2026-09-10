@@ -26,6 +26,8 @@ export async function GET() {
         // Route through Cloudflare Worker (sends auth via header)
         if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
         else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
+        // Worker abuse guard — same header src/lib/tmdb/server.ts sends
+        if (process.env.WORKER_KEY) headers['X-Worker-Key'] = process.env.WORKER_KEY;
       } else {
         // Direct TMDB call
         if (env.TMDB_BEARER_TOKEN) headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
