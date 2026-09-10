@@ -106,7 +106,9 @@ export async function GET(request: NextRequest) {
     // right now" instead of an error state + retry storm. Genuine code errors
     // still surface as 500.
     const upstream =
-      /AniList API (error|rate limit)|temporarily disabled|fetch failed|ECONNRESET|ETIMEDOUT|aborted/i.test(msg);
+      /AniList (API (error|rate limit)|circuit open|GraphQL error)|temporarily disabled|rate limit reached|fetch failed|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|aborted|unable to (get local issuer|verify)/i.test(
+        msg,
+      );
     if (upstream) {
       return NextResponse.json(
         { results: [], pageInfo: null, degraded: true },
