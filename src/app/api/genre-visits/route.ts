@@ -4,6 +4,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/server';
 import { PORTAL_SLUGS } from '@/config/genres';
 import { csrfGuard } from '@/lib/csrf';
 import { ensureCsrfCookie } from '@/lib/csrf';
+import { requireAuth } from '@/lib/auth';
 
 /**
  * POST /api/genre-visits
@@ -79,18 +80,19 @@ export async function GET() {
     return NextResponse.json({ visits: {}, source: 'unconfigured' });
   }
 
+  let userId: string;
+  try {
+    ({ userId } = await requireAuth());
+  } catch {
+    return NextResponse.json({ visits: {}, source: 'unauthenticated' });
+  }
+
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ visits: {}, source: 'unauthenticated' });
-    }
-
     const { data, error } = await supabase
       .from('genre_visits')
       .select('genre_slug, visit_count')
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     if (error) {
       console.error('[genre-visits] get error:', error);

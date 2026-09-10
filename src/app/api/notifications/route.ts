@@ -17,17 +17,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // JWT fast-path — the NotificationBell polls this every 30-60s per open
+    // tab; a Supabase Auth round-trip on each poll is pure waste.
+    let userId: string;
+    try {
+      ({ userId } = await requireAuth());
+    } catch {
+      return NextResponse.json({ notifications: [], unreadCount: 0 });
+    }
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ notifications: [], unreadCount: 0 });
 
-    const profileId = await getVerifiedProfileId(user.id);
+    const profileId = await getVerifiedProfileId(userId);
     if (!profileId) return NextResponse.json({ notifications: [], unreadCount: 0 });
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
     const offset = (page - 1) * limit;
+
+    // Poll requests (limit<=1) only want the badge count — skip the list query.
+    const countOnly = limit <= 1;
+
+    const { count: unreadCount } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('profile_id', profileId)
+      .eq('is_read', false);
+
+    if (countOnly) {
+      return NextResponse.json({ notifications: [], unreadCount: unreadCount || 0 },
+        { headers: rateLimitHeaders(rl) });
+    }
 
     // Get notifications with sender profile info
     const { data, error } = await supabase
@@ -38,13 +58,6 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (error) return NextResponse.json({ notifications: [], unreadCount: 0, error: error.message }, { status: 500 });
-
-    // Get unread count
-    const { count: unreadCount } = await supabase
-      .from('notifications')
-      .select('id', { count: 'exact', head: true })
-      .eq('profile_id', profileId)
-      .eq('is_read', false);
 
     return NextResponse.json({
       notifications: data || [],

@@ -69,17 +69,22 @@ export default function NotificationBell() {
     return () => { cancelled = true; };
   }, [open, user, fetchNotifications]);
 
-  // Poll for unread count every 30s
+  // Poll for unread count every 60s — but only while the tab is visible.
+  // (Was 30s regardless of visibility → 4 Supabase calls/30s per idle tab.)
   useEffect(() => {
     if (!user) return;
-    const poll = setInterval(async () => {
+    const tick = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const res = await fetch('/api/notifications?limit=1');
         const data = await res.json();
         setUnreadCount(data.unreadCount || 0);
       } catch { /* silent */ }
-    }, 30000);
-    return () => clearInterval(poll);
+    };
+    const poll = setInterval(tick, 60000);
+    const onVisible = () => { if (!document.hidden) tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(poll); document.removeEventListener('visibilitychange', onVisible); };
   }, [user]);
 
   // Close on outside click
