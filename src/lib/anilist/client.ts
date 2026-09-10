@@ -243,7 +243,16 @@ const WINDOW_MS = 60_000;
 interface AniListRateState {
   requestCount: number;
   resetTime: number;
+  // circuit breaker — AniList is frequently down (503s, rate limits, or its
+  // own "API temporarily disabled" 403). After CB_THRESHOLD consecutive
+  // failures we stop calling it for CB_COOLDOWN_MS instead of hammering a
+  // dead endpoint on every anime request.
+  fails: number;
+  openUntil: number;
 }
+
+const CB_THRESHOLD = 3;
+const CB_COOLDOWN_MS = 90_000;
 
 // Proper type augmentation for globalThis
 declare global {
@@ -255,14 +264,32 @@ function getRateState(): AniListRateState {
     globalThis.__anilistRateState = {
       requestCount: 0,
       resetTime: 0,
+      fails: 0,
+      openUntil: 0,
     };
   }
   return globalThis.__anilistRateState;
 }
 
+/** Call after every AniList request so the breaker tracks health. */
+export function reportAnilistResult(ok: boolean): void {
+  const s = getRateState();
+  if (ok) {
+    s.fails = 0;
+    s.openUntil = 0;
+  } else if (++s.fails >= CB_THRESHOLD) {
+    s.openUntil = Date.now() + CB_COOLDOWN_MS;
+  }
+}
+
 async function rateLimitedFetch(body: string): Promise<Response> {
   const state = getRateState();
   const now = Date.now();
+  if (state.openUntil > now) {
+    throw new Error(
+      `AniList circuit open — upstream unhealthy, retrying in ${Math.ceil((state.openUntil - now) / 1000)}s`,
+    );
+  }
   if (now > state.resetTime) {
     state.requestCount = 0;
     state.resetTime = now + WINDOW_MS;
@@ -300,19 +327,29 @@ async function rateLimitedFetch(body: string): Promise<Response> {
 
 async function anilistQuery<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const body = JSON.stringify({ query, variables });
-  const res = await rateLimitedFetch(body);
+  let res: Response;
+  try {
+    res = await rateLimitedFetch(body);
+  } catch (e) {
+    // circuit already open, or network error — don't double-count the CB
+    if (!(e instanceof Error) || !/circuit open/.test(e.message)) reportAnilistResult(false);
+    throw e;
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
+    reportAnilistResult(false);
     throw new Error(`AniList API error ${res.status}: ${text}`);
   }
 
   const json = await res.json();
   if (json.errors) {
     const msg = json.errors.map((e: { message: string }) => e.message).join(', ');
+    reportAnilistResult(false);
     throw new Error(`AniList GraphQL error: ${msg}`);
   }
 
+  reportAnilistResult(true);
   return json.data as T;
 }
 

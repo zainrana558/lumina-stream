@@ -3,6 +3,33 @@ import { type NextRequest, NextResponse } from "next/server";
 // ── Middleware (Next.js middleware — must be named middleware.ts) ──────────
 // Auth, security headers, rate limiting.
 
+/**
+ * Decode the Supabase access-token JWT from the request cookies without a
+ * network call. Signature is NOT verified here (Postgres RLS does that on
+ * every query); we only need the user id + expiry for the routing decision.
+ * Returns null when the token is missing, malformed, or expired — the caller
+ * then falls back to supabase.auth.getUser() (which also refreshes it).
+ */
+function localUserIdFromRequest(request: NextRequest): string | null {
+  try {
+    const c = request.cookies
+      .getAll()
+      .find((x) => x.name.includes("-access-token") || x.name === "sb-access-token");
+    if (!c?.value) return null;
+    let raw = c.value;
+    // supabase-ssr may store a base64- prefixed / chunked JSON array
+    if (raw.startsWith("base64-")) raw = atob(raw.slice(7));
+    const token = raw.startsWith("[") ? (JSON.parse(raw)[0] as string) : raw;
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const p = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (!p?.sub || (p.exp && Date.now() >= p.exp * 1000 - 30_000)) return null;
+    return p.sub as string;
+  } catch {
+    return null;
+  }
+}
+
 // ── Public paths — no auth required ────────────────────────────────────────
 // ONLY truly public pages. Protected pages (/watchlist, /settings, /stats,
 // /activity, /collections) are intentionally absent — unauthenticated users
@@ -262,7 +289,17 @@ export default async function middleware(request: NextRequest) {
       }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
+    // Fast path: valid unexpired JWT in cookies → no Supabase Auth round-trip
+    // (saves ~150-450ms on every protected-path request). Only call getUser()
+    // — which also refreshes the token — when the local decode fails.
+    let user: { id: string } | null = null;
+    const fastId = localUserIdFromRequest(request);
+    if (fastId) {
+      user = { id: fastId };
+    } else {
+      const { data } = await supabase.auth.getUser();
+      user = data.user ? { id: data.user.id } : null;
+    }
     const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
 
     // Unauthenticated → /login

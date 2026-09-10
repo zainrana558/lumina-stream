@@ -384,8 +384,9 @@ function scoreProviderIntelligent(
 
 // ── Parallel Probing ──
 
-const PROBE_TIMEOUT = 3000; // 3 seconds per probe
-const MAX_PARALLEL_PROBES = 5; // Only probe top candidates
+const PROBE_TIMEOUT = 2500;       // per-probe hard timeout
+const PROBE_BUDGET_MS = 2200;     // overall wall-clock cap for the whole probe round
+const MAX_PARALLEL_PROBES = 5;    // Only probe top candidates
 
 interface ProbeResult {
   name: string;
@@ -432,9 +433,20 @@ async function probeProvider(url: string, name: string): Promise<ProbeResult> {
     updateSpeedCache(name, latency);
     updateHistoricalCache(name, true);
     return { name, alive: true, latencyMs: latency };
-  } catch {
+  } catch (err) {
     const latency = Date.now() - start;
-    updateHistoricalCache(name, false);
+    const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+    // Incomplete-chain / self-signed TLS errors are a server misconfig on the
+    // provider's side that real browsers paper over (AIA fetching). Node/undici
+    // does not, so a server-side probe fails where the user's <iframe> would
+    // load fine. Don't down-vote the provider's history for these — just report
+    // "not confirmed alive" so scoring falls back to tier/history.
+    const tlsChain =
+      msg.includes('unable to get local issuer') ||
+      msg.includes('self-signed certificate') ||
+      msg.includes('self signed certificate') ||
+      msg.includes('unable to verify the first certificate');
+    if (!tlsChain) updateHistoricalCache(name, false);
     return { name, alive: false, latencyMs: latency };
   }
 }
@@ -449,13 +461,21 @@ async function parallelProbe(
   count: number = MAX_PARALLEL_PROBES,
 ): Promise<Set<string>> {
   const toProbe = candidates.slice(0, count);
-  const results = await Promise.all(
-    toProbe.map(p => probeProvider(p.url, p.name)),
-  );
+  // Race the whole round against an overall budget — one slow/hung provider
+  // must not add 3s to every play. Probes still running past the budget keep
+  // going and update the speed/historical caches for next time; we just don't
+  // wait on them. Confirmed-alive from whoever answered in time is enough
+  // (scoring falls back to tier + historical for the rest).
+  const settled = await Promise.race([
+    Promise.allSettled(toProbe.map(p => probeProvider(p.url, p.name))),
+    new Promise<null>(r => setTimeout(() => r(null), PROBE_BUDGET_MS)),
+  ]);
 
   const alive = new Set<string>();
-  for (const r of results) {
-    if (r.alive) alive.add(r.name);
+  if (settled) {
+    for (const r of settled) {
+      if (r.status === 'fulfilled' && r.value.alive) alive.add(r.value.name);
+    }
   }
   return alive;
 }

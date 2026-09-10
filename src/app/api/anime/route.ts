@@ -100,6 +100,19 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
+    // AniList itself is frequently unavailable (rate limits, or its own
+    // "API temporarily disabled" 403s). That's an upstream outage, not a bug —
+    // degrade to an empty result set with 200 so the client shows "no anime
+    // right now" instead of an error state + retry storm. Genuine code errors
+    // still surface as 500.
+    const upstream =
+      /AniList API (error|rate limit)|temporarily disabled|fetch failed|ECONNRESET|ETIMEDOUT|aborted/i.test(msg);
+    if (upstream) {
+      return NextResponse.json(
+        { results: [], pageInfo: null, degraded: true },
+        { status: 200, headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } },
+      );
+    }
     return NextResponse.json({ error: msg, results: [] }, { status: 500 });
   }
 }

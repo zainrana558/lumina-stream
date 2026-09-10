@@ -4,6 +4,7 @@ import "@/styles/global.css";
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import CsrfProvider from '@/components/common/CsrfProvider';
 
 const cinzelDec = Cinzel_Decorative({
   subsets: ["latin"],
@@ -132,8 +133,15 @@ export default function RootLayout({
           }}
         />
         {children}
-        <Analytics />
-        <SpeedInsights />
+        <CsrfProvider />
+        {/* Vercel Analytics/Speed-Insights inject scripts that only exist on
+            Vercel's edge — off-platform they 404 on every page load. */}
+        {process.env.VERCEL && (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
       </body>
     </html>
   );

@@ -114,8 +114,20 @@ async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: n
     const framesBlocked = xfoBlocked || faBlocked;
 
     return { alive: isReachable, latencyMs, framesBlocked };
-  } catch {
+  } catch (err) {
     const latencyMs = Date.now() - start;
+    const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+    // Incomplete-chain / self-signed TLS: a provider-side misconfig that real
+    // browsers paper over (AIA) but Node/undici does not. A server-side ping
+    // fails where the user's <iframe> loads fine — so stay optimistic instead
+    // of marking dead + swapping in a replacement. Client-side failover still
+    // catches a genuinely broken one.
+    const tlsChain =
+      msg.includes('unable to get local issuer') ||
+      msg.includes('self-signed certificate') ||
+      msg.includes('self signed certificate') ||
+      msg.includes('unable to verify the first certificate');
+    if (tlsChain) return { alive: true, latencyMs, framesBlocked: false };
     return { alive: false, latencyMs, framesBlocked: false };
   }
 }

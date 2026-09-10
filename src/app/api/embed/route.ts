@@ -5,6 +5,9 @@ import { selectWithIntelligence, recordProviderResult } from '@/lib/streaming/pr
 import { getAllEmbedUrls, getAnimeEmbedUrls } from '@/lib/streaming/providers';
 import { resolveContentType } from '@/lib/content/content-intelligence';
 import { getDeadProviders } from '@/lib/streaming/health-check';
+import { getRedis } from '@/lib/redis';
+
+const SMART_TTL = 600; // 10 min — probe data stays useful, providers rarely die faster
 
 /**
  * GET /api/embed
@@ -63,6 +66,21 @@ export async function GET(request: NextRequest) {
 
     // ── Smart Mode: Provider Intelligence Layer ──
     if (mode === 'smart') {
+      // Redis cache — selectWithIntelligence probes 5 third-party embed hosts
+      // in parallel (~2s wall clock). Without this, every play re-ran the whole
+      // probe round. Keyed by content identity so all viewers of the same
+      // title/episode share one probe result for SMART_TTL.
+      const redis = getRedis();
+      const ckey = `lumina:embed:smart:${tmdbId || 0}:${malId || 0}:${anilistId || 0}:${type}:${season}:${episode}:${isAnime ? 1 : 0}`;
+      if (redis) {
+        try {
+          const hit = await redis.get<string>(ckey);
+          if (hit) {
+            const cached = typeof hit === 'string' ? JSON.parse(hit) : hit;
+            return NextResponse.json(cached, { headers: { ...rateLimitHeaders(rl), 'X-Embed-Cache': 'hit' } });
+          }
+        } catch { /* miss */ }
+      }
       try {
         const result = await selectWithIntelligence({
           tmdbId: tmdbId || undefined,
@@ -84,7 +102,10 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        return NextResponse.json(result, { headers: rateLimitHeaders(rl) });
+        if (redis && result?.chain?.length) {
+          try { await redis.set(ckey, JSON.stringify(result), { ex: SMART_TTL }); } catch { /* non-critical */ }
+        }
+        return NextResponse.json(result, { headers: { ...rateLimitHeaders(rl), 'X-Embed-Cache': 'miss' } });
       } catch (intelligenceError) {
         // Intelligence layer failed — fall through to legacy mode
         console.error('[Embed] Intelligence layer failed, falling back to legacy:', intelligenceError);

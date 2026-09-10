@@ -178,17 +178,46 @@ export async function getAllLearnedScores(): Promise<Map<string, number>> {
   // Fall back to DB
   if (!isSupabaseConfigured()) return scores;
 
+  // Negative cache: without the /api/playback/aggregate cron the
+  // provider_performance table is often empty, and this ran a full
+  // `select(*)` on EVERY embed request (~150-400ms Supabase RTT each time).
+  // Skip the DB for 5 min after we see it's empty / unavailable.
+  const EMPTY_MARK = 'lumina:learn:empty';
+  if (redis) {
+    try {
+      if (await redis.get(EMPTY_MARK)) return scores;
+    } catch { /* ignore */ }
+  }
+
   try {
     const supabase = await createClient();
-    const { data } = await supabase.from('provider_performance').select('*');
-    if (!data) return scores;
+    const { data } = await supabase
+      .from('provider_performance')
+      .select('provider,total_plays,successful_plays,error_count,avg_buffer_time,avg_watch_duration')
+      .limit(200);
+    if (!data || data.length === 0) {
+      if (redis) { try { await redis.set(EMPTY_MARK, '1', { ex: 300 }); } catch {} }
+      return scores;
+    }
 
     for (const row of data) {
       const bonus = computeBonus(row);
       scores.set(row.provider as string, bonus);
+      // opportunistically warm the per-provider Redis cache so the next
+      // call skips the DB even without the cron running
+      if (redis) {
+        try {
+          await redis.set(
+            `${BONUS_CACHE_PREFIX}${row.provider}`,
+            JSON.stringify({ bonus, cachedAt: Date.now() }) as unknown as string,
+            { ex: BONUS_CACHE_TTL },
+          );
+        } catch { /* non-critical */ }
+      }
     }
     return scores;
   } catch {
+    if (redis) { try { await redis.set(EMPTY_MARK, '1', { ex: 300 }); } catch {} }
     return scores;
   }
 }
