@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { LANGUAGE_SLUGS } from '@/lib/slug';
@@ -10,7 +11,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/languages`;
 
 export const metadata: Metadata = {
-  title: 'Languages - Browse Movies & TV by Language | Lumovia',
+  title: 'Languages - Browse Movies & TV by Language',
   description:
     'Browse movies and TV shows by language on Lumovia. Discover content in English, Spanish, French, Japanese, Korean, Hindi, Mandarin, and many more languages from around the world.',
   alternates: { canonical: pageUrl },
@@ -100,15 +101,15 @@ export default function LanguagesPage() {
       <style>{`.lang-card:hover{background:rgba(255,245,232,.08)!important;border-color:rgba(255,245,232,.15)!important}`}</style>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        dangerouslySetInnerHTML={{ __html: safeJsonLd({
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
           mainEntity: [
@@ -196,7 +197,7 @@ export default function LanguagesPage() {
               {category.languages.map((lang) => (
                 <Link
                   key={lang.name}
-                  href={`/language/${LANGUAGE_SLUGS[lang.iso] || lang.iso.toLowerCase()}`}
+                  href={`/browse?language=${LANGUAGE_SLUGS[lang.iso] || lang.iso.toLowerCase()}`}
                   style={{
                     display: 'block',
                     textDecoration: 'none',

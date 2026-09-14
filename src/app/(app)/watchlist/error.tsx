@@ -1,5 +1,7 @@
 'use client';
 
+import { AlertTriangle, RotateCw } from 'lucide-react';
+
 export default function WatchlistError({
   error,
   reset,
@@ -19,7 +21,7 @@ export default function WatchlistError({
           background: 'linear-gradient(135deg, rgba(255,179,71,.15) 0%, rgba(139,120,255,.15) 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem',
           boxShadow: '8px 8px 24px rgba(0,0,0,.82), -4px -4px 11px rgba(45,25,90,.28), inset 0 1.5px 0 rgba(255,255,255,.048)',
-        }}>⚠</div>
+        }}><AlertTriangle size={32} color="currentColor" /></div>
         <h2 className="f-cinzel" style={{
            fontSize: '1.4rem',
           color: 'rgba(255,245,232,.8)', letterSpacing: '.08em', marginBottom: '1rem',
@@ -30,7 +32,7 @@ export default function WatchlistError({
         }}>
           We couldn't load your watchlist. Please try again.
         </p>
-        <button onClick={reset} className="btn-p">↻ Try Again</button>
+        <button onClick={reset} className="btn-p"><RotateCw size={16} /> Try Again</button>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb/server';
 import type { TMDBShow } from '@/types';
@@ -6,13 +7,11 @@ import { tmdbToMedia } from '@/types';
 import type { Metadata } from 'next';
 import BrowseClient from '@/components/pages/BrowseClient';
 import { notFound } from 'next/navigation';
+import { VALID_DECADES, type Decade } from '@/config/decades';
 
 export const revalidate = 86400;
 
 const siteUrl = CANONICAL_BASE;
-
-const VALID_DECADES = ['2020s', '2010s', '2000s', '1990s', '1980s', '1970s'] as const;
-type Decade = (typeof VALID_DECADES)[number];
 
 const DECADE_META: Record<Decade, { startYear: number; endYear: number; title: string; description: string }> = {
   '2020s': {
@@ -143,9 +142,9 @@ export default async function DecadePage({ params }: { params: Promise<{ decade:
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [

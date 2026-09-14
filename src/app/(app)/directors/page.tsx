@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, getImageUrl, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
@@ -9,30 +10,43 @@ export const revalidate = 3600;
 const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/directors`;
 
+// The exact count actually rendered fluctuates with TMDB's live popularity
+// data and the /person/popular filtering above (see getPopularDirectors) —
+// this metadata is static (evaluated before that fetch runs), so the copy
+// says "top" rather than a specific number that could drift out of sync with
+// what's actually on the page (audit finding F-07: was hardcoded "60" when
+// only 4 rendered).
 export const metadata: Metadata = {
-  title: 'Popular Directors - Top 60 Most Popular Film & TV Directors | Lumovia',
+  title: 'Popular Directors - Top Film & TV Directors',
   description:
-    'Explore the top 60 most popular film and television directors. Browse their profiles, filmographies, and discover the movies and shows they directed — all free on Lumovia.',
+    'Explore the most popular film and television directors. Browse their profiles, filmographies, and discover the movies and shows they directed — all free on Lumovia.',
   alternates: { canonical: pageUrl },
   openGraph: {
     type: 'website',
     url: pageUrl,
     title: 'Popular Directors | Lumovia',
-    description: 'Browse the top 60 most popular film and TV directors. Discover their profiles, best-known titles, and complete filmographies on Lumovia.',
+    description: 'Browse the most popular film and TV directors. Discover their profiles, best-known titles, and complete filmographies on Lumovia.',
     siteName: 'Lumovia',
     images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }],
   },
   twitter: {
     card: 'summary_large_image' as const,
     title: 'Popular Directors | Lumovia',
-    description: 'Browse the top 60 most popular film and TV directors. Discover their profiles, best-known titles, and complete filmographies on Lumovia.',
+    description: 'Browse the most popular film and TV directors. Discover their profiles, best-known titles, and complete filmographies on Lumovia.',
     images: [`${siteUrl}/og/og-genres.png`],
   },
 };
 
 async function getPopularDirectors(): Promise<TMDBPerson[]> {
+  // TMDB has no dedicated "popular directors" endpoint — this filters
+  // /person/popular (dominated by actors) down to known_for_department ===
+  // 'Directing'. 8 pages (~160 people) only turned up 4-5 directors (audit
+  // finding F-07, "top 60" claim rendering 4 cards); ~50 pages (~1000 people)
+  // reliably finds 40-50. Cheap: this route revalidates hourly, so it's ~50
+  // TMDB calls once/hour in parallel, not per visitor.
+  const PAGES = 50;
   const pages = await Promise.all(
-    [1, 2, 3, 4, 5, 6, 7, 8].map(p =>
+    Array.from({ length: PAGES }, (_, i) => i + 1).map(p =>
       tmdbFetch<TMDBListResponse<TMDBPerson>>('/person/popular', { page: String(p) }).catch(() => null)
     ),
   );
@@ -132,10 +146,10 @@ export default async function DirectorsPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />
 
       <div style={{
         maxWidth: 1200,
@@ -158,7 +172,7 @@ export default async function DirectorsPage() {
           marginBottom: 8,
           maxWidth: 800,
         }}>
-          Discover the top 60 most popular film and television directors, ranked by audience engagement and trend data from TMDB. Click any director to explore their complete filmography, biography, and every project they have helmed.
+          {`Discover the top ${directors.length} most popular film and television directors, ranked by audience engagement and trend data from TMDB. Click any director to explore their complete filmography, biography, and every project they have helmed.`}
         </p>
         <p className="f-crimson" style={{
           fontSize: '.88rem',
@@ -266,7 +280,10 @@ export default async function DirectorsPage() {
             lineHeight: 1.8,
             marginBottom: 12,
           }}>
-            Lumovia&apos;s directors directory highlights the {directors.length} most popular filmmakers currently trending in global entertainment. Directors are the creative visionaries behind every movie and TV show — they shape performances, guide the visual style, and craft the narrative rhythm that makes great stories unforgettable. Our rankings use TMDB&apos;s real-time popularity algorithm to surface the directors audiences are most curious about right now.
+            {/* One template string, not JSX text split around {directors.length} — the split
+                form silently dropped the space before "most" in SSR output ("4most",
+                audit finding F-07). */}
+            {`Lumovia's directors directory highlights the ${directors.length} most popular filmmakers currently trending in global entertainment. Directors are the creative visionaries behind every movie and TV show — they shape performances, guide the visual style, and craft the narrative rhythm that makes great stories unforgettable. Our rankings use TMDB's real-time popularity algorithm to surface the directors audiences are most curious about right now.`}
           </p>
           <p className="f-crimson" style={{
             fontSize: '.88rem',

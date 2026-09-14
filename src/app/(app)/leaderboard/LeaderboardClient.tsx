@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { ClipboardList, Film, Star, Loader2, Trophy, Medal, type LucideIcon } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import Image from 'next/image';
 import { getPosterUrl } from '@/lib/images';
@@ -37,8 +38,8 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
   return <span>{Number.isInteger(target) ? Math.round(count) : count}{suffix}</span>;
 }
 
-function StatCard({ icon, label, value, suffix, color, delay }: {
-  icon: string; label: string; value: number; suffix?: string; color: string; delay: number;
+function StatCard({ icon: Icon, label, value, suffix, color, delay }: {
+  icon: LucideIcon; label: string; value: number; suffix?: string; color: string; delay: number;
 }) {
   return (
     <div className="neo-card s1" style={{
@@ -46,9 +47,9 @@ function StatCard({ icon, label, value, suffix, color, delay }: {
       animation: `card-in .5s ${delay}s both`,
       position: 'relative', overflow: 'hidden',
     }}>
-      <div style={{ position: 'absolute', top: -10, right: -10, fontSize: '3.5rem', opacity: .06, pointerEvents: 'none' }}>{icon}</div>
+      <Icon size={64} style={{ position: 'absolute', top: -10, right: -10, opacity: .06, pointerEvents: 'none' }} />
       <div className="f-cinzel" style={{ fontSize: '.72rem', color,  letterSpacing: '.08em', marginBottom: '.5rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span>{icon}</span> {label}
+        <Icon size={13} /> {label}
       </div>
       <div className="f-cinzel-dec" style={{  fontSize: 'clamp(1.6rem,3vw,2.4rem)', color: '#FFF5E8', lineHeight: 1.2 }}>
         <AnimatedCounter target={value} suffix={suffix || ''} />
@@ -118,7 +119,7 @@ export default function LeaderboardClient() {
   if (loading) {
     return (
       <div className="f-cinzel" style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>
-        <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
+        <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '1rem', color: 'var(--gold)' }}><Loader2 size={28} /></div>
         <div>Loading leaderboard...</div>
       </div>
     );
@@ -127,23 +128,23 @@ export default function LeaderboardClient() {
   return (
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
-        <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>🏆 Community Leaderboard</h1>
+        <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 12 }}><Trophy size={28} color="var(--gold)" /> Community Leaderboard</h1>
         <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>Top rated by Lumovia viewers</p>
       </div>
 
       <div style={{ padding: `0 ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>
         {/* Stat cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(clamp(140px,22vw,200px),1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
-          <StatCard icon="📝" label="Total Ratings" value={totalRatings} color="#FFB347" delay={0} />
-          <StatCard icon="🎬" label="Rated Titles" value={entries.length} color="#8B78FF" delay={0.08} />
+          <StatCard icon={ClipboardList} label="Total Ratings" value={totalRatings} color="#FFB347" delay={0} />
+          <StatCard icon={Film} label="Rated Titles" value={entries.length} color="#8B78FF" delay={0.08} />
           {entries.length > 0 && (
-            <StatCard icon="⭐" label="Highest Rated" value={entries[0].avg_rating} suffix="/10" color="#4ECDC4" delay={0.16} />
+            <StatCard icon={Star} label="Highest Rated" value={entries[0].avg_rating} suffix="/10" color="#4ECDC4" delay={0.16} />
           )}
         </div>
 
         {entries.length === 0 ? (
           <div className="neo-raised" style={{ padding: '3rem 2rem', borderRadius: 16, textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: .3 }}>🏆</div>
+            <Trophy size={48} style={{ marginBottom: '1rem', opacity: .3 }} />
             <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No ratings yet</h3>
             <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.95rem' }}>
               Be the first to rate shows and build the community leaderboard!
@@ -182,7 +183,7 @@ export default function LeaderboardClient() {
                     background: rs.bg, color: rs.color,
                     boxShadow: rank <= 3 ? `0 0 12px ${rs.color}30` : 'none',
                   }}>
-                    {rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : `#${rank}`}
+                    {rank <= 3 ? <Medal size={17} /> : `#${rank}`}
                   </div>
 
                   {/* Poster */}
@@ -194,7 +195,7 @@ export default function LeaderboardClient() {
                     {tmdb?.poster_path ? (
                       <Image src={getPosterUrl({ poster_path: tmdb.poster_path }, 'w92') || ''} alt={title} width={40} height={60} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem', opacity: .3 }}>🎬</div>
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: .3 }}><Film size={16} /></div>
                     )}
                   </div>
 
@@ -220,9 +221,9 @@ export default function LeaderboardClient() {
                      fontSize: '.78rem', fontWeight: 700,
                     color: entry.avg_rating >= 8 ? '#4ECDC4' : entry.avg_rating >= 6 ? '#FFB347' : '#FF6B8A',
                     boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.05)',
-                    flexShrink: 0,
+                    flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
                   }}>
-                    ⭐ {entry.avg_rating}
+                    <Star size={12} fill="currentColor" /> {entry.avg_rating}
                   </div>
                 </div>
               );

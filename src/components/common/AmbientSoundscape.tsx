@@ -17,24 +17,27 @@ const MOOD_COLORS: Record<string, string> = {
 };
 
 export default function AmbientSoundscape({ mood }: { mood?: string }) {
-  const [selectedMood, setSelectedMood] = useState(() => {
-    if (typeof window === 'undefined') return mood || 'Chill';
-    try {
-      const saved = localStorage.getItem('lumina-soundscape');
-      if (saved) { const data = JSON.parse(saved); return data.mood || mood || 'Chill'; }
-    } catch {}
-    return mood || 'Chill';
-  });
-  const [playing, setPlaying] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const saved = localStorage.getItem('lumina-soundscape');
-      if (saved) { const data = JSON.parse(saved); return !!data.enabled; }
-    } catch {}
-    return false;
-  });
+  // Resolve saved mood/enabled state after mount — a localStorage-derived
+  // initial value made the first client render ("ON", colored) differ from SSR
+  // (always "OFF", since the server never sees localStorage) → hydration
+  // mismatch for anyone who'd previously turned the soundscape on.
+  const [selectedMood, setSelectedMood] = useState(() => mood || 'Chill');
+  const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.15);
   const [panelOpen, setPanelOpen] = useState(false);
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- deliberate: localStorage read after mount to avoid a hydration mismatch */
+    try {
+      const saved = localStorage.getItem('lumina-soundscape');
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.mood) setSelectedMood(data.mood);
+        if (data.enabled) setPlaying(true);
+      }
+    } catch { /* ignore */ }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
   const ctxRef = useRef<AudioContext | null>(null);
   const nodesRef = useRef<{ oscs: (OscillatorNode | AudioBufferSourceNode)[]; gains: GainNode[]; master: GainNode } | null>(null);
 

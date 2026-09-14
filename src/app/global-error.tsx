@@ -1,5 +1,6 @@
 'use client';
 import { useEffect } from 'react';
+import { AlertTriangle, RotateCw } from 'lucide-react';
 
 export default function GlobalError({
   error,
@@ -27,7 +28,7 @@ export default function GlobalError({
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem',
             boxShadow: '8px 8px 24px rgba(0,0,0,.82), -4px -4px 11px rgba(45,25,90,.28), inset 0 1.5px 0 rgba(255,255,255,.048)',
           }}>
-            ⚠
+            <AlertTriangle size={32} color="currentColor" />
           </div>
           <h2 style={{
             fontFamily: "'Cinzel', serif", fontSize: '1.6rem',
@@ -46,9 +47,10 @@ export default function GlobalError({
               color: '#05020A',
               background: 'linear-gradient(175deg, #FFE566 0%, #FFB347 26%, #FF8C00 66%, #E07200 100%)',
               boxShadow: 'inset 0 1.5px 1.5px rgba(255,255,255,.55), 0 6px 0 #7A3800, 0 9px 22px rgba(255,140,0,.52)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
             }}
           >
-            ↻ Try Again
+            <RotateCw size={16} /> Try Again
           </button>
         </div>
       </body>

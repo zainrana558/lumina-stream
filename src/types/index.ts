@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import { TMDB_GENRE_ID_MAP } from '@/config/genres';
 
 export interface Show {
@@ -29,19 +30,20 @@ export interface ColorScheme {
   bg: string;
   acc: string;
   base: string;
-  em: string;
+  /** lucide-react icon component — was a raw emoji string */
+  icon: LucideIcon;
 }
 
 export interface GenreCard {
   key: string;
   name: string;
-  em: string;
+  icon: LucideIcon;
   col: string;
   tc: string;
 }
 
 export interface Mood {
-  em: string;
+  icon: LucideIcon;
   name: string;
   col: string;
 }

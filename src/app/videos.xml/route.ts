@@ -1,6 +1,7 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetchPages } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
+import { getStableLastmods } from '@/lib/sitemap-lastmod';
 import { mediaUrl } from '@/lib/slug';
 import { fallbackUrl, escXml } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
@@ -84,6 +85,11 @@ export async function GET() {
       })
     );
 
+    const fulfilledItems = videoEntries
+      .filter((e): e is PromiseFulfilledResult<{ item: TMDBMediaItem; ytVideos: TMDBVideo[] }> => e.status === 'fulfilled' && !!e.value && e.value.ytVideos.length > 0)
+      .map(e => e.value.item);
+    const lastmods = await getStableLastmods('videos', fulfilledItems.map(item => item.id));
+
     const urls: string[] = [];
     for (const entry of videoEntries) {
       if (entry.status !== 'fulfilled' || !entry.value) continue;
@@ -98,7 +104,7 @@ export async function GET() {
       const vid = ytVideos[0];
       const thumbnailUrl = `https://img.youtube.com/vi/${vid.key}/maxresdefault.jpg`;
       const thumbnailFallback = `https://img.youtube.com/vi/${vid.key}/hqdefault.jpg`;
-      urls.push(`<url>\n<loc>${pageUrl}</loc>\n<lastmod>${now}</lastmod>\n<video:video>\n<video:thumbnail_loc>${escXml(thumbnailUrl)}</video:thumbnail_loc>\n<video:title>${title} - ${escXml(vid.name)}</video:title>\n<video:description>Watch the ${vid.type.toLowerCase()} for ${title}${year ? ` (${year})` : ''} on Lumovia. ${title} is available to explore with cast details, ratings, episode guides, and similar title recommendations.</video:description>\n<video:content_loc>https://www.youtube.com/watch?v=${vid.key}</video:content_loc>\n<video:player_loc>https://www.youtube.com/embed/${vid.key}?rel=0&modestbranding=1</video:player_loc>\n<video:publication_date>${item.release_date || item.first_air_date || now}</video:publication_date>\n<video:family_friendly>yes</video:family_friendly>\n<video:live>no</video:live>\n</video:video>\n</url>`);
+      urls.push(`<url>\n<loc>${pageUrl}</loc>\n<lastmod>${lastmods[item.id] || now}</lastmod>\n<video:video>\n<video:thumbnail_loc>${escXml(thumbnailUrl)}</video:thumbnail_loc>\n<video:title>${title} - ${escXml(vid.name)}</video:title>\n<video:description>Watch the ${vid.type.toLowerCase()} for ${title}${year ? ` (${year})` : ''} on Lumovia. ${title} is available to explore with cast details, ratings, episode guides, and similar title recommendations.</video:description>\n<video:content_loc>https://www.youtube.com/watch?v=${vid.key}</video:content_loc>\n<video:player_loc>https://www.youtube.com/embed/${vid.key}?rel=0&modestbranding=1</video:player_loc>\n<video:publication_date>${item.release_date || item.first_air_date || now}</video:publication_date>\n<video:family_friendly>yes</video:family_friendly>\n<video:live>no</video:live>\n</video:video>\n</url>`);
     }
 
     const body = urls.length > 0 ? urls.join('\n\n') : fallbackUrl(CANONICAL_BASE, now);

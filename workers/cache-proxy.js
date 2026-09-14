@@ -6,8 +6,6 @@
  *
  * Responsibilities:
  *   - Proxy all requests to Vercel origin
- *   - Strip X-Frame-Options only (NOT Content-Security-Policy — CSP controls
- *     frame-src for embed players, stripping it removes XSS protection)
  *   - Strip Vercel-internal headers (age, x-vercel-cache, x-vercel-id)
  *   - Forward real client IP via x-forwarded-for (needed for rate limiting)
  *   - Retry on Vercel 5xx errors (cold starts and transient errors)
@@ -33,8 +31,12 @@ const CF_REQUEST_HEADERS_TO_DROP = new Set([
 ]);
 
 // ─── Response headers to REMOVE before sending to browser ─────────────────
+// x-frame-options is deliberately NOT in this list (it used to be — that was
+// based on a mix-up: X-Frame-Options only governs whether Lumovia's OWN pages
+// can be framed BY another site, not what Lumovia embeds — the video players
+// are controlled by CSP's separate frame-src directive, untouched by this).
+// Stripping it left Lumovia framable/clickjackable by anyone.
 const RESPONSE_HEADERS_TO_DROP = new Set([
-  'x-frame-options',   // INTENTIONAL — allows video iframes in detail pages
   'age',               // Prevents browser treating response as stale cached content
   'x-vercel-cache',    // Vercel internals
   'x-vercel-id',       // Vercel internals
@@ -129,6 +131,14 @@ function getCacheTTL(pathname, status, responseHeaders) {
   if (isStaticAsset(pathname)) return EDGE_TTL_STATIC;
   if (isMutatingApi(pathname)) return 0;
 
+  // Honor an explicit "don't store" from the origin. The Next middleware marks
+  // every auth-gated / per-user response this way (private, no-store). Without
+  // this check the worker would cache it under a URL-only key and serve one
+  // user's watchlist / settings / post-login redirect to everyone else.
+  const cc = (responseHeaders.get('cache-control') || '').toLowerCase();
+  const cdncc = (responseHeaders.get('cdn-cache-control') || '').toLowerCase();
+  if (/no-store|private/.test(cc) || /no-store|private/.test(cdncc)) return 0;
+
   // API routes: use X-Cache-Category header from the API route
   // (Vercel strips s-maxage from API responses, so we can't rely on Cache-Control)
   if (pathname.startsWith('/api/')) {
@@ -142,7 +152,7 @@ function getCacheTTL(pathname, status, responseHeaders) {
   return EDGE_TTL_PAGE;
 }
 
-export default {
+const worker = {
   async fetch(request, env, ctx) {
     const VERCEL_ORIGIN = env.VERCEL_ORIGIN || DEFAULT_VERCEL_ORIGIN;
     const VERCEL_HOST   = new URL(VERCEL_ORIGIN).hostname;
@@ -156,6 +166,8 @@ export default {
     }
   },
 };
+
+export default worker;
 
 async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
   const incomingUrl = new URL(request.url);
@@ -178,6 +190,14 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
     }
   }
   forwardHeaders.set('host', VERCEL_HOST);
+  // Next.js's built-in Server Actions origin check compares the browser's
+  // real `Origin` header against `x-forwarded-host` (falling back to the raw
+  // `Host` header when absent). Host here is necessarily the private
+  // sslip.io origin name (see the port/protocol comment above), which never
+  // matches — every Server Action request was being rejected with "Invalid
+  // Server Actions request" (confirmed live in prod.log). Forward the
+  // public-facing host the client actually connected to instead.
+  forwardHeaders.set('x-forwarded-host', incomingUrl.hostname);
 
   const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-real-ip') || '127.0.0.1';
   const existingChain = request.headers.get('x-forwarded-for');
@@ -201,7 +221,16 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
   let response = await fetch(forwardRequest);
 
   // ── Retry on 5xx ────────────────────────────────────────────────────
-  if (response.status >= 500 && response.status <= 504) {
+  // GET/HEAD/OPTIONS only: request.body is a ReadableStream that
+  // buildRequest() already consumed building forwardRequest above — handing
+  // the same (now-locked) stream to a second Request throws, which the
+  // caller's try/catch turns into an opaque 502 "Origin unreachable" that
+  // hid the origin's real error. Retrying a POST/PATCH/DELETE automatically
+  // is also unsafe in general (could double-submit a non-idempotent
+  // mutation), so bodied requests just pass through the origin's real
+  // response instead of retrying.
+  const isBodyless = ['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase());
+  if (isBodyless && response.status >= 500 && response.status <= 504) {
     const retryUrl = new URL(targetUrl.toString());
     retryUrl.searchParams.set('_nocache', String(Date.now()));
     response = await fetch(buildRequest(retryUrl.toString(), request, forwardHeaders));
@@ -254,26 +283,13 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
   // Needed for: HTML pages (chunked from Vercel) + API data (JSON).
   // Static assets already have Content-Length and are cached by CDN-Cache-Control.
   if (ttl > 0 && !isStaticAsset(pathname) && request.method === 'GET') {
-    let body = await response.arrayBuffer();
+    const body = await response.arrayBuffer();
 
-    // ── SEO: Inject canonical link for HTML pages on proxy domain ──
-    // When the page is served via the proxy domain (e.g. cache-proxy.workers.dev),
-    // inject a <link rel="canonical"> pointing to the Vercel origin so Google
-    // treats the proxy URL as a duplicate of the canonical Vercel URL.
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('text/html') && incomingUrl.hostname !== VERCEL_HOST) {
-      const decoder = new TextDecoder('utf-8', { fatal: false });
-      let html = decoder.decode(body);
-      const canonicalUrl = `${VERCEL_ORIGIN}${pathname}`;
-      const canonicalTag = `<link rel="canonical" href="${canonicalUrl}">`;
-      // Insert after <head> or at the start if no <head>
-      if (html.includes('<head')) {
-        html = html.replace('<head', `<head\n  ${canonicalTag}`);
-      } else {
-        html = canonicalTag + html;
-      }
-      body = new TextEncoder().encode(html).buffer;
-    }
+    // NOTE: the Next app emits its own <link rel="canonical"> on every page
+    // (driven by NEXT_PUBLIC_SITE_URL). The proxy must NOT inject a second
+    // canonical — the origin here is a private box hostname that must never be
+    // advertised to search engines, and a duplicate/ conflicting canonical
+    // hurts indexing. HTML passes through untouched.
 
     responseHeaders.set('Content-Length', body.byteLength.toString());
     responseHeaders.delete('Transfer-Encoding');

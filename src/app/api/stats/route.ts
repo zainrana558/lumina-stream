@@ -132,12 +132,36 @@ export async function GET(request: NextRequest) {
       ? Math.round((ratingsData.reduce((s, r) => s + (r.rating || 0), 0) / ratingsData.length) * 10) / 10
       : 0;
 
+    // Top shows by watch count — the /year-in-review page renders this
+    // (stats.topShows) but this endpoint never returned it, so that field
+    // was always `undefined` and `.slice()` on it crashed the page client-side.
+    const watchCounts = new Map<string, { title: string; poster_path: string | null; media_id: number; media_type: string; count: number }>();
+    (historyData || []).forEach(h => {
+      const key = `${h.media_type}-${h.media_id}`;
+      const existing = watchCounts.get(key);
+      if (existing) existing.count++;
+      else watchCounts.set(key, { title: h.title, poster_path: h.poster_path, media_id: h.media_id, media_type: h.media_type, count: 1 });
+    });
+    // A title with saved progress but no history row yet (still watching) still counts as a view.
+    (progressData || []).forEach(p => {
+      const key = `${p.media_type}-${p.media_id}`;
+      if (!watchCounts.has(key)) {
+        watchCounts.set(key, { title: p.title, poster_path: p.poster_path, media_id: p.media_id, media_type: p.media_type, count: 1 });
+      }
+    });
+    const ratingByKey = new Map((ratingsData || []).map(r => [`${r.media_type}-${r.media_id}`, r.rating]));
+    const topShows = Array.from(watchCounts.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map(s => ({ ...s, rating: ratingByKey.get(`${s.media_type}-${s.media_id}`) }));
+
     const stats = {
       totalHours,
       totalTitles: uniqueTitles.size,
       monthlyData,
       streak,
       recentWatches,
+      topShows,
       avgRating,
       totalRatings: ratingsData?.length || 0,
       totalHistory: historyData?.length || 0,

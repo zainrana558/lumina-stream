@@ -21,7 +21,7 @@ export async function setRating(data: z.infer<typeof ratingSchema>) {
   if (!parsed.success) return { error: "Invalid data" };
 
   // Atomic upsert via single RPC
-  const { error } = await supabase.rpc(
+  let { error } = await supabase.rpc(
     "upsert_rating_atomically",
     {
       p_profile_id: parsed.data.profile_id,
@@ -30,6 +30,26 @@ export async function setRating(data: z.infer<typeof ratingSchema>) {
       p_rating: parsed.data.rating,
     }
   );
+
+  // The live RPC has an ambiguous `profile_id` reference / relies on a
+  // `ratings.updated_at` column that may be absent (fixed in migration 006).
+  // Fall back to a plain upsert so rating a title still works.
+  if (error && /ambiguous|updated_at|does not exist|column reference/i.test(error.message || '')) {
+    const row: Record<string, unknown> = {
+      profile_id: parsed.data.profile_id,
+      media_id: parsed.data.media_id,
+      media_type: parsed.data.media_type,
+      rating: parsed.data.rating,
+    };
+    let up = await supabase.from("ratings").upsert(
+      { ...row, updated_at: new Date().toISOString() },
+      { onConflict: "profile_id,media_id,media_type" },
+    );
+    if (up.error && /updated_at/.test(up.error.message || '')) {
+      up = await supabase.from("ratings").upsert(row, { onConflict: "profile_id,media_id,media_type" });
+    }
+    error = up.error;
+  }
 
   if (error) return { error: error.message };
 

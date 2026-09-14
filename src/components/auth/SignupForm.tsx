@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff, ArrowRight, Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useOAuth } from '@/hooks/useOAuth';
+import { GoogleLogo, GithubLogo } from '@/components/common/BrandIcons';
 
 export default function SignupForm() {
   const router = useRouter();
@@ -35,6 +37,16 @@ export default function SignupForm() {
     setLoading(true);
 
     try {
+      // Server-side gate — checked before the Supabase call so automated
+      // mass account-creation against this form is rate-limited by the app
+      // itself, not only by Supabase Auth's own backend limits.
+      const gate = await fetch('/api/auth/attempt-check', { method: 'POST' });
+      if (!gate.ok) {
+        const data = await gate.json().catch(() => null);
+        setError(data?.error || 'Too many attempts. Please wait a minute before trying again.');
+        return;
+      }
+
       const { data, error: signupError } = await supabase.auth.signUp({
         email,
         password,
@@ -63,7 +75,7 @@ export default function SignupForm() {
       <>
         <div className="auth-form-container" style={{ textAlign: 'center' }}>
           <h2>LUMOVIA</h2>
-          <div className="auth-email-sent-icon">✉️</div>
+          <div className="auth-email-sent-icon"><Mail size={40} strokeWidth={1.5} /></div>
           <p className="auth-email-sent-text">
             Check your email at <span className="auth-email-sent-addr">{email}</span>
             <br />
@@ -91,15 +103,17 @@ export default function SignupForm() {
             className="auth-btn-oauth"
             onClick={() => handleOAuth('google')}
             disabled={loading || oauthLoading}
+            aria-label="Continue with Google"
           >
-            G
+            <GoogleLogo size={17} /> Google
           </button>
           <button
             className="auth-btn-oauth"
             onClick={() => handleOAuth('github')}
             disabled={loading || oauthLoading}
+            aria-label="Continue with GitHub"
           >
-            ⚡
+            <GithubLogo size={17} /> GitHub
           </button>
         </div>
 
@@ -115,7 +129,7 @@ export default function SignupForm() {
             <input
               className="auth-input"
               type="email"
-              placeholder="you@lumina.stream"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -142,8 +156,9 @@ export default function SignupForm() {
                 className="auth-toggle-pw"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? '🙈' : '👁'}
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
             </div>
           </div>
@@ -167,7 +182,7 @@ export default function SignupForm() {
             type="submit"
             disabled={loading}
           >
-            {loading ? <div className="auth-spinner" /> : 'Begin Dreaming ✦'}
+            {loading ? <div className="auth-spinner" /> : <>Begin Dreaming <ArrowRight size={16} /></>}
           </button>
         </form>
 

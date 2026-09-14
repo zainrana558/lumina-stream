@@ -5,7 +5,10 @@ export default function robots(): MetadataRoute.Robots {
 
   return {
     rules: [
-      // Block aggressive SEO/scraper bots that burn API quota
+      // Block backlink/rank-tracking scrapers — they burn crawl budget and
+      // API quota but feed zero real traffic, search visibility, or AI
+      // citations (they're competitor-research tools, not search/AI
+      // crawlers). Kept blocked.
       { userAgent: 'AhrefsBot',       disallow: '/' },
       { userAgent: 'SemrushBot',      disallow: '/' },
       { userAgent: 'MJ12bot',         disallow: '/' },
@@ -13,13 +16,41 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: 'BLEXBot',         disallow: '/' },
       { userAgent: 'PetalBot',        disallow: '/' },
       { userAgent: 'YandexBot',       disallow: '/' },
-      { userAgent: 'Baiduspider',     disallow: '/' },
-      { userAgent: 'Bytespider',      disallow: '/' },
-      { userAgent: 'GPTBot',          disallow: '/' },
-      { userAgent: 'ClaudeBot',       disallow: '/' },
-      { userAgent: 'anthropic-ai',    disallow: '/' },
-      { userAgent: 'CCBot',           disallow: '/' },
       { userAgent: 'DataForSeoBot',   disallow: '/' },
+      // Previously GPTBot/ClaudeBot/anthropic-ai/CCBot/Baiduspider/Bytespider
+      // were bundled into the scraper blocklist above under the same
+      // "burns quota" rationale — but these are the crawlers that actually
+      // feed ChatGPT, Claude, other CCBot-trained models, Baidu's
+      // search+AI index, and ByteDance's Doubao, i.e. exactly the AI
+      // visibility this site wants. Explicitly allowed below (redundant
+      // with the "*" allow-all default, but explicit is safer than relying
+      // on an unnamed bot falling through to the wildcard rule).
+      {
+        userAgent: [
+          'GPTBot', 'OAI-SearchBot', 'ChatGPT-User',
+          'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'anthropic-ai',
+          'Google-Extended',
+          'PerplexityBot', 'Perplexity-User',
+          'CCBot',
+          'Baiduspider', 'Bytespider',
+        ],
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/auth/',
+          '/embed/',
+          '/stats',
+          '/watchlist',
+          '/profiles',
+          '/select-profile',
+          '/login',
+          '/signup',
+          '/settings',
+          '/collections',
+          '/activity',
+          '/year-in-review',
+        ],
+      },
       {
         userAgent: '*',
         allow: [

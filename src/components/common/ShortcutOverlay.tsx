@@ -2,23 +2,28 @@
 
 import { CS } from '@/styles/themes';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import {
+  CirclePlay, Maximize, RefreshCw, Tv, SkipBack, SkipForward, Layers,
+  Hash, ClipboardList, FolderOpen, ArrowUp, ArrowLeft, MessageCircle, X, Keyboard,
+  type LucideIcon,
+} from 'lucide-react';
 
-const SHORTCUTS = [
-  { key: 'Space / K', action: 'Play / Pause', icon: '⏯' },
-  { key: 'F', action: 'Toggle Fullscreen', icon: '⛶' },
-  { key: 'Tab', action: 'Switch Server', icon: '🔄' },
-  { key: 'P', action: 'Pop-out to PiP', icon: '📺' },
-  { key: '< / >', action: 'Previous / Next Episode', icon: '⏮' },
-  { key: 'N', action: 'Next Episode', icon: '⏭' },
-  { key: 'S / Shift+S', action: 'Next / Previous Season', icon: '📑' },
-  { key: '1 – 9', action: 'Jump to Episode N', icon: '🔢' },
-  { key: 'W', action: 'Toggle My List', icon: '📋' },
-  { key: 'T / Shift+T', action: 'Next / Previous Tab', icon: '📂' },
-  { key: 'G', action: 'Scroll to Top', icon: '⬆' },
-  { key: 'L', action: 'Go Back', icon: '←' },
-  { key: 'C', action: 'Toggle Subtitles', icon: '💬' },
-  { key: 'Escape', action: 'Exit Player', icon: '✕' },
-  { key: '?', action: 'Show / Hide This', icon: '⌨' },
+const SHORTCUTS: { key: string; action: string; icon: LucideIcon }[] = [
+  { key: 'Space / K', action: 'Play / Pause', icon: CirclePlay },
+  { key: 'F', action: 'Toggle Fullscreen', icon: Maximize },
+  { key: 'Tab', action: 'Switch Server', icon: RefreshCw },
+  { key: 'P', action: 'Pop-out to PiP', icon: Tv },
+  { key: '< / >', action: 'Previous / Next Episode', icon: SkipBack },
+  { key: 'N', action: 'Next Episode', icon: SkipForward },
+  { key: 'S / Shift+S', action: 'Next / Previous Season', icon: Layers },
+  { key: '1 – 9', action: 'Jump to Episode N', icon: Hash },
+  { key: 'W', action: 'Toggle My List', icon: ClipboardList },
+  { key: 'T / Shift+T', action: 'Next / Previous Tab', icon: FolderOpen },
+  { key: 'G', action: 'Scroll to Top', icon: ArrowUp },
+  { key: 'L', action: 'Go Back', icon: ArrowLeft },
+  { key: 'C', action: 'Toggle Subtitles', icon: MessageCircle },
+  { key: 'Escape', action: 'Exit Player', icon: X },
+  { key: '?', action: 'Show / Hide This', icon: Keyboard },
 ];
 
 export default function ShortcutOverlay({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -64,7 +69,7 @@ export default function ShortcutOverlay({ visible, onClose }: { visible: boolean
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ width: 28, height: 28, borderRadius: 8, background: `${s.acc}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem' }}>{sc.icon}</span>
+                <span style={{ width: 28, height: 28, borderRadius: 8, background: `${s.acc}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><sc.icon size={14} /></span>
                 <span className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8' }}>{sc.action}</span>
               </div>
               <kbd className="f-mono" style={{

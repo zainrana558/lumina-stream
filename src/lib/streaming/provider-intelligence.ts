@@ -59,6 +59,7 @@ export interface ScoredProvider {
   score: number;         // 0–100
   signals: ProviderSignals;
   replaced?: boolean;
+  noSandbox?: boolean;
 }
 
 export interface ProviderSignals {
@@ -78,6 +79,7 @@ export interface IntelligenceChain {
     tier: number;
     category: string;
     signals: ProviderSignals;
+    noSandbox?: boolean;
   }>;
   total: number;
   selectionTimeMs: number;
@@ -90,61 +92,50 @@ export interface IntelligenceChain {
 // Curated pools with recommended providers per content category.
 // Providers not in the active list are silently skipped.
 
+// Names must match src/lib/streaming/providers.ts — this pool filter is a
+// SEPARATE allowlist from activeProviders there; a provider missing here is
+// silently dropped even if it's active and working (confirmed live: a
+// provider correctly in providers.ts and passing every sandbox test still
+// never appeared in the player's dropdown until this list was updated too).
+// Full re-sweep 2026-09-14.
+const GENERAL_PROVIDERS = [
+  // Tier 1 — confirmed working end-to-end through the REAL app (real
+  // origin, real CSP, real IntelligentPlayer sandbox), not just an isolated
+  // test harness — verified for both movie and TV.
+  'VidLux', 'Vidzy',
+  // Tier 2 — currently sandbox-blocked (explicit "disable sandbox" rejection
+  // screens, confirmed via screenshot) or, for 111Movies, confirmed broken
+  // specifically in the real app's origin context despite passing an
+  // isolated file://-origin test — kept as lower-priority fallbacks; this
+  // ecosystem's domains/behavior churn constantly.
+  '111Movies', 'VidCore', 'VidFast', 'VidLink', 'VidSrc CC', 'Videasy',
+  'VidSrc IO', 'VidSrc PM', '2Embed', 'MoviesAPI',
+  // Tier 3 — noSandbox required (own JS refuses to play in ANY sandboxed
+  // iframe). Gated behind EmbedResult.noSandbox + the on-screen warning in
+  // IntelligentPlayer; kept last so it's never the default pick.
+  'VidNest',
+];
+
 const MOVIE_POOL: ProviderPool = {
   name: 'movies',
   category: 'movie',
-  providers: [
-    // Tier 1 — confirmed working (2026-07-07)
-    'VidSrc SU', 'VidSrc RU', 'VidSrc IO',
-    'VidCore',
-    // Tier 2 — confirmed working (2026-07-07)
-    'Nontongo',
-    'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
-    'AutoEmbed', 'StreamSilk', 'Series9API', 'VidSrc FYI',
-    'AnyEmbed', 'VaPlayer',
-    '2Embed', 'VidSrc MOV',
-    'FilmU', 'VidSrc.pm',
-    'FileMoon', 'VidLink',
-  ],
+  providers: [...GENERAL_PROVIDERS],
 };
 
 const ANIME_POOL: ProviderPool = {
   name: 'anime',
   category: 'anime',
   providers: [
-    // Anime-dedicated Tier 1 (shown first in dropdown)
-    'Cinezo Anime (Sub)', 'Cinezo Anime (Dub)',
-    'VidSrc WIN Anime',
-    // General Tier 1 — confirmed working (2026-07-07)
-    'VidSrc SU', 'VidSrc RU', 'VidSrc IO',
-    'VidCore',
-    // General Tier 2 — confirmed working (2026-07-07)
-    'Nontongo',
-    'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
-    'AutoEmbed', 'StreamSilk', 'Series9API', 'VidSrc FYI',
-    'AnyEmbed', 'VaPlayer',
-    '2Embed', 'VidSrc MOV',
-    'FilmU', 'VidSrc.pm',
-    'FileMoon', 'VidLink',
+    'Cinezo Anime (Sub)', 'Cinezo Anime (Dub)', 'VidSrc CC Anime', '2Embed Anime',
+    ...GENERAL_PROVIDERS,
+    'VidNest Anime',
   ],
 };
 
 const TV_POOL: ProviderPool = {
   name: 'tv',
   category: 'tv',
-  providers: [
-    // Tier 1 — confirmed working (2026-07-07)
-    'VidSrc SU', 'VidSrc RU', 'VidSrc IO',
-    'VidCore',
-    // Tier 2 — confirmed working (2026-07-07)
-    'Nontongo',
-    'VidSrcMe RU', 'VidSrcMe SU', 'VidSrc-Me RU', 'VidSrc-Me SU',
-    'AutoEmbed', 'StreamSilk', 'Series9API', 'VidSrc FYI',
-    'AnyEmbed', 'VaPlayer',
-    '2Embed', 'VidSrc MOV',
-    'FilmU', 'VidSrc.pm',
-    'FileMoon', 'VidLink',
-  ],
+  providers: [...GENERAL_PROVIDERS],
 };
 
 // ── Provider Capabilities ──
@@ -153,63 +144,34 @@ const TV_POOL: ProviderPool = {
 const PROVIDER_CAPABILITIES: Record<string, {
   subtitleSupport: number;
   quality: number;
-  avgSpeed: number;  // 0–1 estimated, updated by health monitor
+  avgSpeed: number;  // 0-1 estimate, nudged by the health monitor
 }> = {
-  'VidSrc SU':        { subtitleSupport: 0.8, quality: 0.85, avgSpeed: 0.7 },
-  'Embed.su':         { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.8 },
-  'VidSrc RU':        { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.7 },
-  'VidSrc CC':        { subtitleSupport: 0.8, quality: 0.9, avgSpeed: 0.7 },  // proxied
-  'VidSrc.to':        { subtitleSupport: 0.8, quality: 0.9, avgSpeed: 0.7 },  // proxied
-  'MultiEmbed':       { subtitleSupport: 0.6, quality: 0.8, avgSpeed: 0.6 }, // proxied
-  'TVPizza':         { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 }, // proxied
-  'LordFlix':        { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 }, // proxied
-  'VidSrc.me':        { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.6 },
-  'Nontongo':         { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
-  'MoviesApi.to':     { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.6 },
-  'HDStream':        { subtitleSupport: 0.4, quality: 0.75, avgSpeed: 0.6 },
-  'VidSrc PRO':       { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.7 },
-  'VidSrc DEV':       { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
-  // StreamX-Omega providers
-  'VidLink':          { subtitleSupport: 0.7, quality: 0.8, avgSpeed: 0.7 },
-  'AnyEmbed':         { subtitleSupport: 0.6, quality: 0.8, avgSpeed: 0.7 },
-  'Videasy Player':   { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.6 },
-  'VaPlayer':         { subtitleSupport: 0.3, quality: 0.7, avgSpeed: 0.5 },
-  '2Embed':           { subtitleSupport: 0.5, quality: 0.75, avgSpeed: 0.6 },
-  'VidSrc MOV':       { subtitleSupport: 0.5, quality: 0.75, avgSpeed: 0.6 },
-  'VidNest':          { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
-  '111Movies':        { subtitleSupport: 0.3, quality: 0.65, avgSpeed: 0.5 },
-  'VidFast':          { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.7 },
-  // Non-vidsrc diversity providers
-  'VidSrc PM':        { subtitleSupport: 0.4, quality: 0.65, avgSpeed: 0.5 },
-  'StreamWish':       { subtitleSupport: 0.3, quality: 0.7, avgSpeed: 0.5 },
-  'AutoEmbed':        { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
-  'SuperEmbed':       { subtitleSupport: 0.6, quality: 0.8, avgSpeed: 0.6 },
-  'VidSrc FYI':       { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
-  'Videasy':          { subtitleSupport: 0.3, quality: 0.6, avgSpeed: 0.4 },
-  'VidSrc WIN Anime': { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.9 },
-  // Anime-dedicated providers (Cinezo: AniList-native, sub/dub, multi-language)
-  'Cinezo Anime (Sub)': { subtitleSupport: 1.0, quality: 0.85, avgSpeed: 0.7 },
-  'Cinezo Anime (Dub)':  { subtitleSupport: 1.0, quality: 0.85, avgSpeed: 0.8 },
-  // Discovered providers
-  'FilmU':          { subtitleSupport: 0.5, quality: 0.8, avgSpeed: 0.6 },
-  'VidSrc.pm':      { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
-  'VidSrc.dev':     { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.5 },
-  'VidSrc.link':    { subtitleSupport: 0.5, quality: 0.7, avgSpeed: 0.4 },
-  'VidPhantom':     { subtitleSupport: 0.5, quality: 0.75, avgSpeed: 0.6 },
-  'StreamSilk':     { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
-  'FileMoon':       { subtitleSupport: 0.3, quality: 0.7, avgSpeed: 0.3 },
-  // Core providers (2026-07-06+)
-  'VidCore':        { subtitleSupport: 0.9, quality: 0.9, avgSpeed: 0.7 },
-  'Series9API':     { subtitleSupport: 0.4, quality: 0.7, avgSpeed: 0.5 },
-  // New/recovered replacement pool providers (2026-07-07)
-  'VidBinge':       { subtitleSupport: 0.5, quality: 0.75, avgSpeed: 0.8 },
-  'VidSrc IN':      { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.6 },
-  // Legacy — kept for replacement pool reference
-  'VidPlus':        { subtitleSupport: 0.8, quality: 0.85, avgSpeed: 0.7 },
-  'VidPlus Anime (Sub)': { subtitleSupport: 0.9, quality: 0.85, avgSpeed: 0.7 },
-  'VidPlus Anime (Dub)': { subtitleSupport: 0.9, quality: 0.85, avgSpeed: 0.7 },
-  'Vidify':         { subtitleSupport: 0.7, quality: 0.85, avgSpeed: 0.6 },
-  'SmashyStream':   { subtitleSupport: 0.8, quality: 0.85, avgSpeed: 0.6 },
+  // Active set — 2026-09-10 sweep
+  'VidCore':            { subtitleSupport: 0.9,  quality: 0.9,  avgSpeed: 0.75 },
+  'VidFast':            { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.8 },
+  'VidLink':            { subtitleSupport: 0.75, quality: 0.85, avgSpeed: 0.8 },
+  'VidSrc CC':          { subtitleSupport: 0.8,  quality: 0.9,  avgSpeed: 0.7 },
+  'VidSrc CC Anime':    { subtitleSupport: 0.8,  quality: 0.85, avgSpeed: 0.7 },
+  'Videasy':            { subtitleSupport: 0.6,  quality: 0.8,  avgSpeed: 0.75 },
+  'VidSrc IO':          { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.7 },
+  'VidSrc PM':          { subtitleSupport: 0.5,  quality: 0.7,  avgSpeed: 0.6 },
+  '2Embed':             { subtitleSupport: 0.6,  quality: 0.75, avgSpeed: 0.6 },
+  '2Embed Anime':       { subtitleSupport: 0.6,  quality: 0.75, avgSpeed: 0.6 },
+  'MoviesAPI':          { subtitleSupport: 0.4,  quality: 0.75, avgSpeed: 0.7 },
+  'VidLux':             { subtitleSupport: 0.5,  quality: 0.75, avgSpeed: 0.7 },
+  'Cinezo Anime (Sub)': { subtitleSupport: 1.0,  quality: 0.85, avgSpeed: 0.7 },
+  'Cinezo Anime (Dub)': { subtitleSupport: 1.0,  quality: 0.85, avgSpeed: 0.8 },
+  // noSandbox — high playback quality but a weaker-trust embed (own JS
+  // demands sandbox removal), so quality is rated well but not top-of-pool.
+  'VidNest':            { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.65 },
+  'VidNest Anime':      { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.65 },
+  // Replacement-pool hints
+  'VidSrc SU':          { subtitleSupport: 0.8,  quality: 0.85, avgSpeed: 0.7 },
+  'VidSrc RU':          { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.7 },
+  'VSrcEmbed':          { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.7 },
+  'Vid-Src Top':        { subtitleSupport: 0.5,  quality: 0.8,  avgSpeed: 0.6 },
+  'VidRock':            { subtitleSupport: 0.4,  quality: 0.7,  avgSpeed: 0.6 },
+  'SmashyStream':       { subtitleSupport: 0.6,  quality: 0.8,  avgSpeed: 0.6 },
 };
 
 // ── Dynamic speed cache (updated by health monitor) ──
@@ -379,6 +341,7 @@ function scoreProviderIntelligent(
       learnedBonus,
     },
     replaced: provider.replaced,
+    noSandbox: provider.noSandbox,
   };
 }
 
@@ -648,6 +611,10 @@ export async function selectWithIntelligence(options: {
           }
         }
 
+        // Re-sort: probe boosts/penalties above changed scores, and `rescored`
+        // was rebuilt in pool order (not score order). Without this the failover
+        // chain ignores the probe results it just computed.
+        rescored.sort((a, b) => b.score - a.score);
         scored = rescored;
       } // end if (topCandidates.length > 0)
     } catch {
@@ -663,6 +630,7 @@ export async function selectWithIntelligence(options: {
     tier: s.tier,
     category: s.category,
     signals: s.signals,
+    noSandbox: s.noSandbox,
   }));
 
   // Emit selection metrics (fire-and-forget)

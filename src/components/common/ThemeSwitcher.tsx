@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { Check, Palette } from 'lucide-react';
 import { CS } from '@/styles/themes';
 
 const THEME_NAMES = ['Moon', 'Lightning', 'Leaf', 'Fire', 'Ocean', 'Spark', 'Sunrise', 'Galaxy'] as const;
@@ -66,7 +67,7 @@ export default function ThemeSwitcher() {
             : undefined,
         }}
       >
-        🎨
+        <Palette size={18} />
       </button>
 
       {/* Palette panel */}
@@ -110,7 +111,7 @@ export default function ThemeSwitcher() {
                 }
               }}
             >
-              {active === i ? '✓' : ''}
+              {active === i ? <Check size={14} /> : null}
             </button>
           ))}
           <div className="f-cinzel" style={{

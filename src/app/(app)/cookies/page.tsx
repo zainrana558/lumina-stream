@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
@@ -9,7 +10,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/cookies`;
 
 export const metadata: Metadata = {
-  title: 'Cookie Policy - Lumovia',
+  title: 'Cookie Policy',
   description: 'Lumovia cookie policy. Learn about essential Supabase auth cookies, third-party embed cookies, local storage usage, and how to manage your cookie preferences.',
   alternates: { canonical: pageUrl },
   openGraph: { type: 'website', url: pageUrl, title: 'Cookie Policy - Lumovia', description: 'Learn how Lumovia uses cookies and local storage.', siteName: 'Lumovia', images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }] },
@@ -33,18 +34,18 @@ const webPageJsonLd = {
   url: pageUrl,
   isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   datePublished: '2026-07-07',
-  dateModified: '2026-07-07',
+  dateModified: '2026-09-14',
 };
 
 export default function CookiePolicyPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(webPageJsonLd) }} />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 60px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#FFF5E8', marginBottom: 16, letterSpacing: '.02em' }}>Cookie Policy</h1>
-        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 12 }}>Last updated: July 7, 2026</p>
-        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 48 }}>Effective date: July 7, 2026</p>
+        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 12 }}>Last updated: September 14, 2026</p>
+        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 48 }}>Effective date: September 14, 2026</p>
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>1. Introduction</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
@@ -77,7 +78,10 @@ export default function CookiePolicyPage() {
 
         <h2 className="f-cinzel" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.6rem)', color: '#FFF5E8', marginBottom: 20 }}>5. Third-Party Cookies</h2>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 12 }}>
-          When you use the video player on Lumovia, the embedded streaming provider (such as vidsrc.fyi, vidsrc.pm, autoembed.co, and others) may set its own cookies on your device. These cookies are governed by the respective provider&apos;s cookie and privacy policies, not ours.
+          When you use the video player on Lumovia, the embedded streaming provider (such as vidlux.xyz, vidzy.org, vidlink.pro, vidsrc.pm, vidfast.vc, and others — the specific set in active rotation changes over time as we monitor provider reliability) may set its own cookies on your device. These cookies are governed by the respective provider&apos;s cookie and privacy policies, not ours.
+        </p>
+        <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
+          Most embedded players run inside a restricted browser sandbox that blocks pop-ups and prevents the embed from redirecting your tab. A small number of lower-priority providers require that restriction to be relaxed in order to play video at all; when one of those is active, an on-screen warning is shown, and any tab or page that opens unexpectedly should be treated as untrusted and closed. See our <Link href="/disclaimer" style={{ color: '#FFB347' }}>Disclaimer</Link> for details.
         </p>
         <p className="f-crimson" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 32 }}>
           Additionally, Cloudflare may set <strong style={{ color: '#FFB347' }}>cf_clearance</strong> cookies as part of DDoS protection and bot mitigation. These cookies are necessary for the Service to remain accessible and are set at the infrastructure level. We do not control the behavior of these third-party cookies. If you wish to understand or manage them, you should consult the respective provider&apos;s own policy documentation.

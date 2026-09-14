@@ -1,4 +1,5 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE, TMDB_IMAGE_BASE } from '@/lib/seo/constants';
 import { getFamilyFriendlyAnime, anilistToMediaItem } from '@/lib/anilist/client';
 import type { Metadata } from 'next';
@@ -59,7 +60,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       const paramsMap: Record<string, string> = { with_genres: String(genre.genreId), ...genre.extraParams };
       const data = await tmdbFetch<{ results?: { backdrop_path?: string }[] }>(`/discover/${genre.mediaType}`, { ...paramsMap, page: '1' });
       const backdrop = data.results?.[0]?.backdrop_path;
-      if (backdrop) { ogImageUrl = `${TMDB_IMAGE_BASE}/original${backdrop}`; ogImageWidth = 1200; ogImageHeight = 630; }
+      if (backdrop) { ogImageUrl = `${TMDB_IMAGE_BASE}/w1280${backdrop}`; ogImageWidth = 1200; ogImageHeight = 630; }
     }
   } catch { /* keep fallback */ }
 
@@ -172,7 +173,7 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
         fetchTmdbPages(config.mediaType, {
           with_keywords: '210755',
           sort_by: 'popularity.desc',
-          vote_count_gte: '30',
+          'vote_count.gte': '30',
         }, 3).catch(() => []),
       ]);
 
@@ -224,9 +225,9 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
@@ -258,7 +259,7 @@ export default async function GenrePage({ params }: { params: Promise<{ slug: st
                     fontSize: '.82rem',
                     transition: 'background .2s, border-color .2s',
                   }}>
-                    <span style={{ fontSize: '1.1rem' }}>{cfg.em}</span>
+                    <cfg.icon size={17} />
                     <span>{cfg.name}</span>
                   </a>
                 );

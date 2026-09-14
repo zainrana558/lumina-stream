@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { X, Maximize2 } from 'lucide-react';
 
 interface PipPlayerProps {
   url: string;
@@ -133,7 +134,7 @@ export default function PipPlayer({ url, title, episodeInfo, onClose, onExpand }
           transition: 'color .2s',
         }} onMouseEnter={(e) => { e.currentTarget.style.color = '#FF6B8A'; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,245,232,.5)'; }}>
-          ✕
+          <X size={12} />
         </button>
         <button onClick={onExpand} style={{
           width: 20, height: 20, borderRadius: 4, border: 'none', cursor: 'pointer',
@@ -142,7 +143,7 @@ export default function PipPlayer({ url, title, episodeInfo, onClose, onExpand }
           transition: 'color .2s',
         }} onMouseEnter={(e) => { e.currentTarget.style.color = '#FFB347'; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,245,232,.5)'; }}>
-          ⤢
+          <Maximize2 size={13} />
         </button>
       </div>
 

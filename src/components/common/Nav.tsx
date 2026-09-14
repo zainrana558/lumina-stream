@@ -1,7 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Menu, Search, Keyboard, User as UserIcon, ChevronDown,
+  Home, Compass, TrendingUp, Tags, Trophy, Bookmark, Library,
+  Activity as ActivityIcon, BarChart3, Info, Mail, LogIn, UserPlus,
+} from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import type { UserProfile } from '@/contexts/AppContext';
 import NotificationBell from '@/components/common/NotificationBell';
@@ -17,7 +22,7 @@ interface NavProps {
   onShowShortcuts?: () => void;
 }
 
-export default function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }: NavProps) {
+function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }: NavProps) {
   const router = useRouter();
   const [drop, setDrop] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,22 +65,24 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
   const displayEmail = user?.email || '';
 
   const menuItems = [
-    { key: 'home', label: 'Home' },
-    { key: 'shows', label: 'Browse' },
-    { key: 'trending', label: 'Trending' },
-    { key: 'genre', label: 'Genres' },
-    { key: 'leaderboard', label: 'Leaderboard' },
-    { key: 'watchlist', label: 'Watchlist' },
-    { key: 'collections', label: 'Collections' },
-    { key: 'activity', label: 'Activity' },
-    { key: 'stats', label: 'Stats' },
-    { key: 'about', label: 'About' },
-    { key: 'contact', label: 'Contact' },
+    { key: 'home', label: 'Home', icon: Home },
+    { key: 'shows', label: 'Browse', icon: Compass },
+    { key: 'trending', label: 'Trending', icon: TrendingUp },
+    { key: 'genre', label: 'Genres', icon: Tags },
+    { key: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+    { key: 'watchlist', label: 'Watchlist', icon: Bookmark },
+    { key: 'collections', label: 'Collections', icon: Library },
+    { key: 'activity', label: 'Activity', icon: ActivityIcon },
+    { key: 'stats', label: 'Stats', icon: BarChart3 },
+    { key: 'about', label: 'About', icon: Info },
+    { key: 'contact', label: 'Contact', icon: Mail },
   ] as const;
 
   const ROUTER_ONLY = new Set(['genre', 'leaderboard', 'trending', 'about', 'contact', 'faq', 'blog', 'news', 'actors', 'directors', 'studios', 'countries', 'languages', 'reviews', 'coming-soon', 'movies', 'tv-shows']);
 
   const ROUTE_MAP: Record<string, string> = {
+    home: '/',
+    shows: '/browse',
     genre: '/genres',
     leaderboard: '/leaderboard',
     trending: '/trending',
@@ -117,8 +124,8 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
-          style={{ display: 'none', width: 44, height: 44, fontSize: '1rem', alignItems: 'center', justifyContent: 'center' }}
-        >=</button>
+          style={{ display: 'none', width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+        ><Menu size={19} /></button>
         <div onClick={() => go('home')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') go('home'); }} style={{ cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}>
           <span className="logo" style={{ fontSize: 'clamp(1.05rem,2vw,1.35rem)' }}>LUMOVIA</span>
           <span className="f-cinzel" style={{ fontSize: '.42rem', letterSpacing: '.35em', color: 'rgba(255,179,71,.5)', display: 'block', textAlign: 'right',  marginTop: -2 }}>STREAM</span>
@@ -145,9 +152,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
             style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
           >
             Genres
-            <svg width="10" height="6" viewBox="0 0 10 6" style={{ transition: 'transform .2s', transform: genreDrop ? 'rotate(180deg)' : 'rotate(0)' }}>
-              <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <ChevronDown size={13} style={{ transition: 'transform .2s', transform: genreDrop ? 'rotate(180deg)' : 'rotate(0)' }} />
           </span>
           {genreDrop && (
             <div
@@ -188,7 +193,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
-                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: g.color, flexShrink: 0 }} />
+                  <g.icon size={14} color={g.color} style={{ flexShrink: 0 }} />
                   <span className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.06em', color: '#FFF5E8' }}>{g.label}</span>
                 </div>
               ))}
@@ -211,9 +216,7 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
             style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
           >
             More
-            <svg width="10" height="6" viewBox="0 0 10 6" style={{ transition: 'transform .2s', transform: moreDrop ? 'rotate(180deg)' : 'rotate(0)' }}>
-              <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <ChevronDown size={13} style={{ transition: 'transform .2s', transform: moreDrop ? 'rotate(180deg)' : 'rotate(0)' }} />
           </span>
           {moreDrop && (
             <div
@@ -277,9 +280,9 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
       </div>
 
       <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center' }}>
-        <button className="btn-icon" onClick={openSearch} aria-label="Open search">Search</button>
+        <button className="btn-icon" onClick={openSearch} aria-label="Open search"><Search size={16} /></button>
         <NotificationBell />
-        <button className="btn-icon desktop-only" onClick={() => onShowShortcuts?.()} aria-label="Keyboard shortcuts" style={{ fontSize: '.7rem', opacity: .5 }}>?</button>
+        <button className="btn-icon desktop-only" onClick={() => onShowShortcuts?.()} aria-label="Keyboard shortcuts" style={{ opacity: .6 }}><Keyboard size={16} /></button>
         <div ref={dropRef} style={{ position: 'relative' }}>
           {user ? (
             <>
@@ -335,8 +338,9 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', fontSize: '.9rem',
                   boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)',
+                  color: '#FFF5E8',
                 }}
-              >G</button>
+              ><UserIcon size={18} /></button>
               {drop && (
                 <div className="dropdown" role="menu" aria-label="Guest dropdown">
                   <div style={{ padding: '.85rem 1.1rem', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
@@ -381,19 +385,22 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
               className="dd-item"
               role="menuitem"
               tabIndex={0}
-              style={{ padding: '.85rem clamp(1rem,5vw,3rem)', fontSize: '.8rem' }}
+              style={{ padding: '.85rem clamp(1rem,5vw,3rem)', fontSize: '.8rem', display: 'flex', alignItems: 'center', gap: 12, minHeight: 44 }}
               onClick={() => handleMenuNav(item)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMenuNav(item); } }}
             >
+              <item.icon size={17} style={{ flexShrink: 0, color: 'rgba(255,179,71,.75)' }} />
               <span>{item.label}</span>
             </div>
           ))}
           {!user && (
             <>
-              <div className="dd-item" role="menuitem" tabIndex={0} onClick={() => { setMenuOpen(false); router.push('/login'); }} style={{ padding: '.85rem clamp(1rem,5vw,3rem)' }}>
+              <div className="dd-item" role="menuitem" tabIndex={0} onClick={() => { setMenuOpen(false); router.push('/login'); }} style={{ padding: '.85rem clamp(1rem,5vw,3rem)', display: 'flex', alignItems: 'center', gap: 12, minHeight: 44 }}>
+                <LogIn size={17} style={{ flexShrink: 0, color: 'rgba(255,179,71,.75)' }} />
                 <span>Sign In</span>
               </div>
-              <div className="dd-item" role="menuitem" tabIndex={0} onClick={() => { setMenuOpen(false); router.push('/signup'); }} style={{ padding: '.85rem clamp(1rem,5vw,3rem)' }}>
+              <div className="dd-item" role="menuitem" tabIndex={0} onClick={() => { setMenuOpen(false); router.push('/signup'); }} style={{ padding: '.85rem clamp(1rem,5vw,3rem)', display: 'flex', alignItems: 'center', gap: 12, minHeight: 44 }}>
+                <UserPlus size={17} style={{ flexShrink: 0, color: 'rgba(255,179,71,.75)' }} />
                 <span>Create Account</span>
               </div>
             </>
@@ -403,3 +410,5 @@ export default function Nav({ page, go, openSearch, user, profile, onSignOut, on
     </nav>
   );
 }
+
+export default memo(Nav);

@@ -1,4 +1,5 @@
 import { getSeasonalAnime, getTrendingAnime, getUpcomingAnime, anilistToMediaItem } from '@/lib/anilist/client';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import type { MediaItem } from '@/types';
 import type { AniListMedia } from '@/lib/anilist/client';
@@ -90,9 +91,9 @@ export default async function SeasonalPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [

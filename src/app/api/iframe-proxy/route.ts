@@ -82,28 +82,51 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Host not allowed' }, { status: 403 });
     }
 
-    // Fetch from provider (server-to-server — XFO doesn't apply)
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    // Fetch from provider (server-to-server — XFO doesn't apply). Redirects are
+    // followed manually, re-validating each hop's host against the same
+    // allowlist — a compromised/hijacked provider can't use a redirect to
+    // point this server-side fetch at an arbitrary or internal target (SSRF).
+    const REQUEST_HEADERS = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    };
+    const MAX_REDIRECTS = 3;
 
-    let response: Response;
+    let response: Response | null = null;
+    let fetchUrl = targetUrl;
     try {
-      response = await fetch(targetUrl.toString(), {
-        signal: controller.signal,
-        headers: {
-          // Mimic a browser request so providers return HTML (not a 403)
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Referer': targetUrl.origin + '/',
-        },
-        redirect: 'follow',
-      });
+      for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        let hopResponse: Response;
+        try {
+          hopResponse = await fetch(fetchUrl.toString(), {
+            signal: controller.signal,
+            headers: { ...REQUEST_HEADERS, 'Referer': fetchUrl.origin + '/' },
+            redirect: 'manual',
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+
+        if (hopResponse.status < 300 || hopResponse.status >= 400) { response = hopResponse; break; }
+
+        const location = hopResponse.headers.get('location');
+        if (!location) { response = hopResponse; break; }
+
+        const nextUrl = new URL(location, fetchUrl);
+        if (nextUrl.protocol !== 'https:' || !ALLOWED_HOSTS.has(nextUrl.hostname)) {
+          return NextResponse.json({ error: 'Redirect target not allowed' }, { status: 502 });
+        }
+        fetchUrl = nextUrl;
+      }
     } catch {
-      clearTimeout(timeout);
       return NextResponse.json({ error: 'Provider unreachable' }, { status: 502 });
     }
-    clearTimeout(timeout);
+    if (!response) {
+      return NextResponse.json({ error: 'Too many redirects' }, { status: 502 });
+    }
 
     // Build clean response headers — strip all blocking headers
     const headers = new Headers();
@@ -128,7 +151,7 @@ export async function GET(request: NextRequest) {
     // For HTML responses: inject <base> tag to fix relative URLs
     if (contentType.includes('text/html')) {
       const html = await response.text();
-      const baseHref = `${targetUrl.protocol}//${targetUrl.host}/`;
+      const baseHref = `${fetchUrl.protocol}//${fetchUrl.host}/`;
 
       // Inject <base> after <head> or at the very beginning
       let modified: string;

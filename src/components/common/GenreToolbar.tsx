@@ -1,5 +1,7 @@
 'use client';
 
+import { Search } from 'lucide-react';
+
 interface GenreToolbarProps {
   onSearch: (query: string) => void;
   onSort: (sort: string) => void;
@@ -30,7 +32,7 @@ export default function GenreToolbar({ onSearch, onSort, genres, onGenreFilter, 
     }}>
       <div style={{ display: 'flex', gap: '.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: '1 1 200px' }}>
-          <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,245,232,.25)', fontSize: '.9rem' }}>🔍</span>
+          <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,245,232,.25)', display: 'flex' }}><Search size={14} /></span>
           <input
             className="inp"
             style={{ paddingLeft: 38, fontSize: '.88rem' }}

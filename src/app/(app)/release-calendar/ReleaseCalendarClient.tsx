@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { Calendar, Star, ChevronRight } from 'lucide-react';
 import { CS } from '@/styles/themes';
 
 import { getPosterUrl } from '@/lib/images';
@@ -38,7 +39,7 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: '2.2rem clamp(1rem,5vw,3rem) 0', position: 'relative', zIndex: 3 }}>
         <div className="page-in" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '.5rem' }}>
-          <span style={{ fontSize: '1.5rem' }}>📅</span>
+          <Calendar size={24} />
           <h1 className="sec" style={{ fontSize: 'clamp(1.3rem,3vw,2rem)' }}>Release Calendar</h1>
         </div>
         <p className="s2 f-crimson" style={{  color: 'rgba(255,245,232,.45)', fontSize: '1rem' }}>
@@ -174,10 +175,10 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '1rem',
+                          color: CS[cs].acc,
                           boxShadow: '3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2)',
                         }}>
-                          {CS[cs].em}
+                          {(() => { const Icon = CS[cs].icon; return <Icon size={20} />; })()}
                         </div>
                       )}
 
@@ -202,7 +203,9 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                           marginBottom: isExpanded ? 8 : 0,
                         }}>
                           {formattedDate}
-                          {movie.vote_average > 0 ? ` · ⭐ ${movie.vote_average.toFixed(1)}` : ''}
+                          {movie.vote_average > 0 && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}> · <Star size={10} fill="currentColor" /> {movie.vote_average.toFixed(1)}</span>
+                          )}
                         </div>
 
                         {/* Expanded overview */}
@@ -236,14 +239,13 @@ export default function ReleaseCalendarClient({ grouped, sortedMonths }: Release
                       {/* Expand indicator */}
                       <span style={{
                         flexShrink: 0,
-                        fontSize: '.7rem',
                         color: 'rgba(255,245,232,.25)',
                         transition: 'transform .25s',
-                        display: 'inline-block',
+                        display: 'flex',
                         transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
                         marginTop: 8,
                       }}>
-                        ▶
+                        <ChevronRight size={13} />
                       </span>
                     </div>
                   );

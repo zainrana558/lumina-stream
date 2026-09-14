@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAuth, verifyProfileOwnership, getVerifiedProfileId } from "@/lib/auth";
+import { requireAuth, verifyProfileOwnership, getVerifiedProfileId, HttpError } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { watchPartyMessageSchema } from "@/lib/schemas";
 import { csrfGuard } from '@/lib/csrf';
@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true }, { headers: rateLimitHeaders(rl) });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -115,18 +116,22 @@ export async function GET(request: NextRequest) {
 
     if (error) return NextResponse.json({ messages: [] });
 
-    const messages = (data || []).map((m: { id: string; profile_id: string; content: string; created_at: string; profiles: { name: string; avatar_url: string | null }[] }) => ({
-      id: m.id,
-      profile_id: m.profile_id,
-      name: m.profiles?.[0]?.name || "Anonymous",
-      avatar_url: m.profiles?.[0]?.avatar_url || null,
-      content: m.content,
-      created_at: m.created_at,
-    }));
+    const messages = (data || []).map((m: { id: string; profile_id: string; content: string; created_at: string; profiles: { name: string; avatar_url: string | null }[] | { name: string; avatar_url: string | null } | null }) => {
+      const prof = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+      return {
+        id: m.id,
+        profile_id: m.profile_id,
+        name: prof?.name || "Anonymous",
+        avatar_url: prof?.avatar_url || null,
+        content: m.content,
+        created_at: m.created_at,
+      };
+    });
 
     return NextResponse.json({ messages }, { headers: rateLimitHeaders(rl) });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

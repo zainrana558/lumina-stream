@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAuth, verifyProfileOwnership } from "@/lib/auth";
+import { requireAuth, verifyProfileOwnership, HttpError } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { commentPostSchema, commentDeleteSchema } from "@/lib/schemas";
 import { csrfGuard } from '@/lib/csrf';
@@ -49,25 +49,41 @@ export async function GET(request: NextRequest) {
     if (!mediaId) return NextResponse.json({ comments: [] });
 
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("comments")
-      .select("id, profile_id, media_id, media_type, content, created_at, rating, profiles!inner(name, avatar_url)")
-      .eq("media_id", mediaId)
-      .eq("media_type", mediaType)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const runQuery = (cols: string) =>
+      supabase
+        .from("comments")
+        .select(cols)
+        .eq("media_id", mediaId)
+        .eq("media_type", mediaType)
+        .order("created_at", { ascending: false })
+        .limit(50);
 
-    if (error) return NextResponse.json({ comments: [], error: 'Failed to load comments' }, { status: 500 });
+    const COLS = "id, profile_id, media_id, media_type, content, created_at, rating, profiles!inner(name, avatar_url)";
+    let res = await runQuery(COLS);
 
-    const comments: CommentRow[] = (data as unknown as CommentQueryRow[] || []).map((c) => ({
-      id: c.id,
-      profile_id: c.profile_id,
-      content: c.content,
-      created_at: c.created_at,
-      profile_name: c.profiles?.[0]?.name || "Anonymous",
-      profile_avatar: c.profiles?.[0]?.avatar_url || null,
-      rating: c.rating as number | undefined,
-    }));
+    // Tolerate a live DB that predates the `comments.rating` column (see
+    // migration 006). Retry once without it rather than failing the whole tab.
+    if (res.error && /rating/.test(res.error.message || '')) {
+      res = await runQuery(COLS.replace(", rating", ""));
+    }
+
+    if (res.error) return NextResponse.json({ comments: [], error: 'Failed to load comments' }, { status: 200 });
+    const data = res.data;
+
+    const comments: CommentRow[] = (data as unknown as CommentQueryRow[] || []).map((c) => {
+      // PostgREST returns a to-one embed as an object; older versions / some
+      // relationship shapes return a 1-element array. Handle both.
+      const prof = Array.isArray(c.profiles) ? c.profiles[0] : (c.profiles as unknown as { name?: string; avatar_url?: string | null } | null);
+      return {
+        id: c.id,
+        profile_id: c.profile_id,
+        content: c.content,
+        created_at: c.created_at,
+        profile_name: prof?.name || "Anonymous",
+        profile_avatar: prof?.avatar_url || null,
+        rating: c.rating as number | undefined,
+      };
+    });
 
     return NextResponse.json({ comments }, {
       headers: rateLimitHeaders(rl),
@@ -119,13 +135,21 @@ export async function POST(request: NextRequest) {
     };
     if (rating && rating > 0) insertData.rating = rating;
 
-    const { error } = await supabase.from("comments").insert(insertData);
+    let { error } = await supabase.from("comments").insert(insertData);
+
+    // Tolerate a live DB without the `comments.rating` column (migration 006):
+    // keep the comment, drop the rating.
+    if (error && 'rating' in insertData && /rating/.test(error.message || '')) {
+      delete insertData.rating;
+      ({ error } = await supabase.from("comments").insert(insertData));
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -165,6 +189,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

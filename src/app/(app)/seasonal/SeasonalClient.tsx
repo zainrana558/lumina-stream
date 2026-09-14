@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { Tv, Flame, Sparkles, Star, type LucideIcon } from 'lucide-react';
 import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
 
@@ -15,11 +16,11 @@ interface SeasonalClientProps {
   returningSeries: MediaItem[];
 }
 
-const TABS = [
-  { key: 'airing', label: '📺 This Season', emoji: '📺' },
-  { key: 'trending', label: '🔥 Trending Anime', emoji: '🔥' },
-  { key: 'returning', label: '🌸 Upcoming Next', emoji: '🌸' },
-] as const;
+const TABS: { key: string; label: string; icon: LucideIcon }[] = [
+  { key: 'airing', label: 'This Season', icon: Tv },
+  { key: 'trending', label: 'Trending Anime', icon: Flame },
+  { key: 'returning', label: 'Upcoming Next', icon: Sparkles },
+];
 
 function getPosterSrc(item: MediaItem): string | null {
   return getPosterUrl(item);
@@ -59,12 +60,14 @@ function SeasonCard({ item, index }: { item: MediaItem; index: number }) {
         {posterSrc ? (
           <Image src={posterSrc} alt={item.title} fill sizes="(max-width: 768px) 33vw, 20vw" loading="lazy" placeholder="blur" blurDataURL={getBlurPlaceholder(item.cs)} style={{ objectFit: 'cover' }} />
         ) : (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', opacity: .15 }}>{s.em}</div>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: .15, color: s.acc }}><s.icon size={32} /></div>
         )}
         {/* Gradient overlay */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.7) 0%, transparent 50%)', pointerEvents: 'none' }} />
         {/* Rating badge */}
-        <div className="badge-r" style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>⭐ {item.r}</div>
+        <div className="badge-r" style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
+          {item.r > 0 ? <><Star size={11} fill="currentColor" /> {item.r}</> : 'New'}
+        </div>
         {/* Format badge */}
         <div className="f-cinzel" style={{
           position: 'absolute', top: 8, left: 8, zIndex: 2,
@@ -125,29 +128,33 @@ export default function SeasonalClient({ airingToday, trendingThisWeek, returnin
   return (
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
-        <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>🌸 Anime Seasonal Tracker</h1>
+        <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 12 }}><Sparkles size={28} /> Anime Seasonal Tracker</h1>
         <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>Powered by AniList — seasonal anime, trending, and upcoming</p>
       </div>
 
       <div style={{ padding: `0 ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>
         {/* Tab selector */}
         <div style={{ display: 'flex', gap: 0, marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,.06)', overflowX: 'auto' }}>
-          {TABS.map(tab => (
-            <button className="f-cinzel"
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                padding: '12px 24px', background: 'none', border: 'none', outline: 'none',
-                color: activeTab === tab.key ? 'var(--gold)' : 'rgba(255,245,232,.35)',
-                 fontSize: '.82rem', letterSpacing: '.06em',
-                cursor: 'pointer', transition: 'color .22s', whiteSpace: 'nowrap',
-                borderBottom: activeTab === tab.key ? '2px solid var(--gold)' : '2px solid transparent',
-                marginBottom: '-1px',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button className="f-cinzel"
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  padding: '12px 24px', background: 'none', border: 'none', outline: 'none',
+                  color: activeTab === tab.key ? 'var(--gold)' : 'rgba(255,245,232,.35)',
+                   fontSize: '.82rem', letterSpacing: '.06em',
+                  cursor: 'pointer', transition: 'color .22s', whiteSpace: 'nowrap',
+                  borderBottom: activeTab === tab.key ? '2px solid var(--gold)' : '2px solid transparent',
+                  marginBottom: '-1px',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <Icon size={14} /> {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Results count */}
@@ -158,7 +165,7 @@ export default function SeasonalClient({ airingToday, trendingThisWeek, returnin
         {/* Grid */}
         {items.length === 0 ? (
           <div className="neo-raised" style={{ padding: '3rem 2rem', borderRadius: 16, textAlign: 'center' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: .3 }}>🌸</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', opacity: .3 }}><Sparkles size={40} /></div>
             <h3 className="f-cinzel" style={{  fontSize: '1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No titles found</h3>
             <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', fontSize: '.9rem' }}>
               Check back later for seasonal updates

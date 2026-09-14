@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { Play, X } from 'lucide-react';
 import Image from 'next/image';
 import { CS } from '@/styles/themes';
 import { getYoutubeThumbnail } from '@/lib/images';
@@ -63,7 +64,7 @@ export default function TrailerModal({ trailers, showTitle, onClose }: {
               <div className="f-cinzel-dec" style={{  fontSize: '1rem', color: '#FFF5E8' }}>{showTitle}</div>
               <div className="f-cinzel" style={{  fontSize: '.72rem', color: 'rgba(255,245,232,.5)', marginTop: 2 }}>{trailer.name}</div>
             </div>
-            <button onClick={onClose} className="btn-g" style={{ padding: '8px 16px', fontSize: '.72rem' }}>✕ Close</button>
+            <button onClick={onClose} className="btn-g" style={{ padding: '8px 16px', fontSize: '.72rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}><X size={13} /> Close</button>
           </div>
           {/* Trailer thumbnails */}
           {trailers.length > 1 && (
@@ -93,7 +94,7 @@ export default function TrailerModal({ trailers, showTitle, onClose }: {
                       background: 'rgba(255,179,71,.15)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <span style={{ fontSize: '1.5rem' }}>▶</span>
+                      <Play size={22} fill="currentColor" />
                     </div>
                   )}
                 </button>

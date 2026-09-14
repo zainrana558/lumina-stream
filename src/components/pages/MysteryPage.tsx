@@ -1,6 +1,7 @@
 'use client';
 
 import { lazy, Suspense, useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 import type { MediaItem } from '@/types';
 import { tmdbToMedia } from '@/types';
 import type { TMDBShow } from '@/types';
@@ -37,7 +38,7 @@ export default function MysteryPage({ initialShows }: { initialShows: MediaItem[
     setLoadingMore(true);
     try {
       const nextPage = pageRef.current + 1;
-      const res = await fetch(`/api/tmdb?endpoint=/discover/movie&with_genres=9648&sort_by=popularity.desc&vote_count_gte=50&page=${nextPage}`);
+      const res = await fetch(`/api/tmdb?endpoint=/discover/movie&with_genres=9648&sort_by=popularity.desc&vote_count.gte=50&page=${nextPage}`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
         const newItems = data.results
@@ -228,7 +229,8 @@ export default function MysteryPage({ initialShows }: { initialShows: MediaItem[
         <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
         {loadingMore && (
           <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em' }}>
-            ✦ Loading...
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.4rem' }}><Loader2 size={16} /></div>
+            Loading...
           </div>
         )}
         {!hasMore && (

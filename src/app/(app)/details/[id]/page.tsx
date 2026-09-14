@@ -1,4 +1,7 @@
 import { cache } from 'react';
+import { safeJsonLd } from '@/lib/jsonld';
+import type { ComponentProps } from 'react';
+import { notFound } from 'next/navigation';
 import { tmdbFetch } from '@/lib/tmdb/server';
 import { getAnimeDetail, anilistToMediaItem } from '@/lib/anilist/client';
 import DetailsContent from '@/components/pages/DetailsContent';
@@ -35,12 +38,17 @@ const getCachedTmdbDetails = cache(async (showId: number, mediaTypeHint?: 'movie
     return d.id ? { data: d, type: 'movie' as const } : null;
   };
 
-  // Fast path: we know the type from the URL prefix — single fetch, zero 4xx
+  // Fast path: we know the type from the URL prefix — single fetch, zero 4xx.
+  // (Tried falling back to the other type on a miss so a mislabeled /movie/
+  // link for a TV title would still resolve — reverted: TMDB movie and TV ids
+  // aren't in the same namespace, so a "miss" on the hinted type can coincide
+  // with an unrelated real title of the other type. That silently showed the
+  // wrong show, which is worse than a 404 for a genuinely bad link.)
   if (mediaTypeHint === 'tv') return tryTv().catch(() => null);
   if (mediaTypeHint === 'movie') return tryMovie().catch(() => null);
 
-  // Fallback (direct /details/:id URL without prefix): try tv first, then movie
-  // Sequential avoids sending a guaranteed-404 request to the wrong type
+  // No prefix (direct /details/:id): try tv first, then movie. Sequential avoids
+  // a guaranteed-404 to the wrong type.
   const tv = await tryTv().catch(() => null);
   if (tv) return tv;
   return tryMovie().catch(() => null);
@@ -152,23 +160,16 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
         });
       }
     } catch { /* fall through */ }
-    return {
-      title: 'Anime',
-      robots: { index: false, follow: true },
-    };
+    notFound();
   }
 
   // ── TMDB route ──
+  const result = await getCachedTmdbDetails(showId, mediaTypeHint).catch(() => null);
+  // Resolve the missing-title case here, before the response streams, and keep
+  // it OUT of the try/catch below so the notFound() signal isn't swallowed.
+  if (!result?.data?.id) notFound();
+
   try {
-    const result = await getCachedTmdbDetails(showId, mediaTypeHint);
-
-    if (!result?.data?.id) {
-      return {
-        title: 'Show',
-        robots: { index: false, follow: true },
-      };
-    }
-
     const data = result.data;
     const mediaType = result.type;
     const title = data.title || data.name || 'Show';
@@ -192,9 +193,11 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
       description: data.overview,
       genres,
       cast,
-      image: backdrop ? `https://image.tmdb.org/t/p/original${backdrop}` : undefined,
-      imageWidth: 1200,
-      imageHeight: 630,
+      // w1280 (1280×720) is the right size for an OG card — `original` can be
+      // 3–4 MB and social scrapers reject / truncate oversized images.
+      image: backdrop ? `https://image.tmdb.org/t/p/w1280${backdrop}` : undefined,
+      imageWidth: backdrop ? 1280 : undefined,
+      imageHeight: backdrop ? 720 : undefined,
       isThin: thin,
     });
   } catch {
@@ -216,8 +219,20 @@ export default async function DetailsPage({ params, searchParams }: { params: Pr
     let jsonLd: Record<string, unknown> | null = null;
     let videoJsonLd: Record<string, unknown> | null = null;
     let anilistData: Awaited<ReturnType<typeof getAnimeDetail>> = null;
+    // Derived values the JSX below needs — hoisted so the `return` can happen
+    // after the try/catch instead of inside it (react-hooks/error-boundaries:
+    // constructing JSX inside a try/catch doesn't actually catch rendering
+    // errors, since React doesn't render synchronously when JSX is created).
+    let anilistId = 0;
+    let tagNames: string[] = [];
+    let similarAnime: { id: number; title?: string; vote_average?: number; release_date?: string }[] = [];
+    let releaseDate: string | undefined;
+    let rating10: number | undefined;
+    let seasonList: { season_number: number; name: string; episode_count: number }[] | undefined;
+    let studioNames: string[] = [];
+
     try {
-      const anilistId = toAnilistId(showId);
+      anilistId = toAnilistId(showId);
       const data = await getAnimeDetail(anilistId);
       anilistData = data;
       if (data) {
@@ -225,16 +240,16 @@ export default async function DetailsPage({ params, searchParams }: { params: Pr
         const title = data.title.english || data.title.romaji || data.title.native || 'Anime';
         const cover = data.coverImage?.extraLarge || data.coverImage?.large;
         const description = (data.description?.replace(/<[^>]*>/g, '') || '').slice(0, 500);
-        const studioNames = data.studios?.nodes?.map(s => s.name).filter(Boolean) || [];
+        studioNames = data.studios?.nodes?.map(s => s.name).filter(Boolean) || [];
 
         // Build non-spoiler tag list for genres-like enrichment
-        const tagNames = (data.tags || [])
+        tagNames = (data.tags || [])
           .filter(t => !t.isMediaSpoiler && (t.rank ?? 0) < 30)
           .map(t => t.name);
 
         // Build similar anime list from AniList recommendations
         const recNodes = (data as unknown as { recommendations?: { nodes: Array<{ mediaRecommendation: { id: number; title: { romaji: string | null; english: string | null; native: string | null }; meanScore: number | null; startDate: { year: number | null } | null } }> } }).recommendations?.nodes || [];
-        const similarAnime = recNodes
+        similarAnime = recNodes
           .map(n => {
             const rec = n.mediaRecommendation;
             if (!rec) return null;
@@ -247,12 +262,12 @@ export default async function DetailsPage({ params, searchParams }: { params: Pr
           })
           .filter((s): s is NonNullable<typeof s> => s !== null && s.title !== undefined);
 
-        const releaseDate = data.startDate?.year
+        releaseDate = data.startDate?.year
           ? `${data.startDate.year}-${String(data.startDate.month || 1).padStart(2, '0')}-${String(data.startDate.day || 1).padStart(2, '0')}`
           : undefined;
 
         // AniList meanScore is 0-100, convert to 0-10 for TMDB-compatible rating
-        const rating10 = data.meanScore ? data.meanScore / 10 : undefined;
+        rating10 = data.meanScore ? data.meanScore / 10 : undefined;
 
         // Build ImageObject for the cover
         const coverImageObject = cover ? {
@@ -321,56 +336,56 @@ export default async function DetailsPage({ params, searchParams }: { params: Pr
         } : null;
 
         // Build season list for anime (AniList uses seasons, we show as Season 1)
-        const seasonList = data.episodes ? [{ season_number: 1, name: 'Season 1', episode_count: data.episodes }] : undefined;
-
-        return (
-          <>
-            {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
-            {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'BreadcrumbList',
-              itemListElement: [
-                { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-                { '@type': 'ListItem', position: 2, name: show?.title || 'Anime', item: `${SITE_URL}${mediaUrl(showId, show?.title || '', 'tv', data.startDate?.year, true)}` },
-              ],
-            }) }} />
-            <DetailsContent showId={showId} initialShow={show} initialAnilistDetail={anilistData} />
-            {/* SERVER-RENDERED SEO CONTENT for AniList anime — placed AFTER DetailsContent
-                so the hero backdrop (LCP element) renders first, improving LCP */}
-            {show && (
-              <DetailSeoContent
-                title={show.title}
-                year={show.yr ? String(show.yr) : undefined}
-                overview={stripHtml(show.desc || '')}
-                genres={[...data.genres, ...tagNames.slice(0, 3)]}
-                genreIds={[]}
-                mediaType="anime"
-                showId={showId}
-                anilistId={anilistId}
-                rating={rating10}
-                voteCount={data.popularity}
-                runtime={data.duration || undefined}
-                seasons={1}
-                episodes={data.episodes || undefined}
-                status={data.status === 'RELEASING' ? 'Returning Series' : data.status === 'FINISHED' ? 'Ended' : data.status === 'NOT_YET_RELEASED' ? 'Planned' : undefined}
-                releaseDate={releaseDate}
-                cast={[]}
-                similar={similarAnime}
-                productionCompanies={studioNames}
-                seasonList={seasonList}
-                originalTitle={data.title.romaji || data.title.native || undefined}
-                originalLanguage="ja"
-                popularity={data.popularity}
-              />
-            )}
-          </>
-        );
+        seasonList = data.episodes ? [{ season_number: 1, name: 'Season 1', episode_count: data.episodes }] : undefined;
       }
-    } catch { /* fall through to null */ }
+    } catch { /* fall through */ }
+
+    if (!show || !anilistData) {
+      // Anime genuinely not found (or every metadata source is down) — 404 rather
+      // than an infinite "Loading show details…" spinner.
+      notFound();
+    }
+    const data = anilistData;
+
     return (
       <>
-        <DetailsContent showId={showId} initialShow={null} />
+        {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />}
+        {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(videoJsonLd) }} />}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+            { '@type': 'ListItem', position: 2, name: show.title || 'Anime', item: `${SITE_URL}${mediaUrl(showId, show.title || '', 'tv', data.startDate?.year, true)}` },
+          ],
+        }) }} />
+        <DetailsContent showId={showId} initialShow={show} initialAnilistDetail={anilistData} />
+        {/* SERVER-RENDERED SEO CONTENT for AniList anime — placed AFTER DetailsContent
+            so the hero backdrop (LCP element) renders first, improving LCP */}
+        <DetailSeoContent
+          title={show.title}
+          year={show.yr ? String(show.yr) : undefined}
+          overview={stripHtml(show.desc || '')}
+          genres={[...data.genres, ...tagNames.slice(0, 3)]}
+          genreIds={[]}
+          mediaType="anime"
+          showId={showId}
+          anilistId={anilistId}
+          rating={rating10}
+          voteCount={data.popularity}
+          runtime={data.duration || undefined}
+          seasons={1}
+          episodes={data.episodes || undefined}
+          status={data.status === 'RELEASING' ? 'Returning Series' : data.status === 'FINISHED' ? 'Ended' : data.status === 'NOT_YET_RELEASED' ? 'Planned' : undefined}
+          releaseDate={releaseDate}
+          cast={[]}
+          similar={similarAnime}
+          productionCompanies={studioNames}
+          seasonList={seasonList}
+          originalTitle={data.title.romaji || data.title.native || undefined}
+          originalLanguage="ja"
+          popularity={data.popularity}
+        />
       </>
     );
   }
@@ -393,10 +408,20 @@ export default async function DetailsPage({ params, searchParams }: { params: Pr
   const rawData = fullData;
 
   if (!rawData?.id || !mediaType) {
-    return <DetailsContent showId={showId} initialShow={null} />;
+    notFound();
   }
 
   const show = tmdbToMedia({ ...rawData, media_type: mediaType } as TMDBShow);
+
+  // SSR-fetch season 1 episodes for TV so the episode list renders real titles
+  // on first paint (otherwise the client shows numbered placeholders until its
+  // own fetch resolves).
+  const initialEpisodes = mediaType === 'tv' && rawData.number_of_seasons
+    ? await tmdbFetch<{ episodes?: unknown[] }>(`/tv/${showId}/season/1`)
+        .then((d) => d.episodes || [])
+        .catch(() => [])
+    : [];
+
   const title = rawData.title || rawData.name || 'Show';
   const description = (rawData.overview || '').slice(0, 500);
   const poster = rawData.poster_path ? `https://image.tmdb.org/t/p/w500${rawData.poster_path}` : undefined;
@@ -491,9 +516,9 @@ export default async function DetailsPage({ params, searchParams }: { params: Pr
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
+      {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(videoJsonLd) }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
@@ -505,12 +530,13 @@ export default async function DetailsPage({ params, searchParams }: { params: Pr
         showId={showId}
         initialShow={show}
         initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
-        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
+        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia({ ...(r as TMDBShow), media_type: mediaType })) || []}
         initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
         initialCrew={fullData?.credits?.crew || []}
         initialKeywords={fullData?.keywords?.keywords?.map(k => k.name) || []}
         initialImages={fullData?.images || null}
         initialReviews={fullData?.reviews?.results?.slice(0, 5) || []}
+        initialEpisodes={initialEpisodes as ComponentProps<typeof DetailsContent>['initialEpisodes']}
       />
       {/* SERVER-RENDERED SEO CONTENT — placed AFTER DetailsContent so the hero
           backdrop (the LCP element) is rendered first in the DOM */}

@@ -21,7 +21,7 @@ export default function ShortcutFeedback({ feedback }: { feedback: ShortcutFeedb
         border: '1px solid rgba(255,255,255,.1)',
         boxShadow: '4px 4px 20px rgba(0,0,0,.6)',
       }}>
-        <span style={{ fontSize: '1.4rem' }}>{feedback.icon}</span>
+        <span style={{ display: 'flex' }}><feedback.icon size={22} /></span>
         <span className="f-cinzel" style={{
            fontSize: '.82rem',
           color: '#FFF5E8', fontWeight: 600, letterSpacing: '.06em',

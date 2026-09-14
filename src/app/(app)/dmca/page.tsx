@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
@@ -9,7 +10,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/dmca`;
 
 export const metadata: Metadata = {
-  title: 'DMCA & Copyright Policy - Lumovia',
+  title: 'DMCA & Copyright Policy',
   description: 'Lumovia DMCA and copyright policy. Learn about our position as a catalog/discovery platform, DMCA safe harbor compliance, how to file takedown notices, counter-notifications, and our commitment to intellectual property rights.',
   alternates: { canonical: pageUrl },
   openGraph: { type: 'website', url: pageUrl, title: 'DMCA & Copyright Policy - Lumovia', description: 'DMCA takedown procedures and copyright policy for Lumovia.', siteName: 'Lumovia', images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }] },
@@ -44,8 +45,8 @@ const b = { style: { color: '#FFB347' } as React.CSSProperties };
 export default function DmcaPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(webPageJsonLd) }} />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 60px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#FFF5E8', marginBottom: 16, letterSpacing: '.02em' }}>DMCA &amp; Copyright Policy</h1>
         <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 12 }}>Last updated: July 7, 2026</p>
@@ -161,7 +162,7 @@ To: Lumovia DMCA Designated Agent
 
 2. Location of Infringing Material:
    [Full URL(s) on Lumovia, e.g.,
-    https://lumovia-stream-omega.vercel.app/movie/inception-2010-27205
+    ${siteUrl}/movie/inception-2010-27205
     One URL per line. Specific URLs are required.]
 
 3. My Contact Information:

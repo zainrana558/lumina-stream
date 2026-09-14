@@ -2,6 +2,7 @@ import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { browseAllAnime, getTrendingAnime, getTopRatedAnime, getPopularAnime, getAniListTitle, type AniListMedia } from '@/lib/anilist/client';
 import { ANILIST_ID_OFFSET } from '@/types';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
+import { getStableLastmods } from '@/lib/sitemap-lastmod';
 import { mediaUrl } from '@/lib/slug';
 import { fallbackUrl } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
@@ -61,9 +62,10 @@ export async function GET() {
     items.sort((a, b) => b.popularity - a.popularity);
     const capped = items.slice(0, 5000);
 
+    const lastmods = await getStableLastmods('anime', capped.map(item => item.id));
     const urls = capped.map(item => {
       const loc = `${CANONICAL_BASE}${mediaUrl(item.id, item.title, 'tv', item.year, true)}`;
-      return `<url>\n<loc>${loc}</loc>\n<lastmod>${now}</lastmod>\n</url>`;
+      return `<url>\n<loc>${loc}</loc>\n<lastmod>${lastmods[item.id] || now}</lastmod>\n</url>`;
     }).join('\n\n');
 
     const body = urls || fallbackUrl(CANONICAL_BASE, now);

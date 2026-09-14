@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getRedis } from '@/lib/redis';
+import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
 const WHITELISTED_DOMAINS = new Set([
   'image.tmdb.org',
@@ -29,6 +30,14 @@ function getCacheKey(url: string, width?: number, quality?: number): string {
 
 export async function GET(request: NextRequest) {
   try {
+    const rl = await checkRateLimit(request, 'embed');
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please slow down.' },
+        { status: 429, headers: rateLimitHeaders(rl) }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const url = searchParams.get('url');
     const width = searchParams.get('width') ? parseInt(searchParams.get('width')!) : undefined;

@@ -17,3 +17,17 @@ export function sanitizeName(raw: string): string {
     .trim()
     .slice(0, 20) || 'Anonymous';
 }
+
+/**
+ * Validate a redirect target is a same-origin relative path before passing it
+ * to router.push()/NextResponse.redirect(). Rejects anything that could
+ * resolve to a different origin once a URL parser normalizes it — not just
+ * `//host` or `scheme://host`, but also a leading backslash or whitespace
+ * (`"/\\evil.com"`, `"  //evil.com"`), which WHATWG URL parsing collapses
+ * into `//evil.com` *after* those simpler checks would have already passed.
+ * Falls back to `/` for anything that doesn't match.
+ */
+export function safeRedirectPath(raw: string | null | undefined): string {
+  if (raw && /^\/(?!\/)[^\s\\]*$/.test(raw)) return raw;
+  return '/';
+}

@@ -4,10 +4,29 @@
  */
 
 import { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
+import { Rocket, Sparkles, Tv, Radio, Film, Trophy, BookOpen, Search, Users, Ghost, Heart, FileText, ArrowRight, Star, type LucideIcon } from 'lucide-react';
 import { tmdbFetchRaw } from '@/lib/tmdb/server';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { getFeaturedArticles, getRemainingArticles } from '@/content/blog-articles';
+
+function getCategoryIcon(category: string): LucideIcon {
+  switch (category) {
+    case 'Sci-Fi': return Rocket;
+    case 'Anime': return Sparkles;
+    case 'TV Shows': return Tv;
+    case 'Industry': return Radio;
+    case 'Directors': return Film;
+    case 'Awards': return Trophy;
+    case 'Guides': return BookOpen;
+    case 'Crime': return Search;
+    case 'Family': return Users;
+    case 'Horror': return Ghost;
+    case 'Romance': return Heart;
+    default: return FileText;
+  }
+}
 
 export const revalidate = 3600;
 
@@ -69,7 +88,7 @@ export default async function BlogIndexPage() {
       paddingBottom: 120,
     }}>
       {/* JSON-LD at top for consistency */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
         name: 'Lumovia Blog — Streaming Guides & Reviews',
@@ -77,7 +96,7 @@ export default async function BlogIndexPage() {
         url: blogUrl,
         isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: CANONICAL_BASE },
       }) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
@@ -85,7 +104,7 @@ export default async function BlogIndexPage() {
           { '@type': 'ListItem', position: 2, name: 'Blog', item: blogUrl },
         ],
       }) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
@@ -150,7 +169,9 @@ export default async function BlogIndexPage() {
           gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
           gap: 20,
         }}>
-          {featuredArticles.map((article) => (
+          {featuredArticles.map((article) => {
+            const CategoryIcon = getCategoryIcon(article.category);
+            return (
             <Link
               key={article.slug}
               href={`/blog/${article.slug}`}
@@ -175,21 +196,10 @@ export default async function BlogIndexPage() {
                 position: 'relative',
               }}>
                 <span style={{
-                  fontSize: '2rem',
                   opacity: 0.15,
                   position: 'absolute',
                 }}>
-                  {article.category === 'Sci-Fi' ? '🚀' :
-                   article.category === 'Anime' ? '⚡' :
-                   article.category === 'TV Shows' ? '📺' :
-                   article.category === 'Industry' ? '📡' :
-                   article.category === 'Directors' ? '🎬' :
-                   article.category === 'Awards' ? '🏆' :
-                   article.category === 'Guides' ? '📖' :
-                   article.category === 'Crime' ? '🔍' :
-                   article.category === 'Family' ? '👨‍👩‍👧‍👦' :
-                   article.category === 'Horror' ? '👻' :
-                   article.category === 'Romance' ? '❤️' : '📝'}
+                  <CategoryIcon size={32} />
                 </span>
                 <span style={{
                   display: 'inline-block',
@@ -241,12 +251,16 @@ export default async function BlogIndexPage() {
                   fontSize: '.7rem',
                   color: '#FFB347',
                   fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
                 }}>
-                  Read More →
+                  Read More <ArrowRight size={12} />
                 </span>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -305,8 +319,11 @@ export default async function BlogIndexPage() {
                   textTransform: 'uppercase',
                   letterSpacing: '.06em',
                   marginBottom: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
                 }}>
-                  {show.type === 'tv' ? 'TV Series' : 'Movie'} · ⭐ {show.vote_average?.toFixed(1) || 'N/A'}
+                  {show.type === 'tv' ? 'TV Series' : 'Movie'} · <Star size={10} fill="currentColor" /> {show.vote_average?.toFixed(1) || 'N/A'}
                 </div>
                 <h3 style={{
                   fontSize: '.85rem',

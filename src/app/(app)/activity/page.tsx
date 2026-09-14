@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
 import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
+import AuthLoading from '@/components/common/AuthLoading';
 import ActivityFeed from '@/components/common/ActivityFeed';
+import { Users, ClipboardList } from 'lucide-react';
 
 export default function ActivityPage() {
   const { user, profile, authLoading, supabaseReady } = useApp();
@@ -33,6 +35,8 @@ export default function ActivityPage() {
   }, [user, profile, authLoading, router]);
 
   if (!supabaseReady) return <SupabaseNotConfigured />;
+
+  if (authLoading) return <AuthLoading />;
 
   if (!user) {
     return (
@@ -67,8 +71,8 @@ export default function ActivityPage() {
         {/* Tab switcher */}
         <div style={{ display: 'flex', gap: '.5rem', marginBottom: '1.5rem' }}>
           {([
-            { key: 'feed' as const, label: 'Following', icon: '👥' },
-            { key: 'my' as const, label: 'My Activity', icon: '📋' },
+            { key: 'feed' as const, label: 'Following', icon: Users },
+            { key: 'my' as const, label: 'My Activity', icon: ClipboardList },
           ]).map(t => (
             <button className="f-cinzel"
               key={t.key}
@@ -85,7 +89,7 @@ export default function ActivityPage() {
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
             >
-              <span>{t.icon}</span> {t.label}
+              <t.icon size={14} /> {t.label}
             </button>
           ))}
         </div>

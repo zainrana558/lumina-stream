@@ -1,6 +1,7 @@
 'use client';
 
 import { lazy, Suspense, useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
 import Card from '@/components/common/Card';
@@ -223,7 +224,8 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
         <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
         {loadingMore && (
           <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,183,197,.3)', fontSize: '.8rem', letterSpacing: '.08em' }}>
-            ✦ Loading...
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.4rem' }}><Loader2 size={16} /></div>
+            Loading...
           </div>
         )}
         {!hasMore && (

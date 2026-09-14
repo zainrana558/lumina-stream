@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { AlertTriangle, Check, Info, X, type LucideIcon } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -25,11 +26,11 @@ export function useToast() {
   return ctx;
 }
 
-const COLORS: Record<ToastType, { bg: string; border: string; icon: string }> = {
-  success: { bg: 'rgba(16,185,129,.15)', border: 'rgba(16,185,129,.5)', icon: '✓' },
-  error:   { bg: 'rgba(239,68,68,.15)',   border: 'rgba(239,68,68,.5)',   icon: '✕' },
-  info:    { bg: 'rgba(59,130,246,.15)',  border: 'rgba(59,130,246,.5)',  icon: 'ℹ' },
-  warning: { bg: 'rgba(245,158,11,.15)',  border: 'rgba(245,158,11,.5)',  icon: '⚠' },
+const COLORS: Record<ToastType, { bg: string; border: string; icon: LucideIcon }> = {
+  success: { bg: 'rgba(16,185,129,.15)', border: 'rgba(16,185,129,.5)', icon: Check },
+  error:   { bg: 'rgba(239,68,68,.15)',   border: 'rgba(239,68,68,.5)',   icon: X },
+  info:    { bg: 'rgba(59,130,246,.15)',  border: 'rgba(59,130,246,.5)',  icon: Info },
+  warning: { bg: 'rgba(245,158,11,.15)',  border: 'rgba(245,158,11,.5)',  icon: AlertTriangle },
 };
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) {
@@ -69,10 +70,10 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       <div style={{
         width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
         background: c.border, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '.7rem', color: '#FFF5E8', fontWeight: 700,
-      }}>{c.icon}</div>
+        color: '#FFF5E8', fontWeight: 700,
+      }}><c.icon size={13} /></div>
       <span style={{ fontSize: '.78rem', color: '#FFF5E8', flex: 1 }}>{toast.message}</span>
-      <button onClick={onRemove} style={{ background: 'none', border: 'none', color: 'rgba(255,245,232,.4)', cursor: 'pointer', fontSize: '.8rem', padding: 2 }}>✕</button>
+      <button onClick={onRemove} style={{ background: 'none', border: 'none', color: 'rgba(255,245,232,.4)', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} /></button>
       <div style={{
         position: 'absolute', bottom: 0, left: 0, height: 2,
         background: c.border, transition: 'width .1s linear',

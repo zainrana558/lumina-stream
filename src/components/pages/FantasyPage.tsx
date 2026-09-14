@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { Sparkles, Star, Gem, Loader2 } from 'lucide-react';
 import type { MediaItem } from '@/types';
 import { tmdbToMedia } from '@/types';
 import type { TMDBShow } from '@/types';
@@ -37,7 +38,7 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
     setLoadingMore(true);
     try {
       const nextPage = pageRef.current + 1;
-      const res = await fetch(`/api/tmdb?endpoint=/discover/movie&with_genres=14&sort_by=popularity.desc&vote_count_gte=50&page=${nextPage}`);
+      const res = await fetch(`/api/tmdb?endpoint=/discover/movie&with_genres=14&sort_by=popularity.desc&vote_count.gte=50&page=${nextPage}`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
         const newItems = data.results
@@ -176,11 +177,11 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
         <div style={{ position: 'relative', zIndex: 5, padding: '3rem clamp(1rem,5vw,3rem) 2rem', textAlign: 'center' }}>
           {/* Sparkle stars around title */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <span style={{ color: '#FFD700', fontSize: '1.2rem', animation: 'sparkle-p 2s ease-in-out infinite' }}>✦</span>
-            <span style={{ color: '#87CEEB', fontSize: '0.8rem', animation: 'sparkle-p 2.5s 0.3s ease-in-out infinite' }}>✧</span>
-            <span style={{ color: '#C39BD3', fontSize: '1.4rem', animation: 'sparkle-p 1.8s 0.6s ease-in-out infinite' }}>✦</span>
-            <span style={{ color: '#FFD700', fontSize: '0.9rem', animation: 'sparkle-p 2.2s 0.9s ease-in-out infinite' }}>✧</span>
-            <span style={{ color: '#87CEEB', fontSize: '1.1rem', animation: 'sparkle-p 2.8s 1.2s ease-in-out infinite' }}>✦</span>
+            <Sparkles size={19} fill="currentColor" style={{ color: '#FFD700', animation: 'sparkle-p 2s ease-in-out infinite' }} />
+            <Star size={13} style={{ color: '#87CEEB', animation: 'sparkle-p 2.5s 0.3s ease-in-out infinite' }} />
+            <Sparkles size={22} fill="currentColor" style={{ color: '#C39BD3', animation: 'sparkle-p 1.8s 0.6s ease-in-out infinite' }} />
+            <Star size={14} style={{ color: '#FFD700', animation: 'sparkle-p 2.2s 0.9s ease-in-out infinite' }} />
+            <Sparkles size={18} fill="currentColor" style={{ color: '#87CEEB', animation: 'sparkle-p 2.8s 1.2s ease-in-out infinite' }} />
           </div>
           <h1 className="f-playfair" style={{
             
@@ -209,7 +210,7 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
             display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: '1rem',
           }}>
             <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg,transparent,rgba(195,155,211,0.35))' }} />
-            <span style={{ fontSize: '1rem', opacity: 0.5 }}>🔮</span>
+            <Gem size={16} style={{ opacity: 0.5, color: '#C39BD3' }} />
             <div style={{ width: 60, height: 1, background: 'linear-gradient(270deg,transparent,rgba(195,155,211,0.35))' }} />
           </div>
         </div>
@@ -250,7 +251,8 @@ export default function FantasyPage({ initialShows }: { initialShows: MediaItem[
         <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
         {loadingMore && (
           <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em' }}>
-            ✦ Loading...
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.4rem' }}><Loader2 size={16} /></div>
+            Loading...
           </div>
         )}
         {!hasMore && (

@@ -1,4 +1,5 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import type { Metadata } from 'next';
 import PersonPageClient from '@/components/pages/PersonPage';
@@ -221,9 +222,9 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personFaqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(personJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(personFaqJsonLd) }} />
 
       <PersonPageClient person={data} />
 

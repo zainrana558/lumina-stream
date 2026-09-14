@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { checkAllProviders } from '@/lib/streaming/health-check';
 import { getPoolStatus } from '@/lib/streaming/providers';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, HttpError } from '@/lib/auth';
 
 /**
  * GET /api/embed-health
@@ -52,6 +52,7 @@ export async function GET(request: Request) {
     );
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: msg }, { status });
   }
 }

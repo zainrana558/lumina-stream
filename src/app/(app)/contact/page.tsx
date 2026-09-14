@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import Link from 'next/link';
+import { Facebook, Instagram, ArrowRight, type LucideIcon } from 'lucide-react';
 
 export const dynamic = 'force-static';
 export const revalidate = 86400;
@@ -30,11 +32,11 @@ export const metadata: Metadata = {
 };
 
 // Social icons — decorative-only, following the Footer.tsx pattern.
-const SOCIAL_CHANNELS = [
-  { icon: '𝕏', label: 'Twitter / X' },
-  { icon: '📘', label: 'Facebook' },
-  { icon: '📸', label: 'Instagram' },
-] as const;
+const SOCIAL_CHANNELS: { icon: LucideIcon | null; glyph?: string; label: string }[] = [
+  { icon: null, glyph: '𝕏', label: 'Twitter / X' },
+  { icon: Facebook, label: 'Facebook' },
+  { icon: Instagram, label: 'Instagram' },
+];
 
 export default function ContactPage() {
   const breadcrumbJsonLd = {
@@ -74,8 +76,8 @@ export default function ContactPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(contactJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(contactJsonLd) }} />
 
       <style>{`
         .contact-card { transition: background .2s, border-color .2s; }
@@ -180,7 +182,9 @@ export default function ContactPage() {
               Follow us for platform updates, new feature announcements, and community highlights.
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
-              {SOCIAL_CHANNELS.map(ch => (
+              {SOCIAL_CHANNELS.map(ch => {
+                const Icon = ch.icon;
+                return (
                 <span
                   key={ch.label}
                   aria-label={ch.label}
@@ -199,9 +203,10 @@ export default function ContactPage() {
                     cursor: 'default',
                   }}
                 >
-                  {ch.icon}
+                  {Icon ? <Icon size={16} /> : ch.glyph}
                 </span>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -231,8 +236,11 @@ export default function ContactPage() {
               color: '#FFB347',
               textDecoration: 'none',
               fontSize: '.88rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
             }}>
-              Visit FAQ Page →
+              Visit FAQ Page <ArrowRight size={13} />
             </Link>
           </div>
         </div>

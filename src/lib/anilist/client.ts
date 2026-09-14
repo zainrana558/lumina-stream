@@ -15,6 +15,22 @@
 import { fetchWithCache, getCached, setCache } from '@/lib/cache';
 import type { MediaItem } from '@/types';
 import { ANILIST_ID_OFFSET } from '@/types';
+import * as jikan from '@/lib/anime/jikan';
+import * as kitsu from '@/lib/anime/kitsu';
+import * as tmdbAnime from '@/lib/anime/tmdb-anime';
+
+// MAL genre ids for the Jikan fallback (AniList uses names, MAL uses numbers).
+const MAL_GENRE_IDS: Record<string, string> = {
+  Action: '1', Adventure: '2', Comedy: '4', Drama: '8', Fantasy: '10',
+  Horror: '14', Mystery: '7', Romance: '22', 'Sci-Fi': '24', 'Slice of Life': '36',
+  Sports: '30', Supernatural: '37', Thriller: '41', 'Mahou Shoujo': '66',
+  Ecchi: '9', 'Award Winning': '46', Suspense: '41', 'Avant Garde': '5',
+};
+function genresToMalIds(names: string[]): string[] {
+  const ids = names.map(n => MAL_GENRE_IDS[n]).filter(Boolean) as string[];
+  return ids.length ? ids : ['1'];
+}
+
 
 // ---- Types ----
 
@@ -152,7 +168,6 @@ export interface AniListMedia {
     icon: string | null;
     type: string;
     color: string | null;
-    iconUrl: string | null;
   }>;
 }
 
@@ -226,11 +241,11 @@ const MEDIA_DETAIL_FRAGMENT = `
   source
   studios { nodes { name isAnimationStudio } }
   staff(perPage: 12) { edges { node { id name { full native } image { medium } } role } }
-  characters(perPage: 15) { edges { node { id name { full native } image { medium } } role voiceActors(languageV2: Japanese, perPage: 1) { id name { full native } languageV2 image { medium } } } }
+  characters(perPage: 15) { edges { node { id name { full native } image { medium } } role voiceActors(language: JAPANESE) { id name { full native } languageV2 image { medium } } } }
   relations { edges { relationType node { id title { romaji english native } format coverImage { extraLarge large } } } }
   siteUrl
   trailer { id site thumbnail }
-  externalLinks { site url icon type color iconUrl }
+  externalLinks { site url icon type color }
 `;
 
 // ---- Rate limiting (90 req/min) ----
@@ -382,6 +397,35 @@ export function getAniListCover(media: AniListMedia): string | null {
  * AniList covers use full URLs (not TMDB paths), stored in _anilistCover.
  */
 export function anilistToMediaItem(media: AniListMedia): MediaItem {
+  // TMDB-sourced anime (last-resort fallback) — treat as a normal TMDB TV item
+  // so it routes to /details/{tmdbId} and loads via the standard TMDB path,
+  // NOT the AniList/MAL detail path.
+  const tmdb = media as unknown as { __tmdb?: boolean; __posterPath?: string | null; __backdropPath?: string | null };
+  if (tmdb.__tmdb) {
+    const t = getAniListTitle(media);
+    const yr = media.startDate?.year || new Date().getFullYear();
+    const r = Math.round(((media.meanScore ?? 0) / 10) * 10) / 10;
+    return {
+      id: media.id,
+      title: t,
+      sub: media.title.native || '',
+      genre: media.genres.length ? media.genres : ['Animation'],
+      r, yr,
+      eps: media.episodes || 12,
+      st: 'Returning Series',
+      tag: 'TV',
+      cs: Math.abs(media.id) % 8,
+      featured: r >= 7.5,
+      progress: 0,
+      desc: media.description?.replace(/<[^>]*>/g, '') || '',
+      cast: [],
+      epList: [],
+      poster_path: tmdb.__posterPath ?? null,
+      backdrop_path: tmdb.__backdropPath ?? null,
+      media_type: 'tv',
+    } as MediaItem;
+  }
+
   const title = getAniListTitle(media);
   const year = media.startDate?.year || new Date().getFullYear();
   // AniList scores are 0-100, our app uses 0-10
@@ -407,6 +451,13 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem {
 // Namespace the AniList ID to prevent collisions with TMDB IDs
   const namespacedId = media.id + ANILIST_ID_OFFSET;
 
+  // Kitsu detail fallback carries real per-episode titles — surface them so the
+  // episode list shows titles instead of "Episode N" placeholders.
+  const kitsuEps = (media as unknown as { _kitsuEpisodes?: Array<{ number: number; title: string }> })._kitsuEpisodes;
+  const epList = Array.isArray(kitsuEps)
+    ? kitsuEps.map((e) => ({ ep: e.number, title: e.title, dur: '', done: false }))
+    : [];
+
   return {
     id: namespacedId,
     title,
@@ -422,7 +473,7 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem {
     progress: 0,
     desc: media.description?.replace(/<[^>]*>/g, '') || '',
     cast: media.studios?.nodes?.map(s => s.name) || [],
-    epList: [],
+    epList,
     poster_path: null, // Not a TMDB path — use _anilistCover instead
     backdrop_path: null,
     media_type: 'tv',
@@ -480,14 +531,14 @@ export async function getSeasonalAnime(
     }
   `;
 
-  return fetchWithCache('trending', `anilist:seasonal:${season || autoSeason}:${autoYear}:${page}:${sort}`, () =>
+  return fetchWithCache('trending', `anime:v2:seasonal:${season || autoSeason}:${autoYear}:${page}:${sort}`, () =>
     anilistPageQuery<AniListMedia>(query, {
       season: season || autoSeason,
       year: autoYear,
       page,
       perPage,
       sort,
-    })
+    }).catch(() => kitsu.kitsuTrending(page)).catch(() => tmdbAnime.tmdbAnimeTrending(page))
   );
 }
 
@@ -506,8 +557,8 @@ export async function getTrendingAnime(page = 1, perPage = 20): Promise<AniListP
     }
   `;
 
-  return fetchWithCache('trending', `anilist:trending:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { page, perPage })
+  return fetchWithCache('trending', `anime:v2:trending:${page}`, () =>
+    anilistPageQuery<AniListMedia>(query, { page, perPage }).catch(() => kitsu.kitsuTrending(page)).catch(() => tmdbAnime.tmdbAnimeTrending(page))
   );
 }
 
@@ -526,8 +577,8 @@ export async function getPopularAnime(page = 1, perPage = 20): Promise<AniListPa
     }
   `;
 
-  return fetchWithCache('popular', `anilist:popular:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { page, perPage })
+  return fetchWithCache('popular', `anime:v2:popular:${page}`, () =>
+    anilistPageQuery<AniListMedia>(query, { page, perPage }).catch(() => kitsu.kitsuPopular(page)).catch(() => tmdbAnime.tmdbAnimePopular(page))
   );
 }
 
@@ -561,8 +612,8 @@ export async function getUpcomingAnime(
     }
   `;
 
-  return fetchWithCache('trending', `anilist:upcoming:${nextSeason}:${nextYear}:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { season: nextSeason, year: nextYear, page, perPage })
+  return fetchWithCache('trending', `anime:v2:upcoming:${nextSeason}:${nextYear}:${page}`, () =>
+    anilistPageQuery<AniListMedia>(query, { season: nextSeason, year: nextYear, page, perPage }).catch(() => kitsu.kitsuUpcoming(page)).catch(() => tmdbAnime.tmdbAnimeUpcoming(page))
   );
 }
 
@@ -581,18 +632,27 @@ export async function getAiringAnime(page = 1, perPage = 20): Promise<AniListPag
     }
   `;
 
-  return fetchWithCache('trending', `anilist:airing:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { page, perPage })
+  return fetchWithCache('trending', `anime:v2:airing:${page}`, () =>
+    anilistPageQuery<AniListMedia>(query, { page, perPage }).catch(() => kitsu.kitsuAiring(page)).catch(() => tmdbAnime.tmdbAnimeTrending(page))
   );
 }
 
 /**
- * Search anime by title
+ * Search anime by title.
+ *
+ * `cascade` (default true) controls whether a zero-result AniList search
+ * falls through to Kitsu → Jikan → TMDB-anime. Pass `false` for low-confidence
+ * queries fired in a loop (e.g. a fuzzy-match fallback trying several mutated
+ * variants of a typo'd query) — cascading all 4 providers on every one of
+ * those would compound into several seconds of sequential requests for what
+ * are mostly going to be genuine misses anyway. Full cascade is worth the
+ * latency for the query the user actually typed.
  */
 export async function searchAnime(
   query: string,
   page = 1,
-  perPage = 10
+  perPage = 10,
+  options?: { cascade?: boolean },
 ): Promise<AniListPage<AniListMedia>> {
   const gql = `
     query ($search: String, $page: Int, $perPage: Int) {
@@ -605,8 +665,42 @@ export async function searchAnime(
     }
   `;
 
-  // Don't cache search results — they should be fresh
-  return anilistPageQuery<AniListMedia>(gql, { search: query, page, perPage });
+  // Don't cache search results — they should be fresh.
+  // Order: AniList → Kitsu → Jikan (all real anime search) → TMDB (weakest, genre-filtered TV).
+  //
+  // Cascades on an EMPTY result too, not just a thrown error. A provider
+  // returning zero matches is a perfectly normal, successful response (not
+  // a rejection), so a plain .catch() chain never reaches Kitsu/Jikan/TMDB
+  // for a title AniList's own catalog simply doesn't have — confirmed by
+  // reading anilistQuery(): it only throws on network failure, a non-2xx
+  // response, or a GraphQL `errors` payload, never on `media: []`. These
+  // catalogs don't fully overlap (an obscure or very new title can exist on
+  // one and not another), so a query-level miss on AniList should still try
+  // the rest before giving up, the same as an outright AniList outage does.
+  const tryProvider = async (
+    fn: () => Promise<AniListPage<AniListMedia>>,
+  ): Promise<AniListPage<AniListMedia> | null> => {
+    try {
+      const result = await fn();
+      return result.media && result.media.length > 0 ? result : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const anilistResult = await tryProvider(() => anilistPageQuery<AniListMedia>(gql, { search: query, page, perPage }));
+  if (anilistResult || options?.cascade === false) {
+    return anilistResult ?? { media: [], pageInfo: { total: 0, currentPage: page, lastPage: 0, hasNextPage: false, perPage } };
+  }
+
+  return (
+    (await tryProvider(() => kitsu.kitsuSearch(query, page))) ??
+    (await tryProvider(() => jikan.jikanSearch(query, page))) ??
+    (await tryProvider(() => tmdbAnime.tmdbAnimeSearch(query, page))) ?? {
+      media: [],
+      pageInfo: { total: 0, currentPage: page, lastPage: 0, hasNextPage: false, perPage },
+    }
+  );
 }
 
 /**
@@ -617,7 +711,7 @@ export async function getAnimeDetail(id: number): Promise<AniListMedia | null> {
     query ($id: Int) {
       Media(type: ANIME, id: $id, isAdult: false) {
         ${MEDIA_DETAIL_FRAGMENT}
-        recommendations(page: 1, perPage: 10, sort: [RATING_DESC, POPULARITY_DESC]) {
+        recommendations(page: 1, perPage: 10, sort: [RATING_DESC]) {
           nodes {
             mediaRecommendation {
               id
@@ -634,13 +728,17 @@ export async function getAnimeDetail(id: number): Promise<AniListMedia | null> {
     }
   `;
 
-  const cached = await getCached<AniListMedia>('details', `anilist:detail:${id}`);
+  const cached = await getCached<AniListMedia>('details', `anime:v2:detail:${id}`);
   if (cached) return cached;
 
-  const data = await anilistQuery<{ Media: (AniListMedia & { recommendations?: { nodes: Array<{ mediaRecommendation: { id: number; title: { romaji: string | null; english: string | null; native: string | null }; meanScore: number | null; coverImage: { extraLarge: string | null; large: string | null } | null; format: AniListMediaFormat | null; startDate: { year: number | null } | null; episodes: number | null } }> } }) | null }>(query, { id });
-  const result = data.Media;
+  const data = await anilistQuery<{ Media: (AniListMedia & { recommendations?: { nodes: Array<{ mediaRecommendation: { id: number; title: { romaji: string | null; english: string | null; native: string | null }; meanScore: number | null; coverImage: { extraLarge: string | null; large: string | null } | null; format: AniListMediaFormat | null; startDate: { year: number | null } | null; episodes: number | null } }> } }) | null }>(query, { id }).catch(() => null);
+  // When AniList is down, the id is a MAL id (see jikanToMedia / kitsuToMedia).
+  // Kitsu first — no aggressive rate limit, stable under crawl load, has real
+  // episode titles. Jikan second (its 3/s limit 429/504s hard under bursts, but
+  // it adds recommendations).
+  const result = data?.Media ?? (await kitsu.kitsuDetail(id)) ?? (await jikan.jikanDetail(id));
   if (result) {
-    setCache('details', `anilist:detail:${id}`, result).catch(() => {});
+    setCache('details', `anime:v2:detail:${id}`, result).catch(() => {});
   }
   return result;
 }
@@ -668,8 +766,10 @@ export async function browseAllAnime(
     }
   `;
 
-  return fetchWithCache('popular', `anilist:all:${sort}:${page}`, () =>
+  return fetchWithCache('popular', `anime:v2:all:${sort}:${page}`, () =>
     anilistPageQuery<AniListMedia>(query, { page, perPage, sort })
+      .catch(() => (sort.includes('SCORE') ? kitsu.kitsuTopRated(page) : kitsu.kitsuPopular(page)))
+      .catch(() => tmdbAnime.tmdbAnimePopular(page))
   );
 }
 
@@ -692,8 +792,10 @@ export async function browseAnimeByGenre(
     }
   `;
 
-  return fetchWithCache('popular', `anilist:genre:${genres.join(',')}:${page}`, () =>
+  return fetchWithCache('popular', `anime:v2:genre:${genres.join(',')}:${page}`, () =>
     anilistPageQuery<AniListMedia>(query, { genres, page, perPage })
+      .catch(() => kitsu.kitsuByGenre(genres, page))
+      .catch(() => tmdbAnime.tmdbAnimePopular(page))
   );
 }
 
@@ -712,8 +814,8 @@ export async function getTopRatedAnime(page = 1, perPage = 20): Promise<AniListP
     }
   `;
 
-  return fetchWithCache('popular', `anilist:top:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { page, perPage })
+  return fetchWithCache('popular', `anime:v2:top:${page}`, () =>
+    anilistPageQuery<AniListMedia>(query, { page, perPage }).catch(() => kitsu.kitsuTopRated(page)).catch(() => tmdbAnime.tmdbAnimeTopRated(page))
   );
 }
 
@@ -744,8 +846,8 @@ export async function getFamilyFriendlyAnime(
     }
   `;
 
-  return fetchWithCache('popular', `anilist:family:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { page, perPage, genres: safeGenres })
+  return fetchWithCache('popular', `anime:v2:family:${page}`, () =>
+    anilistPageQuery<AniListMedia>(query, { page, perPage, genres: safeGenres }).catch(() => kitsu.kitsuFamily(page)).catch(() => tmdbAnime.tmdbAnimePopular(page))
   );
 }
 

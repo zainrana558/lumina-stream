@@ -1,7 +1,9 @@
 import { tmdbFetch } from '@/lib/tmdb/server';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import type { TMDBShow } from '@/types';
 import type { Metadata } from 'next';
+import { Calendar } from 'lucide-react';
 import ReleaseCalendarClient from './ReleaseCalendarClient';
 
 const siteUrl = CANONICAL_BASE;
@@ -51,7 +53,14 @@ export default async function ReleaseCalendarPage() {
 
   try {
     const data = await tmdbFetch<{ results: UpcomingMovie[] }>('/movie/upcoming', { region: 'US' });
-    const movies = (data.results || []).filter(m => m.poster_path && m.release_date);
+    // TMDB's /movie/upcoming list endpoint returns each movie's single flat
+    // `release_date`, which isn't always its US theatrical date — a
+    // re-release, restoration, or festival re-run can land in "upcoming" with
+    // its *original* decades-old release_date still attached (audit finding
+    // F-08: titles from 1986-1996 showing up on a page framed as "next 9
+    // months"). Defensively re-filter to dates that are actually in the future.
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const movies = (data.results || []).filter(m => m.poster_path && m.release_date && m.release_date >= todayIso);
 
     for (const movie of movies) {
       const date = new Date(movie.release_date);
@@ -75,10 +84,10 @@ export default async function ReleaseCalendarPage() {
     };
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(errBreadcrumbJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(errBreadcrumbJsonLd) }} />
         <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ padding: '2.2rem clamp(1rem,5vw,3rem) 0', position: 'relative', zIndex: 3 }}>
-          <h1 className="sec" style={{ fontSize: 'clamp(1.3rem,3vw,2rem)', marginBottom: '.5rem' }}>📅 Release Calendar</h1>
+          <h1 className="sec" style={{ fontSize: 'clamp(1.3rem,3vw,2rem)', marginBottom: '.5rem', display: 'flex', alignItems: 'center', gap: 10 }}><Calendar size={24} /> Release Calendar</h1>
           <p className="f-crimson" style={{  color: 'rgba(255,245,232,.45)', fontSize: '1rem' }}>Upcoming movie releases</p>
         </div>
         <div className="f-cinzel" style={{ padding: '3rem clamp(1rem,5vw,3rem)', textAlign: 'center', color: 'rgba(255,245,232,.35)',  fontSize: '.9rem' }}>
@@ -108,9 +117,9 @@ export default async function ReleaseCalendarPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { BarChart3 } from 'lucide-react';
 
 export default function NotFound() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function NotFound() {
         background: 'linear-gradient(135deg, rgba(255,215,0,.15) 0%, rgba(255,179,71,.15) 100%)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem',
         boxShadow: '8px 8px 24px rgba(0,0,0,.82), -4px -4px 11px rgba(45,25,90,.28)',
-      }} aria-hidden="true">📊</div>
+      }} aria-hidden="true"><BarChart3 size={32} color="currentColor" /></div>
       <h2 className="f-cinzel" style={{ color: 'rgba(255,245,232,.8)', letterSpacing: '.08em', fontSize: '1.2rem' }}>Page not found</h2>
       <p className="f-crimson" style={{ color: 'rgba(255,245,232,.5)', fontSize: '.95rem', maxWidth: 360, textAlign: 'center', lineHeight: 1.7 }}>
         This stats page doesn't exist.

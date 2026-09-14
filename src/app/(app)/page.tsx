@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import { fetchBatchWithCache } from '@/lib/cache';
 import { tmdbFetchRaw } from '@/lib/tmdb/server';
 import { getTrendingAnime, anilistToMediaItem } from '@/lib/anilist/client';
@@ -63,6 +64,54 @@ const HOME_FETCHES: HomeFetch[] = [
   { id: 'acclaimed',    endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' }, category: 'discover' },
 ];
 
+/**
+ * Fetches the AniList "trending anime" row and picks a genuinely-anime backdrop
+ * for the anime genre portal card (AniList banner → AniList cover art → a
+ * correctly-tagged TMDB anime discover query, never an unrelated genre's pool).
+ * Split out so it can run concurrently with the main TMDB batch instead of
+ * serially after it (was adding its full latency on top of the batch's).
+ */
+async function fetchAnimeData(): Promise<{ animeRow: RowData | null; anilistBanner: string | null }> {
+  let anilistBanner: string | null = null;
+  let animeRow: RowData | null = null;
+
+  try {
+    const animeResults = await getTrendingAnime(1, 12);
+    const animeItems = animeResults.media
+      .filter(m => m.coverImage?.large)
+      .map(m => anilistToMediaItem(m));
+    if (animeItems.length) animeRow = { title: 'Anime', sub: '5,000+ series in the archive · Powered by AniList', items: animeItems.slice(0, 12), endpoint: '/genre/anime' };
+    // Grab a banner for the anime genre portal card from the same response — prefer an
+    // actual banner image; fall back to cover art (still genuinely anime) rather than an
+    // unrelated genre's backdrop (previously fell back to a random sci-fi movie backdrop).
+    const withBanner = animeResults.media.filter(m => m.bannerImage);
+    const bannerPool = withBanner.length ? withBanner : animeResults.media.filter(m => m.coverImage?.large);
+    if (bannerPool.length) {
+      const pick = bannerPool[Math.floor(Math.random() * bannerPool.length)];
+      anilistBanner = pick.bannerImage || pick.coverImage!.large!;
+    }
+  } catch { /* non-critical — skip anime row if AniList is down */ }
+
+  // Last-resort anime backdrop if AniList had nothing usable: TMDB does carry anime,
+  // just needs the correct tags (Animation genre + Japan origin) — not a random
+  // unrelated genre's pool.
+  if (!anilistBanner) {
+    try {
+      const animeFallback = await tmdbFetchRaw<{ results?: TMDBShow[] }>('/discover/tv', {
+        with_genres: '16',
+        with_origin_country: 'JP',
+        sort_by: 'popularity.desc',
+      });
+      const withBackdrop = (animeFallback.results || []).filter(r => r.backdrop_path);
+      if (withBackdrop.length) {
+        anilistBanner = withBackdrop[Math.floor(Math.random() * withBackdrop.length)].backdrop_path!;
+      }
+    } catch { /* keep the gradient fallback if this also fails */ }
+  }
+
+  return { animeRow, anilistBanner };
+}
+
 async function getTMDBData() {
   try {
     // Build batch entries — one MGET for all fetches
@@ -74,8 +123,12 @@ async function getTMDBData() {
         .catch(() => ({ results: [] as TMDBShow[], total_results: 0 })),
     }));
 
-    // Single Redis MGET + parallel fetch for misses
-    const batchResults = await fetchBatchWithCache(batchEntries);
+    // Single Redis MGET + parallel fetch for misses, run concurrently with the
+    // AniList row/backdrop fetch below (was awaited serially after this).
+    const [batchResults, { animeRow, anilistBanner }] = await Promise.all([
+      fetchBatchWithCache(batchEntries),
+      fetchAnimeData(),
+    ]);
 
     // Extract results by ID
     const get = (id: string): TMDBShow[] => {
@@ -126,46 +179,60 @@ async function getTMDBData() {
     const featured = trendingWithBackdrop.slice(0, 6).map(r => tmdbToMedia(r));
     const rows: RowData[] = [];
 
+    // Cross-row de-duplication: most of these rows are sorted by pure TMDB
+    // popularity with no other differentiation, so without this the same
+    // handful of current blockbusters shows up in nearly every row —
+    // measured live: Popular Movies and Action shared 8 of 12 items, Popular
+    // Movies and Thriller shared 5. Track which IDs an EARLIER row already
+    // claimed and skip them lower down; movie and TV IDs are independent
+    // TMDB namespaces (can collide numerically on unrelated titles) so they
+    // get separate sets. Falls back to the undeduped list when too few
+    // unique items remain — a single TMDB page (20 results) doesn't always
+    // leave 12 leftovers once several earlier rows have already claimed the
+    // same "currently popular" candidates.
+    const usedMovieIds = new Set<number>();
+    const usedTvIds = new Set<number>();
+    const dedupe = (items: TMDBShow[], used: Set<number>, min = 8): TMDBShow[] => {
+      const fresh = items.filter(r => !used.has(r.id));
+      const pick = fresh.length >= min ? fresh : items;
+      pick.slice(0, 12).forEach(r => used.add(r.id));
+      return pick;
+    };
+    // Trending is mixed movie/tv — claim each item into the right set by its
+    // own media_type (present natively on /trending/all/week) without
+    // filtering the row itself; it's the primary "what's hot" signal and
+    // should always show as-is.
+    trending.slice(0, 12).forEach(r => (r.media_type === 'tv' ? usedTvIds : usedMovieIds).add(r.id));
+
     // ── Trending & Popular ──
-    if (popular.length) rows.push({ title: 'Trending Now', sub: fmtCount('trending', 'Most watched this week'), items: popular.slice(0, 12).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week' });
-    if (popular.length) rows.push({ title: 'Top 10 This Week', sub: fmtCount('popular', 'Hot right now'), items: popular.slice(0, 10).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week', ranked: true });
-    if (tvPopular.length) rows.push({ title: 'Popular TV', sub: fmtCount('tvPopular', 'Most popular TV shows'), items: tvPopular.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/popular' });
-    if (topRated.length) rows.push({ title: 'Top Rated', sub: fmtCount('topRated', 'Highest rated of all time'), items: topRated.slice(0, 12).map(r => tmdbToMedia(r)), endpoint: '/movie/top_rated' });
-    if (upcoming.length) rows.push({ title: 'Coming Soon', sub: fmtCount('upcoming', 'Upcoming releases'), items: upcoming.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/upcoming' });
+    if (trending.length) rows.push({ title: 'Trending Now', sub: fmtCount('trending', 'Most watched this week'), items: trending.slice(0, 12).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week' });
+    if (trending.length) rows.push({ title: 'Top 10 This Week', sub: fmtCount('trending', 'Hot right now'), items: trending.slice(0, 10).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week', ranked: true });
+    if (popular.length) rows.push({ title: 'Popular Movies', sub: fmtCount('popular', 'Most popular right now'), items: dedupe(popular, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/popular' });
+    if (tvPopular.length) rows.push({ title: 'Popular TV', sub: fmtCount('tvPopular', 'Most popular TV shows'), items: dedupe(tvPopular, usedTvIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/popular' });
+    if (topRated.length) rows.push({ title: 'Top Rated', sub: fmtCount('topRated', 'Highest rated of all time'), items: dedupe(topRated, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/top_rated' });
+    if (upcoming.length) rows.push({ title: 'Coming Soon', sub: fmtCount('upcoming', 'Upcoming releases'), items: dedupe(upcoming, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/upcoming' });
 
     // ── Genre rows ──
-    if (action.length) rows.push({ title: 'Action', sub: fmtCount('action', 'Adrenaline-pumping hits'), items: action.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' } });
-    if (comedy.length) rows.push({ title: 'Comedy', sub: fmtCount('comedy', 'Laugh-out-loud favorites'), items: comedy.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '35', sort_by: 'popularity.desc' } });
-    if (scifi.length) rows.push({ title: 'Sci-Fi', sub: fmtCount('scifi', 'Explore the unknown'), items: scifi.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '878', sort_by: 'popularity.desc' } });
+    if (action.length) rows.push({ title: 'Action', sub: fmtCount('action', 'Adrenaline-pumping hits'), items: dedupe(action, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '28', sort_by: 'popularity.desc' } });
+    if (comedy.length) rows.push({ title: 'Comedy', sub: fmtCount('comedy', 'Laugh-out-loud favorites'), items: dedupe(comedy, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '35', sort_by: 'popularity.desc' } });
+    if (scifi.length) rows.push({ title: 'Sci-Fi', sub: fmtCount('scifi', 'Explore the unknown'), items: dedupe(scifi, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '878', sort_by: 'popularity.desc' } });
 
-    // Anime row from AniList (pure anime, no western cartoons)
-    // Also captures a banner for the anime genre portal card — single fetch serves both
-    let anilistBanner: string | null = null;
-    try {
-      const animeResults = await getTrendingAnime(1, 12);
-      const animeItems = animeResults.media
-        .filter(m => m.coverImage?.large)
-        .map(m => anilistToMediaItem(m));
-      if (animeItems.length) rows.push({ title: 'Anime', sub: '5,000+ series in the archive · Powered by AniList', items: animeItems.slice(0, 12), endpoint: '/genre/anime' });
-      // Grab a banner for the anime genre portal card from the same response
-      const withBanner = animeResults.media.filter(m => m.bannerImage);
-      if (withBanner.length) {
-        anilistBanner = withBanner[Math.floor(Math.random() * withBanner.length)].bannerImage!;
-      }
-    } catch { /* non-critical — skip anime row if AniList is down */ }
+    // Anime row from AniList (pure anime, no western cartoons) — fetched
+    // concurrently with the TMDB batch above via fetchAnimeData().
+    if (animeRow) rows.push(animeRow);
 
     // ── Now Playing + TV airing ──
-    if (nowPlaying.length) rows.push({ title: 'Now Playing in Theaters', sub: fmtCount('nowPlaying', 'Currently showing in cinemas'), items: nowPlaying.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/now_playing' });
-    if (airingToday.length) rows.push({ title: 'Airing Today on TV', sub: fmtCount('airingToday', 'Episodes airing today'), items: airingToday.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/airing_today' });
-    if (onTheAir.length) rows.push({ title: 'On The Air', sub: fmtCount('onTheAir', 'TV shows currently broadcasting'), items: onTheAir.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/on_the_air' });
-    if (drama.length) rows.push({ title: 'Drama', sub: fmtCount('drama', 'Emotional stories that move you'), items: drama.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '18', sort_by: 'popularity.desc' } });
+    if (nowPlaying.length) rows.push({ title: 'Now Playing in Theaters', sub: fmtCount('nowPlaying', 'Currently showing in cinemas'), items: dedupe(nowPlaying, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/now_playing' });
+    if (airingToday.length) rows.push({ title: 'Airing Today on TV', sub: fmtCount('airingToday', 'Episodes airing today'), items: dedupe(airingToday, usedTvIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/airing_today' });
+    if (onTheAir.length) rows.push({ title: 'On The Air', sub: fmtCount('onTheAir', 'TV shows currently broadcasting'), items: dedupe(onTheAir, usedTvIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/on_the_air' });
+    if (drama.length) rows.push({ title: 'Drama', sub: fmtCount('drama', 'Emotional stories that move you'), items: dedupe(drama, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '18', sort_by: 'popularity.desc' } });
 
     // ── Thriller ──
-    if (thriller.length) rows.push({ title: 'Thriller', sub: fmtCount('thriller', 'Edge-of-your-seat suspense'), items: thriller.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '53', sort_by: 'popularity.desc' } });
+    if (thriller.length) rows.push({ title: 'Thriller', sub: fmtCount('thriller', 'Edge-of-your-seat suspense'), items: dedupe(thriller, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '53', sort_by: 'popularity.desc' } });
 
     // ── Curated collections ──
-    if (hiddenGems.length) rows.push({ title: 'Hidden Gems', sub: fmtCount('hiddenGems', 'Underrated treasures waiting to be found'), items: hiddenGems.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' } });
-    if (acclaimed.length) rows.push({ title: 'Critically Acclaimed', sub: fmtCount('acclaimed', 'Certified hits with top ratings'), items: acclaimed.slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' } });
+    if (hiddenGems.length) rows.push({ title: 'Hidden Gems', sub: fmtCount('hiddenGems', 'Underrated treasures waiting to be found'), items: dedupe(hiddenGems, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '7', 'vote_count.gte': '200', sort_by: 'popularity.asc' } });
+    if (acclaimed.length) rows.push({ title: 'Critically Acclaimed', sub: fmtCount('acclaimed', 'Certified hits with top ratings'), items: dedupe(acclaimed, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { 'vote_average.gte': '8', 'vote_count.gte': '500', sort_by: 'popularity.desc' } });
 
     // Genre featured backdrops for portal cards — reuses existing row data
     // instead of 6 separate API calls (one per backdrop)
@@ -186,7 +253,7 @@ async function getTMDBData() {
     };
 
     const genreFeatured: GenreFeatured[] = [
-      { key: 'anime',   name: 'Anime',   backdrop: anilistBanner || pickBackdrop(scifi), title: '', count: 5000, tagline: GENRE_TAGLINES.anime },
+      { key: 'anime',   name: 'Anime',   backdrop: anilistBanner, title: '', count: 5000, tagline: GENRE_TAGLINES.anime },
       { key: 'cartoon', name: 'Cartoon', backdrop: pickBackdrop(comedy),               title: '', count: 800,  tagline: GENRE_TAGLINES.cartoon },
       { key: 'horror',  name: 'Horror',  backdrop: pickBackdrop(thriller),             title: '', count: 1200, tagline: GENRE_TAGLINES.horror },
       { key: 'romance', name: 'Romance', backdrop: pickBackdrop(drama),                title: '', count: 1500, tagline: GENRE_TAGLINES.romance },
@@ -270,11 +337,11 @@ export default async function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeFaqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(homeFaqJsonLd) }}
       />
 
       <Home featured={featured} rows={rows} genreFeatured={genreFeatured} />

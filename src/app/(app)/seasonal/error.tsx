@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { Sparkles } from 'lucide-react';
 
 export default function SeasonalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function SeasonalError({ error, reset }: { error: Error & { diges
           background: 'linear-gradient(135deg, rgba(255,107,107,.15) 0%, rgba(255,179,71,.15) 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem',
           boxShadow: '8px 8px 24px rgba(0,0,0,.82), -4px -4px 11px rgba(45,25,90,.28), inset 0 1.5px 0 rgba(255,255,255,.048)',
-        }}>🌸</div>
+        }}><Sparkles size={32} color="currentColor" /></div>
         <h2 className="f-cinzel" style={{
           fontSize: '1.4rem',
           color: 'rgba(255,245,232,.8)', letterSpacing: '.08em', marginBottom: '1rem',

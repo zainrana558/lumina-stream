@@ -28,6 +28,16 @@ export interface StreamProvider {
   getAniListUrl?: (anilistId: number, episode: number) => string;
   /** If true, route through /api/iframe-proxy to bypass X-Frame-Options: SAMEORIGIN */
   useProxy?: boolean;
+  /**
+   * This provider's own JS refuses to play at all inside ANY sandboxed
+   * iframe (confirmed live — not a guess), regardless of which tokens are
+   * granted; the only thing that satisfies it is omitting the sandbox
+   * attribute entirely. That removes the containment that normally blocks
+   * pop-under ads and full-tab-hijack redirects from these embeds. Kept at
+   * low tier (never the default first choice) and gated behind an explicit
+   * on-screen warning in IntelligentPlayer before load — see noSandboxWarning.
+   */
+  noSandbox?: boolean;
 }
 
 export interface EmbedResult {
@@ -39,6 +49,8 @@ export interface EmbedResult {
   replaced?: boolean;
   /** true if this URL goes through the iframe proxy (SAMEORIGIN bypass) */
   proxied?: boolean;
+  /** See StreamProvider.noSandbox */
+  noSandbox?: boolean;
 }
 
 // ---- Replacement Pool (stashed extras) ----
@@ -54,35 +66,30 @@ interface ReplacementEntry {
 }
 
 const REPLACEMENT_POOL: ReplacementEntry[] = [
-  // All verified alive 2026-07-07 (200 OK, no X-Frame-Options, no CSP frame-ancestors block)
-  { name: 'PStream', category: 'all', getMovieUrl: (id) => `https://iframe.pstream.org/embed/tmdb-movie-${id}`, getTvUrl: (id, s, e) => `https://iframe.pstream.org/embed/tmdb-tv-${id}/${s}/${e}` },
-  { name: 'StreamLare', category: 'all', getMovieUrl: (id) => `https://streamlare.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://streamlare.com/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc PRO', category: 'all', getMovieUrl: (id) => `https://vidsrc.pro/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}-${e}` },
-  // New additions verified 2026-07-07
-  { name: 'VidBinge', category: 'all', getMovieUrl: (id) => `https://vidbinge.com/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidbinge.com/embed/tv/${id}/${s}/${e}` },
-  { name: 'VidSrc IN', category: 'all', getMovieUrl: (id) => `https://vidsrc.in/embed/movie/${id}`, getTvUrl: (id, s, e) => `https://vidsrc.in/embed/tv/${id}/${s}/${e}` },
-  { name: 'SmashyStream', category: 'all', getMovieUrl: (id) => `https://embed.smashystream.com/playere.php?tmdb=${id}`, getTvUrl: (id, s, e) => `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${s}&episode=${e}` },
-  // AutoEmbed — promoted to active TIER 2 (2026-07-07)
-  // StreamSilk — promoted to active TIER 2 (2026-07-07)
-  // Series9API — promoted to active TIER 2 (2026-07-07)
-  // VidSrc FYI — promoted to active TIER 2 (2026-07-07)
-  // StreamSB — REMOVED: redirects to parked domain ww1.streamsb.net (2026-07-07)
-  // MoviesAPI — REMOVED: fetch failed (2026-07-07)
-  // VidoLol — REMOVED: fetch failed (2026-07-07)
-  // LordFlix — REMOVED: 404 + SAMEORIGIN (2026-07-07)
+  // Reserve providers — swapped in when an active one dies. Re-swept
+  // 2026-09-14: the previous 6 entries here (VidSrc SU/RU, VSrcEmbed,
+  // Vid-Src Top, VidRock, SmashyStream) were ALL confirmed broken via live
+  // sandboxed-iframe testing — a dead replacement pool doesn't help when an
+  // active provider fails. Replaced with confirmed-working mirror domains of
+  // the Tier 1 Vidzy entry (same backend, verified identical playback) —
+  // real resilience if vidzy.org specifically gets blocked/seized, rather
+  // than swapping one broken provider for another.
+  { name: 'VidzyCC',    category: 'all', getMovieUrl: (id) => `https://vidzy.cc/movie/${id}`,        getTvUrl: (id, s, e) => `https://vidzy.cc/serie/${id}/${s}/${e}` },
+  // Same backend as VidzyCC/vidzy.org for movies, but its own TV routing —
+  // /serie/ 404s here, /tv/ is correct. Verified separately, not assumed.
+  { name: 'VidApiQzz',  category: 'all', getMovieUrl: (id) => `https://vidapi.qzz.io/movie/${id}`,   getTvUrl: (id, s, e) => `https://vidapi.qzz.io/tv/${id}/${s}/${e}` },
 ];
 
 // ---- Active Providers ----
+// Full fresh sweep 2026-09-10 — old hardcoded list removed. Each verified to
+// return a real player payload (200 + HLS/player markers). Domains in the
+// streaming-embed space rotate constantly; the health-check + REPLACEMENT_POOL
+// handle churn, but this list should be re-swept every few weeks.
 
 const activeProviders: StreamProvider[] = [
   // ══════════════════════════════════════════════════════════════════
-  // ANIME TIER 1 — Dedicated anime streaming providers
-  // These providers appear first in the dropdown for anime content.
-  // Cinezo: AniList-native, sub/dub support, multi-language. Gold standard.
-  // VidSrc WIN: TMDB-based anime, fast fallback.
+  // ANIME TIER 1 — dedicated anime embeds (shown first for anime content)
   // ══════════════════════════════════════════════════════════════════
-
-  // Cinezo Anime (Sub) — 729ms, 200 OK, no XFO. AniList-native embed, sub/dub, multi-language
   {
     name: "Cinezo Anime (Sub)",
     tier: 1, category: "anime",
@@ -90,8 +97,6 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
     getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}`,
   },
-
-  // Cinezo Anime (Dub) — 649ms, 200 OK, no XFO. Same as above but with English dub
   {
     name: "Cinezo Anime (Dub)",
     tier: 1, category: "anime",
@@ -99,234 +104,159 @@ const activeProviders: StreamProvider[] = [
     getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
     getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}?dub=true`,
   },
-
-  // VidPlus Anime (Sub/Dub) — REMOVED: 403 + X-Frame-Options: SAMEORIGIN (2026-07-07)
-
-  // VidSrc WIN Anime — 186ms (FASTEST anime), 200 OK, no XFO. TMDB/MAL-based
   {
-    name: "VidSrc WIN Anime",
+    name: "VidSrc CC Anime",
     tier: 1, category: "anime",
-    getMovieUrl: (id) => `https://vidsrc.win/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.win/embed/tv/${id}/${s}/${e}`,
-    getAnimeUrl: (malId, ep) => {
-      const s = Math.floor((ep - 1) / 25) + 1;
-      const e = ((ep - 1) % 25) + 1;
-      return `https://vidsrc.win/embed/tv/${malId}/${s}/${e}`;
-    },
+    getMovieUrl: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
+    getAnimeUrl: (malId, ep) => `https://vidsrc.cc/v2/embed/anime/${malId}/${ep}/sub`,
+  },
+  {
+    name: "2Embed Anime",
+    tier: 2, category: "anime",
+    getMovieUrl: (id) => `https://www.2embed.cc/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://www.2embed.cc/embed/tv/${id}/${s}/${e}`,
+    getAnimeUrl: (malId) => `https://www.2embed.cc/embed/anime/${malId}`,
   },
 
   // ══════════════════════════════════════════════════════════════════
-  // TIER 1 — Top general providers (curated for quality, diversity, speed, stability)
-  // All general providers also serve anime content via TMDB IDs.
+  // GENERAL TIER 1 — movies + TV
+  // Re-swept 2026-09-14. VidLux is the one confirmed working end-to-end
+  // through the REAL production app (real origin, real CSP, real
+  // IntelligentPlayer sandbox) — verified with an actual screenshot of it
+  // playing real content. Everything else here was live-tested with a
+  // sandboxed iframe matching the exact production sandbox attribute
+  // (allow-scripts allow-same-origin allow-forms allow-presentation, no
+  // popups/top-nav). Most of the wider vidsrc-alternative ecosystem has
+  // adopted client-side JS that detects ANY iframe sandbox attribute
+  // (regardless of which tokens are granted — confirmed by testing with
+  // allow-popups/allow-top-navigation added too, no change) and refuses to
+  // play, showing "please disable sandbox" instead of video.
+  //
+  // 111Movies is deliberately NOT here despite passing an isolated
+  // file://-origin sandbox test: it failed when actually played through the
+  // real app (real https origin) — its backend (vidlove.cc) showed "This
+  // site broke the player" and refused to embed. A file:// parent origin
+  // isn't a fully faithful stand-in for the real embedding context; the
+  // ones below were all re-verified through a real HTTPS-origin test page
+  // (served from the live app's own domain, not file://) after that lesson.
+  {
+    name: "VidLux",
+    tier: 1, category: "all",
+    getMovieUrl: (id) => `https://vidlux.xyz/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidlux.xyz/embed/tv/${id}/${s}/${e}`,
+  },
+  {
+    // vidzy.org / vidzy.cc / vidapi.qzz.io are the same backend (confirmed —
+    // identical frame-for-frame playback across all three) under different
+    // domains; vidzy.cc kept in the replacement pool below as a same-service
+    // mirror in case this specific domain gets blocked/seized.
+    name: "Vidzy",
+    tier: 1, category: "all",
+    getMovieUrl: (id) => `https://vidzy.org/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidzy.org/serie/${id}/${s}/${e}`,
+  },
+
   // ══════════════════════════════════════════════════════════════════
-
-  // 1. VidSrc SU — 544ms, 200 OK, no XFO
+  // GENERAL TIER 2 — currently sandbox-blocked as of the 2026-09-14 sweep
+  // (each confirmed via screenshot: explicit "disable sandbox" rejection,
+  // not a network/reachability failure) or, for 111Movies, confirmed
+  // broken specifically in the real app's origin context. Kept as
+  // lower-priority fallbacks rather than deleted — this whole ecosystem's
+  // domains and behavior churn constantly, and the health-check/swap
+  // system in registry.ts already demotes/replaces providers that fail
+  // live checks. Re-sweep periodically.
+  // ══════════════════════════════════════════════════════════════════
   {
-    name: "VidSrc SU",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.su/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.su/embed/tv/${id}/${s}/${e}`,
+    name: "111Movies",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://111movies.com/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://111movies.com/tv/${id}/${s}/${e}`,
   },
-
-  // 2. VidSrc RU — 541ms, 200 OK, no XFO
-  {
-    name: "VidSrc RU",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.ru/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.ru/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // 3. VidSrc IO — 889ms, 200 OK, no XFO, ACAO: *
-  {
-    name: "VidSrc IO",
-    tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.io/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.io/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // 4. VidCore — 3095ms (slow but reliable), 14+ servers, auto-fallback, subtitles
   {
     name: "VidCore",
-    tier: 1, category: "all",
+    tier: 2, category: "all",
     getMovieUrl: (id) => `https://vidcore.org/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidcore.org/embed/tv/${id}/${s}/${e}`,
   },
-
-  // VidPlus — REMOVED: 403 + X-Frame-Options: SAMEORIGIN (2026-07-07)
-  // VidSrc Embed RU/SU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN
-  // VSrc SU — REMOVED: redirects to vsembed.ru → 403 SAMEORIGIN
-
-  // ══════════════════════════════════════════
-  // TIER 2 — Backup providers
-  // ══════════════════════════════════════════
-
-  // VidSrcMe RU — 517ms, 200 OK
   {
-    name: "VidSrcMe RU",
+    name: "VidFast",
     tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrcme.ru/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrcme.ru/embed/tv/${id}/${s}/${e}`,
+    getMovieUrl: (id) => `https://vidfast.vc/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidfast.vc/tv/${id}/${s}/${e}`,
   },
-
-  // VidSrcMe SU — 774ms, 200 OK
-  {
-    name: "VidSrcMe SU",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrcme.su/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrcme.su/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // VidSrc-Me RU — 793ms, 200 OK
-  {
-    name: "VidSrc-Me RU",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc-me.ru/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc-me.ru/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // VidSrc-Me SU — 805ms, 200 OK
-  {
-    name: "VidSrc-Me SU",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc-me.su/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc-me.su/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // Promoted from pool (2026-07-07) — all verified 200 OK, no frame-block
-
-  // AutoEmbed — 621ms, TMDB-native embed
-  {
-    name: "AutoEmbed",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://autoembed.co/movie/tmdb/${id}`,
-    getTvUrl: (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}`,
-  },
-
-  // StreamSilk — 758ms, clean embed
-  {
-    name: "StreamSilk",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://streamsilk.com/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://streamsilk.com/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // Series9API — 977ms, API-based
-  {
-    name: "Series9API",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://api.series9.io/film/${id}`,
-    getTvUrl: (id, s, e) => `https://api.series9.io/series/${id}/${s}/${e}`,
-  },
-
-  // VidSrc FYI — 954ms, independent VidSrc domain
-  {
-    name: "VidSrc FYI",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.fyi/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.fyi/embed/tv/${id}/${s}-${e}`,
-  },
-
-  // Existing verified TIER 2
-
-  // AnyEmbed — 75ms (FASTEST), TMDB-native embed
-  {
-    name: "AnyEmbed",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://anyembed.xyz/embed/tmdb-movie-${id}`,
-    getTvUrl: (id, s, e) => `https://anyembed.xyz/embed/tmdb-tv-${id}-${s}-${e}`,
-  },
-
-  // VaPlayer — 420ms, Russian embed provider
-  {
-    name: "VaPlayer",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vaplayer.ru/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vaplayer.ru/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // Nontongo — 558ms, 200 OK
-  {
-    name: "Nontongo",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://nontongo.win/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://nontongo.win/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // VidLink — 563ms, 200 OK
   {
     name: "VidLink",
     tier: 2, category: "all",
     getMovieUrl: (id) => `https://vidlink.pro/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
   },
-
-  // VidSrc.pm — 671ms, independent VidSrc domain
   {
-    name: "VidSrc.pm",
+    name: "VidSrc CC",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
+  },
+  {
+    name: "Videasy",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://player.videasy.to/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.videasy.to/tv/${id}/${s}/${e}`,
+  },
+  {
+    name: "VidSrc IO",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidsrc.io/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.io/embed/tv/${id}/${s}/${e}`,
+  },
+  {
+    name: "VidSrc PM",
     tier: 2, category: "all",
     getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
   },
-
-  // VidSrc MOV — 712ms, 200 OK, separate infrastructure
-  {
-    name: "VidSrc MOV",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.mov/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.mov/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // FilmU — 849ms, clean embed API, 4K support
-  {
-    name: "FilmU",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://embed.filmu.in/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://embed.filmu.in/tv/${id}/${s}/${e}`,
-  },
-
-  // FileMoon — 801ms, 200 OK
-  {
-    name: "FileMoon",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://filemoon.sx/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://filemoon.sx/embed/tv/${id}/${s}/${e}`,
-  },
-
-  // 2Embed — 1247ms, 200 OK
   {
     name: "2Embed",
     tier: 2, category: "all",
     getMovieUrl: (id) => `https://www.2embed.cc/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://www.2embed.cc/embed/tv/${id}/${s}/${e}`,
   },
+  {
+    name: "MoviesAPI",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://moviesapi.to/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://moviesapi.to/tv/${id}-${s}-${e}`,
+  },
 
-  // ── REMOVED providers (dead/frame-blocked as of 2026-07-07) ──
-  // VidPlus — 403 + X-Frame-Options: SAMEORIGIN
-  // VidPlus Anime (Sub/Dub) — same domain, same 403
-  // SmashyStream — DNS/connection failure (fetch failed)
-  // Vidify — TIMEOUT (8s+)
-  // SuperEmbed — 403 + SAMEORIGIN after redirect to streamingnow.mov
-  // VidSrc CC — 403 Forbidden
-  // VidSrc.to — SAMEORIGIN
-  // Embed.su — domain for sale
-  // VidSrc Embed RU/SU — redirects to vsembed.ru → 403
-  // VSrc SU — redirects to vsembed.ru → 403
-  // MoviesApi.to — 404
-  // VidSrc.vip — unreachable
-  // StreamWish — 403
-  // VidNest — 404
-  // 111Movies — 404
-  // VidFast — 404
-  // HDStream — unreachable
-  // Videasy — domain for sale
-  // VidPhantom — 404
-  // StreamHide — unreachable
-  // Series9 — unreachable
-  // VidSrc.dev — domain for sale
-  // VidSrc.link — 415 + SAMEORIGIN
-  // TVPizza — SAMEORIGIN (proxy can't fix CORS)
-  // LordFlix — 404 + SAMEORIGIN
-  // MultiEmbed — 403 after redirect
+  // ══════════════════════════════════════════════════════════════════
+  // GENERAL/ANIME TIER 3 — noSandbox required. Same "own JS refuses to
+  // play inside ANY sandboxed iframe" pattern as the rejections above,
+  // confirmed via direct A/B testing (adding allow-popups/allow-top-nav
+  // tokens didn't help; only fully omitting the sandbox attribute does).
+  // Gated behind the noSandbox flag + on-screen warning in
+  // IntelligentPlayer, kept at the lowest tier so it's never the
+  // default pick. VidNest is unique in this registry: one backend
+  // serves movie + TV + anime (via AniList ID) in a single service, so
+  // it's listed twice — once as a general entry and once as an
+  // anime-category entry (VidNest Anime) — matching the existing
+  // 2Embed / 2Embed Anime split pattern so it surfaces correctly in
+  // both the general and anime dropdown groupings.
+  // ══════════════════════════════════════════════════════════════════
+  {
+    name: "VidNest",
+    tier: 3, category: "all",
+    getMovieUrl: (id) => `https://vidnest.fun/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidnest.fun/tv/${id}/${s}/${e}`,
+    noSandbox: true,
+  },
+  {
+    name: "VidNest Anime",
+    tier: 3, category: "anime",
+    getMovieUrl: (id) => `https://vidnest.fun/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidnest.fun/tv/${id}/${s}/${e}`,
+    getAniListUrl: (anilistId, ep) => `https://vidnest.fun/anime/${anilistId}/${ep}/sub`,
+    noSandbox: true,
+  },
 ];
 
 // ---- Pool State ----
@@ -419,6 +349,7 @@ export function getAllEmbedUrls(
         tier: p.tier,
         category: p.category,
         replaced: swappedIn.has(p.name),
+        noSandbox: p.noSandbox,
         url: rawUrl,
       };
     });
@@ -449,6 +380,7 @@ export function getAnimeEmbedUrls(
         tier: p.tier,
         category: "all" as ProviderCategory,
         replaced: swappedIn.has(p.name),
+        noSandbox: p.noSandbox,
         url: rawUrl,
       };
     });
@@ -472,6 +404,7 @@ export function getAnimeEmbedUrls(
         tier: p.tier,
         category: "anime" as ProviderCategory,
         replaced: swappedIn.has(p.name),
+        noSandbox: p.noSandbox,
         url: rawUrl || '',
       };
     })

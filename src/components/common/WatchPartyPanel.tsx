@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Check, Circle, Clapperboard, Copy, PartyPopper, RefreshCw, Star } from 'lucide-react';
 import { CS } from '@/styles/themes';
+import { createClient, ensureRealtimeAuth } from '@/lib/supabase/client';
 
 interface Participant {
   profile_id: string;
@@ -41,7 +43,7 @@ interface WatchPartyPanelProps {
   mediaType: string;
   season: number;
   episode: number;
-  isHostControl: boolean; // true = host controls playback
+  /** Non-host participants receive the host's playback state here. */
   onPlaybackSync?: (state: { isPlaying: boolean; currentTime: number; season: number; episode: number }) => void;
   profileId: string | null;
   profileName: string | null;
@@ -54,7 +56,6 @@ export default function WatchPartyPanel({
   mediaType,
   season,
   episode,
-  isHostControl,
   onPlaybackSync,
   profileId,
   profileName,
@@ -71,11 +72,12 @@ export default function WatchPartyPanel({
   const [chatInput, setChatInput] = useState('');
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [lastMessageAt, setLastMessageAt] = useState<string | null>(null);
+  const [resyncing, setResyncing] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const syncRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // You control playback iff you're the room's host.
+  const isHostControl = !!room && !!profileId && room.host_profile_id === profileId;
 
   const s = CS[Math.abs(showId) % 8];
 
@@ -84,69 +86,101 @@ export default function WatchPartyPanel({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (syncRef.current) clearInterval(syncRef.current);
-    };
-  }, []);
-
-  // Poll for new messages when in room
+  // New chat messages via Supabase Realtime — replaces a 3s poll that hit
+  // Redis rate-limiting + Supabase + the Cloudflare Worker on every tick for
+  // every participant (see the caching audit: ~1,919 req/hr/participant was
+  // enough to exhaust Cloudflare's entire free daily quota in ~1 hour at
+  // ~52 concurrent participants).
   useEffect(() => {
     if (view !== 'room' || !room) return;
+    const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
-    const pollMessages = async () => {
-      try {
-        const params = new URLSearchParams({ roomId: room.id });
-        if (lastMessageAt) params.set('after', lastMessageAt);
-        const res = await fetch(`/api/watch-party/messages?${params}`);
-        const data = await res.json();
-        if (data.messages && data.messages.length > 0) {
-          setMessages(prev => {
-            const existingIds = new Set(prev.map(m => m.id));
-            const newMsgs = data.messages.filter((m: ChatMessage) => !existingIds.has(m.id));
-            return [...prev, ...newMsgs];
-          });
-          setLastMessageAt(data.messages[data.messages.length - 1].created_at);
-        }
-      } catch { /* silent */ }
-    };
+    (async () => {
+      await ensureRealtimeAuth(supabase);
+      if (cancelled) return;
+      channel = supabase
+        .channel(`watch-party-messages:${room.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'watch_party_messages', filter: `room_id=eq.${room.id}` },
+          (payload) => {
+            const row = payload.new as { id: string; profile_id: string; content: string; created_at: string };
+            setMessages(prev => {
+              if (prev.some(m => m.id === row.id)) return prev;
+              const sender = participants.find(p => p.profile_id === row.profile_id);
+              const newMsg: ChatMessage = {
+                id: row.id,
+                profile_id: row.profile_id,
+                name: sender?.name || 'Anonymous',
+                avatar_url: sender?.avatar_url || null,
+                content: row.content,
+                created_at: row.created_at,
+              };
+              // Drop the optimistic local echo of our own just-sent message.
+              const withoutOptimistic = prev.filter(m => !(m.id.startsWith('local-') && m.profile_id === row.profile_id && m.content === row.content));
+              return [...withoutOptimistic, newMsg];
+            });
+          },
+        )
+        .subscribe();
+    })();
 
-    pollMessages(); // Initial fetch
-    pollRef.current = setInterval(pollMessages, 3000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [view, room?.id, lastMessageAt]);
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
+  }, [view, room?.id, participants]);
 
-  // Poll for playback sync state (for non-host participants)
+  // Pull the host's current playback state and push it to the player. Used
+  // for the initial sync on join and on demand via the "Resync" button.
+  const pullHostSync = useCallback(async () => {
+    if (!room || isHostControl) return;
+    try {
+      const res = await fetch(`/api/watch-party/sync?roomId=${room.id}`);
+      const data = await res.json();
+      if (onPlaybackSync && !data.error) {
+        onPlaybackSync({
+          isPlaying: data.is_playing,
+          currentTime: data.playback_time,
+          season: data.season,
+          episode: data.episode,
+        });
+      }
+    } catch { /* silent */ }
+  }, [room?.id, isHostControl, onPlaybackSync]);
+
+  // Initial sync on join, then live playback updates via Supabase Realtime —
+  // replaces a 5s poll (non-host participants only) with the same cost
+  // profile as the message poll above.
   useEffect(() => {
     if (view !== 'room' || !room || isHostControl) return;
+    pullHostSync();
+    const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
-    const pollSync = async () => {
-      try {
-        const res = await fetch(`/api/watch-party/sync?roomId=${room.id}`);
-        const data = await res.json();
-        if (onPlaybackSync && !data.error) {
-          onPlaybackSync({
-            isPlaying: data.is_playing,
-            currentTime: data.playback_time,
-            season: data.season,
-            episode: data.episode,
-          });
-        }
-        // Update participant count
-        if (data.participant_count !== undefined) {
-          setParticipants(prev => {
-            // Just update count display - full list fetched on join
-            return prev;
-          });
-        }
-      } catch { /* silent */ }
-    };
+    (async () => {
+      await ensureRealtimeAuth(supabase);
+      if (cancelled) return;
+      channel = supabase
+        .channel(`watch-party-sync:${room.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'watch_party_rooms', filter: `id=eq.${room.id}` },
+          (payload) => {
+            const row = payload.new as { is_playing: boolean; playback_time: number; season: number; episode: number };
+            onPlaybackSync?.({
+              isPlaying: row.is_playing,
+              currentTime: row.playback_time,
+              season: row.season,
+              episode: row.episode,
+            });
+          },
+        )
+        .subscribe();
+    })();
 
-    syncRef.current = setInterval(pollSync, 5000);
-    return () => { if (syncRef.current) clearInterval(syncRef.current); };
-  }, [view, room?.id, isHostControl, onPlaybackSync]);
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
+  }, [view, room?.id, isHostControl, pullHostSync, onPlaybackSync]);
 
   const handleCreate = async () => {
     if (!profileId) return;
@@ -200,7 +234,6 @@ export default function WatchPartyPanel({
       setRoom(data.room);
       setParticipants(data.participants || []);
       setMessages(data.messages || []);
-      setLastMessageAt(data.messages?.length > 0 ? data.messages[data.messages.length - 1].created_at : null);
       setView('room');
     } catch { setError('Network error'); }
   };
@@ -217,7 +250,6 @@ export default function WatchPartyPanel({
     setRoom(null);
     setParticipants([]);
     setMessages([]);
-    setLastMessageAt(null);
     setView('lobby');
   };
 
@@ -255,7 +287,7 @@ export default function WatchPartyPanel({
     });
   };
 
-  const handleSyncPlayback = useCallback(async (state: { isPlaying: boolean; currentTime: number }) => {
+  const handleSyncPlayback = useCallback(async (state: { isPlaying: boolean; currentTime: number; season?: number; episode?: number }) => {
     if (!profileId || !room || !isHostControl) return;
     try {
       await fetch('/api/watch-party/sync', {
@@ -264,11 +296,14 @@ export default function WatchPartyPanel({
         body: JSON.stringify({
           profile_id: profileId,
           room_id: room.id,
-          ...state,
+          is_playing: state.isPlaying,
+          playback_time: state.currentTime,
+          season: state.season ?? season,
+          episode: state.episode ?? episode,
         }),
       });
     } catch { /* silent */ }
-  }, [profileId, room?.id, isHostControl]);
+  }, [profileId, room?.id, isHostControl, season, episode]);
 
   // Expose sync function via ref-like callback
   useEffect(() => {
@@ -287,7 +322,7 @@ export default function WatchPartyPanel({
       <div className="wp-panel">
         {/* Lobby header */}
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '.5rem' }}>🎬</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '.5rem' }}><Clapperboard size={32} /></div>
           <h3 className="wp-heading">Watch Party</h3>
           <p className="f-crimson" style={{  fontSize: '.88rem', color: 'rgba(255,245,232,.5)', lineHeight: 1.6, marginTop: '.5rem' }}>
             Watch together in real-time. One person hosts, everyone syncs.
@@ -315,7 +350,10 @@ export default function WatchPartyPanel({
                   Creating...
                 </span>
               ) : (
-                '🎉 Create a Watch Party'
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <PartyPopper size={16} />
+                  Create a Watch Party
+                </span>
               )}
             </button>
 
@@ -403,7 +441,7 @@ export default function WatchPartyPanel({
         borderBottom: '1px solid rgba(255,255,255,.06)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
-          <div style={{ fontSize: '1.2rem' }}>🎬</div>
+          <div style={{ display: 'flex' }}><Clapperboard size={19} /></div>
           <div>
             <div className="f-cinzel" style={{  fontSize: '.72rem', color: 'rgba(255,245,232,.45)', letterSpacing: '.06em' }}>
               WATCHING
@@ -413,7 +451,11 @@ export default function WatchPartyPanel({
             </div>
             <div className="f-mono" style={{  fontSize: '.6rem', color: 'rgba(255,245,232,.3)', marginTop: 2 }}>
               S{room?.season || season} E{room?.episode || episode}
-              {isHostControl && <span style={{ color: s.acc, marginLeft: 6 }}>⬤ HOST</span>}
+              {isHostControl && (
+                <span style={{ color: s.acc, marginLeft: 6, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <Circle size={7} fill="currentColor" /> HOST
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -433,8 +475,24 @@ export default function WatchPartyPanel({
             title="Click to copy code"
           >
             {room?.code || '------'}
-            {copied ? ' ✓' : ' ⎘'}
+            {copied ? <Check size={12} /> : <Copy size={12} />}
           </button>
+          {/* Guests can force an immediate catch-up to the host's position */}
+          {!isHostControl && (
+            <button className="f-cinzel"
+              onClick={async () => { setResyncing(true); await pullHostSync(); setTimeout(() => setResyncing(false), 600); }}
+              disabled={resyncing}
+              style={{
+                padding: '6px 12px', borderRadius: 8, border: `1px solid ${s.acc}30`,
+                background: `${s.acc}10`, color: s.acc,
+                fontSize: '.62rem', fontWeight: 600,
+                cursor: resyncing ? 'default' : 'pointer', letterSpacing: '.04em', transition: 'all .2s',
+              }}
+              title="Jump to the host's current position"
+            >
+              {resyncing ? 'Syncing…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><RefreshCw size={11} /> Resync</span>}
+            </button>
+          )}
           <button className="f-cinzel"
             onClick={handleLeave}
             style={{
@@ -476,7 +534,7 @@ export default function WatchPartyPanel({
               color: p.is_host ? s.acc : 'rgba(255,245,232,.6)',
               fontWeight: p.is_host ? 700 : 400, letterSpacing: '.04em',
             }}>
-              {p.name}{p.is_host ? ' ★' : ''}
+              {p.name}{p.is_host ? <Star size={9} fill="currentColor" style={{ marginLeft: 3, verticalAlign: -1 }} /> : ''}
             </span>
           </div>
         ))}

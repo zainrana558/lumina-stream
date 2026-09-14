@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
+import { Star, X } from 'lucide-react';
 
 export interface FilterState {
   genre: string;
@@ -64,14 +65,14 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
     onFilterChange(cleared);
   };
 
-  const activeFilters: { key: keyof FilterState; label: string }[] = [];
+  const activeFilters: { key: keyof FilterState; label: ReactNode }[] = [];
   if (localFilters.genre) {
     const g = genres.find(g => g.id === Number(localFilters.genre));
     activeFilters.push({ key: 'genre', label: g ? g.name : localFilters.genre });
   }
   if (localFilters.yearFrom) activeFilters.push({ key: 'yearFrom', label: `From ${localFilters.yearFrom}` });
   if (localFilters.yearTo) activeFilters.push({ key: 'yearTo', label: `To ${localFilters.yearTo}` });
-  if (localFilters.minRating) activeFilters.push({ key: 'minRating', label: `≥ ${localFilters.minRating}★` });
+  if (localFilters.minRating) activeFilters.push({ key: 'minRating', label: <>≥ {localFilters.minRating}<Star size={10} fill="currentColor" style={{ marginLeft: 2 }} /></> });
   if (localFilters.runtimeFrom) activeFilters.push({ key: 'runtimeFrom', label: `≥ ${localFilters.runtimeFrom} min` });
   if (localFilters.runtimeTo) activeFilters.push({ key: 'runtimeTo', label: `≤ ${localFilters.runtimeTo} min` });
   if (localFilters.sortBy) {
@@ -209,7 +210,7 @@ export default function SearchFilters({ filters, onFilterChange, genres, mediaTy
               style={{ cursor: 'pointer', fontSize: '.6rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 36 }}
             >
               {f.label}
-              <span style={{ opacity: 0.5 }}>✕</span>
+              <span style={{ opacity: 0.5, display: 'flex' }}><X size={10} /></span>
             </span>
           ))}
           <button className="f-cinzel"

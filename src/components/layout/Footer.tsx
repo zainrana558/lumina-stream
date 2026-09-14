@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Facebook, Instagram, Twitter, Youtube, type LucideIcon } from 'lucide-react';
 import { GCARDS } from '@/config/genres';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -50,7 +51,12 @@ const FOOTER_SECTIONS = [
 
 // Social icons — update with real profile URLs when available.
 // Currently decorative-only to avoid linking to non-existent profiles.
-const SOCIAL_ICONS = ['𝕏', '📘', '📸', '▶'] as const;
+const SOCIAL_ICONS: { Icon: LucideIcon; label: string }[] = [
+  { Icon: Twitter, label: 'X (Twitter)' },
+  { Icon: Facebook, label: 'Facebook' },
+  { Icon: Instagram, label: 'Instagram' },
+  { Icon: Youtube, label: 'YouTube' },
+];
 
 export default function Footer() {
   return (
@@ -95,13 +101,13 @@ export default function Footer() {
           </span>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          {SOCIAL_ICONS.map(ic => (
+          {SOCIAL_ICONS.map(({ Icon, label }) => (
             <span
-              key={ic}
+              key={label}
               aria-hidden="true"
               className="footer-icon"
-              style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.78rem', background: '#0C091A', boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.04)', transition: 'all .25s', color: 'rgba(255,245,232,.18)' }}
-            >{ic}</span>
+              style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0C091A', boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.04)', transition: 'all .25s', color: 'rgba(255,245,232,.18)' }}
+            ><Icon size={14} /></span>
           ))}
         </div>
       </div>

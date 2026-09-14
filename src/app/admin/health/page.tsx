@@ -8,16 +8,17 @@
 import { getFullStatus, getAllHealthRecords, type HealthRecord } from '@/lib/streaming/health-check';
 import { getSelectionMetrics, getHealthMetrics, getRecentFailovers } from '@/lib/streaming/metrics';
 import { getProviderRegistry } from '@/lib/streaming/registry';
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import HealthDashboardClient from './HealthDashboardClient';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function HealthDashboardPage() {
-  // Auth check
+  // Auth check — admin only; requireAuth() alone would let any signed-in
+  // user view internal provider health/latency/error data.
   try {
-    await requireAuth();
+    await requireAdmin();
   } catch {
     return (
       <div style={{ padding: 40, color: '#ff6b6b', fontFamily: 'monospace', minHeight: '100vh', background: '#07040F' }}>

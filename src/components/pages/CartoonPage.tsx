@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { Cloud, Sparkles, Star, Palette, PartyPopper, Loader2 } from 'lucide-react';
 import type { MediaItem } from '@/types';
 import { tmdbToMedia } from '@/types';
 import type { TMDBShow } from '@/types';
@@ -37,7 +38,7 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
     setLoadingMore(true);
     try {
       const nextPage = pageRef.current + 1;
-      const res = await fetch(`/api/tmdb?endpoint=/discover/tv&with_genres=16&with_original_language=en&sort_by=popularity.desc&vote_count_gte=50&page=${nextPage}`);
+      const res = await fetch(`/api/tmdb?endpoint=/discover/tv&with_genres=16&with_original_language=en&sort_by=popularity.desc&vote_count.gte=50&page=${nextPage}`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
         const newItems = data.results
@@ -125,10 +126,10 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
         {clouds.map(c => (
           <div key={c.id} style={{
             position: 'absolute', top: c.top, left: c.left,
-            fontSize: `${c.scale * 4}rem`, opacity: c.op, zIndex: 1,
+            opacity: c.op, zIndex: 1,
             animation: `cloud-d ${c.dur} ${c.delay} ease-in-out infinite`,
             pointerEvents: 'none', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.05))',
-          }}>☁️</div>
+          }}><Cloud size={c.scale * 64} color="#FFFFFF" fill="#FFFFFF" /></div>
         ))}
 
         {/* Rising bubbles */}
@@ -149,9 +150,8 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
           {flowers.map(f => (
             <div key={f.id} style={{
               position: 'absolute', bottom: 5, left: f.left,
-              fontSize: f.size,
               animation: `bounce-in 0.6s ${f.delay} both`,
-            }}>🌸</div>
+            }}><Sparkles size={f.size} color={f.color} /></div>
           ))}
         </div>
 
@@ -164,7 +164,7 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
             textShadow: '3px 3px 0 rgba(0,0,0,0.08), -1px -1px 0 rgba(255,255,255,0.3)',
             marginBottom: '0.5rem',
             animation: 'bounce-in 0.8s ease both',
-          }}><GenreIntro text="CARTOONS! 🌈" genre="cartoon" /></h1>
+          }}><GenreIntro text="CARTOONS!" genre="cartoon" /></h1>
           <p className="f-cinzel" style={{
             
             fontSize: '0.85rem',
@@ -177,11 +177,18 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
           <div style={{
             display: 'flex', justifyContent: 'center', gap: 8, marginTop: '1rem',
           }}>
-            {['🌈', '⭐', '🎨', '🌟', '🎈'].map((em, i) => (
+            {[
+              { Icon: Sparkles, color: '#FF6B8A' },
+              { Icon: Star, color: '#FFD700' },
+              { Icon: Palette, color: '#9B59B6' },
+              { Icon: Sparkles, color: '#74B9FF' },
+              { Icon: PartyPopper, color: '#FF8C00' },
+            ].map(({ Icon, color }, i) => (
               <span key={i} style={{
-                fontSize: '1.4rem',
+                display: 'inline-flex',
+                color,
                 animation: `sway ${2 + i * 0.3}s ease-in-out infinite`,
-              }}>{em}</span>
+              }}><Icon size={22} /></span>
             ))}
           </div>
         </div>
@@ -222,7 +229,8 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
         <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
         {loadingMore && (
           <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em' }}>
-            ✦ Loading...
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.4rem' }}><Loader2 size={16} /></div>
+            Loading...
           </div>
         )}
         {!hasMore && (

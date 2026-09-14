@@ -3,11 +3,13 @@
 import '@/styles/home.css';
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { Star, Play, Check, Plus, Loader2, Info, ArrowRight } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import type { MediaItem } from '@/types';
 import { CS, MOODS, GCARDS } from '@/styles/themes';
 import Card from '@/components/common/Card';
 import ContentRow from '@/components/common/ContentRow';
+import LazyMount from '@/components/common/LazyMount';
 import ContinueWatchingCard from '@/components/common/ContinueWatchingCard';
 import MoodRoulette from '@/components/common/MoodRoulette';
 import GenreProgress from '@/components/common/GenreProgress';
@@ -57,6 +59,20 @@ const GenreIcon = ({ name, size = 32, color }: { name: string; size?: number; co
 };
 
 /* ── Mood landscape particle configs ── */
+
+/**
+ * Deterministic [0,1) pseudo-random. `Math.random()` here (evaluated once at
+ * module load) gave the server one set of particle offsets and the client a
+ * different set → React #418 hydration mismatch on every homepage load. A
+ * seeded generator produces identical values on both sides.
+ */
+function seededRandom(seed: number): () => number {
+  let s = (seed * 2654435761) >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
 const MOOD_SCENES: Record<string, {
   bg: string;
   subtitle: string;
@@ -67,14 +83,17 @@ const MOOD_SCENES: Record<string, {
     bg: 'linear-gradient(160deg,#0a0520,#1a0d3a,#0d0828)',
     subtitle: 'Rainy nights & deep thoughts',
     particleClass: 'mood-rain',
-    particles: Array.from({ length: 18 }, (_, i) => ({
-      key: `rain-${i}`,
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 30}%`,
-      height: `${20 + Math.random() * 40}px`,
-      '--dur': `${0.8 + Math.random() * 0.8}s`,
-      '--delay': `${Math.random() * 2}s`,
-    } as React.CSSProperties & { key: string })),
+    particles: Array.from({ length: 18 }, (_, i) => {
+      const r = seededRandom(i + 100);
+      return {
+        key: `rain-${i}`,
+        left: `${r() * 100}%`,
+        top: `${r() * 30}%`,
+        height: `${20 + r() * 40}px`,
+        '--dur': `${0.8 + r() * 0.8}s`,
+        '--delay': `${r() * 2}s`,
+      } as React.CSSProperties & { key: string };
+    }),
   },
   Pumped: {
     bg: 'linear-gradient(160deg,#1a0f00,#2d1800,#1a0e00)',
@@ -82,7 +101,7 @@ const MOOD_SCENES: Record<string, {
     particleClass: 'mood-lightning',
     particles: Array.from({ length: 3 }, (_, i) => ({
       key: `bolt-${i}`,
-      '--dur': `${2.5 + Math.random() * 3}s`,
+      '--dur': `${2.5 + seededRandom(i + 200)() * 3}s`,
       '--delay': `${i * 1.5}s`,
     } as React.CSSProperties & { key: string })),
   },
@@ -90,16 +109,19 @@ const MOOD_SCENES: Record<string, {
     bg: 'linear-gradient(160deg,#1a0510,#2d0a1e,#1a0815)',
     subtitle: 'Love stories & warm feels',
     particleClass: 'mood-hearts',
-    particles: Array.from({ length: 10 }, (_, i) => ({
-      key: `heart-${i}`,
-      left: `${10 + Math.random() * 80}%`,
-      bottom: `${Math.random() * 30}%`,
-      '--sz': `${8 + Math.random() * 10}px`,
-      '--dur': `${3 + Math.random() * 3}s`,
-      '--delay': `${Math.random() * 4}s`,
-      '--sway': `${-20 + Math.random() * 40}px`,
-      '--rot': `${-20 + Math.random() * 40}deg`,
-    } as React.CSSProperties & { key: string })),
+    particles: Array.from({ length: 10 }, (_, i) => {
+      const r = seededRandom(i + 300);
+      return {
+        key: `heart-${i}`,
+        left: `${10 + r() * 80}%`,
+        bottom: `${r() * 30}%`,
+        '--sz': `${8 + r() * 10}px`,
+        '--dur': `${3 + r() * 3}s`,
+        '--delay': `${r() * 4}s`,
+        '--sway': `${-20 + r() * 40}px`,
+        '--rot': `${-20 + r() * 40}deg`,
+      } as React.CSSProperties & { key: string };
+    }),
   },
   Thrilling: {
     bg: 'linear-gradient(160deg,#1a0505,#2d0808,#1a0606)',
@@ -111,35 +133,42 @@ const MOOD_SCENES: Record<string, {
       '--dur': `${10 + i * 4}s`,
       '--delay': `${i * 2}s`,
     } as React.CSSProperties & { key: string })),
+    // (fog particles are already deterministic — index-based)
   },
   Chill: {
     bg: 'linear-gradient(160deg,#051a0a,#0a2d12,#061a0b)',
     subtitle: 'Relax & unwind',
     particleClass: 'mood-leaves',
-    particles: Array.from({ length: 8 }, (_, i) => ({
-      key: `leaf-${i}`,
-      left: `${10 + Math.random() * 80}%`,
-      bottom: `${Math.random() * 20}%`,
-      '--sz': `${6 + Math.random() * 6}px`,
-      '--dur': `${4 + Math.random() * 4}s`,
-      '--delay': `${Math.random() * 5}s`,
-      '--leaf-col': i % 2 === 0 ? '#78D621' : '#5B8C35',
-    } as React.CSSProperties & { key: string })),
+    particles: Array.from({ length: 8 }, (_, i) => {
+      const r = seededRandom(i + 400);
+      return {
+        key: `leaf-${i}`,
+        left: `${10 + r() * 80}%`,
+        bottom: `${r() * 20}%`,
+        '--sz': `${6 + r() * 6}px`,
+        '--dur': `${4 + r() * 4}s`,
+        '--delay': `${r() * 5}s`,
+        '--leaf-col': i % 2 === 0 ? '#78D621' : '#5B8C35',
+      } as React.CSSProperties & { key: string };
+    }),
   },
   Epic: {
     bg: 'linear-gradient(160deg,#1a0f00,#2d1500,#1a0c00)',
     subtitle: 'Legends & grand adventures',
     particleClass: 'mood-embers',
-    particles: Array.from({ length: 12 }, (_, i) => ({
-      key: `ember-${i}`,
-      left: `${10 + Math.random() * 80}%`,
-      bottom: `${Math.random() * 20}%`,
-      '--sz': `${2 + Math.random() * 4}px`,
-      '--dur': `${2 + Math.random() * 2.5}s`,
-      '--delay': `${Math.random() * 3}s`,
-      '--drift': `${-15 + Math.random() * 30}px`,
-      '--ember-col': i % 3 === 0 ? '#FF4A4A' : i % 3 === 1 ? '#FF8C00' : '#FFB347',
-    } as React.CSSProperties & { key: string })),
+    particles: Array.from({ length: 12 }, (_, i) => {
+      const r = seededRandom(i + 500);
+      return {
+        key: `ember-${i}`,
+        left: `${10 + r() * 80}%`,
+        bottom: `${r() * 20}%`,
+        '--sz': `${2 + r() * 4}px`,
+        '--dur': `${2 + r() * 2.5}s`,
+        '--delay': `${r() * 3}s`,
+        '--drift': `${-15 + r() * 30}px`,
+        '--ember-col': i % 3 === 0 ? '#FF4A4A' : i % 3 === 1 ? '#FF8C00' : '#FFB347',
+      } as React.CSSProperties & { key: string };
+    }),
   },
 };
 
@@ -150,14 +179,16 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
   const [idx, setIdx] = useState(0);
   const [tick, setTick] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false
-  );
+  // Start false (matches SSR) and read the real preference after mount, so the
+  // first client render is identical to the server's (no hydration mismatch).
+  const [reducedMotion, setReducedMotion] = useState(false);
   const bgRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate: read client-only pref after mount to avoid a hydration mismatch
+    setReducedMotion(mq.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
@@ -263,7 +294,7 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
         )}
         <div style={{ position: 'absolute', top: '16%', left: '55%', width: 400, height: 400, borderRadius: '50%', background: `radial-gradient(circle,${s.acc}28 0%,transparent 68%)`, filter: 'blur(50px)', animation: 'aurora 11s ease-in-out infinite' }} />
         <div style={{ position: 'absolute', bottom: '22%', right: '16%', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(139,120,255,.22) 0%,transparent 68%)', filter: 'blur(52px)', animation: 'aurora 15s ease-in-out infinite reverse' }} />
-        <div style={{ position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', fontSize: 'clamp(9rem,17vw,19rem)', opacity: .04, filter: 'blur(5px)', animation: 'float 8s ease-in-out infinite', userSelect: 'none' }}>{s.em}</div>
+        <div style={{ position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', width: 'clamp(9rem,17vw,19rem)', height: 'clamp(9rem,17vw,19rem)', opacity: .04, filter: 'blur(5px)', animation: 'float 8s ease-in-out infinite', userSelect: 'none', color: s.acc }}><s.icon style={{ width: '100%', height: '100%' }} /></div>
       </div>
       <div className="hero-mask" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', zIndex: 2 }} />
       <div key={`txt-${tick}`} style={{ position: 'relative', zIndex: 3, padding: '0 clamp(1rem,5vw,4rem)', maxWidth: 'clamp(280px,50vw,720px)' }}>
@@ -275,15 +306,15 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
         <p className="s3 f-cinzel" style={{  fontSize: 'clamp(.73rem,.98vw,.88rem)', letterSpacing: '.06em', color: 'rgba(255,245,232,.52)', marginBottom: '.72rem' }}>{F.sub || F.genre[0]}</p>
         <p className="s4 f-crimson" style={{  fontSize: 'clamp(.9rem,1.2vw,1.05rem)', lineHeight: 1.78, color: 'rgba(255,245,232,.68)', maxWidth: 530, marginBottom: '1.4rem' }}>{F.desc.slice(0, 130)}…</p>
         <div className="s4" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1.8rem' }}>
-          <div className="badge-r">⭐ {F.r}</div>
+          <div className="badge-r">{F.r > 0 ? <><Star size={11} fill="currentColor" /> {F.r}</> : 'New'}</div>
           {F.genre.slice(0, 2).map(g => <span key={g} className="gtag">{g}</span>)}
           <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)', alignSelf: 'center', }}>{F.eps} eps · {F.yr}</span>
         </div>
         <div className="s5" style={{ display: 'flex', gap: '.85rem', flexWrap: 'wrap' }}>
-          <button className="btn-p" onClick={() => router.push(mediaUrl(F.id, F.title, F.media_type, F.yr, F._isAnilist))}>▶ Play Now</button>
-          <button className="btn-g" onClick={() => router.push(mediaUrl(F.id, F.title, F.media_type, F.yr, F._isAnilist))}>ℹ More Info</button>
+          <button className="btn-p" onClick={() => router.push(mediaUrl(F.id, F.title, F.media_type, F.yr, F._isAnilist))}><Play size={15} fill="currentColor" /> Play Now</button>
+          <button className="btn-g" onClick={() => router.push(mediaUrl(F.id, F.title, F.media_type, F.yr, F._isAnilist))}><Info size={15} /> More Info</button>
           <button className="btn-g" onClick={() => toggleHeroWatchlist(F)}>
-            {heroWatchlist.has(F.id) ? '✓ In My List' : '+ My List'}
+            {heroWatchlist.has(F.id) ? <><Check size={14} /> In My List</> : <><Plus size={14} /> My List</>}
           </button>
         </div>
       </div>
@@ -420,7 +451,7 @@ function GenrePortalCard({
         )}
         {/* Enter Portal CTA (visible on hover) */}
         <div className="portal-cta" style={{ borderColor: `${g.tc}35` }}>
-          Enter Portal <span style={{ fontSize: '.7rem' }}>→</span>
+          Enter Portal <ArrowRight size={13} />
         </div>
         {/* Genre progress */}
         <GenreProgress genre={g.key} />
@@ -549,23 +580,32 @@ export default function Home({
   const [continueWatching, setContinueWatching] = useState<MediaItem[]>([]);
   const [recommendedItems, setRecommendedItems] = useState<MediaItem[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(false);
-  const [timeGreeting] = useState(() => {
-    const h = new Date().getHours();
-    if (h >= 5 && h < 12) return 'Good Morning';
-    if (h >= 12 && h < 17) return 'Good Afternoon';
-    if (h >= 17 && h < 21) return 'Good Evening';
-    return 'Late Night Vibes';
-  });
+  // Time-of-day text depends on the VIEWER's clock — computing it during render
+  // makes SSR (server TZ) disagree with the client (React #418). Resolve after mount.
+  const [timeGreeting, setTimeGreeting] = useState('Welcome back');
   const [heroWatchlist, setHeroWatchlist] = useState<Set<number>>(new Set());
   const router = useRouter();
 
-  // Time-aware mood highlight index
-  const highlightedMood = useMemo(() => {
+  // Time-aware mood highlight — viewer-clock dependent, so resolve after mount
+  // (null during SSR + first client render → no hydration mismatch).
+  const [highlightedMood, setHighlightedMood] = useState<string | null>(null);
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- deliberate: viewer-clock values resolved after mount to avoid a hydration mismatch */
     const h = new Date().getHours();
-    if (h >= 5 && h < 12) return 'Pumped';
-    if (h >= 12 && h < 17) return 'Chill';
-    if (h >= 17 && h < 21) return 'Romantic';
-    return 'Thrilling';
+    setTimeGreeting(
+      h >= 5 && h < 12 ? 'Good Morning'
+        : h >= 12 && h < 17 ? 'Good Afternoon'
+        : h >= 17 && h < 21 ? 'Good Evening'
+        : 'Late Night Vibes',
+    );
+    setHighlightedMood(
+      h >= 5 && h < 12 ? 'Pumped'
+        : h >= 12 && h < 17 ? 'Chill'
+        : h >= 17 && h < 21 ? 'Romantic'
+        : 'Thrilling',
+    );
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   // Fetch continue watching
@@ -588,7 +628,8 @@ export default function Home({
             tag: 'CONTINUE',
             cs: Math.abs(item.media_id) % 8,
             featured: false,
-            progress: item.duration > 0 ? (item.progress / item.duration) * 100 : 0,
+            // `progress` is already a 0-100 percentage in watch_progress.
+            progress: Math.max(0, Math.min(100, item.progress || 0)),
             desc: '',
             cast: [],
             epList: [],
@@ -719,10 +760,23 @@ export default function Home({
       {/* ── Content Rows ── */}
       <section style={{ padding: '0 0 3.5rem', position: 'relative', zIndex: 3 }}>
         {/* Static rows first (server-rendered via ISR) so they define the initial
-            viewport layout and prevent CLS when Continue Watching loads async. */}
-        {filteredRows.map((row, i) => (
-          <ContentRow key={`row-${i}`} title={row.title} sub={row.sub} items={row.items} ranked={row.title.includes('Top 10')} loadMoreEndpoint={row.endpoint} loadMoreParams={row.params} />
-        ))}
+            viewport layout and prevent CLS when Continue Watching loads async.
+            Only the first few are above-the-fold on a typical viewport — the
+            rest mount lazily (LazyMount reserves their height up front, so
+            this doesn't reintroduce CLS). Lighthouse traced ~190 Card
+            components (16 rows × 12 items) mounting eagerly on first paint
+            as the dominant cost behind this page's Rendering/Style & Layout
+            main-thread time, well above script execution. */}
+        {filteredRows.map((row, i) => {
+          const content = (
+            <ContentRow title={row.title} sub={row.sub} items={row.items} ranked={row.title.includes('Top 10')} loadMoreEndpoint={row.endpoint} loadMoreParams={row.params} />
+          );
+          return i < 3 ? (
+            <div key={`row-${i}`}>{content}</div>
+          ) : (
+            <LazyMount key={`row-${i}`}>{content}</LazyMount>
+          );
+        })}
         {continueWatching.length > 0 && (
           <div style={{ marginBottom: 44 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16, paddingInline: 'clamp(1rem,5vw,3rem)' }}>
@@ -742,7 +796,7 @@ export default function Home({
         )}
         {loadingRecs && (
           <div className="f-cinzel" style={{ padding: '0 clamp(1rem,5vw,3rem)', textAlign: 'center', color: 'rgba(255,245,232,.35)',  fontSize: '.82rem', letterSpacing: '.1em', marginBottom: 44 }}>
-            <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem', marginBottom: '0.5rem' }}>✦</div>
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '0.5rem' }}><Loader2 size={24} /></div>
             <div>Finding recommendations for you…</div>
           </div>
         )}

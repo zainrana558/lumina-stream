@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, HttpError } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 // GET /api/watch-party/rooms?code=xxx — fetch room data, participants, and recent messages
@@ -54,14 +54,17 @@ export async function GET(request: NextRequest) {
     const participants = (participantsRaw || []).map((p: {
       profile_id: string;
       joined_at: string;
-      profiles: { name: string; avatar_url: string | null }[];
-    }) => ({
-      profile_id: p.profile_id,
-      name: p.profiles?.[0]?.name || "Anonymous",
-      avatar_url: p.profiles?.[0]?.avatar_url || null,
-      joined_at: p.joined_at,
-      is_host: p.profile_id === room.host_profile_id,
-    }));
+      profiles: { name: string; avatar_url: string | null }[] | { name: string; avatar_url: string | null } | null;
+    }) => {
+      const prof = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+      return {
+        profile_id: p.profile_id,
+        name: prof?.name || "Anonymous",
+        avatar_url: prof?.avatar_url || null,
+        joined_at: p.joined_at,
+        is_host: p.profile_id === room.host_profile_id,
+      };
+    });
 
     // Fetch recent messages (last 50)
     const { data: messagesRaw } = await supabase
@@ -76,15 +79,18 @@ export async function GET(request: NextRequest) {
       profile_id: string;
       content: string;
       created_at: string;
-      profiles: { name: string; avatar_url: string | null }[];
-    }) => ({
-      id: m.id,
-      profile_id: m.profile_id,
-      name: m.profiles?.[0]?.name || "Anonymous",
-      avatar_url: m.profiles?.[0]?.avatar_url || null,
-      content: m.content,
-      created_at: m.created_at,
-    }));
+      profiles: { name: string; avatar_url: string | null }[] | { name: string; avatar_url: string | null } | null;
+    }) => {
+      const prof = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+      return {
+        id: m.id,
+        profile_id: m.profile_id,
+        name: prof?.name || "Anonymous",
+        avatar_url: prof?.avatar_url || null,
+        content: m.content,
+        created_at: m.created_at,
+      };
+    });
 
     return NextResponse.json(
       {
@@ -109,6 +115,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

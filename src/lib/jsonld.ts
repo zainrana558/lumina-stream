@@ -4,6 +4,16 @@ import { mediaUrl } from '@/lib/slug';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
 /**
+ * Serialize a JSON-LD object for embedding via `dangerouslySetInnerHTML`.
+ * Escapes `<` so a value containing `</script>` (e.g. upstream TMDB/AniList
+ * text) can't break out of the script tag — `<` round-trips through
+ * both JSON.parse and HTML parsing back to a literal `<`.
+ */
+export function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
+/**
  * Build a Schema.org JSON-LD object for a detail page.
  *
  * Returns a `Movie` or `TVSeries` structured-data object depending on the

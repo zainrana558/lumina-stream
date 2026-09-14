@@ -249,8 +249,8 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
           .catch(() => ({ results: [] as TMDBShow[] }))
       )
     ),
-    fetchPages('movie', { sort_by: 'popularity.desc', vote_count_gte: '100' }, 3),
-    fetchPages('tv',    { sort_by: 'popularity.desc', vote_count_gte: '50'  }, 3),
+    fetchPages('movie', { sort_by: 'popularity.desc', 'vote_count.gte': '100' }, 3),
+    fetchPages('tv',    { sort_by: 'popularity.desc', 'vote_count.gte': '50'  }, 3),
   ]);
 
   const trendingRaw = trendingPages.flatMap(p => (p.results ?? []) as TMDBShow[]);
@@ -276,7 +276,7 @@ async function warmBrowse(): Promise<{ slug: string; count: number; cached: bool
 // ─── Home page genre portal feature cards ───────────────────────────────────
 
 const HOME_FEAT_FETCHES: { id: string; endpoint: string; params: Record<string, string> }[] = [
-  { id: 'feat-anime',   endpoint: '/discover/tv',    params: { with_genres: '16,10759', sort_by: 'popularity.desc', with_original_language: 'ja', vote_count_gte: '100' } },
+  { id: 'feat-anime',   endpoint: '/discover/tv',    params: { with_genres: '16,10759', sort_by: 'popularity.desc', with_original_language: 'ja', 'vote_count.gte': '100' } },
   { id: 'feat-cartoon', endpoint: '/discover/tv',    params: { with_genres: '16', sort_by: 'popularity.desc', without_genres: '10759', with_original_language: 'en' } },
   { id: 'feat-horror',  endpoint: '/discover/movie', params: { with_genres: '27', sort_by: 'popularity.desc' } },
   { id: 'feat-romance', endpoint: '/discover/movie', params: { with_genres: '10749', sort_by: 'popularity.desc' } },

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Check, Share2 } from 'lucide-react';
 import { useToast } from '@/components/common/ToastProvider';
 
 export default function ShareButton({ title, id }: { title: string; id: number }) {
@@ -40,7 +41,7 @@ export default function ShareButton({ title, id }: { title: string; id: number }
         display: 'flex', alignItems: 'center', gap: 6,
       }}
     >
-      {shared ? '✓ Shared' : '↗ Share'}
+      {shared ? <><Check size={14} /> Shared</> : <><Share2 size={14} /> Share</>}
     </button>
   );
 }

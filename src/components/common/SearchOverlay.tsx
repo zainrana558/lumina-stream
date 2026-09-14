@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { X, Film, Sparkles, Users, Search as SearchIcon, ChevronRight, Loader2, User as UserIcon, Star, SearchX } from 'lucide-react';
 import type { MediaItem } from '@/types';
 import { GCARDS } from '@/styles/themes';
 import { CS } from '@/styles/themes';
@@ -73,6 +74,18 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       setPersonResults([]);
       return;
     }
+    // Guards against out-of-order async responses: switching tabs re-runs
+    // doSearch for whatever text is already in the box (see the searchTab
+    // effect below), and a debounced keystroke can still be in flight when
+    // the next one fires. Without this, a slower earlier request could
+    // resolve AFTER a faster later one and clobber its results with stale
+    // data — confirmed live (typing "Intersteller" then switching to the
+    // Anime tab and typing "One Peice" could show the Anime tab still
+    // rendering "Intersteller" hits). Each call claims the ref as its own
+    // "latest request" token; a call only applies its fetched data if it's
+    // still the most recent one by the time the fetch resolves.
+    const myRequest = (searchQueryRef.current = `${searchTab}:${query}:${Date.now()}:${Math.random()}`);
+    const isStale = () => searchQueryRef.current !== myRequest;
     setLoading(true);
     setSearched(true);
 
@@ -80,13 +93,19 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       try {
         const res = await fetch(`/api/tmdb?endpoint=/search/person&query=${encodeURIComponent(query)}`);
         const data = await res.json();
+        if (isStale()) return;
         if (data.results) {
-          setPersonResults(data.results.filter((r: TMDBPersonResult) => r.profile_path).slice(0, 8));
+          // Prefer people with a photo, but don't drop the rest — the row has a
+          // 👤 fallback avatar, and dropping them can leave a real match invisible.
+          const people = (data.results as TMDBPersonResult[])
+            .filter((r) => r.known_for && r.known_for.length > 0)
+            .sort((a, b) => (b.profile_path ? 1 : 0) - (a.profile_path ? 1 : 0));
+          setPersonResults(people.slice(0, 8));
         }
       } catch {
-        setPersonResults([]);
+        if (!isStale()) setPersonResults([]);
       }
-      setLoading(false);
+      if (!isStale()) setLoading(false);
       return;
     }
 
@@ -95,16 +114,17 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&page=1&source=anilist`);
         const data = await res.json();
+        if (isStale()) return;
         if (data.results) {
           setResults(data.results.slice(0, 10));
           setSuggestions(data.suggestions || []);
         }
       } catch {
-        setResults([]);
- }
+        if (!isStale()) setResults([]);
+      }
       addSearch(query);
       setRecentSearches(getRecentSearches());
-      setLoading(false);
+      if (!isStale()) setLoading(false);
       return;
     }
 
@@ -113,6 +133,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       const source = hasActiveFilters && filters.mediaType !== 'all' ? 'tmdb' : 'all';
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&page=1&source=${source}`);
       const data = await res.json();
+      if (isStale()) return;
       if (data.results) {
         // API returns MediaItem[] directly
         let items: MediaItem[] = data.results;
@@ -138,9 +159,9 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       addSearch(query);
       setRecentSearches(getRecentSearches());
     } catch {
-      setResults([]);
+      if (!isStale()) setResults([]);
     }
-    setLoading(false);
+    if (!isStale()) setLoading(false);
   }, [searchTab, hasActiveFilters, filters]);
 
   const handleInputChange = useCallback((value: string) => {
@@ -170,7 +191,13 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
         if (fresh.length === 0) setHasMoreResults(false);
         setResults(prev => [...prev, ...fresh]);
         setSearchPage(nextPage);
-        if (!data.has_more) setHasMoreResults(false);
+        // /api/anime (anime tab) returns AniList's own `pageInfo.hasNextPage`
+        // instead of the `has_more` field /api/search returns — checking
+        // `data.has_more` unconditionally there was always undefined/falsy,
+        // silently capping every anime search at 2 pages regardless of how
+        // many results actually existed.
+        const hasMore = searchTab === 'anime' ? !!data.pageInfo?.hasNextPage : !!data.has_more;
+        if (!hasMore) setHasMoreResults(false);
       } else {
         setHasMoreResults(false);
       }
@@ -185,6 +212,17 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
   }, [onClose]);
 
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+
+  // Re-run the current query when the tab changes — otherwise switching from
+  // Shows to Anime/People with text already in the box shows a stale empty
+  // state (no results, no "nothing found" message) until the user retypes.
+  useEffect(() => {
+    // doSearch's setLoading/setSearched calls before its first await are the whole
+    // point here — re-running the search (with its own loading state) is what "tab
+    // changed" means.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate, see above
+    if (q.trim().length >= 2) doSearch(q);
+  }, [searchTab]);
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
@@ -208,7 +246,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       <div style={{ width: '100%', maxWidth: 640 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <span className="sec" style={{ fontSize: '1.2rem' }}>Search Lumovia</span>
-          <button className="btn-icon" onClick={onClose} aria-label="Close search">✕</button>
+          <button className="btn-icon" onClick={onClose} aria-label="Close search"><X size={16} /></button>
         </div>
 
         {/* Tab bar: Shows / People */}
@@ -218,15 +256,16 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
               key={tab}
               className={`tab-btn${searchTab === tab ? ' on' : ''} f-cinzel`}
               onClick={() => { setSearchTab(tab); setResults([]); setPersonResults([]); setSearched(false); }}
-              style={{ padding: '10px clamp(14px,3vw,24px)', background: 'none', border: 'none', outline: 'none', color: searchTab === tab ? 'var(--gold)' : 'rgba(255,245,232,.35)', transition: 'color .22s',  fontSize: '.82rem', letterSpacing: '.06em', cursor: 'pointer', minHeight: 48, display: 'flex', alignItems: 'center' }}
+              style={{ padding: '10px clamp(14px,3vw,24px)', background: 'none', border: 'none', outline: 'none', color: searchTab === tab ? 'var(--gold)' : 'rgba(255,245,232,.35)', transition: 'color .22s',  fontSize: '.82rem', letterSpacing: '.06em', cursor: 'pointer', minHeight: 48, display: 'flex', alignItems: 'center', gap: 7 }}
             >
-              {tab === 'shows' ? '🎬 Shows' : tab === 'anime' ? '🎌 Anime' : '👤 People'}
+              {tab === 'shows' ? <Film size={15} /> : tab === 'anime' ? <Sparkles size={15} /> : <Users size={15} />}
+              {tab === 'shows' ? 'Shows' : tab === 'anime' ? 'Anime' : 'People'}
             </button>
           ))}
         </div>
 
         <div style={{ position: 'relative', marginBottom: '1rem' }}>
-          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,245,232,.5)', fontSize: '1.1rem' }}>🔍</span>
+          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,245,232,.5)', display: 'flex' }}><SearchIcon size={17} /></span>
           <input className="inp" autoFocus style={{ paddingLeft: 44, fontSize: '1.05rem' }} placeholder={searchTab === 'people' ? 'Search actors, directors…' : searchTab === 'anime' ? 'Search anime titles…' : 'Search shows, genres…'} value={q} onChange={(e) => handleInputChange(e.target.value)} />
         </div>
 
@@ -238,7 +277,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
               className="btn-g f-cinzel"
               style={{ padding: '6px 16px', fontSize: '.72rem',  display: 'flex', alignItems: 'center', gap: 6, marginBottom: showFilters ? '.75rem' : 0 }}
             >
-              <span style={{ transition: 'transform .25s', display: 'inline-block', transform: showFilters ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+              <ChevronRight size={13} style={{ transition: 'transform .25s', transform: showFilters ? 'rotate(90deg)' : 'rotate(0deg)' }} />
               Filters{hasActiveFilters ? ' · Active' : ''}
             </button>
             {showFilters && (
@@ -251,7 +290,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
 
         {loading ? (
           <div className="f-cinzel" style={{ textAlign: 'center', padding: '2.5rem', color: 'rgba(255,245,232,.4)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
-            <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚡</div>
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '0.5rem', color: 'var(--gold)' }}><Loader2 size={24} /></div>
             <div>Searching…</div>
           </div>
         ) : searchTab === 'people' && personResults.length > 0 ? (
@@ -277,7 +316,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
                     <Image src={getProfileUrl(p.profile_path, 'w92')!} alt={p.name} width={48} height={48} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 ) : (
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg,#8B78FF55,#8B78FF22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0, boxShadow: '3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22)' }}>👤</div>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg,#8B78FF55,#8B78FF22)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF5E8', flexShrink: 0, boxShadow: '3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22)' }}><UserIcon size={20} /></div>
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="f-cinzel" style={{  fontWeight: 600, fontSize: '.88rem', color: '#FFF5E8', marginBottom: 3 }}>{p.name}</div>
@@ -286,7 +325,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
                     {p.known_for?.slice(0, 3).map((kf) => kf.title || kf.name).join(', ') || 'No known works'}
                   </div>
                 </div>
-                <span className="f-cinzel" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.25)',  flexShrink: 0 }}>→</span>
+                <ChevronRight size={14} style={{ color: 'rgba(255,245,232,.25)', flexShrink: 0 }} />
               </div>
             ))}
           </div>
@@ -295,26 +334,29 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
             {results.map((s, i) => {
               const posterSrc = getPosterUrl(s, 'w92');
               return (
-              <div key={s.id} className="ep-row" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(mediaUrl(s.id, s.title, s.media_type, s.yr, s._isAnilist)); onClose(); } }} onClick={() => { router.push(mediaUrl(s.id, s.title, s.media_type, s.yr, s._isAnilist)); onClose(); }} style={{ padding: '.9rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .35s ${i * 0.06}s both` }}>
+              <div key={`${s.media_type || 'tv'}-${s.id}`} className="ep-row" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(mediaUrl(s.id, s.title, s.media_type, s.yr, s._isAnilist)); onClose(); } }} onClick={() => { router.push(mediaUrl(s.id, s.title, s.media_type, s.yr, s._isAnilist)); onClose(); }} style={{ padding: '.9rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .35s ${i * 0.06}s both` }}>
                 {posterSrc ? (
                   <div style={{ width: 42, height: 42, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '2px 2px 8px rgba(0,0,0,.6)' }}>
                     <Image src={posterSrc} alt={s.title} width={42} height={42} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 ) : (
-                  <div style={{ width: 42, height: 42, borderRadius: 10, background: CS[s.cs].bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>{CS[s.cs].em}</div>
+                  <div style={{ width: 42, height: 42, borderRadius: 10, background: CS[s.cs].bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: CS[s.cs].acc, flexShrink: 0 }}>
+                    {(() => { const Icon = CS[s.cs].icon; return <Icon size={19} />; })()}
+                  </div>
                 )}
                 <div style={{ flex: 1 }}>
                   <div className="f-cinzel" style={{  fontWeight: 600, fontSize: '.86rem', color: '#FFF5E8', marginBottom: 3 }}>{s.title}</div>
                   <div style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)' }}>{s.genre[0]} · {s.yr}</div>
                 </div>
-                <div className="badge-r">⭐ {s.r}</div>
+                <div className="badge-r">{s.r > 0 ? <><Star size={11} fill="currentColor" /> {s.r}</> : 'New'}</div>
               </div>
               );
             })}
           </div>
         ) : searched && q.length > 1 ? (
           <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-            <div className="f-cinzel" style={{ color: 'rgba(255,245,232,.5)',  fontSize: '.82rem', letterSpacing: '.1em', marginBottom: '.7rem' }}>✦ No results ✦</div>
+            <SearchX size={28} style={{ color: 'rgba(255,245,232,.3)', marginBottom: '.6rem' }} />
+            <div className="f-cinzel" style={{ color: 'rgba(255,245,232,.5)',  fontSize: '.82rem', letterSpacing: '.1em', marginBottom: '.7rem' }}>No results</div>
             <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.4)', marginBottom: suggestions.length > 0 ? '1rem' : 0 }}>
               Try fewer words or check spelling
             </div>
@@ -353,9 +395,9 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
               onClick={loadMoreSearch}
               disabled={loading}
               className="btn-g f-cinzel"
-              style={{ padding: '10px 28px', fontSize: '.78rem',  letterSpacing: '.06em', opacity: loading ? 0.6 : 1, cursor: loading ? 'wait' : 'pointer' }}
+              style={{ padding: '10px 28px', fontSize: '.78rem',  letterSpacing: '.06em', opacity: loading ? 0.6 : 1, cursor: loading ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}
             >
-              {loading ? '✦ Loading...' : 'Show More Results'}
+              {loading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading</> : 'Show More Results'}
             </button>
           </div>
         ) : recentSearches.length > 0 ? (
@@ -368,7 +410,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
               {recentSearches.slice(0, 8).map(term => (
                 <span key={term} className="gtag" onClick={() => handleInputChange(term)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '.6rem', padding: '8px 12px', minHeight: 36 }}>
                   {term}
-                  <span onClick={(e) => removeSearchTerm(term, e)} style={{ opacity: 0.4, cursor: 'pointer', fontSize: '.55rem' }}>✕</span>
+                  <span onClick={(e) => removeSearchTerm(term, e)} style={{ opacity: 0.4, cursor: 'pointer', display: 'inline-flex' }}><X size={10} /></span>
                 </span>
               ))}
             </div>
@@ -376,7 +418,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.55rem' }}>
             {GCARDS.map(g => (
-              <span key={g.key} className="gtag" onClick={() => handleInputChange(g.name)}>{g.em} {g.name}</span>
+              <span key={g.key} className="gtag" onClick={() => handleInputChange(g.name)}><g.icon size={12} /> {g.name}</span>
             ))}
           </div>
         )}

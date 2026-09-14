@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
 import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
+import AuthLoading from '@/components/common/AuthLoading';
 import { CollectionCard, CreateCollectionModal, CollectionDetail } from '@/components/common/Collections';
+import { ClipboardList, Loader2, X, ArrowLeft } from 'lucide-react';
 
 interface Collection {
   id: string;
@@ -89,10 +91,12 @@ export default function CollectionsPage() {
 
   if (!supabaseReady) return <SupabaseNotConfigured />;
 
+  if (authLoading) return <AuthLoading />;
+
   if (!user) {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
-        <div style={{ fontSize: '3rem', opacity: .3 }}>📋</div>
+        <div style={{ opacity: .3 }}><ClipboardList size={48} /></div>
         <p className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to manage collections</p>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
@@ -110,9 +114,9 @@ export default function CollectionsPage() {
           <button
             onClick={() => setSelectedCollection(null)}
             className="btn-g"
-            style={{ padding: '6px 14px', borderRadius: 8, fontSize: '.68rem', marginBottom: '1rem' }}
+            style={{ padding: '6px 14px', borderRadius: 8, fontSize: '.68rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            ← Back to Collections
+            <ArrowLeft size={14} /> Back to Collections
           </button>
         </div>
         <div style={{ padding: `0 ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>
@@ -145,12 +149,12 @@ export default function CollectionsPage() {
       <div style={{ padding: `1.5rem ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>
         {loading ? (
           <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem', color: 'rgba(255,245,232,.5)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
-            <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem', marginBottom: '.5rem' }}>✦</div>
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.5rem' }}><Loader2 size={22} /></div>
             <div>Loading collections...</div>
           </div>
         ) : collections.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '5rem 2rem' }}>
-            <div style={{ fontSize: '3.5rem', marginBottom: '1rem', opacity: .25 }}>📋</div>
+            <div style={{ marginBottom: '1rem', opacity: .25 }}><ClipboardList size={56} /></div>
             <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No collections yet</h3>
             <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.9rem', maxWidth: 400, margin: '0 auto 1.5rem' }}>
               Create your first collection to organize your favorite shows into curated lists like &quot;My Top 10 Shonen&quot; or &quot;Weekend Binge&quot;
@@ -183,7 +187,7 @@ export default function CollectionsPage() {
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0'; }}
                   aria-label="Delete collection"
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               </div>
             ))}

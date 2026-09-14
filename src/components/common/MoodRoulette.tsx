@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Dices } from 'lucide-react';
 
 const DESTINATIONS = [
   { name: 'Melancholy', type: 'mood' as const },
@@ -71,16 +72,20 @@ export default function MoodRoulette() {
     tick();
   }, [spinning, router]);
 
-  // Cleanup on unmount
-  if (typeof window !== 'undefined') {
-    // This is fine for cleanup in the return
-  }
+  // Cleanup on unmount — a pending tick/navigation timeout must not fire after unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearTimeout(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
       <button
         onClick={spin}
         disabled={spinning}
+        className="shine-sweep"
         style={{
           position: 'relative',
           padding: 'clamp(12px,1.5vw,16px) clamp(24px,3vw,40px)',
@@ -106,15 +111,14 @@ export default function MoodRoulette() {
             animation: 'shimmer 0.8s linear infinite',
           }} />
         )}
-        <span className="f-cinzel" style={{
-          fontSize: spinning ? '1.4rem' : '1.2rem',
+        <span style={{
+          display: 'flex',
           animation: spinning ? 'spin 0.4s linear infinite' : 'none',
           position: 'relative', zIndex: 1,
           filter: `drop-shadow(0 0 8px ${glowColor}60)`,
-          
-          fontWeight: 700,
+          color: glowColor,
         }}>
-          {spinning ? displayName[0] : '?'}
+          <Dices size={spinning ? 22 : 19} />
         </span>
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <span className="f-cinzel" style={{

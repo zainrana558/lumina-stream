@@ -1,5 +1,7 @@
 'use client';
 
+import { AlertTriangle, RotateCw, Home } from 'lucide-react';
+
 export default function DetailsError({
   error,
   reset,
@@ -20,7 +22,7 @@ export default function DetailsError({
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem',
           boxShadow: '8px 8px 24px rgba(0,0,0,.82), -4px -4px 11px rgba(45,25,90,.28), inset 0 1.5px 0 rgba(255,255,255,.048)',
           animation: 'breathe 3s ease-in-out infinite',
-        }}>⚠</div>
+        }}><AlertTriangle size={32} color="currentColor" /></div>
         <h2 className="f-cinzel" style={{
            fontSize: '1.4rem',
           color: 'rgba(255,245,232,.8)', letterSpacing: '.08em', marginBottom: '1rem',
@@ -32,8 +34,8 @@ export default function DetailsError({
           We couldn't load the show details. Please try again.
         </p>
         <div style={{ display: 'flex', gap: '.85rem', justifyContent: 'center' }}>
-          <button onClick={reset} className="btn-p">↻ Try Again</button>
-          <button onClick={() => { window.location.href = '/'; }} className="btn-g">✦ Go Home</button>
+          <button onClick={reset} className="btn-p"><RotateCw size={16} /> Try Again</button>
+          <button onClick={() => { window.location.href = '/'; }} className="btn-g"><Home size={16} /> Go Home</button>
         </div>
       </div>
     </div>

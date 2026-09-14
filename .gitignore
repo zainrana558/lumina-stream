@@ -44,12 +44,16 @@ local-*
 .claude
 .z-ai-config
 *.log
+*.log.*
 dev.log
 dev.out.log
 test
 prompt
 
 server.log
+
+# Supabase CLI local state
+supabase/.temp/
 
 # Database files
 db/
@@ -65,4 +69,7 @@ prisma/
 traffic-toolkit/output/
 
 # Skills directory
-/skills/
+/skills
+
+# local traffic-analysis instrumentation (not for production)
+/src/instrumentation.ts

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAuth, verifyProfileOwnership, getVerifiedProfileId } from "@/lib/auth";
+import { requireAuth, verifyProfileOwnership, getVerifiedProfileId, HttpError } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { watchPartySyncSchema } from "@/lib/schemas";
 import { csrfGuard } from '@/lib/csrf';
@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true }, { headers: rateLimitHeaders(rl) });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -133,6 +134,7 @@ export async function GET(request: NextRequest) {
     }, { headers: rateLimitHeaders(rl) });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

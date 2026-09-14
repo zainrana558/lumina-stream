@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAuth, verifyProfileOwnership, getVerifiedProfileId } from "@/lib/auth";
+import { requireAuth, verifyProfileOwnership, getVerifiedProfileId, HttpError } from "@/lib/auth";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { watchlistAddSchema, watchlistDeleteSchema, watchlistPatchSchema } from "@/lib/schemas";
 import { csrfGuard } from '@/lib/csrf';
@@ -83,7 +83,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -104,6 +105,18 @@ export async function DELETE(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    // "Clear entire watchlist" (Settings → Privacy). Operates on the caller's
+    // verified active profile — no per-item payload.
+    if (body?.clearAll === true) {
+      const { supabase, userId } = await requireAuth();
+      const profileId = await getVerifiedProfileId(userId);
+      if (!profileId) return NextResponse.json({ error: "No active profile" }, { status: 400 });
+      const { error } = await supabase.from("watchlist").delete().eq("profile_id", profileId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
     const parsed = watchlistDeleteSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid request: " + parsed.error.issues.map(i => i.message).join(', ') }, { status: 400 });
@@ -124,7 +137,8 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -165,6 +179,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

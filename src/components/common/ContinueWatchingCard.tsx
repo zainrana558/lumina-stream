@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { Play } from 'lucide-react';
 import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
 import { vibrateTap } from '@/lib/haptics';
@@ -71,13 +72,13 @@ const ContinueWatchingCard = memo(function ContinueWatchingCard({ show }: Contin
           zIndex: 5, width: 44, height: 44, borderRadius: '50%',
           background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '1.1rem', opacity: 0, transition: 'opacity .25s',
+          color: '#FFF5E8', opacity: 0, transition: 'opacity .25s',
           boxShadow: '0 4px 16px rgba(0,0,0,.5)',
         }}
         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0'; }}
         >
-          ▶
+          <Play size={18} fill="currentColor" />
         </div>
 
         {/* Title at bottom */}

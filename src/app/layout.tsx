@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { safeJsonLd } from '@/lib/jsonld';
 import { Cinzel_Decorative, Cinzel, Crimson_Pro } from "next/font/google";
 import "@/styles/global.css";
 import { CANONICAL_BASE } from '@/lib/seo/constants';
@@ -101,7 +102,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: safeJsonLd({
               '@context': 'https://schema.org',
               '@type': 'Organization',
               name: 'Lumovia',
@@ -115,7 +116,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: safeJsonLd({
               '@context': 'https://schema.org',
               '@type': 'WebSite',
               name: 'Lumovia',

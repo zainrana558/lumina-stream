@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { Film, Drama, Flame, type LucideIcon } from 'lucide-react';
 
 export const dynamic = 'force-static';
 export const revalidate = 86400;
@@ -28,24 +30,24 @@ export const metadata: Metadata = {
   },
 };
 
-const RATING_SOURCES = [
+const RATING_SOURCES: { title: string; icon: LucideIcon; description: string; scale: string; voters: string }[] = [
   {
     title: 'TMDB User Ratings',
-    icon: '🎬',
+    icon: Film,
     description: 'The Movie Database aggregates ratings from millions of registered users worldwide. Every movie and TV show on Lumovia displays a TMDB score on a 1-10 scale, weighted to reduce outlier manipulation. With over 500 million total votes across the platform, TMDB scores are among the most reliable crowd-sourced quality indicators in the entertainment industry.',
     scale: '1 – 10 scale',
     voters: 'Millions of users',
   },
   {
     title: 'AniList Scores',
-    icon: '🎭',
+    icon: Drama,
     description: 'AniList is the premier community platform for anime and manga enthusiasts. Unlike traditional review aggregators, AniList scores are calculated using a weighted mean that accounts for user engagement, review recency, and scoring distribution. Anime titles on Lumovia display both the AniList mean score and the user count, giving you a clear picture of community consensus.',
     scale: '1 – 100 scale',
     voters: 'Hundreds of thousands',
   },
   {
     title: 'Popularity Index',
-    icon: '🔥',
+    icon: Flame,
     description: 'Our proprietary Popularity Index combines real-time trending data, user interaction metrics, and external buzz signals to rank currently popular content. Unlike static ratings, the Popularity Index changes dynamically — a title can surge after a viral moment, a new season announcement, or an award nomination. It powers our "Trending Now" and "Popular This Week" sections.',
     scale: 'Relative ranking',
     voters: 'Algorithm-based',
@@ -128,9 +130,9 @@ export default function ReviewsPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewsJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(reviewsJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />
 
       <style>{`
         .review-source-card { transition: background .2s, border-color .2s; }
@@ -198,7 +200,7 @@ export default function ReviewsPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <span style={{ fontSize: '1.3rem' }}>{source.icon}</span>
+                <source.icon size={21} color="#FFB347" />
                 <h3 className="f-cinzel" style={{
                   fontSize: '1rem',
                   color: '#FFB347',

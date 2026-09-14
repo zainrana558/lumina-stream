@@ -139,6 +139,52 @@ async function handleTmdb(request, url, ctx, env) {
   return response;
 }
 
+async function handleJikan(request, url, ctx) {
+  if (request.method !== 'GET') return json({ error: 'Only GET for Jikan' }, 405);
+
+  // /jikan/top/anime?filter=... -> https://api.jikan.moe/v4/top/anime?filter=...
+  const jikanPath = url.pathname.slice('/jikan/'.length);
+  const target = new URL(`https://api.jikan.moe/v4/${jikanPath}`);
+  for (const [k, v] of url.searchParams) target.searchParams.set(k, v);
+
+  const cacheKey = new Request(target.toString(), { method: 'GET' });
+  const cache = caches.default;
+  let cached = null;
+  try { cached = await cache.match(cacheKey); } catch { /* miss */ }
+  if (cached) {
+    const h = new Headers(cached.headers);
+    h.set('X-Cache-Status', 'HIT');
+    return new Response(cached.body, { status: cached.status, headers: h });
+  }
+
+  let res;
+  try {
+    res = await fetch(target.toString(), { headers: { Accept: 'application/json' }, cf: { cacheTtl: 0 } });
+  } catch (e) {
+    return json({ error: `Jikan fetch failed: ${e.message}` }, 502);
+  }
+  if (!res.ok) {
+    // Don't cache Jikan errors (429/504 are transient).
+    const body = await res.text().catch(() => '');
+    return json({ error: `Jikan ${res.status}: ${body.slice(0, 120)}` }, res.status);
+  }
+
+  // Detail/full pages are stable → cache longer; ranked lists shift → 6h.
+  const ttl = /\/anime\/\d+/.test(jikanPath) ? DAY : 21600;
+  const buf = await res.arrayBuffer();
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}`,
+    'CDN-Cache-Control': `public, max-age=${ttl}`,
+    'X-Cache-Status': 'MISS',
+    'Access-Control-Allow-Origin': '*',
+    'Content-Length': String(buf.byteLength),
+  });
+  const out = new Response(buf, { status: 200, headers });
+  ctx.waitUntil(cache.put(cacheKey, out.clone()));
+  return out;
+}
+
 async function handleAnilist(request, ctx) {
   if (request.method !== 'POST') {
     return json({ error: 'Only POST for AniList' }, 405);
@@ -194,7 +240,7 @@ async function handleAnilist(request, ctx) {
   return response;
 }
 
-export default {
+const worker = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
@@ -211,10 +257,13 @@ export default {
       });
     }
 
-    if (path === '/health') return json({ ok: true, service: 'api-cache', version: 2 });
+    if (path === '/health') return json({ ok: true, service: 'api-cache', version: 3 });
     if (path.startsWith('/tmdb/')) return handleTmdb(request, url, ctx, env);
     if (path === '/anilist') return handleAnilist(request, ctx);
+    if (path.startsWith('/jikan/')) return handleJikan(request, url, ctx);
 
-    return json({ error: 'Not found. Use /tmdb/... or /anilist' }, 404);
+    return json({ error: 'Not found. Use /tmdb/..., /anilist or /jikan/...' }, 404);
   },
 };
+
+export default worker;

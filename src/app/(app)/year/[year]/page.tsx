@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb/server';
 import type { TMDBShow } from '@/types';
@@ -92,9 +93,18 @@ async function getYearData(year: number) {
         return true;
       })
       .map(r => tmdbToMedia({ ...r, media_type: (r.media_type || 'movie') as 'movie' | 'tv' } as TMDBShow));
-    return unique.slice(0, 100);
+    return {
+      shows: unique.slice(0, 100),
+      // Real, per-year-distinct facts (not a template swap) — the
+      // highest-vote-average title actually released that year, computed
+      // from data we already fetch. Used to keep each year page's on-page
+      // copy and FAQ schema genuinely different from every other year page
+      // instead of the same boilerplate paragraph with the digits swapped.
+      topMovie: topMovies[0] ? tmdbToMedia({ ...topMovies[0], media_type: 'movie' } as TMDBShow) : null,
+      topTv: topTv[0] ? tmdbToMedia({ ...topTv[0], media_type: 'tv' } as TMDBShow) : null,
+    };
   } catch {
-    return [];
+    return { shows: [], topMovie: null, topTv: null };
   }
 }
 
@@ -103,16 +113,20 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
   const year = parseInt(yearStr, 10);
   if (isNaN(year) || year < MIN_YEAR || year > MAX_YEAR) notFound();
 
-  const shows = await getYearData(year);
+  const { shows, topMovie, topTv } = await getYearData(year);
   const pageUrl = `${siteUrl}/year/${year}`;
   const isFuture = year > CURRENT_YEAR;
   const pageTitle = isFuture ? `Upcoming ${year}` : `${year}`;
+  const topMovieLine = topMovie ? `${topMovie.title} (${topMovie.r}/10)` : null;
+  const topTvLine = topTv ? `${topTv.title} (${topTv.r}/10)` : null;
 
   const collectionJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: `${pageTitle} Movies & TV Shows`,
-    description: `Browse the best movies and TV shows from ${year}.`,
+    description: topMovieLine
+      ? `Browse the best movies and TV shows from ${year}, topped by ${topMovieLine}.`
+      : `Browse the best movies and TV shows from ${year}.`,
     url: pageUrl,
     isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   };
@@ -127,13 +141,24 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
           { '@type': 'Question', name: `What movies and TV shows were released in ${year}?`, acceptedAnswer: { '@type': 'Answer', text: `This page collects the most popular and highest-rated movies and TV shows released in ${year}, pulling data from TMDB. We run four separate discover queries — popular movies, popular TV, top-rated movies, and top-rated TV — all filtered to ${year}, then deduplicate and sort by relevance.` } },
+          ...(topMovieLine || topTvLine ? [{
+            '@type': 'Question',
+            name: `What was the highest-rated title of ${year}?`,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: [
+                topMovieLine ? `The highest-rated movie of ${year} on Lumovia is ${topMovieLine}.` : null,
+                topTvLine ? `The highest-rated TV show of ${year} is ${topTvLine}.` : null,
+              ].filter(Boolean).join(' '),
+            },
+          }] : []),
           { '@type': 'Question', name: `How many titles are available for ${year}?`, acceptedAnswer: { '@type': 'Answer', text: `The ${year} page displays up to 100 titles from thousands available on TMDB. The selection prioritizes high-popularity and high-rated content to surface the most significant releases from ${year}.` } },
           { '@type': 'Question', name: `Can I browse other years or decades?`, acceptedAnswer: { '@type': 'Answer', text: `Yes. Use the decade collection pages to browse titles by era, or visit individual year pages for ${Array.from({length: 12}, (_, i) => new Date().getFullYear() + 1 - i).join(', ')}. All pages are accessible from the navigation menu and interlinked for easy exploration.` } },
         ],
@@ -146,7 +171,7 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
         <p className="f-crimson" style={{ fontSize: 'clamp(.9rem,1.3vw,1.05rem)', color: 'rgba(255,245,232,.55)', lineHeight: 1.7, maxWidth: 800 }}>
           {isFuture
             ? `Get a head start on ${year}. This page previews the most anticipated movies and TV shows scheduled for release throughout the year, from blockbuster franchise installments to promising indie films and new series pickups. Check back regularly as release dates are finalized and new titles are announced. We pull data from TMDB using discover filters for both movies and television, sorting by popularity and rating to surface the titles generating the most excitement. Use the genre and sort controls above to refine your view of what ${year} has to offer.`
-            : `Relive the best of ${year}. This page curates the most popular and highest-rated movies and TV shows released in ${year}, pulling data from TMDB to surface both crowd-pleasing hits and critically acclaimed titles that defined the year in entertainment. We run four separate TMDB discover queries — popular movies, popular TV, top-rated movies, and top-rated TV — all filtered to ${year}, then deduplicate and sort by relevance. The result is a comprehensive snapshot of the best content from that twelve-month period. Whether you are feeling nostalgic for the year you graduated high school or you want to catch up on titles you missed, this page makes it easy to browse by rating or popularity.`
+            : `Relive the best of ${year}. This page curates the most popular and highest-rated movies and TV shows released in ${year}, pulling data from TMDB to surface both crowd-pleasing hits and critically acclaimed titles that defined the year in entertainment.${topMovieLine ? ` The highest-rated movie of the year is ${topMovieLine}` : ''}${topMovieLine && topTvLine ? ', and' : topTvLine ? ' The highest-rated TV show is' : ''}${topTvLine ? ` ${topTvLine}` : ''}${topMovieLine || topTvLine ? '.' : ''} We run four separate TMDB discover queries — popular movies, popular TV, top-rated movies, and top-rated TV — all filtered to ${year}, then deduplicate and sort by relevance. Whether you are feeling nostalgic for the year you graduated high school or you want to catch up on titles you missed, this page makes it easy to browse by rating or popularity.`
           }
         </p>
       </section>

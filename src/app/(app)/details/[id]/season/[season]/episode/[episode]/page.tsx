@@ -1,3 +1,6 @@
+import type { ComponentProps } from 'react';
+import { safeJsonLd } from '@/lib/jsonld';
+import { notFound } from 'next/navigation';
 import { tmdbFetch } from '@/lib/tmdb/server';
 import { getAnimeDetail, anilistToMediaItem } from '@/lib/anilist/client';
 import DetailsContent from '@/components/pages/DetailsContent';
@@ -154,12 +157,12 @@ export async function generateMetadata({
 
   // ── TMDB route ──
   try {
-    // Detect media type
+    // Detect media type. Episode URLs are only meaningful for TV, so try /tv
+    // first and only fall back to /movie sequentially — avoids firing a
+    // guaranteed-404 (uncached, burns TMDB quota) on every TV episode page.
     const fallback: TMDBShowData = { id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 };
-    const [tvRes, movieRes] = await Promise.all([
-      tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => fallback),
-      tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => fallback),
-    ]);
+    const tvRes = await tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => fallback);
+    const movieRes = tvRes.id ? fallback : await tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => fallback);
     const rawData = tvRes.id ? tvRes : movieRes.id ? movieRes : null;
     const mediaType: 'tv' | 'movie' = tvRes.id ? 'tv' : 'movie';
 
@@ -338,14 +341,16 @@ export default async function EpisodePage({
           };
         }
       }
-    } catch { /* fall through to null */ }
+    } catch { /* fall through */ }
+
+    if (!show) notFound();
 
     return (
       <>
-        {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
-        {episodeJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(episodeJsonLd) }} />}
-        {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />}
+        {episodeJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(episodeJsonLd) }} />}
+        {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(videoJsonLd) }} />}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
           itemListElement: [
@@ -382,13 +387,14 @@ export default async function EpisodePage({
   let fullData: TMDBDetails | null = null;
   let episodeData: TMDBSeasonEpisode | null = null;
   let seasonEpisodeCount: number | undefined;
+  let seasonEpisodesList: TMDBSeasonEpisode[] = [];
 
   try {
+    // Episode URLs are TV-only: try /tv first, fall back to /movie sequentially
+    // so a TV episode page never fires a guaranteed-404 /movie request.
     const fallback: TMDBShowData = { id: 0, overview: '', poster_path: null, backdrop_path: null, vote_average: 0, popularity: 0 };
-    const [tvRes, movieRes] = await Promise.all([
-      tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => fallback),
-      tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => fallback),
-    ]);
+    const tvRes = await tmdbFetch<TMDBShowData>(`/tv/${showId}`).catch(() => fallback);
+    const movieRes = tvRes.id ? fallback : await tmdbFetch<TMDBShowData>(`/movie/${showId}`).catch(() => fallback);
 
     mediaType = tvRes.id ? 'tv' : movieRes.id ? 'movie' : null;
     rawData = mediaType === 'tv' ? tvRes : movieRes;
@@ -414,6 +420,7 @@ export default async function EpisodePage({
 
       if (seasonRes) {
         const seasonEpisodes = (seasonRes as { episodes: TMDBSeasonEpisode[] }).episodes;
+        seasonEpisodesList = seasonEpisodes || [];
         seasonEpisodeCount = seasonEpisodes?.length;
         const ep = seasonEpisodes?.find(
           (e: TMDBSeasonEpisode) => e.episode_number === episode
@@ -426,7 +433,7 @@ export default async function EpisodePage({
   }
 
   if (!rawData?.id || !mediaType) {
-    return <DetailsContent showId={showId} initialShow={null} defaultSeason={season} defaultEpisode={episode} />;
+    notFound();
   }
 
   const show = tmdbToMedia({ ...rawData, media_type: mediaType } as TMDBShow);
@@ -517,10 +524,10 @@ export default async function EpisodePage({
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(showJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(episodeJsonLd) }} />
-      {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(showJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(episodeJsonLd) }} />
+      {videoJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(videoJsonLd) }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
@@ -534,10 +541,11 @@ export default async function EpisodePage({
         showId={showId}
         initialShow={show}
         initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
-        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia(r as TMDBShow)) || []}
+        initialSimilar={fullData?.similar?.results?.slice(0, 6).map((r) => tmdbToMedia({ ...(r as TMDBShow), media_type: mediaType })) || []}
         initialVideos={fullData?.videos?.results?.filter((v) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube').map((v) => ({ key: v.key, name: v.name, site: v.site, type: v.type })) || []}
         defaultSeason={season}
         defaultEpisode={episode}
+        initialEpisodes={seasonEpisodesList as ComponentProps<typeof DetailsContent>['initialEpisodes']}
       />
       {/* SERVER-RENDERED EPISODE SEO CONTENT */}
       <EpisodeSeoContent

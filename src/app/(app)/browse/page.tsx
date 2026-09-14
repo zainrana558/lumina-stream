@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch } from '@/lib/tmdb/server';
 import BrowseClient from '@/components/pages/BrowseClient';
@@ -64,8 +65,18 @@ async function getBrowseData() {
   }
 }
 
-export default async function BrowsePage() {
+interface BrowsePageProps {
+  searchParams: Promise<{ country?: string; language?: string; q?: string; genre?: string; mood?: string }>;
+}
+
+export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const shows = await getBrowseData();
+  // /country/:slug, /language/:slug and /studio/:slug reach this page via a
+  // next.config.ts rewrite — the browser's own URL bar still shows the
+  // original path, so client-side useSearchParams() sees no query string at
+  // all there. This server-side searchParams prop DOES see the rewritten
+  // destination's query, so we pass it down as the initial filter state.
+  const sp = await searchParams;
 
   const collectionJsonLd = {
     '@context': 'https://schema.org',
@@ -86,9 +97,9 @@ export default async function BrowsePage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
@@ -98,7 +109,14 @@ export default async function BrowsePage() {
         ],
       }) }} />
       <Suspense>
-        <BrowseClient initialShows={shows} />
+        <BrowseClient
+          initialShows={shows}
+          initialCountry={sp.country || ''}
+          initialLanguage={sp.language || ''}
+          initialQ={sp.q || ''}
+          initialGenre={sp.genre || ''}
+          initialMood={sp.mood || ''}
+        />
       </Suspense>
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 60px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#FFF5E8', marginBottom: 12, letterSpacing: '.02em' }}>Browse the Full Lumovia Catalog</h1>

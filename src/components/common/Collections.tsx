@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2, Film, ClipboardList } from 'lucide-react';
 import Image from 'next/image';
 import { useApp } from '@/contexts/AppContext';
 import { getPosterUrl } from '@/lib/images';
@@ -241,7 +242,7 @@ export function CollectionDetail({ collectionId }: { collectionId: string }) {
   if (loading) {
     return (
       <div className="f-cinzel" style={{ textAlign: 'center', padding: '4rem', color: 'rgba(255,245,232,.5)', }}>
-        <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.5rem' }}>✦</div>
+        <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite' }}><Loader2 size={24} /></div>
         <div style={{ marginTop: '.5rem' }}>Loading collection...</div>
       </div>
     );
@@ -294,7 +295,7 @@ export function CollectionDetail({ collectionId }: { collectionId: string }) {
               {item.poster_path ? (
                 <Image src={getPosterUrl({ poster_path: item.poster_path }, 'w342') || ''} alt={item.title} fill sizes="(max-width: 768px) 33vw, 15vw" loading="lazy" style={{ objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', opacity: .2 }}>🎬</div>
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: .2 }}><Film size={24} /></div>
               )}
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 8px', background: 'linear-gradient(to top, rgba(0,0,0,.85), transparent)', }}>
                 <div className="f-cinzel" style={{  fontSize: '.65rem', color: '#FFF5E8', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textShadow: '0 2px 6px rgba(0,0,0,.8)' }}>
@@ -308,7 +309,7 @@ export function CollectionDetail({ collectionId }: { collectionId: string }) {
 
       {items.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '.5rem', opacity: .3 }}>📋</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '.5rem', opacity: .3 }}><ClipboardList size={32} /></div>
           <div className="f-crimson" style={{  color: 'rgba(255,245,232,.35)' }}>This collection is empty</div>
         </div>
       )}

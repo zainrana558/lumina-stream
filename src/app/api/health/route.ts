@@ -1,7 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getValidatedEnv } from '@/lib/env';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Audit finding F-15: this endpoint's detailed `checks` breakdown leaked the
+  // exact Supabase project host and Redis host to any anonymous caller (plus
+  // live embed-provider uptime ratios) — concrete, previously-unguessable
+  // targets for further probing. Gate the detail behind the same admin key
+  // used elsewhere; anonymous/public callers now get only the aggregate
+  // status. Internal monitoring (deploy.sh) only reads `.status`, so it needs
+  // no changes.
+  const adminKey = process.env.ADMIN_API_KEY;
+  const isAdmin = !!adminKey && request.headers.get('x-admin-key') === adminKey;
+
   const startTime = Date.now();
   const checks: Record<string, { ok: boolean; detail: string; latencyMs?: number }> = {};
 
@@ -81,36 +91,48 @@ export async function GET() {
     checks.redis = { ok: false, detail: 'Error checking Redis' };
   }
 
-  // Embed providers health
+  // Embed providers health — read the in-process health map directly. The old
+  // version did a full HTTP round-trip to $SITE_URL/api/embed-health (out
+  // through Cloudflare and back, always 401), which was pure noise.
   try {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumovia-stream-omega.vercel.app';
-    const embedRes = await fetch(
-      `${siteUrl}/api/embed-health`,
-      { signal: AbortSignal.timeout(3000) }
-    ).catch(() => null);
+    const { getAllHealthRecords } = await import('@/lib/streaming/health-check');
+    const records = getAllHealthRecords();
+    const checked = records.size;
+    let alive = 0;
+    for (const r of records.values()) if (r.status !== 'dead') alive++;
     checks.embed_providers = {
-      ok: embedRes !== null,
-      detail: embedRes ? `Embed health check responded (${embedRes.status})` : 'Embed health check unreachable',
+      // Before any health check has run the map is empty — that's fine, not a
+      // failure. Only flag if we've checked providers and all are dead.
+      ok: checked === 0 || alive > 0,
+      detail: checked === 0
+        ? 'No provider checks recorded yet'
+        : `${alive}/${checked} providers alive`,
     };
   } catch {
-    checks.embed_providers = { ok: false, detail: 'Error checking embed providers' };
+    checks.embed_providers = { ok: true, detail: 'Provider health map unavailable (non-critical)' };
   }
 
   const totalLatency = Date.now() - startTime;
   const allOk = Object.values(checks).every(c => c.ok);
 
-  return NextResponse.json(
-    {
-      status: allOk ? 'ok' : 'degraded',
-      timestamp: new Date().toISOString(),
-      uptime_ms: totalLatency,
-      checks,
+  const body = isAdmin
+    ? {
+        status: allOk ? 'ok' : 'degraded',
+        timestamp: new Date().toISOString(),
+        uptime_ms: totalLatency,
+        checks,
+      }
+    : {
+        // Public shape: aggregate only, no hostnames / latencies / provider
+        // uptime ratios. `X-Admin-Key: $ADMIN_API_KEY` gets the full breakdown.
+        status: allOk ? 'ok' : 'degraded',
+        timestamp: new Date().toISOString(),
+      };
+
+  return NextResponse.json(body, {
+    status: allOk ? 200 : 503,
+    headers: {
+      'Cache-Control': 'no-store',
     },
-    {
-      status: allOk ? 200 : 503,
-      headers: {
-        'Cache-Control': 'no-store',
-      },
-    }
-  );
+  });
 }

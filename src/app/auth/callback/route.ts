@@ -1,15 +1,14 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { sanitizeName } from '@/lib/utils';
+import { sanitizeName, safeRedirectPath } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
-  const next = requestUrl.searchParams.get('next') ?? '/';
-  // Prevent redirect to API routes or external paths
-  if (next.startsWith('/api/') || next.startsWith('//') || next.includes('://')) {
-    return NextResponse.redirect(new URL('/', requestUrl.origin));
-  }
+  // safeRedirectPath rejects anything that could resolve to a different
+  // origin once a URL parser normalizes it (leading backslash/whitespace
+  // etc.), not just the simpler '/api/'/'//'/'://' cases this used to check.
+  const next = safeRedirectPath(requestUrl.searchParams.get('next'));
 
   if (code) {
     try {

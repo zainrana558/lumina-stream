@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { AlertTriangle, RotateCw, Home } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   error: Error & { digest?: string };
@@ -44,7 +45,7 @@ export default function Error({ error, reset }: ErrorBoundaryProps) {
           animation: 'breathe 3s ease-in-out infinite',
         }}
       >
-        ⚠
+        <AlertTriangle size={32} color="currentColor" />
       </div>
 
       <h2 className="f-cinzel"
@@ -83,10 +84,10 @@ export default function Error({ error, reset }: ErrorBoundaryProps) {
 
         <div style={{ display: 'flex', gap: '.85rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button className="btn-p" onClick={reset}>
-            ↻ Try Again
+            <RotateCw size={16} /> Try Again
           </button>
           <button className="btn-g" onClick={() => { router.push('/'); }}>
-            ✦ Go Home
+            <Home size={16} /> Go Home
           </button>
         </div>
       </div>

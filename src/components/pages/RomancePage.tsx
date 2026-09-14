@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { Heart, Flower2, Loader2 } from 'lucide-react';
 import type { MediaItem } from '@/types';
 import { tmdbToMedia } from '@/types';
 import type { TMDBShow } from '@/types';
@@ -37,7 +38,7 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
     setLoadingMore(true);
     try {
       const nextPage = pageRef.current + 1;
-      const res = await fetch(`/api/tmdb?endpoint=/discover/movie&with_genres=10749&sort_by=popularity.desc&vote_count_gte=50&page=${nextPage}`);
+      const res = await fetch(`/api/tmdb?endpoint=/discover/movie&with_genres=10749&sort_by=popularity.desc&vote_count.gte=50&page=${nextPage}`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
         const newItems = data.results
@@ -113,14 +114,13 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
         {hearts.map(h => (
           <div key={h.id} style={{
             position: 'absolute', bottom: '-20px', left: h.left,
-            fontSize: h.size,
             color: h.color,
             opacity: 0.7,
             zIndex: 1, pointerEvents: 'none',
             animation: `heart-rise ${h.dur} ${h.delay} ease-in-out infinite`,
             filter: `drop-shadow(0 0 6px ${h.color}55)`,
           } as React.CSSProperties}>
-            {h.id % 3 === 0 ? '♥' : h.id % 3 === 1 ? '♡' : '❤'}
+            <Heart size={h.size} fill={h.id % 3 === 1 ? 'none' : 'currentColor'} />
           </div>
         ))}
 
@@ -141,14 +141,21 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
         {/* Header */}
         <div style={{ position: 'relative', zIndex: 5, padding: '3rem clamp(1rem,5vw,3rem) 2rem', textAlign: 'center' }}>
           <div className="f-playfair" style={{
-            
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '0.5em',
             fontWeight: 900,
             fontSize: 'clamp(1.5rem,4vw,2.5rem)',
             color: '#FFB3C1',
             marginBottom: '0.3rem',
             letterSpacing: '0.05em',
             animation: 'love-g 3s ease-in-out infinite',
-          }}>♥ &nbsp; ♡ &nbsp; ♥</div>
+          }}>
+            <Heart size="1em" fill="currentColor" />
+            <Heart size="1em" />
+            <Heart size="1em" fill="currentColor" />
+          </div>
           <h1 className="f-playfair" style={{
             
             fontStyle: 'italic',
@@ -176,7 +183,7 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
               width: 50, height: 1,
               background: 'linear-gradient(90deg,transparent,rgba(255,107,138,0.4))',
             }} />
-            <span style={{ color: '#FF6B8A', fontSize: '1rem', opacity: 0.6 }}>🌹</span>
+            <Flower2 size={16} style={{ color: '#FF6B8A', opacity: 0.6 }} />
             <div style={{
               width: 50, height: 1,
               background: 'linear-gradient(270deg,transparent,rgba(255,107,138,0.4))',
@@ -220,7 +227,8 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
         <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
         {loadingMore && (
           <div style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em' }}>
-            ✦ Loading...
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.4rem' }}><Loader2 size={16} /></div>
+            Loading...
           </div>
         )}
         {!hasMore && (

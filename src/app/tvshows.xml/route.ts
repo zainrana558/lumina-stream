@@ -1,6 +1,7 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetchPages } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
+import { getStableLastmods } from '@/lib/sitemap-lastmod';
 import { mediaUrl } from '@/lib/slug';
 import { fallbackUrl } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
@@ -49,9 +50,10 @@ export async function GET() {
     all.sort((a, b) => b.popularity - a.popularity);
     const capped = all.slice(0, 5000);
 
+    const lastmods = await getStableLastmods('tvshows', capped.map(item => item.id));
     const urls = capped.map(item => {
       const loc = `${CANONICAL_BASE}${mediaUrl(item.id, item.title || item.name || '', 'tv', item.first_air_date?.slice(0, 4))}`;
-      return `<url>\n<loc>${loc}</loc>\n<lastmod>${now}</lastmod>\n</url>`;
+      return `<url>\n<loc>${loc}</loc>\n<lastmod>${lastmods[item.id] || now}</lastmod>\n</url>`;
     }).join('\n\n');
 
     const body = urls || fallbackUrl(CANONICAL_BASE, now);

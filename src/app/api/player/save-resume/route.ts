@@ -9,8 +9,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { isSupabaseConfigured, createClient } from '@/lib/supabase/server';
-import { requireAuth, getVerifiedProfileId } from '@/lib/auth';
+import { requireAuth, getVerifiedProfileId, HttpError } from '@/lib/auth';
 import { csrfGuard } from '@/lib/csrf';
+import { playerResumeSchema } from '@/lib/schemas';
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,38 +38,59 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { mediaId, position, duration, mediaType } = body;
-
-    if (!mediaId || position === undefined) {
+    const parsed = playerResumeSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields: mediaId, position' },
+        { error: 'Invalid request: ' + parsed.error.issues.map(i => i.message).join(', ') },
         { status: 400 },
       );
     }
+    const { mediaId, position, duration, mediaType, title, posterPath, seasonNumber, episodeNumber } = parsed.data;
 
     const profileId = await getVerifiedProfileId(userId) || userId;
-    const resolvedMediaType = mediaType || 'tv'; // default to tv (most content is episodic)
+    const resolvedMediaType = mediaType; // schema defaults to 'tv' (most content is episodic)
 
     if (!isSupabaseConfigured()) {
       return NextResponse.json({ status: 'saved' }, { headers: rateLimitHeaders(rl) });
     }
 
     const supabase = await createClient();
-    await supabase.from('watch_progress').upsert({
+    const dur = duration ? Number(duration) : 0;
+    const pos = Number(position);
+    const row: Record<string, unknown> = {
       profile_id: profileId,
       media_id: Number(mediaId),
       media_type: resolvedMediaType,
-      position: Number(position),
-      duration: duration ? Number(duration) : 0,
-      progress: duration ? Math.round((Number(position) / Number(duration)) * 100) : 0,
+      position: pos,
+      duration: dur,
+      // Floor at 1% once playback has actually started so the row surfaces in
+      // "Continue Watching" (which filters progress > 0).
+      progress:
+        dur > 0 ? Math.max(pos > 5 ? 1 : 0, Math.min(100, Math.round((pos / dur) * 100))) : (pos > 5 ? 1 : 0),
       updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'profile_id,media_id,media_type',
-    });
+    };
+    if (typeof title === 'string' && title) row.title = title.slice(0, 300);
+    if (typeof posterPath === 'string' && posterPath) row.poster_path = posterPath;
+    if (Number.isFinite(seasonNumber)) row.season_number = Number(seasonNumber);
+    if (Number.isFinite(episodeNumber)) row.episode_number = Number(episodeNumber);
+    let { error } = await supabase
+      .from('watch_progress')
+      .upsert(row, { onConflict: 'profile_id,media_id,media_type' });
+
+    // Tolerate a live DB without `watch_progress.position` (migration 006):
+    // still persist progress% so "continue watching" works.
+    if (error && /position/.test(error.message || '')) {
+      delete row.position;
+      ({ error } = await supabase
+        .from('watch_progress')
+        .upsert(row, { onConflict: 'profile_id,media_id,media_type' }));
+    }
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     return NextResponse.json({ status: 'saved' }, { headers: rateLimitHeaders(rl) });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: msg }, { status });
   }
 }

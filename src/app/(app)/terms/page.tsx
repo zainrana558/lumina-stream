@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
@@ -9,7 +10,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/terms`;
 
 export const metadata: Metadata = {
-  title: 'Terms of Service - Lumovia',
+  title: 'Terms of Service',
   description: 'Lumovia terms of service. Read the legal terms and conditions governing your use of Lumovia, including acceptable use, intellectual property, disclaimers, and limitation of liability.',
   alternates: { canonical: pageUrl },
   openGraph: { type: 'website', url: pageUrl, title: 'Terms of Service - Lumovia', description: 'Read the terms and conditions governing your use of Lumovia.', siteName: 'Lumovia', images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }] },
@@ -33,7 +34,7 @@ const webPageJsonLd = {
   url: pageUrl,
   isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   datePublished: '2026-07-07',
-  dateModified: '2026-07-07',
+  dateModified: '2026-09-14',
 };
 
 const p = { className: 'f-crimson', style: { fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 12 } as React.CSSProperties };
@@ -44,12 +45,12 @@ const b = { style: { color: '#FFB347' } as React.CSSProperties };
 export default function TermsPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(webPageJsonLd) }} />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 60px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#FFF5E8', marginBottom: 16, letterSpacing: '.02em' }}>Terms of Service</h1>
-        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 12 }}>Last updated: July 7, 2026</p>
-        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 48 }}>Effective date: July 7, 2026</p>
+        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 12 }}>Last updated: September 14, 2026</p>
+        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 48 }}>Effective date: September 14, 2026</p>
 
         {/* ── 1. Agreement to Terms ── */}
         <h2 {...h2}>1. Agreement to Terms</h2>
@@ -161,8 +162,11 @@ export default function TermsPage() {
         <p {...p}>
           <strong {...b}>7.3 No Warranty of Legality.</strong> We make no representations or warranties whatsoever about the legality, accuracy, reliability, quality, availability, or intellectual property status of any third-party embedded content. The presence of a link or embed does not indicate that we have verified the legal status of the content or that we believe the content to be authorized for distribution by the third-party provider.
         </p>
-        <p {...ps}>
+        <p {...p}>
           <strong {...b}>7.4 Takedown Cooperation.</strong> If you believe any embedded content infringes your rights, please contact us through our <Link href="/dmca" style={{ color: '#FFB347' }}>DMCA &amp; Copyright Policy</Link> page so we can review and take appropriate action, including disabling the link or embed to the identified content. Because we do not host the content ourselves, the most effective remedy is to also contact the third-party provider directly.
+        </p>
+        <p {...ps}>
+          <strong {...b}>7.5 Embedded Player Sandbox and Pop-Ups.</strong> Embedded players are loaded inside a restricted browser sandbox by default, which blocks pop-ups and prevents an embed from navigating your tab away from the Service. A small number of lower-priority third-party sources will not play video at all under that restriction and require it to be relaxed to function; we do so only for those specific, clearly-identified sources, and an on-screen warning is displayed for the duration of playback from one of them. You acknowledge that selecting such a source may result in additional tabs, windows, or pages opening, and you agree not to trust or enter information into any page that opens unexpectedly as a result — close it and return to the Service. See our <Link href="/disclaimer" style={{ color: '#FFB347' }}>Disclaimer</Link> for further detail.
         </p>
 
         {/* ── 8. User Responsibilities Regarding Content ── */}

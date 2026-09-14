@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { COUNTRY_SLUGS } from '@/lib/slug';
 import Link from 'next/link';
@@ -10,7 +11,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/countries`;
 
 export const metadata: Metadata = {
-  title: 'Countries & Film Industries - Global Cinema Directory | Lumovia',
+  title: 'Countries & Film Industries - Global Cinema Directory',
   description:
     'Explore film and TV industries from around the world. Discover content from the United States, Japan, South Korea, France, India, the United Kingdom, and more on Lumovia.',
   alternates: { canonical: pageUrl },
@@ -35,37 +36,37 @@ const COUNTRY_CATEGORIES = [
   {
     title: 'North America',
     countries: [
-      { name: 'United States', flag: '🇺🇸', code: 'US', desc: 'Home to Hollywood, the largest film industry in the world by revenue. Dominates global box office with blockbuster franchises, prestige television, and a vast ecosystem of independent cinema from New York to Los Angeles.' },
-      { name: 'Canada', flag: '🇨🇦', code: 'CA', desc: 'A major production hub known for its thriving film festivals (Toronto, Vancouver), tax incentive programs that attract Hollywood productions, and acclaimed creators like Denis Villeneuve and Ryan Reynolds.' },
-      { name: 'Mexico', flag: '🇲🇽', code: 'MX', desc: 'Rich cinematic tradition from the Golden Age of Mexican cinema to modern masterpieces by directors like Guillermo del Toro, Alfonso Cuarón, and Alejandro González Iñárritu.' },
+      { name: 'United States', code: 'US', desc: 'Home to Hollywood, the largest film industry in the world by revenue. Dominates global box office with blockbuster franchises, prestige television, and a vast ecosystem of independent cinema from New York to Los Angeles.' },
+      { name: 'Canada', code: 'CA', desc: 'A major production hub known for its thriving film festivals (Toronto, Vancouver), tax incentive programs that attract Hollywood productions, and acclaimed creators like Denis Villeneuve and Ryan Reynolds.' },
+      { name: 'Mexico', code: 'MX', desc: 'Rich cinematic tradition from the Golden Age of Mexican cinema to modern masterpieces by directors like Guillermo del Toro, Alfonso Cuarón, and Alejandro González Iñárritu.' },
     ],
   },
   {
     title: 'Europe',
     countries: [
-      { name: 'United Kingdom', flag: '🇬🇧', code: 'GB', desc: 'A powerhouse of film and television production, home to Pinewood and Shepperton studios, the James Bond franchise, Harry Potter, and acclaimed TV from the BBC, ITV, and streaming originals.' },
-      { name: 'France', flag: '🇫🇷', code: 'FR', desc: 'The birthplace of cinema and home to Cannes, the world\'s most prestigious film festival. French cinema spans art house classics, animated masterpieces, and global hits like The Intouchables.' },
-      { name: 'Germany', flag: '🇩🇪', code: 'DE', desc: 'A major European film market with a rich history from Expressionist cinema to modern international co-productions. Known for the Berlin International Film Festival and acclaimed filmmakers like Wim Wenders and Werner Herzog.' },
-      { name: 'Spain', flag: '🇪🇸', code: 'ES', desc: 'Producer of acclaimed international cinema and popular series. From Pedro Almodóvar\'s award-winning films to the global phenomenon of La Casa de Papel (Money Heist), Spain\'s film industry continues to captivate worldwide audiences.' },
-      { name: 'Italy', flag: '🇮🇹', code: 'IT', desc: 'A historic cornerstone of world cinema, from Federico Fellini and Sergio Leone to Paolo Sorrentino. Italian cinema is celebrated for its neorealist roots, stylish genre films, and the prestigious Venice Film Festival.' },
+      { name: 'United Kingdom', code: 'GB', desc: 'A powerhouse of film and television production, home to Pinewood and Shepperton studios, the James Bond franchise, Harry Potter, and acclaimed TV from the BBC, ITV, and streaming originals.' },
+      { name: 'France', code: 'FR', desc: 'The birthplace of cinema and home to Cannes, the world\'s most prestigious film festival. French cinema spans art house classics, animated masterpieces, and global hits like The Intouchables.' },
+      { name: 'Germany', code: 'DE', desc: 'A major European film market with a rich history from Expressionist cinema to modern international co-productions. Known for the Berlin International Film Festival and acclaimed filmmakers like Wim Wenders and Werner Herzog.' },
+      { name: 'Spain', code: 'ES', desc: 'Producer of acclaimed international cinema and popular series. From Pedro Almodóvar\'s award-winning films to the global phenomenon of La Casa de Papel (Money Heist), Spain\'s film industry continues to captivate worldwide audiences.' },
+      { name: 'Italy', code: 'IT', desc: 'A historic cornerstone of world cinema, from Federico Fellini and Sergio Leone to Paolo Sorrentino. Italian cinema is celebrated for its neorealist roots, stylish genre films, and the prestigious Venice Film Festival.' },
     ],
   },
   {
     title: 'Asia',
     countries: [
-      { name: 'Japan', flag: '🇯🇵', code: 'JP', desc: 'A global entertainment titan. Japan produces the world\'s most influential anime and manga, alongside a prolific live-action film industry spanning samurai epics, J-Horror, and the films of Akira Kurosawa and Hayao Miyazaki.' },
-      { name: 'South Korea', flag: '🇰🇷', code: 'KR', desc: 'The epicenter of the Korean Wave (Hallyu). Korean cinema and K-Dramas have achieved massive global popularity, from Parasite\'s historic Best Picture Oscar to hits like Squid Game, Train to Busan, and Crash Landing on You.' },
-      { name: 'India', flag: '🇮🇳', code: 'IN', desc: 'Home to Bollywood — the world\'s most prolific film industry by volume. India produces over 2,000 films annually across multiple languages including Hindi, Tamil, Telugu, and Malayalam, with a massive global audience.' },
-      { name: 'China', flag: '🇨🇳', code: 'CN', desc: 'One of the largest film markets in the world by box office revenue. Chinese cinema ranges from wuxia epics and historical dramas to modern sci-fi blockbusters like The Wandering Earth.' },
-      { name: 'Thailand', flag: '🇹🇭', code: 'TH', desc: 'A rising force in Southeast Asian cinema known for horror, action, and romantic films. Thai cinema gained international acclaim through films like Ong-Bak and the horror anthology The Medium, while Thai BL series have built a massive global fanbase.' },
+      { name: 'Japan', code: 'JP', desc: 'A global entertainment titan. Japan produces the world\'s most influential anime and manga, alongside a prolific live-action film industry spanning samurai epics, J-Horror, and the films of Akira Kurosawa and Hayao Miyazaki.' },
+      { name: 'South Korea', code: 'KR', desc: 'The epicenter of the Korean Wave (Hallyu). Korean cinema and K-Dramas have achieved massive global popularity, from Parasite\'s historic Best Picture Oscar to hits like Squid Game, Train to Busan, and Crash Landing on You.' },
+      { name: 'India', code: 'IN', desc: 'Home to Bollywood — the world\'s most prolific film industry by volume. India produces over 2,000 films annually across multiple languages including Hindi, Tamil, Telugu, and Malayalam, with a massive global audience.' },
+      { name: 'China', code: 'CN', desc: 'One of the largest film markets in the world by box office revenue. Chinese cinema ranges from wuxia epics and historical dramas to modern sci-fi blockbusters like The Wandering Earth.' },
+      { name: 'Thailand', code: 'TH', desc: 'A rising force in Southeast Asian cinema known for horror, action, and romantic films. Thai cinema gained international acclaim through films like Ong-Bak and the horror anthology The Medium, while Thai BL series have built a massive global fanbase.' },
     ],
   },
   {
     title: 'Latin America',
     countries: [
-      { name: 'Brazil', flag: '🇧🇷', code: 'BR', desc: 'The largest film industry in Latin America, known for vibrant urban dramas, social documentaries, and the internationally acclaimed City of God. Brazil also has a fast-growing streaming market and a strong tradition in telenovelas.' },
-      { name: 'Argentina', flag: '🇦🇷', code: 'AR', desc: 'A cornerstone of Latin American cinema with a rich tradition of auteur filmmaking. Argentine cinema has won multiple Academy Awards for Best Foreign Language Film and produced celebrated works by directors like Lucrecia Martel.' },
-      { name: 'Colombia', flag: '🇨🇴', code: 'CO', desc: 'An emerging film market gaining international recognition for films like Embrace of the Serpent and documentaries exploring the country\'s complex history. Colombia\'s creative industry is expanding rapidly in both film and television.' },
+      { name: 'Brazil', code: 'BR', desc: 'The largest film industry in Latin America, known for vibrant urban dramas, social documentaries, and the internationally acclaimed City of God. Brazil also has a fast-growing streaming market and a strong tradition in telenovelas.' },
+      { name: 'Argentina', code: 'AR', desc: 'A cornerstone of Latin American cinema with a rich tradition of auteur filmmaking. Argentine cinema has won multiple Academy Awards for Best Foreign Language Film and produced celebrated works by directors like Lucrecia Martel.' },
+      { name: 'Colombia', code: 'CO', desc: 'An emerging film market gaining international recognition for films like Embrace of the Serpent and documentaries exploring the country\'s complex history. Colombia\'s creative industry is expanding rapidly in both film and television.' },
     ],
   },
 ];
@@ -93,15 +94,15 @@ export default function CountriesPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        dangerouslySetInnerHTML={{ __html: safeJsonLd({
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
           mainEntity: [
@@ -211,7 +212,7 @@ export default function CountriesPage() {
               {category.countries.map((country) => (
                 <div key={country.code} className="country-card">
                   <Link
-                    href={`/country/${COUNTRY_SLUGS[country.code] || country.code.toLowerCase()}`}
+                    href={`/browse?country=${COUNTRY_SLUGS[country.code] || country.code.toLowerCase()}`}
                     className="country-link"
                   >
                     <div
@@ -225,7 +226,15 @@ export default function CountriesPage() {
                         gap: 8,
                       }}
                     >
-                      <span style={{ fontSize: '1.3rem' }}>{country.flag}</span>
+                      <img
+                        src={`https://flagcdn.com/h24/${country.code.toLowerCase()}.png`}
+                        srcSet={`https://flagcdn.com/h48/${country.code.toLowerCase()}.png 2x`}
+                        alt=""
+                        width={24}
+                        height={16}
+                        loading="lazy"
+                        style={{ borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,.5)', flexShrink: 0 }}
+                      />
                       {country.name}
                     </div>
                   </Link>

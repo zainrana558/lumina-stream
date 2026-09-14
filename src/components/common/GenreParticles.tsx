@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Heart, type LucideIcon } from 'lucide-react';
 
 interface GenreParticlesProps {
   genre: 'anime' | 'cartoon' | 'horror' | 'romance' | 'mystery' | 'fantasy';
@@ -19,7 +20,8 @@ interface Particle {
   background?: string;
   border?: string;
   borderRadius?: string;
-  content?: string;
+  icon?: LucideIcon;
+  iconFill?: boolean;
   fontSize?: number;
   animation: string;
   dur: string;
@@ -135,12 +137,12 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
         });
       }
     } else if (genre === 'romance') {
-      const hearts = ['♥', '♡', '❤', '💕', '💗'];
+      const heartFills = [true, false, true, true, true];
       for (let i = 0; i < n; i++) {
         const color = r() > 0.5 ? '#FF6B8A' : '#FF4D6D';
         result.push({
           id: i, left: `${5 + r() * 90}%`, bottom: `-${r() * 20}px`,
-          content: hearts[i % hearts.length], color,
+          icon: Heart, iconFill: heartFills[i % heartFills.length], color,
           fontSize: 10 + r() * 14,
           animation: `heart-float ${6 + r() * 6}s ${r() * 6}s ease-in-out infinite`,
           dur: '', delay: '', opacity: 0.15 + r() * 0.2,
@@ -188,7 +190,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
             bottom: p.bottom,
             width: p.w ?? p.size,
             height: p.h ?? p.size,
-            minWidth: p.content ? undefined : (p.w ?? p.size),
+            minWidth: p.icon ? undefined : (p.w ?? p.size),
             borderRadius: p.borderRadius,
             background: p.background,
             border: p.border,
@@ -202,7 +204,7 @@ export default function GenreParticles({ genre }: GenreParticlesProps) {
             ...p.extraStyle,
           } as React.CSSProperties}
         >
-          {p.content}
+          {p.icon && <p.icon size={p.fontSize} fill={p.iconFill ? 'currentColor' : 'none'} />}
         </div>
       ))}
     </div>

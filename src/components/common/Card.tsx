@@ -3,6 +3,7 @@
 import { memo, useRef, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Star } from 'lucide-react';
 import type { MediaItem } from '@/types';
 import { CS } from '@/styles/themes';
 import { vibrateTap } from '@/lib/haptics';
@@ -28,7 +29,10 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
   const h = { sm: 200, md: 296, lg: 370 }[sz];
   // Support both TMDB poster paths and AniList full cover URLs
   const posterSrc = getPosterUrl(show, 'w342');
-  const hasPoster = !!posterSrc;
+  const [imgFailed, setImgFailed] = useState(false);
+  const hasPoster = !!posterSrc && !imgFailed;
+  // Reset the failed-flag if the card gets recycled for a different poster.
+  useEffect(() => { setImgFailed(false); }, [posterSrc]);
 
   const onMove = useCallback((e: React.MouseEvent) => {
     if (raf.current) return;
@@ -97,6 +101,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
               loading="lazy"
               placeholder="blur"
               blurDataURL={getBlurPlaceholder(show.cs)}
+              onError={() => setImgFailed(true)}
               style={{
                 objectFit: 'cover',
                 zIndex: 0,
@@ -130,10 +135,10 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
         {!hasPoster && (
           <div style={{
             position: 'absolute', bottom: '40%', right: '10%',
-            fontSize: sz === 'lg' ? '3.8rem' : '2.2rem', opacity: 0.09,
+            opacity: 0.09, color: s.acc,
             filter: 'blur(2px)', animation: `float ${3.2 + show.id * 0.4}s ease-in-out infinite`,
             userSelect: 'none',
-          }}>{s.em}</div>
+          }}><s.icon size={sz === 'lg' ? 62 : 36} /></div>
         )}
         <div className="f-cinzel" style={{
           position: 'absolute', top: 9, left: 9, zIndex: 5,
@@ -141,7 +146,9 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
           fontSize: '.6rem',  color: s.acc, letterSpacing: '.04em',
           boxShadow: `3px 3px 9px rgba(0,0,0,.7),-1px -1px 3px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px ${s.acc}40`,
         }}>{show.tag}</div>
-        <div className="badge-r" style={{ position: 'absolute', top: 9, right: 9, zIndex: 5 }}>⭐ {show.r}</div>
+        <div className="badge-r" style={{ position: 'absolute', top: 9, right: 9, zIndex: 5 }}>
+          {show.r > 0 ? <><Star size={11} fill="currentColor" /> {show.r}</> : 'New'}
+        </div>
         {show.progress > 0 && show.progress < 100 && (
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 6 }}>
             <div className="prog-bar" style={{ borderRadius: 0, height: 3 }}>

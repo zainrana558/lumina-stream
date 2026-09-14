@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
+import { Play, Star, MessageCircle, User, ClipboardList, Trophy, Loader2, type LucideIcon } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import { createClient, ensureRealtimeAuth } from '@/lib/supabase/client';
 
 interface Notification {
   id: string;
@@ -14,16 +16,19 @@ interface Notification {
   link: string;
   is_read: boolean;
   created_at: string;
-  from_profile?: { id: string; name: string; avatar_url: string | null }[];
+  from_profile?:
+    | { id: string; name: string; avatar_url: string | null }[]
+    | { id: string; name: string; avatar_url: string | null }
+    | null;
 }
 
-const NOTIFICATION_ICONS: Record<string, { icon: string; color: string }> = {
-  new_episode: { icon: '▶', color: '#4ECDC4' },
-  watchlist_update: { icon: '★', color: '#FFB347' },
-  comment_reply: { icon: '💬', color: '#8B78FF' },
-  follow: { icon: '👤', color: '#FF6B8A' },
-  list_shared: { icon: '📋', color: '#78D621' },
-  milestone: { icon: '🏆', color: '#FFE566' },
+const NOTIFICATION_ICONS: Record<string, { icon: LucideIcon; color: string }> = {
+  new_episode: { icon: Play, color: '#4ECDC4' },
+  watchlist_update: { icon: Star, color: '#FFB347' },
+  comment_reply: { icon: MessageCircle, color: '#8B78FF' },
+  follow: { icon: User, color: '#FF6B8A' },
+  list_shared: { icon: ClipboardList, color: '#78D621' },
+  milestone: { icon: Trophy, color: '#FFE566' },
 };
 
 function timeAgo(dateStr: string): string {
@@ -40,8 +45,8 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function NotificationBell() {
-  const { user } = useApp();
+function NotificationBell() {
+  const { user, profile } = useApp();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -69,23 +74,30 @@ export default function NotificationBell() {
     return () => { cancelled = true; };
   }, [open, user, fetchNotifications]);
 
-  // Poll for unread count every 60s — but only while the tab is visible.
-  // (Was 30s regardless of visibility → 4 Supabase calls/30s per idle tab.)
+  // Push-based unread updates via Supabase Realtime — replaces a 60s poll
+  // that cost one Redis rate-limit command + 2 Supabase queries per tick per
+  // open tab (≈100k Redis commands/day at 10k DAU, see the caching audit).
   useEffect(() => {
-    if (!user) return;
-    const tick = async () => {
-      if (typeof document !== 'undefined' && document.hidden) return;
-      try {
-        const res = await fetch('/api/notifications?limit=1');
-        const data = await res.json();
-        setUnreadCount(data.unreadCount || 0);
-      } catch { /* silent */ }
-    };
-    const poll = setInterval(tick, 60000);
-    const onVisible = () => { if (!document.hidden) tick(); };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => { clearInterval(poll); document.removeEventListener('visibilitychange', onVisible); };
-  }, [user]);
+    if (!profile) return;
+    const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    (async () => {
+      await ensureRealtimeAuth(supabase);
+      if (cancelled) return;
+      channel = supabase
+        .channel(`notifications:${profile.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'notifications', filter: `profile_id=eq.${profile.id}` },
+          () => { setUnreadCount(c => c + 1); },
+        )
+        .subscribe();
+    })();
+
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
+  }, [profile]);
 
   // Close on outside click
   useEffect(() => {
@@ -104,11 +116,12 @@ export default function NotificationBell() {
   }, [open]);
 
   const markRead = async (notificationId: string) => {
+    if (!profile?.id) return;
     try {
       await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificationId, markAll: false }),
+        body: JSON.stringify({ notificationId, profileId: profile.id }),
       });
       setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -116,11 +129,12 @@ export default function NotificationBell() {
   };
 
   const markAllRead = async () => {
+    if (!profile?.id) return;
     try {
       const res = await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileId: '', markAll: true }),
+        body: JSON.stringify({ profileId: profile.id, markAll: true }),
       });
       if (res.ok) {
         setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
@@ -211,7 +225,7 @@ export default function NotificationBell() {
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {loading ? (
               <div className="f-cinzel" style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,245,232,.5)',  fontSize: '.75rem' }}>
-                <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '1.2rem', marginBottom: '.5rem' }}>✦</div>
+                <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.5rem' }}><Loader2 size={19} /></div>
                 <div>Loading...</div>
               </div>
             ) : notifications.length === 0 ? (
@@ -232,8 +246,14 @@ export default function NotificationBell() {
             ) : (
               notifications.map((notification, i) => {
                 const ni = NOTIFICATION_ICONS[notification.type] || NOTIFICATION_ICONS.watchlist_update;
-                const fromName = notification.from_profile?.[0]?.name || '';
-                const fromAvatar = notification.from_profile?.[0]?.avatar_url;
+                const NIcon = ni.icon;
+                // PostgREST returns the to-one `from_profile` embed as an object
+                // (older shapes: a 1-element array) — handle both.
+                const fromProfile = Array.isArray(notification.from_profile)
+                  ? notification.from_profile[0]
+                  : notification.from_profile;
+                const fromName = fromProfile?.name || '';
+                const fromAvatar = fromProfile?.avatar_url;
 
                 return (
                   <div
@@ -263,7 +283,7 @@ export default function NotificationBell() {
                       overflow: 'hidden',
                     }}>
                       {!fromAvatar && (
-                        <span style={{ fontSize: '.85rem' }}>{ni.icon}</span>
+                        <NIcon size={14} color={ni.color} />
                       )}
                     </div>
                     {/* Content */}
@@ -295,3 +315,5 @@ export default function NotificationBell() {
     </div>
   );
 }
+
+export default memo(NotificationBell);

@@ -178,3 +178,43 @@ export const reminderDeleteSchema = z.object({
   mediaId: z.number().int().positive(),
   mediaType: z.enum(['movie', 'tv']),
 });
+
+// ---- Player resume ----
+export const playerResumeSchema = z.object({
+  mediaId: z.number().int().positive(),
+  position: z.number().min(0),
+  duration: z.number().min(0).optional(),
+  mediaType: z.enum(['movie', 'tv']).optional().default('tv'),
+  title: z.string().min(1).optional(),
+  posterPath: z.string().nullable().optional(),
+  seasonNumber: z.number().int().positive().optional(),
+  episodeNumber: z.number().int().positive().optional(),
+});
+
+// ---- Reminders check ----
+// Previously typed as ReminderItem[] with no runtime check — a malformed
+// body (reminders not an array, or entries missing mediaId/mediaType) threw
+// inside the .map()/.filter() calls below instead of a clean 400.
+export const remindersCheckSchema = z.object({
+  reminders: z.array(z.object({
+    mediaId: z.number().int().positive(),
+    mediaType: z.enum(['movie', 'tv']),
+    title: z.string().min(1),
+    releaseDate: z.string().optional(),
+    addedAt: z.number(),
+  })).max(200), // a user's reminder list is bounded well under this in practice
+  lastCheck: z.string().optional(),
+});
+
+// ---- Playback event ----
+export const playbackEventSchema = z.object({
+  mediaId: z.union([z.string(), z.number()]),
+  provider: z.string().min(1).max(100),
+  eventType: z.enum([
+    'play', 'pause', 'seek', 'buffer_start', 'buffer_end',
+    'error', 'complete', 'quality_change', 'provider_switch',
+  ]),
+  position: z.number().min(0).optional(),
+  duration: z.number().min(0).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});

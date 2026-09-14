@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, getImageUrl, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
@@ -10,7 +11,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/actors`;
 
 export const metadata: Metadata = {
-  title: 'Popular Actors & Actresses - Top 100 Most Popular Performers | Lumovia',
+  title: 'Popular Actors & Actresses - Top 100 Most Popular Performers',
   description:
     'Explore the top 100 most popular actors and actresses in movies and TV shows. Browse their profiles, filmographies, and discover the titles that made them famous — all free on Lumovia.',
   alternates: { canonical: pageUrl },
@@ -131,10 +132,10 @@ export default async function ActorsPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />
 
       <div style={{
         maxWidth: 1200,

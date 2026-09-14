@@ -4,21 +4,27 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
 import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
+import AuthLoading from '@/components/common/AuthLoading';
 import Image from 'next/image';
+import {
+  User, Drama, Palette, Bell, Lock, Sparkles, Settings as SettingsIcon,
+  Baby, Lightbulb, Waves, ClipboardList, Zap, Film, Triangle,
+  type LucideIcon,
+} from 'lucide-react';
 
 interface SettingsSection {
   id: string;
   title: string;
-  icon: string;
+  icon: LucideIcon;
 }
 
 const SECTIONS: SettingsSection[] = [
-  { id: 'account', title: 'Account', icon: '👤' },
-  { id: 'profile', title: 'Profile & Avatar', icon: '🎭' },
-  { id: 'appearance', title: 'Appearance', icon: '🎨' },
-  { id: 'notifications', title: 'Notifications', icon: '🔔' },
-  { id: 'privacy', title: 'Privacy & Data', icon: '🔒' },
-  { id: 'about', title: 'About Lumovia', icon: '✨' },
+  { id: 'account', title: 'Account', icon: User },
+  { id: 'profile', title: 'Profile & Avatar', icon: Drama },
+  { id: 'appearance', title: 'Appearance', icon: Palette },
+  { id: 'notifications', title: 'Notifications', icon: Bell },
+  { id: 'privacy', title: 'Privacy & Data', icon: Lock },
+  { id: 'about', title: 'About Lumovia', icon: Sparkles },
 ];
 
 export default function SettingsPage() {
@@ -37,10 +43,12 @@ export default function SettingsPage() {
 
   if (!supabaseReady) return <SupabaseNotConfigured />;
 
+  if (authLoading) return <AuthLoading />;
+
   if (!user) {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
-        <div style={{ fontSize: '3rem', opacity: .3 }}>⚙️</div>
+        <div style={{ opacity: .3 }}><SettingsIcon size={48} /></div>
         <p className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to access settings</p>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
@@ -59,7 +67,7 @@ export default function SettingsPage() {
   return (
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
-        <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>⚙️ Settings</h1>
+        <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}><SettingsIcon size={26} /> Settings</h1>
         <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>
           Manage your account, preferences, and privacy
         </p>
@@ -69,7 +77,9 @@ export default function SettingsPage() {
         {/* Sidebar - Desktop */}
         <nav style={{ display: 'none', width: 220, flexShrink: 0 }} className="settings-sidebar">
           <div style={{ position: 'sticky', top: 'clamp(70px,8vw,90px)', display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
-            {SECTIONS.map((section) => (
+            {SECTIONS.map((section) => {
+              const Icon = section.icon;
+              return (
               <button className="f-cinzel"
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
@@ -90,17 +100,20 @@ export default function SettingsPage() {
                     : '2px solid transparent',
                 }}
               >
-                <span style={{ fontSize: '1rem' }}>{section.icon}</span>
+                <Icon size={16} />
                 {section.title}
               </button>
-            ))}
+              );
+            })}
           </div>
         </nav>
 
         {/* Mobile Tab Selector */}
         <div style={{ display: 'none', width: '100%', marginBottom: '.5rem' }} className="settings-mobile-tabs">
           <div style={{ display: 'flex', gap: '.4rem', overflowX: 'auto', paddingBottom: '.5rem', WebkitOverflowScrolling: 'touch' }}>
-            {SECTIONS.map((section) => (
+            {SECTIONS.map((section) => {
+              const Icon = section.icon;
+              return (
               <button className="f-cinzel"
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
@@ -119,9 +132,10 @@ export default function SettingsPage() {
                   borderLeft: activeSection === section.id ? undefined : undefined,
                 }}
               >
-                <span>{section.icon}</span> {section.title}
+                <Icon size={13} /> {section.title}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -199,7 +213,7 @@ function AccountSection({
 }) {
   return (
     <div style={{ animation: 'card-in .3s both' }}>
-      <SectionHeader icon="👤" title="Account" subtitle="Your account information and session management" />
+      <SectionHeader icon={User} title="Account" subtitle="Your account information and session management" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
@@ -286,7 +300,7 @@ function ProfileSection({ profile, showToast }: { profile: any; showToast: (msg:
 
   return (
     <div style={{ animation: 'card-in .3s both' }}>
-      <SectionHeader icon="🎭" title="Profile & Avatar" subtitle="Customize your viewing identity" />
+      <SectionHeader icon={Drama} title="Profile & Avatar" subtitle="Customize your viewing identity" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
@@ -313,8 +327,8 @@ function ProfileSection({ profile, showToast }: { profile: any; showToast: (msg:
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
-              👶 Kids Mode
+            <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Baby size={14} /> Kids Mode
             </div>
             <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.5)',  marginTop: 2 }}>
               Filter content suitable for younger audiences
@@ -362,7 +376,7 @@ function ProfileSection({ profile, showToast }: { profile: any; showToast: (msg:
         fontSize: '.6rem', color: 'rgba(255,245,232,.35)', 
         lineHeight: 1.5,
       }}>
-        💡 To change your avatar, visit the <span style={{ color: '#8B78FF', cursor: 'pointer' }} onClick={() => window.location.href = '/profiles'}>Manage Profiles</span> page and click on your profile picture.
+        <Lightbulb size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} /> To change your avatar, visit the <span style={{ color: '#8B78FF', cursor: 'pointer' }} onClick={() => window.location.href = '/profiles'}>Manage Profiles</span> page and click on your profile picture.
       </div>
     </div>
   );
@@ -377,13 +391,13 @@ function AppearanceSection({ showToast }: { showToast: (msg: string) => void }) 
 
   return (
     <div style={{ animation: 'card-in .3s both' }}>
-      <SectionHeader icon="🎨" title="Appearance" subtitle="Customize how Lumovia looks and feels" />
+      <SectionHeader icon={Palette} title="Appearance" subtitle="Customize how Lumovia looks and feels" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <div>
-            <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em' }}>
-              🌊 Reduced Motion
+            <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFF5E8', letterSpacing: '.04em', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Waves size={14} /> Reduced Motion
             </div>
             <div className="f-crimson" style={{ fontSize: '.65rem', color: 'rgba(255,245,232,.5)',  marginTop: 2 }}>
               Minimize animations and transitions
@@ -458,7 +472,7 @@ function NotificationsSection({ showToast }: { showToast: (msg: string) => void 
 
   return (
     <div style={{ animation: 'card-in .3s both' }}>
-      <SectionHeader icon="🔔" title="Notifications" subtitle="Control how Lumovia notifies you" />
+      <SectionHeader icon={Bell} title="Notifications" subtitle="Control how Lumovia notifies you" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.6rem' }}>
@@ -538,7 +552,7 @@ function PrivacySection({ showToast }: { showToast: (msg: string) => void }) {
 
   return (
     <div style={{ animation: 'card-in .3s both' }}>
-      <SectionHeader icon="🔒" title="Privacy & Data" subtitle="Manage your data and privacy preferences" />
+      <SectionHeader icon={Lock} title="Privacy & Data" subtitle="Manage your data and privacy preferences" />
 
       <div className="neo-card s1" style={{ padding: '1.2rem 1.4rem', borderRadius: 14, marginBottom: '1rem' }}>
         <div className="f-cinzel" style={{  fontSize: '.68rem', color: 'rgba(255,245,232,.4)', letterSpacing: '.06em', marginBottom: '.8rem' }}>
@@ -546,7 +560,7 @@ function PrivacySection({ showToast }: { showToast: (msg: string) => void }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
           <DataActionRow
-            icon="📋"
+            icon={ClipboardList}
             title="Clear Watchlist"
             description="Remove all titles from your watchlist"
             onClick={handleClearWatchlist}
@@ -573,7 +587,7 @@ function PrivacySection({ showToast }: { showToast: (msg: string) => void }) {
 function AboutSection() {
   return (
     <div style={{ animation: 'card-in .3s both' }}>
-      <SectionHeader icon="✨" title="About Lumovia" subtitle="Your personal streaming companion" />
+      <SectionHeader icon={Sparkles} title="About Lumovia" subtitle="Your personal streaming companion" />
 
       <div className="neo-card s1" style={{ padding: '1.5rem', borderRadius: 14, marginBottom: '1rem', textAlign: 'center' }}>
         <div className="f-cinzel-dec" style={{  fontSize: '1.8rem', color: '#FFB347', marginBottom: '.3rem', letterSpacing: '.06em' }}>
@@ -598,18 +612,18 @@ function AboutSection() {
         </div>
         <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
           {[
-            { name: 'Next.js 16', icon: '▲' },
-            { name: 'Supabase', icon: '⚡' },
-            { name: 'TMDB', icon: '🎬' },
-            { name: 'AniList', icon: '🌸' },
-            { name: 'Vercel', icon: '⚡' },
-          ].map(({ name, icon }) => (
+            { name: 'Next.js 16', icon: Triangle },
+            { name: 'Supabase', icon: Zap },
+            { name: 'TMDB', icon: Film },
+            { name: 'AniList', icon: Sparkles },
+            { name: 'Vercel', icon: Zap },
+          ].map(({ name, icon: Icon }) => (
             <div key={name} style={{
               display: 'flex', alignItems: 'center', gap: '.35rem',
               padding: '.35rem .7rem', borderRadius: 8,
               background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)',
             }}>
-              <span style={{ fontSize: '.75rem' }}>{icon}</span>
+              <Icon size={12} />
               <span className="f-mono" style={{ fontSize: '.55rem', color: 'rgba(255,245,232,.4)', }}>
                 {name}
               </span>
@@ -623,11 +637,11 @@ function AboutSection() {
 
 /* ============ SHARED COMPONENTS ============ */
 
-function SectionHeader({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
+function SectionHeader({ icon: Icon, title, subtitle }: { icon: LucideIcon; title: string; subtitle: string }) {
   return (
     <div style={{ marginBottom: '1rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.2rem' }}>
-        <span style={{ fontSize: '1.1rem' }}>{icon}</span>
+        <Icon size={18} />
         <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.8vw,1.15rem)' }}>{title}</h2>
       </div>
       <p className="f-crimson" style={{  fontSize: '.78rem', color: 'rgba(255,245,232,.5)', fontStyle: 'italic', paddingLeft: '1.7rem' }}>
@@ -656,9 +670,9 @@ function InfoRow({ label, value, mono, highlight }: { label: string; value: stri
 }
 
 function DataActionRow({
-  icon, title, description, onClick, loading, danger,
+  icon: Icon, title, description, onClick, loading, danger,
 }: {
-  icon: string; title: string; description: string;
+  icon: LucideIcon; title: string; description: string;
   onClick: () => void; loading?: boolean; danger?: boolean;
 }) {
   return (
@@ -669,7 +683,7 @@ function DataActionRow({
       border: `1px solid ${danger ? 'rgba(255,74,74,.1)' : 'rgba(255,255,255,.05)'}`,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem' }}>
-        <span style={{ fontSize: '1rem' }}>{icon}</span>
+        <Icon size={16} />
         <div>
           <div className="f-cinzel" style={{  fontSize: '.7rem', color: '#FFF5E8', letterSpacing: '.04em' }}>{title}</div>
           <div className="f-crimson" style={{ fontSize: '.6rem', color: 'rgba(255,245,232,.25)',  marginTop: 1 }}>{description}</div>

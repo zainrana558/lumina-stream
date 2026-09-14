@@ -1,4 +1,6 @@
 import { Suspense } from 'react';
+import { safeJsonLd } from '@/lib/jsonld';
+import { buildMovieItemListJsonLd } from '@/lib/seo/itemListSchema';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, type TMDBListResponse, type TMDBMediaItem } from '@/lib/tmdb/server';
 import type { TMDBShow } from '@/types';
@@ -83,12 +85,14 @@ export default async function MoviesPage() {
       { '@type': 'ListItem', position: 2, name: 'Movies', item: pageUrl },
     ],
   };
+  const itemListJsonLd = buildMovieItemListJsonLd(shows);
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(moviesJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(moviesJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      {itemListJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd) }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [

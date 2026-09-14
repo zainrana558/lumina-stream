@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lumina-v4';
+const CACHE_NAME = 'lumovia-v1'; // renamed from 'lumina-v*' — audit finding F-24 (leftover pre-rebrand name); bumping this also forces a clean cache reset
 const STATIC_ASSETS = ['/logo.svg'];
 
 // API routes that must NEVER be served from cache (auth/user-specific)

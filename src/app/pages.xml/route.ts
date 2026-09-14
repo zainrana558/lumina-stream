@@ -1,4 +1,5 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { VALID_DECADES } from '@/config/decades';
 import { NextResponse } from 'next/server';
 
 /**
@@ -50,6 +51,24 @@ export async function GET() {
     (p) => `<url>\n<loc>${CANONICAL_BASE}${p.path}</loc>\n<priority>${p.priority}</priority>\n</url>`
   );
 
+  // Genre portal pages are already covered by genres.xml — not duplicated here.
+
+  // Decade pages (/decade/2020s, ...) — genres.xml's own header comment
+  // claims these were "moved to pages.xml", but they never actually were.
+  // Closing that gap here.
+  const decadePages = VALID_DECADES.map(
+    (decade) => `<url>\n<loc>${CANONICAL_BASE}/decade/${decade}</loc>\n<priority>0.7</priority>\n</url>`
+  );
+
+  // Year pages (/year/2016 .. current+1) — mirrors year/[year]'s own
+  // generateStaticParams range so the sitemap never claims a year the page
+  // doesn't actually statically cover.
+  const currentYear = new Date().getFullYear();
+  const yearPages: string[] = [];
+  for (let y = currentYear + 1; y >= currentYear - 10; y--) {
+    yearPages.push(`<url>\n<loc>${CANONICAL_BASE}/year/${y}</loc>\n<priority>0.6</priority>\n</url>`);
+  }
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -57,6 +76,10 @@ export async function GET() {
 ${home}
 
 ${pages.join('\n\n')}
+
+${decadePages.join('\n\n')}
+
+${yearPages.join('\n\n')}
 
 </urlset>`;
 

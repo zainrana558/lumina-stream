@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { Home, Sparkles } from 'lucide-react';
 
 export default function NotFound() {
   const router = useRouter();
@@ -68,21 +69,22 @@ export default function NotFound() {
         onClick={() => { router.push('/'); }}
         style={{ marginTop: '0.5rem' }}
       >
-        ✦ Go Home
+        <Home size={16} /> Go Home
       </button>
 
       <div
         style={{
           position: 'absolute',
           bottom: '10%',
-          fontSize: 'clamp(2rem,5vw,4rem)',
           opacity: 0.06,
           animation: 'float 8s ease-in-out infinite',
           userSelect: 'none',
           pointerEvents: 'none',
+          display: 'flex',
+          justifyContent: 'center',
         }}
       >
-        ✦
+        <Sparkles size={64} />
       </div>
     </div>
   );

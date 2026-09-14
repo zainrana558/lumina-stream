@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAuth, verifyProfileOwnership, getVerifiedProfileId } from '@/lib/auth';
+import { requireAuth, verifyProfileOwnership, getVerifiedProfileId, HttpError } from '@/lib/auth';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { notificationMarkReadSchema, notificationMarkAllReadSchema } from '@/lib/schemas';
 import { csrfGuard } from '@/lib/csrf';
@@ -89,8 +89,13 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
 
-    // Try mark-all-read schema first (contains markAll: true literal)
-    const markAllParsed = notificationMarkAllReadSchema.safeParse(body);
+    // Mark-all only when explicitly requested AND no single id is given —
+    // otherwise a valid single mark-read payload (which also carries profileId)
+    // would match this schema and wipe the whole unread list.
+    const markAllParsed =
+      body?.markAll === true && !body?.notificationId
+        ? notificationMarkAllReadSchema.safeParse(body)
+        : ({ success: false } as const);
     if (markAllParsed.success) {
       const { supabase, userId } = await requireAuth();
       const { profileId } = markAllParsed.data;
@@ -122,7 +127,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -162,6 +168,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

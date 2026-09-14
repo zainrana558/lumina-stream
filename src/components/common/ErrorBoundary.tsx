@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -46,7 +47,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             background: 'rgba(255,179,71,.08)', fontSize: '2rem',
             boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 5px rgba(45,25,90,.2),0 0 0 1px rgba(255,179,71,.2)',
           }}>
-            ⚠
+            <AlertTriangle size={32} color="#FFB347" />
           </div>
           <h2 className="f-cinzel-dec" style={{
              fontWeight: 900, fontSize: '1.4rem',

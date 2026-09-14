@@ -142,14 +142,25 @@ function batchMemoryCheck(
 
   // Every BATCH_SIZE-th request, sync to Redis for accuracy
   if (entry.count >= BATCH_SIZE && redisLimiter) {
-    // Synchronous-ish: we need the result to update our tracking
-    // But we still return the in-memory estimate immediately
-    // The Redis result updates the batch entry for future requests
+    // Each Redis `.limit()` call only ever represents ONE token consumed —
+    // it has no way to know the other (BATCH_SIZE-1) real requests happened
+    // locally in between syncs, so its reported "used" count is necessarily
+    // an undercount relative to actual traffic. Blindly assigning it back
+    // (as this used to do) periodically reset the accurate local counter
+    // DOWN to that stale, sparse sample, letting the limit be bypassed
+    // indefinitely for any traffic spread out enough for each sync to
+    // resolve before the next one fires (confirmed empirically: sequential
+    // request bursts never triggered a 429, while tight concurrent bursts
+    // did). Local, per-request counting is already exact for this
+    // single-process deployment — Redis's role is only to catch a HIGHER
+    // count than local tracking knows about (e.g. a future multi-instance
+    // deployment sharing the same identifier), never to lower it.
     redisLimiter.limit(identifier)
       .then(result => {
-        entry.totalUsed = tokens - result.remaining;
-        entry.syncRemaining = result.remaining;
-        entry.lastBlocked = !result.success;
+        const redisTotalUsed = tokens - result.remaining;
+        entry.totalUsed = Math.max(entry.totalUsed, redisTotalUsed);
+        entry.syncRemaining = Math.max(0, tokens - entry.totalUsed);
+        entry.lastBlocked = entry.totalUsed >= tokens || !result.success;
       })
       .catch(() => {
         // Redis failed — keep using in-memory estimate

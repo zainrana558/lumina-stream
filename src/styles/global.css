@@ -43,6 +43,10 @@ body{background:#07040F;color:#FFF5E8;font-family:var(--font-crimson),serif;over
   --ns-d:rgba(0,0,0,.82);--ns-l:rgba(45,25,90,.28);
   --accent:#FFB347;--accent2:rgba(255,107,138,.8);--accent3:rgba(139,120,255,.8);--accent-base:#14052E;
   --pad:clamp(1rem,5vw,3rem);
+  /* ── Scale tokens (additive — organize spacing/radii without touching the
+     existing shadow-heavy visual style, which stays exactly as designed) ── */
+  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:22px;--r-pill:999px;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;
 }
 
 /* Scrollbar — physical track & thumb */
@@ -80,6 +84,28 @@ body{background:#07040F;color:#FFF5E8;font-family:var(--font-crimson),serif;over
 @keyframes bspin{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 @keyframes auth-aurora{0%,100%{transform:translate(0,0) scale(1);opacity:.25}40%{transform:translate(3%,5%) scale(1.08);opacity:.45}70%{transform:translate(-4%,3%) scale(.93);opacity:.18}}
 @keyframes auth-page-in{from{opacity:0;transform:scale(.975) translateY(12px)}to{opacity:1;transform:none}}
+
+/* ── NEW engaging motion (opt-in via className, nothing existing changed) ── */
+@keyframes tilt-in{from{opacity:0;transform:perspective(800px) rotateX(8deg) translateY(24px) scale(.96)}to{opacity:1;transform:perspective(800px) rotateX(0) translateY(0) scale(1)}}
+@keyframes float-3d{0%,100%{transform:perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0)}25%{transform:perspective(800px) rotateX(2deg) rotateY(-3deg) translateY(-6px)}50%{transform:perspective(800px) rotateX(-1deg) rotateY(2deg) translateY(-10px)}75%{transform:perspective(800px) rotateX(2deg) rotateY(3deg) translateY(-4px)}}
+@keyframes shimmer-sweep{0%{transform:translateX(-120%) skewX(-15deg)}100%{transform:translateX(220%) skewX(-15deg)}}
+@keyframes ripple-out{0%{transform:scale(.4);opacity:.55}100%{transform:scale(2.6);opacity:0}}
+@keyframes marquee-x{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes pop-in{0%{opacity:0;transform:scale(.4) rotate(-8deg)}60%{opacity:1;transform:scale(1.08) rotate(2deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes glow-pulse{0%,100%{filter:drop-shadow(0 0 6px currentColor)}50%{filter:drop-shadow(0 0 18px currentColor)}}
+
+/* Perspective wrapper for any 3D-tilt element */
+.tilt-3d{perspective:1000px}
+.tilt-3d-in{animation:tilt-in .6s cubic-bezier(.22,1,.36,1) both}
+.float-3d{animation:float-3d 7s ease-in-out infinite;transform-style:preserve-3d}
+/* Diagonal light sweep on hover — add a ::after via this class */
+.shine-sweep{position:relative;overflow:hidden}
+.shine-sweep::after{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(115deg,transparent 0%,rgba(255,255,255,.16) 50%,transparent 100%);transform:translateX(-120%) skewX(-15deg);pointer-events:none}
+.shine-sweep:hover::after{animation:shimmer-sweep 1s ease}
+.pop-in{animation:pop-in .5s cubic-bezier(.34,1.56,.64,1) both}
+.glow-pulse{animation:glow-pulse 2.4s ease-in-out infinite}
+/* Click ripple ring (positioned absolutely by the triggering component) */
+.ripple-ring{position:absolute;border-radius:50%;border:2px solid currentColor;pointer-events:none;animation:ripple-out .6s ease-out forwards}
 
 /* Skip link — visible only on keyboard focus */
 .skip-link{position:absolute;top:-100px;left:16px;z-index:9999;padding:8px 16px;background:#FFB347;color:#05020A;border-radius:8px;font-weight:600;font-size:.85rem;text-decoration:none;transition:top .2s}
@@ -175,11 +201,19 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   display:inline-flex;align-items:center;justify-content:center;
   width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;font-size:.88rem;
   background:linear-gradient(175deg,#201A3A 0%,#130F26 50%,#0F0B1E 100%);
+  /* Buttons don't inherit `color` from body in the UA stylesheet the way
+     ordinary elements do, so every icon here (all use stroke="currentColor")
+     was rendering pure black — invisible against this near-black gradient.
+     Confirmed live via computed styles (rgb(0,0,0) on every one of the 7+
+     files using this class: nav hamburger/search, notification bell, theme
+     switcher, row scroll arrows, watchlist remove, PIN modal). */
+  color:#FFF5E8;
   box-shadow:inset 0 1.5px 0 rgba(255,255,255,.12),inset 0 -1.5px 3px rgba(0,0,0,.45),0 4px 0 #080512,0 6px 15px rgba(0,0,0,.58),0 0 0 1px rgba(255,255,255,.07);
   transition:all .12s;
 }
 .btn-icon:hover{transform:translateY(-2px);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.14),inset 0 -1.5px 3px rgba(0,0,0,.45),0 6px 0 #080512,0 10px 22px rgba(0,0,0,.68),0 0 0 1px rgba(255,179,71,.28)}
 .btn-icon:active{transform:translateY(3px);box-shadow:inset 0 2.5px 5px rgba(0,0,0,.5),0 1px 0 #080512}
+.btn-icon svg{width:16px;height:16px}
 
 /* ═══════════════════════════════════════════
    CARD (3D tilt)
@@ -218,7 +252,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
    BADGES & TAGS
    ═══════════════════════════════════════════ */
 .badge-r{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;background:#0C091A;color:var(--gold);font-family:var(--font-cinzel),serif;font-size:.68rem;font-weight:600;box-shadow:3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1.5px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15),0 0 0 1px rgba(255,179,71,.3)}
-.gtag{display:inline-flex;padding:5px 13px;border-radius:20px;font-family:var(--font-cinzel),serif;font-size:.65rem;font-weight:500;letter-spacing:.07em;cursor:pointer;transition:all .28s;background:var(--s2);color:rgba(139,120,255,.85);box-shadow:3px 3px 9px rgba(0,0,0,.68),-2px -2px 5px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.04),0 0 0 1px rgba(139,120,255,.18)}
+.badge-r svg{width:11px;height:11px}
+.gtag{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-family:var(--font-cinzel),serif;font-size:.65rem;font-weight:500;letter-spacing:.07em;cursor:pointer;transition:all .28s;background:var(--s2);color:rgba(139,120,255,.85);box-shadow:3px 3px 9px rgba(0,0,0,.68),-2px -2px 5px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.04),0 0 0 1px rgba(139,120,255,.18)}
 .gtag:hover,.gtag.on{background:var(--s3);color:#fff;box-shadow:4px 4px 12px rgba(0,0,0,.72),-2px -2px 6px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(139,120,255,.4),0 0 16px rgba(139,120,255,.15)}
 
 /* ═══════════════════════════════════════════
@@ -236,6 +271,16 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .text-xs{font-size:.58rem}
 .text-sm{font-size:.68rem}
 .text-md{font-size:.82rem}
+
+/* ═══════════════════════════════════════════
+   ICONS — sizing utility for the lucide-react icon system
+   ═══════════════════════════════════════════ */
+.icon{display:inline-block;flex-shrink:0;stroke-width:2}
+.icon-xs{width:12px;height:12px}
+.icon-sm{width:14px;height:14px}
+.icon-md{width:18px;height:18px}
+.icon-lg{width:24px;height:24px}
+.icon-xl{width:32px;height:32px}
 
 /* ═══════════════════════════════════════════
    EPISODE ROWS & TABS
@@ -270,6 +315,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
    ═══════════════════════════════════════════ */
 .dropdown{position:absolute;top:calc(100% + 10px);right:0;background:var(--s1);border-radius:16px;min-width:200px;overflow:hidden;box-shadow:14px 14px 36px rgba(0,0,0,.85),-5px -5px 14px rgba(45,25,90,.25),inset 0 1.5px 0 rgba(255,255,255,.05),inset 0 -1px 0 rgba(0,0,0,.15),0 0 0 1px rgba(255,255,255,.05);z-index:200;animation:page-in .22s ease both}
 .dd-item{display:flex;align-items:center;gap:10px;padding:.78rem 1.1rem;font-family:var(--font-cinzel),serif;font-size:.72rem;letter-spacing:.06em;color:rgba(255,245,232,.62);cursor:pointer;transition:all .2s;border-bottom:1px solid rgba(255,255,255,.04)}
+.dd-item svg{flex-shrink:0}
 .dd-item:last-child{border-bottom:none}.dd-item:hover{background:var(--s3);color:var(--gold)}
 
 /* ═══════════════════════════════════════════
@@ -278,7 +324,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:997;height:62px;background:#0A0718;border-top:1px solid rgba(255,255,255,.04);box-shadow:0 -4px 0 rgba(0,0,0,.7),0 -8px 28px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.15);align-items:center;justify-content:space-around}
 .bn{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:rgba(255,245,232,.35);transition:color .25s,transform .15s;position:relative;padding:4px 0}
 .bn:active{transform:scale(.92)}
-.bn.on{color:var(--gold)}.bn .em{font-size:1.15rem}.bn .lb{font-family:var(--font-cinzel),serif;font-size:.5rem;letter-spacing:.08em}
+.bn.on{color:var(--gold)}.bn .lb{font-family:var(--font-cinzel),serif;font-size:.5rem;letter-spacing:.08em}
 
 /* ═══════════════════════════════════════════
    SKELETON LOADER
@@ -325,7 +371,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .auth-input:focus{border-color:rgba(255,179,71,.45);box-shadow:inset 5px 5px 16px rgba(0,0,0,.72),inset -2px -2px 6px rgba(35,20,75,.2),inset 0 2px 4px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,179,71,.08),0 0 0 3px rgba(255,179,71,.12),0 0 24px rgba(255,179,71,.06)}
 .auth-input::placeholder{color:rgba(255,245,232,.22)}
 .auth-input-wrapper{position:relative}
-.auth-toggle-pw{position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:.9rem;opacity:.38;user-select:none;background:none;border:none;padding:4px}
+.auth-toggle-pw{position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;opacity:.38;user-select:none;background:none;border:none;padding:4px;display:flex;color:currentColor;transition:opacity .2s}
+.auth-toggle-pw:hover{opacity:.8}
 
 .auth-btn-primary{
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
@@ -342,9 +389,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .auth-btn-primary:disabled{opacity:.6;cursor:not-allowed}
 
 .auth-btn-oauth{
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:1;
-  padding:12px 26px;border-radius:50px;border:none;cursor:pointer;
-  font-family:var(--font-cinzel),serif;font-size:.82rem;font-weight:500;letter-spacing:.09em;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;flex:1;
+  padding:12px 20px;border-radius:50px;border:none;cursor:pointer;
+  font-family:var(--font-cinzel),serif;font-size:.8rem;font-weight:500;letter-spacing:.03em;
   color:rgba(255,245,232,.82);
   background:linear-gradient(175deg,#1E1838 0%,#130F26 100%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 -2px 4px rgba(0,0,0,.48),0 5px 0 #080512,0 8px 20px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.06);
@@ -364,7 +411,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .auth-footer a:hover{color:#FFB347}
 .auth-error{color:#FF4A4A;font-family:var(--font-crimson),serif;font-size:.88rem;text-align:center;margin-bottom:.8rem;min-height:1.4rem}
 .auth-spinner{width:20px;height:20px;border:2.5px solid rgba(0,0,0,.3);border-top-color:#05020A;border-radius:50%;animation:spin .7s linear infinite}
-.auth-email-sent-icon{font-size:3rem;margin-bottom:1rem}
+.auth-email-sent-icon{margin-bottom:1rem;display:flex;justify-content:center;color:var(--gold)}
 .auth-email-sent-text{color:rgba(255,245,232,.62);font-family:var(--font-crimson),serif;font-size:1.05rem;line-height:1.6;margin-bottom:1.5rem}
 .auth-email-sent-addr{color:#8B78FF;font-weight:600}
 .auth-page-in{animation:auth-page-in .55s cubic-bezier(.22,1,.36,1) both}
@@ -388,6 +435,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .ps-select-btn:active{transform:translateY(3px);box-shadow:inset 0 2px 4px rgba(0,0,0,.35),0 1px 0 #7A3800}
 .ps-delete-btn{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;font-size:.72rem;display:flex;align-items:center;justify-content:center;background:rgba(255,74,74,.12);color:rgba(255,74,74,.7);transition:all .2s;padding:0}
 .ps-delete-btn:hover{background:rgba(255,74,74,.25);color:#FF4A4A;transform:scale(1.1)}
+.ps-delete-btn svg{width:13px;height:13px}
 .ps-create-section{background:#0C091A;border-radius:18px;padding:1.5rem;box-shadow:9px 9px 24px rgba(0,0,0,.82),-3px -3px 9px rgba(45,25,90,.25),inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.03)}
 .ps-create-label{font-family:var(--font-cinzel),serif;font-size:.68rem;letter-spacing:.1em;color:rgba(255,245,232,.38);margin-bottom:.6rem}
 .ps-create-row{display:flex;gap:.6rem}
@@ -492,3 +540,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .skip-link:focus {
   top: 16px;
 }
+
+/* Watch Party panel (rendered inside a .neo-raised section on the details page) */
+.wp-panel{display:flex;flex-direction:column;font-family:var(--font-crimson),serif}
+.wp-heading{font-family:var(--font-cinzel-dec),serif;font-size:1.05rem;color:#FFF5E8;letter-spacing:.02em;margin:0}
+.wp-code-input{font-family:var(--font-mono),monospace}

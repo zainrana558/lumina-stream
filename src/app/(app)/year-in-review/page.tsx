@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
+import AuthLoading from '@/components/common/AuthLoading';
 import Image from 'next/image';
 import { getPosterUrl } from '@/lib/images';
+import { Sparkles, Loader2, Timer, Film, Flame, Music, Trophy, Calendar, Share2, Star } from 'lucide-react';
 
 interface YearStats {
   totalHours: number;
@@ -59,7 +61,7 @@ function ConfettiPiece({ delay }: { delay: number }) {
 }
 
 export default function YearInReviewPage() {
-  const { user, profile } = useApp();
+  const { user, profile, authLoading } = useApp();
   const router = useRouter();
   const [stats, setStats] = useState<YearStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,7 +86,7 @@ export default function YearInReviewPage() {
   }, []);
 
   const handleShare = async () => {
-    const shareText = `🎬 My ${year} on Lumovia!\n⏱ ${stats?.totalHours || 0} hours watched\n🎬 ${stats?.totalTitles || 0} titles\n🔥 Come join me!`;
+    const shareText = `My ${year} on Lumovia!\n${stats?.totalHours || 0} hours watched\n${stats?.totalTitles || 0} titles\nCome join me!`;
 
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
@@ -105,10 +107,12 @@ export default function YearInReviewPage() {
 
   const P = 'clamp(1rem,5vw,3rem)';
 
+  if (authLoading) return <AuthLoading />;
+
   if (!user || !profile) {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
-        <div style={{ fontSize: '3rem', opacity: .3 }}>🌟</div>
+        <div style={{ display: 'flex', justifyContent: 'center', opacity: .3 }}><Sparkles size={48} /></div>
         <p className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to see your year in review</p>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
@@ -118,7 +122,7 @@ export default function YearInReviewPage() {
   if (loading) {
     return (
       <div className="f-cinzel" style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>
-        <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
+        <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '1rem' }}><Loader2 size={32} /></div>
         <div>Compiling your {year}...</div>
       </div>
     );
@@ -128,10 +132,10 @@ export default function YearInReviewPage() {
     return (
       <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ padding: '2.2rem ' + P + ' 0', position: 'relative', zIndex: 3 }}>
-          <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)' }}>🌟 Your {year} in Review</h1>
+          <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}><Sparkles size={26} /> Your {year} in Review</h1>
         </div>
         <div style={{ padding: '0 ' + P + ' 5.5rem', position: 'relative', zIndex: 3, textAlign: 'center', paddingTop: '4rem' }}>
-          <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>🌟</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.2rem', opacity: .4 }}><Sparkles size={56} /></div>
           <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>Not enough data for {year} yet</h3>
           <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start watching to build your year-in-review</p>
           <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
@@ -172,7 +176,9 @@ export default function YearInReviewPage() {
     return `${g.color} ${start}% ${cumulative}%`;
   }).join(', ');
 
-  const topShows = stats.topShows.slice(0, 5);
+  // Defensive: a Redis-cached /api/stats response from before topShows existed
+  // could still be served for up to 5 minutes after deploy.
+  const topShows = (stats.topShows || []).slice(0, 5);
 
   return (
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
@@ -223,7 +229,7 @@ export default function YearInReviewPage() {
             animation: `card-in .5s .2s both`,
             border: '1px solid rgba(255,179,71,.15)',
           }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>⏱</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '.5rem', color: '#FFB347' }}><Timer size={40} /></div>
             <div className="f-cinzel-dec" style={{  fontSize: 'clamp(2rem,4vw,3.2rem)', color: '#FFB347' }}>
               <AnimatedCounter target={stats.totalHours} suffix="h" />
             </div>
@@ -235,7 +241,7 @@ export default function YearInReviewPage() {
             animation: `card-in .5s .3s both`,
             border: '1px solid rgba(139,120,255,.15)',
           }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🎬</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '.5rem', color: '#8B78FF' }}><Film size={40} /></div>
             <div className="f-cinzel-dec" style={{  fontSize: 'clamp(2rem,4vw,3.2rem)', color: '#8B78FF' }}>
               <AnimatedCounter target={stats.totalTitles} />
             </div>
@@ -247,7 +253,7 @@ export default function YearInReviewPage() {
             animation: `card-in .5s .4s both`,
             border: '1px solid rgba(255,107,138,.15)',
           }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🔥</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '.5rem', color: '#FF6B8A' }}><Flame size={40} /></div>
             <div className="f-cinzel-dec" style={{  fontSize: 'clamp(2rem,4vw,3.2rem)', color: '#FF6B8A' }}>
               <AnimatedCounter target={stats.streak} suffix="d" />
             </div>
@@ -257,7 +263,7 @@ export default function YearInReviewPage() {
 
         {/* Genre Distribution Pie */}
         <div className="neo-card s1" style={{ padding: '2rem', borderRadius: 20, marginBottom: '2.5rem', animation: 'card-in .5s .5s both' }}>
-          <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.1rem)', marginBottom: '1.5rem', textAlign: 'center' }}>🎵 Most Watched Genres</h2>
+          <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.1rem)', marginBottom: '1.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Music size={18} /> Most Watched Genres</h2>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2.5rem', flexWrap: 'wrap' }}>
             {/* Pie chart */}
             <div style={{
@@ -299,7 +305,7 @@ export default function YearInReviewPage() {
         {/* Top 5 Shows */}
         {topShows.length > 0 && (
           <div className="neo-card s1" style={{ padding: '2rem', borderRadius: 20, marginBottom: '2.5rem', animation: 'card-in .5s .6s both' }}>
-            <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.1rem)', marginBottom: '1.5rem', textAlign: 'center' }}>🏆 Top 5 Shows You Loved</h2>
+            <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.1rem)', marginBottom: '1.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Trophy size={18} /> Top 5 Shows You Loved</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '.7rem' }}>
               {topShows.map((show, i) => (
                 <div key={`${show.media_type}-${show.media_id}`} className="neo-raised" onClick={() => router.push(`/details/${show.media_id}`)} style={{
@@ -323,7 +329,7 @@ export default function YearInReviewPage() {
                     {show.poster_path ? (
                       <Image src={getPosterUrl({ poster_path: show.poster_path }, 'w92') || ''} alt={show.title} width={40} height={60} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.9rem', opacity: .3 }}>🎬</div>
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: .3 }}><Film size={16} /></div>
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -333,7 +339,7 @@ export default function YearInReviewPage() {
                     </div>
                   </div>
                   {show.rating && (
-                    <div className="badge-r" style={{ fontSize: '.55rem' }}>⭐ {show.rating}</div>
+                    <div className="badge-r" style={{ fontSize: '.55rem' }}><Star size={10} fill="currentColor" /> {show.rating}</div>
                   )}
                 </div>
               ))}
@@ -343,7 +349,7 @@ export default function YearInReviewPage() {
 
         {/* Monthly Activity */}
         <div className="neo-card s1" style={{ padding: '2rem', borderRadius: 20, marginBottom: '2.5rem', animation: 'card-in .5s .7s both' }}>
-          <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.1rem)', marginBottom: '1.5rem', textAlign: 'center' }}>📅 {year} Activity</h2>
+          <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.1rem)', marginBottom: '1.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Calendar size={18} /> {year} Activity</h2>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'clamp(4px,1vw,10px)', height: 140, padding: '0 .25rem' }}>
             {allMonths.map((m, i) => {
               const height = Math.max((m.count / Math.max(maxMonth, 1)) * 110, m.count > 0 ? 6 : 2);
@@ -370,7 +376,7 @@ export default function YearInReviewPage() {
         {/* Share Button */}
         <div style={{ textAlign: 'center', animation: 'card-in .5s .9s both' }}>
           <button className="btn-p" onClick={handleShare} style={{ fontSize: '.85rem', padding: '.85rem 2rem', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span>📤</span> Share Your {year}
+            <Share2 size={16} /> Share Your {year}
           </button>
           <p className="f-crimson" style={{  color: 'rgba(255,245,232,.25)', fontSize: '.82rem', marginTop: '.8rem', fontStyle: 'italic' }}>
             Share your streaming year with friends

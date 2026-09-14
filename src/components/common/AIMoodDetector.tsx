@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { ScanFace } from 'lucide-react';
 
 const MOOD_MAP: Record<string, { name: string; col: string }> = {
   Pumped:     { name: 'Pumped',     col: '#FFB347' },
@@ -139,6 +140,7 @@ export default function AIMoodDetector({ onMoodDetected }: AIMoodDetectorProps) 
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <button
         onClick={status === 'idle' || status === 'result' || status === 'error' ? startScan : undefined}
+        className="shine-sweep"
         style={{
           position: 'relative',
           padding: 'clamp(12px,1.5vw,16px) clamp(20px,2.8vw,32px)',
@@ -152,14 +154,12 @@ export default function AIMoodDetector({ onMoodDetected }: AIMoodDetectorProps) 
           overflow: 'hidden',
         }}
       >
-        <span className="f-cinzel" style={{
-          fontSize: '1.1rem',
-          
-          fontWeight: 700,
+        <span style={{
+          display: 'flex',
           color: 'rgba(78,208,196,.8)',
           filter: 'drop-shadow(0 0 6px rgba(78,208,196,.5))',
           animation: status === 'scanning' ? 'pulse-dot 1s ease-in-out infinite' : 'none',
-        }}>AI</span>
+        }}><ScanFace size={20} /></span>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <span className="f-cinzel" style={{
              fontSize: 'clamp(.55rem,.72vw,.65rem)',

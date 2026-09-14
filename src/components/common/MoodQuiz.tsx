@@ -1,59 +1,64 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Wand2, X, Moon, Zap, Leaf, Flame, CloudRain, Sun, MoonStar, Flower2,
+  Brain, Laugh, HeartCrack, Skull, BookOpen, Swords, Heart, Compass,
+  type LucideIcon,
+} from 'lucide-react';
 
 interface QuizStep {
   q: string;
-  opts: { label: string; scores: Record<string, number> }[];
+  opts: { label: string; icon: LucideIcon; scores: Record<string, number> }[];
 }
 
 const STEPS: QuizStep[] = [
   {
     q: 'What\'s your energy level?',
     opts: [
-      { label: 'Sleepy', scores: { Melancholy: 3, Thrilling: 0, Romantic: 1, Epic: 0, Chill: 1, Pumped: 0 } },
-      { label: 'Energetic', scores: { Melancholy: 0, Thrilling: 1, Romantic: 0, Epic: 2, Chill: 0, Pumped: 3 } },
-      { label: 'Chill', scores: { Melancholy: 1, Thrilling: 0, Romantic: 1, Epic: 0, Chill: 3, Pumped: 0 } },
-      { label: 'Fired up', scores: { Melancholy: 0, Thrilling: 2, Romantic: 0, Epic: 3, Chill: 0, Pumped: 1 } },
+      { label: 'Sleepy', icon: Moon, scores: { Melancholy: 3, Thrilling: 0, Romantic: 1, Epic: 0, Chill: 1, Pumped: 0 } },
+      { label: 'Energetic', icon: Zap, scores: { Melancholy: 0, Thrilling: 1, Romantic: 0, Epic: 2, Chill: 0, Pumped: 3 } },
+      { label: 'Chill', icon: Leaf, scores: { Melancholy: 1, Thrilling: 0, Romantic: 1, Epic: 0, Chill: 3, Pumped: 0 } },
+      { label: 'Fired up', icon: Flame, scores: { Melancholy: 0, Thrilling: 2, Romantic: 0, Epic: 3, Chill: 0, Pumped: 1 } },
     ],
   },
   {
     q: 'Pick a vibe',
     opts: [
-      { label: 'Rainy day', scores: { Melancholy: 3, Thrilling: 0, Romantic: 1, Epic: 0, Chill: 2, Pumped: 0 } },
-      { label: 'Sunny', scores: { Melancholy: 0, Thrilling: 0, Romantic: 1, Epic: 2, Chill: 2, Pumped: 3 } },
-      { label: 'Late night', scores: { Melancholy: 2, Thrilling: 3, Romantic: 1, Epic: 1, Chill: 0, Pumped: 0 } },
-      { label: 'Spring', scores: { Melancholy: 0, Thrilling: 0, Romantic: 3, Epic: 1, Chill: 2, Pumped: 1 } },
+      { label: 'Rainy day', icon: CloudRain, scores: { Melancholy: 3, Thrilling: 0, Romantic: 1, Epic: 0, Chill: 2, Pumped: 0 } },
+      { label: 'Sunny', icon: Sun, scores: { Melancholy: 0, Thrilling: 0, Romantic: 1, Epic: 2, Chill: 2, Pumped: 3 } },
+      { label: 'Late night', icon: MoonStar, scores: { Melancholy: 2, Thrilling: 3, Romantic: 1, Epic: 1, Chill: 0, Pumped: 0 } },
+      { label: 'Spring', icon: Flower2, scores: { Melancholy: 0, Thrilling: 0, Romantic: 3, Epic: 1, Chill: 2, Pumped: 1 } },
     ],
   },
   {
     q: 'What are you feeling?',
     opts: [
-      { label: 'Thoughtful', scores: { Melancholy: 3, Thrilling: 0, Romantic: 1, Epic: 1, Chill: 1, Pumped: 0 } },
-      { label: 'Laughing', scores: { Melancholy: 0, Thrilling: 0, Romantic: 0, Epic: 1, Chill: 3, Pumped: 2 } },
-      { label: 'Emotional', scores: { Melancholy: 3, Thrilling: 0, Romantic: 2, Epic: 0, Chill: 1, Pumped: 0 } },
-      { label: 'On edge', scores: { Melancholy: 0, Thrilling: 3, Romantic: 0, Epic: 2, Chill: 0, Pumped: 2 } },
+      { label: 'Thoughtful', icon: Brain, scores: { Melancholy: 3, Thrilling: 0, Romantic: 1, Epic: 1, Chill: 1, Pumped: 0 } },
+      { label: 'Laughing', icon: Laugh, scores: { Melancholy: 0, Thrilling: 0, Romantic: 0, Epic: 1, Chill: 3, Pumped: 2 } },
+      { label: 'Emotional', icon: HeartCrack, scores: { Melancholy: 3, Thrilling: 0, Romantic: 2, Epic: 0, Chill: 1, Pumped: 0 } },
+      { label: 'On edge', icon: Skull, scores: { Melancholy: 0, Thrilling: 3, Romantic: 0, Epic: 2, Chill: 0, Pumped: 2 } },
     ],
   },
   {
     q: 'Choose your escape',
     opts: [
-      { label: 'Get lost in story', scores: { Melancholy: 3, Thrilling: 1, Romantic: 2, Epic: 0, Chill: 1, Pumped: 0 } },
-      { label: 'Action overload', scores: { Melancholy: 0, Thrilling: 2, Romantic: 0, Epic: 3, Chill: 0, Pumped: 3 } },
-      { label: 'Love & drama', scores: { Melancholy: 1, Thrilling: 0, Romantic: 3, Epic: 1, Chill: 0, Pumped: 0 } },
-      { label: 'Explore worlds', scores: { Melancholy: 0, Thrilling: 1, Romantic: 1, Epic: 3, Chill: 1, Pumped: 1 } },
+      { label: 'Get lost in story', icon: BookOpen, scores: { Melancholy: 3, Thrilling: 1, Romantic: 2, Epic: 0, Chill: 1, Pumped: 0 } },
+      { label: 'Action overload', icon: Swords, scores: { Melancholy: 0, Thrilling: 2, Romantic: 0, Epic: 3, Chill: 0, Pumped: 3 } },
+      { label: 'Love & drama', icon: Heart, scores: { Melancholy: 1, Thrilling: 0, Romantic: 3, Epic: 1, Chill: 0, Pumped: 0 } },
+      { label: 'Explore worlds', icon: Compass, scores: { Melancholy: 0, Thrilling: 1, Romantic: 1, Epic: 3, Chill: 1, Pumped: 1 } },
     ],
   },
 ];
 
-const MOOD_INFO: Record<string, { col: string; desc: string }> = {
-  Melancholy: { col: '#8B78FF', desc: 'You\'re in a reflective mood. Dive into deep, emotional stories that resonate with your soul.' },
-  Pumped:     { col: '#FFB347', desc: 'Energy is flowing through you! Action-packed adventures and high-octane thrills await.' },
-  Romantic:   { col: '#FF6B8A', desc: 'Love is in the air. Heartfelt stories, tender romances, and emotional journeys are calling.' },
-  Thrilling:  { col: '#FF4A4A', desc: 'You crave suspense and adrenaline. Edge-of-your-seat mysteries and dark thrillers await.' },
-  Chill:      { col: '#78D621', desc: 'Relax and unwind. Light-hearted, easy-watching content is exactly what you need right now.' },
-  Epic:       { col: '#FF8C00', desc: 'Go big or go home. Grand adventures, legendary sagas, and epic worlds are ready for you.' },
+const MOOD_INFO: Record<string, { col: string; desc: string; icon: LucideIcon }> = {
+  Melancholy: { col: '#8B78FF', icon: CloudRain, desc: 'You\'re in a reflective mood. Dive into deep, emotional stories that resonate with your soul.' },
+  Pumped:     { col: '#FFB347', icon: Zap,       desc: 'Energy is flowing through you! Action-packed adventures and high-octane thrills await.' },
+  Romantic:   { col: '#FF6B8A', icon: Heart,     desc: 'Love is in the air. Heartfelt stories, tender romances, and emotional journeys are calling.' },
+  Thrilling:  { col: '#FF4A4A', icon: Skull,     desc: 'You crave suspense and adrenaline. Edge-of-your-seat mysteries and dark thrillers await.' },
+  Chill:      { col: '#78D621', icon: Leaf,      desc: 'Relax and unwind. Light-hearted, easy-watching content is exactly what you need right now.' },
+  Epic:       { col: '#FF8C00', icon: Flame,     desc: 'Go big or go home. Grand adventures, legendary sagas, and epic worlds are ready for you.' },
 };
 
 const TIEBREAKER = ['Thrilling', 'Epic', 'Romantic', 'Chill', 'Pumped', 'Melancholy'];
@@ -78,10 +83,14 @@ export default function MoodQuiz() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [result, setResult] = useState<string | null>(null);
-  const [lastMood, setLastMood] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try { return localStorage.getItem('lumina-mood-quiz'); } catch { return null; }
-  });
+  // Read after mount — a localStorage value in the initial state makes the first
+  // client render differ from SSR (which always sees null) → hydration mismatch.
+  const [lastMood, setLastMood] = useState<string | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate: localStorage read after mount to avoid a hydration mismatch
+    try { setLastMood(localStorage.getItem('lumina-mood-quiz')); } catch { /* ignore */ }
+  }, []);
 
   const handleSelect = (optIdx: number) => {
     const next = [...answers, optIdx];
@@ -114,6 +123,7 @@ export default function MoodQuiz() {
       {/* Collapsed button */}
       <button
         onClick={() => setOpen(true)}
+        className="shine-sweep"
         style={{
           position: 'relative',
           padding: 'clamp(12px,1.5vw,16px) clamp(20px,2.8vw,32px)',
@@ -127,6 +137,7 @@ export default function MoodQuiz() {
           overflow: 'hidden',
         }}
       >
+        <Wand2 size={18} color="#8B78FF" style={{ flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <span className="f-cinzel" style={{  fontSize: 'clamp(.55rem,.72vw,.65rem)', letterSpacing: '.14em', color: 'rgba(139,120,255,.6)', textTransform: 'uppercase', fontWeight: 600 }}>Mood Quiz</span>
           {lastMood && (
@@ -154,14 +165,15 @@ export default function MoodQuiz() {
             background: '#0D0A1E', borderRadius: 20,
             padding: 'clamp(1.5rem,4vw,2.5rem)',
             boxShadow: '12px 12px 40px rgba(0,0,0,.9), -4px -4px 14px rgba(45,25,90,.25), 0 0 0 1px rgba(255,255,255,.05)',
-            animation: 'page-in .35s cubic-bezier(.22,1,.36,1) both',
+            animation: 'tilt-in .45s cubic-bezier(.22,1,.36,1) both',
+            position: 'relative',
           }}>
             {/* Close button */}
             <button onClick={close} style={{
               position: 'absolute', top: 12, right: 16,
               background: 'none', border: 'none', color: 'rgba(255,245,232,.4)',
-              cursor: 'pointer', fontSize: '1.2rem', padding: 4,
-            }}>x</button>
+              cursor: 'pointer', padding: 4, display: 'flex',
+            }}><X size={18} /></button>
 
             {/* Progress dots */}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: '1.5rem' }}>
@@ -193,6 +205,7 @@ export default function MoodQuiz() {
                     <button
                       key={i}
                       onClick={() => handleSelect(i)}
+                      className="pop-in"
                       style={{
                         padding: 'clamp(14px,2vw,20px) 12px',
                         borderRadius: 14,
@@ -202,6 +215,7 @@ export default function MoodQuiz() {
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
                         transition: 'all .2s',
                         boxShadow: '4px 4px 12px rgba(0,0,0,.7), -2px -2px 6px rgba(45,25,90,.2), inset 0 1px 0 rgba(255,255,255,.04)',
+                        animationDelay: `${i * 0.06}s`,
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-3px) scale(1.03)';
@@ -214,12 +228,7 @@ export default function MoodQuiz() {
                         e.currentTarget.style.boxShadow = '4px 4px 12px rgba(0,0,0,.7), -2px -2px 6px rgba(45,25,90,.2), inset 0 1px 0 rgba(255,255,255,.04)';
                       }}
                     >
-                      <span className="f-cinzel" style={{
-                        fontSize: 'clamp(1.6rem,3vw,2.2rem)',
-                        
-                        fontWeight: 700,
-                        color: '#8B78FF',
-                      }}>{opt.label[0].toUpperCase()}</span>
+                      <opt.icon size={30} color="#8B78FF" strokeWidth={1.75} />
                       <span className="f-cinzel" style={{  fontSize: 'clamp(.62rem,.78vw,.72rem)', color: 'rgba(255,245,232,.7)', letterSpacing: '.06em' }}>{opt.label}</span>
                     </button>
                   ))}
@@ -227,13 +236,12 @@ export default function MoodQuiz() {
               </>
             ) : info ? (
               <div style={{ textAlign: 'center', animation: 'eu .4s cubic-bezier(.34,1.56,.64,1) both' }}>
-                <div className="f-cinzel-dec" style={{
-                  fontSize: '3.5rem', marginBottom: '1rem',
-                   fontWeight: 900,
-                  filter: `drop-shadow(0 0 20px ${info.col}50)`,
-                  animation: 'float 3s ease-in-out infinite',
+                <div className="pop-in glow-pulse" style={{
+                  display: 'flex', justifyContent: 'center', marginBottom: '1rem',
                   color: info.col,
-                }}>{result[0]}</div>
+                }}>
+                  <info.icon size={64} strokeWidth={1.5} />
+                </div>
                 <h3 className="f-cinzel-dec" style={{
                    fontWeight: 900,
                   fontSize: 'clamp(1.5rem,3vw,2rem)', marginBottom: '.75rem',

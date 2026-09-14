@@ -5,6 +5,7 @@
  */
 
 import Link from 'next/link';
+import { Star } from 'lucide-react';
 
 interface Show {
   id: number;
@@ -60,7 +61,9 @@ export default function BlogPost({ show, content }: { show: Show; content: strin
           padding: '32px clamp(1rem, 5vw, 2rem)',
         }}>
           <div style={{
-            display: 'inline-block',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
             padding: '4px 12px',
             borderRadius: 20,
             background: 'rgba(255,179,71,.15)',
@@ -71,7 +74,7 @@ export default function BlogPost({ show, content }: { show: Show; content: strin
             textTransform: 'uppercase',
             marginBottom: 8,
           }}>
-            {show.type === 'tv' ? 'TV Series' : 'Movie'} · ⭐ {show.rating}
+            {show.type === 'tv' ? 'TV Series' : 'Movie'} · <Star size={10} fill="currentColor" /> {show.rating}
           </div>
           <h1 style={{
             fontSize: 'clamp(1.4rem, 3vw, 2rem)',

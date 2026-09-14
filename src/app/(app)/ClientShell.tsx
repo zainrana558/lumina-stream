@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { Bell } from 'lucide-react';
 
 // Dynamic imports — reduces initial JS bundle by code-splitting non-critical UI
 const AdScripts = lazy(() => import('@/components/common/AdScripts'));
@@ -71,7 +72,7 @@ function NotificationBanner() {
       gap: '12px',
       animation: 'eu .4s cubic-bezier(.34,1.56,.64,1) both',
     }}>
-      <span style={{ fontSize: '1.2rem', flexShrink: 0 }} aria-hidden="true">🔔</span>
+      <span style={{ display: 'flex', flexShrink: 0, color: '#FFB347' }} aria-hidden="true"><Bell size={19} /></span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="f-cinzel" style={{  fontSize: '.72rem', color: '#FFB347', fontWeight: 600, marginBottom: 2, letterSpacing: '.04em' }}>
           Stay Updated
@@ -129,9 +130,9 @@ function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [reducedMotion, setReducedMotion] = useState(() => 
-    typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false
-  );
+  // Start false (matches SSR); read the real preference after mount so the first
+  // client render matches the server's markup exactly (avoids React #418).
+  const [reducedMotion, setReducedMotion] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [shortcutOverlay, setShortcutOverlay] = useState(false);
   const [orbsVisible, setOrbsVisible] = useState(false);
@@ -140,6 +141,16 @@ function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const t = requestIdleCallback(() => setOrbsVisible(true));
     return () => cancelIdleCallback(t);
+  }, []);
+
+  // Resolve the motion preference after mount (see reducedMotion useState note)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate: read client-only pref after mount to avoid a hydration mismatch
+    setReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
   // Register Service Worker
@@ -197,7 +208,11 @@ function AppShell({ children }: { children: ReactNode }) {
     : pathname.startsWith('/stats') ? 'stats'
     : 'home';
 
-  const go = (target: string) => {
+  // Stable identities so Nav/BottomNav (both memo()-wrapped) actually skip
+  // re-rendering when unrelated ClientShell state changes (e.g. opening the
+  // PiP player or the shortcuts overlay used to re-render the header too,
+  // since these were fresh inline closures every render).
+  const go = useCallback((target: string) => {
     const routes: Record<string, string> = {
       home: '/',
       shows: '/browse',
@@ -209,7 +224,11 @@ function AppShell({ children }: { children: ReactNode }) {
     };
     const href = routes[target];
     if (href) router.push(href);
-  };
+  }, [router]);
+  const openSearch = useCallback(() => setSearchOpen(true), [setSearchOpen]);
+  const closeSearch = useCallback(() => setSearchOpen(false), [setSearchOpen]);
+  const showShortcuts = useCallback(() => setShortcutOverlay(true), []);
+  const closeShortcuts = useCallback(() => setShortcutOverlay(false), []);
 
   return (
     <div style={{ minHeight: '100vh', background: '#07040F', position: 'relative' }}>
@@ -240,16 +259,16 @@ function AppShell({ children }: { children: ReactNode }) {
         <Nav
           page={page}
           go={go}
-          openSearch={() => setSearchOpen(true)}
+          openSearch={openSearch}
           user={user}
           profile={profile}
           onSignOut={handleSignOut}
-          onShowShortcuts={() => setShortcutOverlay(true)}
+          onShowShortcuts={showShortcuts}
         />
       </Suspense>
       {searchOpen && (
         <Suspense fallback={null}>
-          <SearchOverlay onClose={() => setSearchOpen(false)} />
+          <SearchOverlay onClose={closeSearch} />
         </Suspense>
       )}
 
@@ -266,7 +285,7 @@ function AppShell({ children }: { children: ReactNode }) {
       {/* Keyboard shortcuts overlay */}
       {shortcutOverlay && (
         <Suspense fallback={null}>
-          <ShortcutOverlay visible={shortcutOverlay} onClose={() => setShortcutOverlay(false)} />
+          <ShortcutOverlay visible={shortcutOverlay} onClose={closeShortcuts} />
         </Suspense>
       )}
 
@@ -292,8 +311,8 @@ function AppShell({ children }: { children: ReactNode }) {
         <BottomNav
           page={page}
           go={go}
-          openSearch={() => setSearchOpen(true)}
-          onShowShortcuts={() => setShortcutOverlay(true)}
+          openSearch={openSearch}
+          onShowShortcuts={showShortcuts}
         />
       </Suspense>
 

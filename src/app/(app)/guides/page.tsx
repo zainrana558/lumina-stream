@@ -4,6 +4,7 @@
  */
 
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
 import { CANONICAL_BASE, SITE_NAME } from '@/lib/seo/constants';
 import { GUIDES } from '@/content/guides';
@@ -14,7 +15,7 @@ export const revalidate = 86400;
 const pageUrl = `${CANONICAL_BASE}/guides`;
 
 export const metadata: Metadata = {
-  title: 'Streaming Guides & Answers — Lumovia',
+  title: 'Streaming Guides & Answers',
   description:
     'Expert answers to common questions about movies, TV shows, anime, and streaming. Find what to watch, understand genres, and get personalized recommendations.',
   alternates: { canonical: pageUrl },
@@ -79,8 +80,8 @@ export default function GuidesIndexPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
 
       <div style={{
         maxWidth: 900,

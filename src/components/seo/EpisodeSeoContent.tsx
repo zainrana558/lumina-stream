@@ -4,6 +4,7 @@
  */
 
 import Link from 'next/link';
+import { safeJsonLd } from '@/lib/jsonld';
 import { mediaUrl } from '@/lib/slug';
 
 interface EpisodeSeoProps {
@@ -101,7 +102,7 @@ export default function EpisodeSeoContent(props: EpisodeSeoProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }} />
 
       <style>{`
         .seo-ep{max-width:1000px;margin:0 auto;padding:0 20px 60px}

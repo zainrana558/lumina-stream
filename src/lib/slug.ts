@@ -17,6 +17,12 @@
  */
 export function slugify(text: string): string {
   return text
+    // Transliterate accented Latin letters to their base form first (e.g.
+    // "Cuarón" → "Cuaron") — without this, the regex below treated any
+    // accented character as a separator, so "Cuarón" became "cuar-n" instead
+    // of "cuaron" (audit finding F-21; affects every non-ASCII name sitewide).
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')

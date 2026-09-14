@@ -6,8 +6,10 @@ import type { MediaItem } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/components/common/ToastProvider';
 import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
+import AuthLoading from '@/components/common/AuthLoading';
 import Image from 'next/image';
 import { getPosterUrl } from '@/lib/images';
+import { Lock, ClipboardList, Share2, Bell, Loader2, Moon, Film, X, Sparkles } from 'lucide-react';
 
 interface WatchlistItem {
   id: string;
@@ -151,7 +153,7 @@ export default function WatchlistPage() {
       if (profile) {
         await fetch('/api/reminders', {
           method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mediaId: reminder.mediaId, mediaType: reminder.mediaType }),
+          body: JSON.stringify({ profileId: profile.id, mediaId: reminder.mediaId, mediaType: reminder.mediaType }),
         });
       }
       // Also clear localStorage
@@ -187,10 +189,12 @@ export default function WatchlistPage() {
 
   if (!supabaseReady) return <SupabaseNotConfigured />;
 
+  if (authLoading) return <AuthLoading />;
+
   if (!user) {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
-        <div style={{ fontSize: '3rem', opacity: .3 }}>🔒</div>
+        <div style={{ opacity: .3 }}><Lock size={48} /></div>
         <p className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to view your watchlist</p>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
@@ -205,11 +209,11 @@ export default function WatchlistPage() {
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
           <div>
-            <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>📋 My Watchlist</h1>
+            <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}><ClipboardList size={26} /> My Watchlist</h1>
             <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>{items.length} {items.length === 1 ? 'title' : 'titles'} saved</p>
           </div>
           <button className="btn-g" onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '.75rem' }}>
-            <span>📤</span> Share Watchlist
+            <Share2 size={14} /> Share Watchlist
           </button>
         </div>
 
@@ -218,14 +222,16 @@ export default function WatchlistPage() {
           <button
             className={`tab-btn${activeTab === 'watchlist' ? ' on' : ''}`}
             onClick={() => setActiveTab('watchlist')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            📋 Watchlist
+            <ClipboardList size={13} /> Watchlist
           </button>
           <button
             className={`tab-btn${activeTab === 'reminders' ? ' on' : ''}`}
             onClick={() => setActiveTab('reminders')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            🔔 Reminders {reminders.length > 0 && `(${reminders.length})`}
+            <Bell size={13} /> Reminders {reminders.length > 0 && `(${reminders.length})`}
           </button>
         </div>
       </div>
@@ -235,12 +241,12 @@ export default function WatchlistPage() {
         {activeTab === 'watchlist' && (
           loading ? (
             <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>
-              <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
+              <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '1rem' }}><Loader2 size={28} /></div>
               <div>Loading watchlist...</div>
             </div>
           ) : items.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '5rem 0' }}>
-              <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>🌙</div>
+              <div style={{ marginBottom: '1.2rem', opacity: .4 }}><Moon size={56} /></div>
               <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>Your watchlist is empty</h3>
               <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start adding shows you want to watch later</p>
               <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
@@ -263,7 +269,7 @@ export default function WatchlistPage() {
                       {item.poster_path ? (
                         <Image src={getPosterUrl({ poster_path: item.poster_path }, 'w185') || ''} alt={item.title} width={48} height={72} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', opacity: .4 }}>🎬</div>
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: .4 }}><Film size={19} /></div>
                       )}
                     </div>
 
@@ -281,7 +287,7 @@ export default function WatchlistPage() {
                       </div>
                     </div>
 
-                    <button onClick={(e) => { e.stopPropagation(); handleRemove(item); }} className="btn-icon remove-btn" style={{ width: 32, height: 32, fontSize: '.7rem', flexShrink: 0 }}>✕</button>
+                    <button onClick={(e) => { e.stopPropagation(); handleRemove(item); }} className="btn-icon remove-btn" style={{ width: 32, height: 32, flexShrink: 0 }}><X size={16} /></button>
                   </div>
                 );
               })}
@@ -293,12 +299,12 @@ export default function WatchlistPage() {
         {activeTab === 'reminders' && (
           remindersLoading ? (
             <div className="f-cinzel" style={{ textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>
-              <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
+              <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '1rem' }}><Loader2 size={28} /></div>
               <div>Loading reminders...</div>
             </div>
           ) : reminders.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '5rem 0' }}>
-              <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>🔔</div>
+              <div style={{ marginBottom: '1.2rem', opacity: .4 }}><Bell size={56} /></div>
               <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No reminders set</h3>
               <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Click the bell icon on any title to get a reminder</p>
               <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
@@ -324,7 +330,7 @@ export default function WatchlistPage() {
                       {reminder.poster_path ? (
                         <Image src={getPosterUrl({ poster_path: reminder.poster_path }, 'w185') || ''} alt={reminder.title} width={48} height={72} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <span style={{ fontSize: '1.4rem', opacity: .5 }}>🔔</span>
+                        <Bell size={22} style={{ opacity: .5 }} />
                       )}
                     </div>
 
@@ -336,7 +342,8 @@ export default function WatchlistPage() {
                           background: 'rgba(78,214,196,.15)', color: '#4ECDC4',
                           border: '1px solid rgba(78,214,196,.3)',
                            fontWeight: 600, letterSpacing: '.05em',
-                        }}>✨ Available Now!</span>
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                        }}><Sparkles size={11} /> Available Now!</span>
                       ) : daysLeft !== null ? (
                         <span className="f-mono" style={{
                           fontSize: '.62rem', 
@@ -349,7 +356,8 @@ export default function WatchlistPage() {
                           fontSize: '.58rem', padding: '3px 10px', borderRadius: 20,
                           background: 'rgba(139,120,255,.15)', color: '#8B78FF',
                            fontWeight: 600,
-                        }}>🔔 Reminded</span>
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                        }}><Bell size={11} /> Reminded</span>
                       )}
                       {reminder.releaseDate && (
                         <div className="f-mono" style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.25)',  marginTop: 4 }}>
@@ -361,8 +369,8 @@ export default function WatchlistPage() {
                     <button
                       onClick={(e) => { e.stopPropagation(); removeReminder(reminder); }}
                       className="btn-icon remove-btn"
-                      style={{ width: 32, height: 32, fontSize: '.7rem', flexShrink: 0 }}
-                    >✕</button>
+                      style={{ width: 32, height: 32, flexShrink: 0 }}
+                    ><X size={16} /></button>
                   </div>
                 );
               })}

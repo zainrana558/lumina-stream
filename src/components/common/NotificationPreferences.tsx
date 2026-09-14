@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Tv, Flame, Clock, Mail, type LucideIcon } from 'lucide-react';
 
 interface NotifPrefs {
   newEpisodes: boolean;
@@ -43,13 +44,15 @@ export default function NotificationPreferences() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {([
-          { key: 'newEpisodes' as const, icon: '📺', label: 'New Episode Alerts', desc: 'Get notified when new episodes of your watchlist shows air' },
-          { key: 'trendingUpdates' as const, icon: '🔥', label: 'Trending Updates', desc: 'Weekly digest of trending shows and movies' },
-          { key: 'watchlistReminders' as const, icon: '⏰', label: 'Watchlist Reminders', desc: 'Reminders to continue watching items in your watchlist' },
-        ]).map((item) => (
+          { key: 'newEpisodes' as const, icon: Tv as LucideIcon, label: 'New Episode Alerts', desc: 'Get notified when new episodes of your watchlist shows air' },
+          { key: 'trendingUpdates' as const, icon: Flame as LucideIcon, label: 'Trending Updates', desc: 'Weekly digest of trending shows and movies' },
+          { key: 'watchlistReminders' as const, icon: Clock as LucideIcon, label: 'Watchlist Reminders', desc: 'Reminders to continue watching items in your watchlist' },
+        ]).map((item) => {
+          const Icon = item.icon;
+          return (
           <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '.75rem 1rem', borderRadius: 12, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={{ fontSize: '1.1rem', width: 32, textAlign: 'center' }}>{item.icon}</span>
+              <span style={{ width: 32, display: 'flex', justifyContent: 'center' }}><Icon size={18} /></span>
               <div>
                 <div className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{item.label}</div>
                 <div className="f-crimson" style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.35)', }}>{item.desc}</div>
@@ -75,12 +78,13 @@ export default function NotificationPreferences() {
               }} />
             </button>
           </div>
-        ))}
+          );
+        })}
 
         {/* Email digest frequency */}
         <div style={{ padding: '.75rem 1rem', borderRadius: 12, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '.75rem' }}>
-            <span style={{ fontSize: '1.1rem', width: 32, textAlign: 'center' }}>📧</span>
+            <span style={{ width: 32, display: 'flex', justifyContent: 'center' }}><Mail size={18} /></span>
             <div>
               <div className="f-cinzel" style={{  fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>Email Digest</div>
               <div className="f-crimson" style={{ fontSize: '.64rem', color: 'rgba(255,245,232,.35)', }}>Receive a summary of your activity and updates</div>

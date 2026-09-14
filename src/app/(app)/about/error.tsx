@@ -1,5 +1,7 @@
 'use client';
 
+import { Info, RotateCw } from 'lucide-react';
+
 export default function AboutError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <div style={{
@@ -13,14 +15,14 @@ export default function AboutError({ error, reset }: { error: Error & { digest?:
           background: 'linear-gradient(135deg, rgba(78,205,196,.15) 0%, rgba(255,179,71,.15) 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem',
           boxShadow: '8px 8px 24px rgba(0,0,0,.82), -4px -4px 11px rgba(45,25,90,.28), inset 0 1.5px 0 rgba(255,255,255,.048)',
-        }}>ℹ️</div>
+        }}><Info size={32} color="currentColor" /></div>
         <h2 className="f-cinzel" style={{ fontSize: '1.4rem', color: 'rgba(255,245,232,.8)', letterSpacing: '.08em', marginBottom: '1rem' }}>
           Failed to Load Page
         </h2>
         <p className="f-crimson" style={{ color: 'rgba(255,245,232,.5)', fontSize: '1rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>
           We couldn&apos;t load this page. Please try again.
         </p>
-        <button onClick={reset} className="btn-p">↻ Try Again</button>
+        <button onClick={reset} className="btn-p"><RotateCw size={16} /> Try Again</button>
       </div>
     </div>
   );

@@ -1,19 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Ban } from 'lucide-react';
 import { useToast } from '@/components/common/ToastProvider';
 
 export default function BlockButton({ mediaId, mediaType, title }: {
   mediaId: number; mediaType: string; title: string;
 }) {
   const { addToast } = useToast();
-  const [blocked, setBlocked] = useState(() => {
-    if (typeof window === 'undefined') return false;
+  // Read after mount — see RemindButton.tsx for why (avoids a hydration mismatch).
+  const [blocked, setBlocked] = useState(false);
+
+  useEffect(() => {
     try {
       const blockedList: string[] = JSON.parse(localStorage.getItem('lumina_blocked') || '[]');
-      return blockedList.includes(`${mediaType}_${mediaId}`);
-    } catch { return false; }
-  });
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate: localStorage read after mount to avoid a hydration mismatch
+      setBlocked(blockedList.includes(`${mediaType}_${mediaId}`));
+    } catch { /* ignore */ }
+  }, [mediaId, mediaType]);
 
   const toggleBlock = () => {
     const blockedList: string[] = JSON.parse(localStorage.getItem('lumina_blocked') || '[]');
@@ -46,7 +50,7 @@ export default function BlockButton({ mediaId, mediaType, title }: {
         display: 'flex', alignItems: 'center', gap: 6,
       }}
     >
-      {blocked ? '🚫 Blocked' : '🚫 Block'}
+      {blocked ? <><Ban size={14} /> Blocked</> : <><Ban size={14} /> Block</>}
     </button>
   );
 }

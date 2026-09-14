@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
 import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
+import AuthLoading from '@/components/common/AuthLoading';
 import Image from 'next/image';
 import { getPosterUrl } from '@/lib/images';
+import { Clock, Film, Flame, FileText, Star, Calendar, BarChart3, Loader2, type LucideIcon } from 'lucide-react';
 
 interface StatsData {
   totalHours: number;
@@ -43,8 +45,8 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
   return <span>{Number.isInteger(target) ? Math.round(count) : count}{suffix}</span>;
 }
 
-function StatCard({ icon, label, value, suffix, color, delay }: {
-  icon: string; label: string; value: number; suffix?: string; color: string; delay: number;
+function StatCard({ icon: Icon, label, value, suffix, color, delay }: {
+  icon: LucideIcon; label: string; value: number; suffix?: string; color: string; delay: number;
 }) {
   return (
     <div className="neo-card s1" style={{
@@ -52,12 +54,9 @@ function StatCard({ icon, label, value, suffix, color, delay }: {
       animation: `card-in .5s ${delay}s both`,
       position: 'relative', overflow: 'hidden',
     }}>
-      <div style={{
-        position: 'absolute', top: -10, right: -10,
-        fontSize: '3.5rem', opacity: .06, pointerEvents: 'none',
-      }}>{icon}</div>
+      <Icon size={64} style={{ position: 'absolute', top: -10, right: -10, opacity: .06, pointerEvents: 'none' }} />
       <div className="f-cinzel" style={{ fontSize: '.72rem', color,  letterSpacing: '.08em', marginBottom: '.5rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span>{icon}</span> {label}
+        <Icon size={13} /> {label}
       </div>
       <div className="f-cinzel-dec" style={{  fontSize: 'clamp(1.6rem,3vw,2.4rem)', color: '#FFF5E8', lineHeight: 1.2 }}>
         <AnimatedCounter target={value} suffix={suffix || ''} />
@@ -95,10 +94,12 @@ export default function StatsPage() {
 
   if (!supabaseReady) return <SupabaseNotConfigured />;
 
+  if (authLoading) return <AuthLoading />;
+
   if (!user) {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', paddingTop: 'clamp(60px,7vw,80px)' }}>
-        <div style={{ fontSize: '3rem', opacity: .3 }}>📊</div>
+        <div style={{ opacity: .3 }}><BarChart3 size={48} /></div>
         <p className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.6)', letterSpacing: '.08em' }}>Sign in to view your stats</p>
         <button className="btn-p" onClick={() => router.push('/login')}>Sign In</button>
       </div>
@@ -109,7 +110,7 @@ export default function StatsPage() {
   if (!profile || loading) {
     return (
       <div className="f-cinzel" style={{ textAlign: 'center', padding: '10rem 0', color: 'rgba(255,245,232,.5)',  letterSpacing: '.1em' }}>
-        <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
+        <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '1rem' }}><Loader2 size={28} /></div>
         <div>Loading your stats...</div>
       </div>
     );
@@ -119,10 +120,10 @@ export default function StatsPage() {
     return (
       <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div style={{ padding: '2.2rem ' + P + ' 0', position: 'relative', zIndex: 3 }}>
-          <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)' }}>📊 Viewing Stats</h1>
+          <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', display: 'flex', alignItems: 'center', gap: 10 }}><BarChart3 size={26} /> Viewing Stats</h1>
         </div>
         <div style={{ padding: '0 ' + P + ' 5.5rem', position: 'relative', zIndex: 3, textAlign: 'center', paddingTop: '4rem' }}>
-          <div style={{ fontSize: '3.5rem', marginBottom: '1.2rem', opacity: .4 }}>📊</div>
+          <div style={{ marginBottom: '1.2rem', opacity: .4 }}><BarChart3 size={56} /></div>
           <h3 className="f-cinzel" style={{  fontSize: '1.1rem', color: 'rgba(255,245,232,.5)', marginBottom: '.5rem' }}>No viewing data yet</h3>
           <p className="f-crimson" style={{  color: 'rgba(255,245,232,.5)', marginBottom: '1.5rem', fontSize: '.95rem' }}>Start watching to see your stats here</p>
           <button className="btn-p" onClick={() => router.push('/browse')}>Browse Shows</button>
@@ -142,23 +143,23 @@ export default function StatsPage() {
   return (
     <div className="page" style={{ minHeight: '100vh', paddingTop: 'clamp(60px,7vw,80px)' }}>
       <div style={{ padding: `2.2rem ${P} 0`, position: 'relative', zIndex: 3 }}>
-        <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4 }}>📊 Viewing Stats</h1>
+        <h1 className="sec" style={{ fontSize: 'clamp(1.5rem,3vw,2.2rem)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}><BarChart3 size={26} /> Viewing Stats</h1>
         <p className="f-crimson" style={{  color: 'rgba(255,245,232,.4)', fontStyle: 'italic' }}>{profile.name}&apos;s streaming journey</p>
       </div>
 
       <div style={{ padding: `0 ${P} 5.5rem`, position: 'relative', zIndex: 3 }}>
         {/* Stat cards grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(clamp(160px,22vw,220px),1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
-          <StatCard icon="⏱" label="Hours Watched" value={stats.totalHours} suffix="h" color="#FFB347" delay={0} />
-          <StatCard icon="🎬" label="Titles Watched" value={stats.totalTitles} color="#8B78FF" delay={0.08} />
-          <StatCard icon="🔥" label="Day Streak" value={stats.streak} suffix="d" color="#FF6B8A" delay={0.16} />
-          <StatCard icon="📝" label="Total Views" value={stats.totalHistory} color="#4ECDC4" delay={0.24} />
+          <StatCard icon={Clock} label="Hours Watched" value={stats.totalHours} suffix="h" color="#FFB347" delay={0} />
+          <StatCard icon={Film} label="Titles Watched" value={stats.totalTitles} color="#8B78FF" delay={0.08} />
+          <StatCard icon={Flame} label="Day Streak" value={stats.streak} suffix="d" color="#FF6B8A" delay={0.16} />
+          <StatCard icon={FileText} label="Total Views" value={stats.totalHistory} color="#4ECDC4" delay={0.24} />
         </div>
 
         {/* Average Rating */}
         {stats.totalRatings > 0 && (
           <div className="neo-card s1" style={{ padding: '1.3rem 1.5rem', borderRadius: 16, marginBottom: '2rem', animation: 'card-in .5s .32s both', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
-            <div style={{ fontSize: '2rem' }}>⭐</div>
+            <Star size={32} fill="currentColor" style={{ color: '#FFB347' }} />
             <div>
               <div className="f-cinzel" style={{ fontSize: '.72rem', color: '#FFB347',  letterSpacing: '.08em', marginBottom: 4 }}>Average Rating</div>
               <div className="f-cinzel-dec" style={{  fontSize: '1.8rem', color: '#FFF5E8' }}>
@@ -174,7 +175,7 @@ export default function StatsPage() {
         {/* Monthly Activity Chart */}
         {months.length > 0 && (
           <div className="neo-card s1" style={{ padding: '1.5rem', borderRadius: 16, marginBottom: '2rem', animation: 'card-in .5s .4s both' }}>
-            <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.05rem)', marginBottom: '1.2rem' }}>📅 Monthly Activity</h2>
+            <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.05rem)', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: 8 }}><Calendar size={16} /> Monthly Activity</h2>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'clamp(8px,1.5vw,16px)', height: 140, padding: '0 .5rem' }}>
               {months.map(([month, count], i) => {
                 const height = Math.max((count / maxMonthCount) * 110, 4);
@@ -200,7 +201,7 @@ export default function StatsPage() {
         {/* Recently Watched */}
         {recentList.length > 0 && (
           <div style={{ animation: 'card-in .5s .5s both' }}>
-            <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.05rem)', marginBottom: '1.2rem' }}>🎞 Recently Watched</h2>
+            <h2 className="sec" style={{ fontSize: 'clamp(.9rem,1.4vw,1.05rem)', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: 8 }}><Film size={16} /> Recently Watched</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
               {recentList.map((item, i) => (
                 <div key={`${item.media_type}-${item.media_id}`} className="neo-card" onClick={() => router.push(`/details/${item.media_id}`)} style={{
@@ -215,7 +216,7 @@ export default function StatsPage() {
                     {item.poster_path ? (
                       <Image src={getPosterUrl({ poster_path: item.poster_path }, 'w92') || ''} alt={item.title} width={40} height={60} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', opacity: .3 }}>🎬</div>
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: .3 }}><Film size={16} /></div>
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>

@@ -1,9 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import {
+  Loader2, Star, Check, Plus, Play, User as UserIcon, Film, Tv, Sparkles,
+  Link2, Globe, BookOpen, Lock, ImageOff, X as CloseIcon, ArrowLeft,
+} from 'lucide-react';
+import { GoogleLogo } from '@/components/common/BrandIcons';
 import type { MediaItem, TMDBCastMember, TMDBShow } from '@/types';
 import { tmdbToMedia, isAnilistId, toAnilistId } from '@/types';
 import { CS } from '@/styles/themes';
@@ -13,12 +18,13 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useApp } from '@/contexts/AppContext';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { vibrateMedium, vibrateLong } from '@/lib/haptics';
-import { getTmdbImageUrl, getBackdropUrl, getYoutubeThumbnail } from '@/lib/images';
+import { getTmdbImageUrl, getBackdropUrl, getYoutubeThumbnail, getBlurPlaceholder } from '@/lib/images';
 import { personUrl } from '@/lib/slug';
 import type { AniListMedia } from '@/lib/anilist/client';
 import TrailerModal from '@/components/common/TrailerModal';
 import IntelligentPlayer from '@/components/common/IntelligentPlayer';
 import LegalDisclaimerBanner from '@/components/common/LegalDisclaimerBanner';
+import WatchPartyPanel from '@/components/common/WatchPartyPanel';
 
 interface TMDBSeasonEpisode {
   id: number;
@@ -84,12 +90,15 @@ interface DetailsContentProps {
   /** Pre-selected episode (from episode URL route) */
   defaultEpisode?: number;
   initialAnilistDetail?: AniListMedia | null;
+  /** SSR-fetched episodes for the initially-selected season — seeds the episode
+      list so real titles render on first paint instead of placeholders. */
+  initialEpisodes?: TMDBSeasonEpisode[];
 }
 
-export default function DetailsContent({ 
-  showId, initialShow, initialCredits = [], initialSimilar = [], initialVideos = [], 
+export default function DetailsContent({
+  showId, initialShow, initialCredits = [], initialSimilar = [], initialVideos = [],
   initialCrew = [], initialKeywords = [], initialImages = null, initialReviews = [],
-  defaultSeason, defaultEpisode, initialAnilistDetail
+  defaultSeason, defaultEpisode, initialAnilistDetail, initialEpisodes = []
 }: DetailsContentProps) {
   const router = useRouter();
   const { user, profile, openPip, triggerConfetti } = useApp();
@@ -113,12 +122,15 @@ export default function DetailsContent({
   const [tmdbReviews, setTmdbReviews] = useState(initialReviews);
   const [galleryImages, setGalleryImages] = useState(initialImages);
   const [keywords, setKeywords] = useState<string[]>(initialKeywords);
-  const [seasonEpisodes, setSeasonEpisodes] = useState<TMDBSeasonEpisode[]>([]);
+  const [seasonEpisodes, setSeasonEpisodes] = useState<TMDBSeasonEpisode[]>(initialEpisodes);
+  // True until the client has fetched a season itself — lets the first render
+  // trust the SSR-seeded episodes for `defaultSeason` without a redundant fetch.
+  const seededSeasonRef = useRef<number | null>(initialEpisodes.length > 0 ? (defaultSeason || 1) : null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [loadingSeason, setLoadingSeason] = useState(false);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [hasMoreSimilar, setHasMoreSimilar] = useState(true);
-  const [providers, setProviders] = useState<Array<{ name: string; url: string; tier?: number; category?: string; score?: number; proxied?: boolean }>>([]);
+  const [providers, setProviders] = useState<Array<{ name: string; url: string; tier?: number; category?: string; score?: number; proxied?: boolean; noSandbox?: boolean }>>([]);
   const [selectedProvider, setSelectedProvider] = useState(0);
   const [failoverMsg, setFailoverMsg] = useState('');
   const [loadingProviders, setLoadingProviders] = useState(false);
@@ -162,13 +174,30 @@ export default function DetailsContent({
   }, [playing]);
 
   // Keyboard shortcuts (only active when player is open) — must be before early return
-  const DETAIL_TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['gallery', 'Gallery'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
+  const DETAIL_TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['gallery', 'Gallery'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['watchparty', 'Watch Party'], ['related', 'More Like This']];
 
   /** Update the URL to reflect the current season/episode for SEO crawlability. */
   const syncEpisodeUrl = useCallback((s: number, e: number) => {
     const epUrl = `/details/${showId}/season/${s}/episode/${e}`;
     router.replace(epUrl, { scroll: false });
   }, [showId, router]);
+
+  /**
+   * Close the player AND clear all transient playback state. A bare
+   * setPlaying(false) left the failover chain / provider index / pending
+   * failover timer alive, so re-opening (or a late timer firing) could resurrect
+   * the player pointing at a stale provider — the "stuck player" symptom.
+   */
+  const exitPlayer = useCallback(() => {
+    if (iframeLoadTimer.current) { clearTimeout(iframeLoadTimer.current); iframeLoadTimer.current = undefined; }
+    iframeLoadedRef.current = false;
+    triedProviders.current.clear();
+    setPlaying(false);
+    setFailoverMsg('');
+    setChainIndex(0);
+    setChainExhausted(false);
+    setSelectedProvider(0);
+  }, []);
 
   useKeyboardShortcuts(true, {
     onTogglePlayPause: () => { if (playing) {
@@ -181,7 +210,7 @@ export default function DetailsContent({
       } catch { /* cross-origin */ }
     } else { vibrateLong(); setPlaying(true); } },
     onToggleFullscreen: () => { if (playing) playerRef.current?.requestFullscreen?.(); },
-    onExit: () => { if (playing) setPlaying(false); },
+    onExit: () => { if (playing) exitPlayer(); },
     onPreviousEpisode: () => { if (epIdx > 1) { const ne = epIdx - 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
     onNextEpisode: () => { const maxEp = seasonEpisodes.length > 0 ? seasonEpisodes.length : (show?.eps ?? 10); if (epIdx < maxEp) { const ne = epIdx + 1; setEpIdx(ne); setPlaying(true); syncEpisodeUrl(season, ne); } },
     onJumpToEpisode: (n) => { if (n <= seasonEpisodes.length) { setEpIdx(n); setPlaying(true); syncEpisodeUrl(season, n); } },
@@ -200,6 +229,9 @@ export default function DetailsContent({
   // If show came from SSR, seed fullDetails with initial credits/similar/videos
   useEffect(() => {
     if (initialShow && !fullDetails) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate: one-time
+         hydration of client state from SSR-provided initial props, guarded by !fullDetails
+         so it only ever runs once. */
       setFullDetails({
         id: initialShow.id,
         credits: initialCredits.length > 0 ? { cast: initialCredits, crew: initialCrew.length > 0 ? initialCrew : undefined } : undefined,
@@ -304,7 +336,10 @@ export default function DetailsContent({
 
   // Fetch season episodes (TMDB only — AniList items don't have TMDB season data)
   useEffect(() => {
-    if (!show || show.media_type !== 'tv' || show._isAnilist) return;    const id = show.id;
+    if (!show || show.media_type !== 'tv' || show._isAnilist) return;
+    const id = show.id;
+    // First paint: the server already seeded this season's episodes — don't refetch.
+    if (seededSeasonRef.current === season) { seededSeasonRef.current = null; return; }
     let cancelled = false;
     const controller = new AbortController();
     const load = async () => {
@@ -338,9 +373,18 @@ export default function DetailsContent({
     if (malId) params.set('mal', String(malId));
     if (show._anilistId) params.set('anilist', String(show._anilistId));
     if (isAnime) params.set('isAnime', 'true');
-    fetch(`/api/embed?${params}`)
+    // Audit finding (Round 9 GitHub report): "Finding best provider..." could
+    // hang indefinitely with no way out but Exit — this fetch had no
+    // client-side timeout. 12s comfortably covers /api/embed's own ~2.2s probe
+    // budget; past that, treat it as a failure so the user lands on the
+    // existing "No sources found" state (with a Go Back button) instead of a
+    // frozen spinner.
+    const embedController = new AbortController();
+    const embedTimeout = setTimeout(() => embedController.abort(), 12_000);
+    fetch(`/api/embed?${params}`, { signal: embedController.signal })
       .then(r => r.json())
       .then(data => {
+        clearTimeout(embedTimeout);
         setLoadingProviders(false);
         // Smart mode: use chain for failover, populate providers for dropdown
         if (data.chain && data.chain.length > 0) {
@@ -348,7 +392,7 @@ export default function DetailsContent({
           setChainIndex(0);
           setChainExhausted(false);
           // Also populate providers dropdown from chain (include category for grouping)
-          setProviders(data.chain.map((c: { provider: string; url: string; score: number; tier: number; category: string }) => ({ name: c.provider, url: c.url, tier: c.tier, score: c.score, category: c.category })));
+          setProviders(data.chain.map((c: { provider: string; url: string; score: number; tier: number; category: string; noSandbox?: boolean }) => ({ name: c.provider, url: c.url, tier: c.tier, score: c.score, category: c.category, noSandbox: c.noSandbox })));
           setSelectedProvider(0);
         } else if (data.providers) {
           // Legacy mode fallback
@@ -358,7 +402,8 @@ export default function DetailsContent({
           setSelectedProvider(0);
         }
       })
-      .catch(() => { setLoadingProviders(false); setProviders([]); setFailoverChain([]); });
+      .catch(() => { clearTimeout(embedTimeout); setLoadingProviders(false); setProviders([]); setFailoverChain([]); });
+    return () => { clearTimeout(embedTimeout); embedController.abort(); };
   }, [playing, showId, season, epIdx, show]);
 
   // Fetch comments
@@ -535,11 +580,66 @@ export default function DetailsContent({
     return () => { clearTimeout(timer); };
   }, [playing, activeProviderUrl]);
 
+  // Persist coarse watch progress while the player is open. Third-party embeds
+  // are cross-origin and never report a real position, so we estimate it from
+  // wall-clock time elapsed vs. the episode/movie runtime. Rough, but enough to
+  // power "Continue Watching" and the recently-watched lists.
+  useEffect(() => {
+    if (!playing || !show || !user || !profile) return;
+    const mediaType = (show.media_type || 'tv') as 'movie' | 'tv';
+    const curEp = seasonEpisodes.find(e => e.episode_number === epIdx);
+    const runtimeMin =
+      mediaType === 'movie'
+        ? (fullDetails as { runtime?: number } | null)?.runtime || 110
+        : curEp?.runtime || 24;
+    const estDuration = Math.max(300, runtimeMin * 60);
+    const startedAt = Date.now();
+    const mediaId = show.id;
+    const post = () => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      const position = Math.min(elapsed + 8, Math.round(estDuration * 0.95));
+      fetch('/api/player/save-resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mediaId,
+          mediaType,
+          position,
+          duration: estDuration,
+          title: show.title,
+          posterPath: show.poster_path || null,
+          seasonNumber: mediaType === 'tv' ? season : undefined,
+          episodeNumber: mediaType === 'tv' ? epIdx : undefined,
+        }),
+      }).catch(() => {});
+    };
+    post();
+    const iv = setInterval(post, 30_000);
+    return () => { post(); clearInterval(iv); };
+  }, [playing, show?.id, season, epIdx, user, profile?.id]);
+
+  // ── Watch Party ──
+  // Host: push play/pause + current episode to the room whenever they change.
+  // `window.__luminaSyncPlayback` is installed by WatchPartyPanel only while
+  // this user is the room host, so the optional-call is a no-op otherwise.
+  useEffect(() => {
+    const sync = (window as unknown as { __luminaSyncPlayback?: (s: { isPlaying: boolean; currentTime: number; season: number; episode: number }) => void }).__luminaSyncPlayback;
+    sync?.({ isPlaying: playing, currentTime: 0, season, episode: epIdx });
+  }, [playing, season, epIdx]);
+
+  // Guest: follow the host's episode + play state (fired by the panel's poll,
+  // which only calls this for non-hosts). Only act on real changes.
+  const handlePartySync = useCallback((st: { isPlaying: boolean; currentTime: number; season: number; episode: number }) => {
+    if (Number.isFinite(st.season) && st.season > 0 && st.season !== season) setSeason(st.season);
+    if (Number.isFinite(st.episode) && st.episode > 0 && st.episode !== epIdx) setEpIdx(st.episode);
+    setPlaying(prev => (st.isPlaying !== prev ? st.isPlaying : prev));
+  }, [season, epIdx]);
+
   if (!show) {
     return (
       <div className="page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 'clamp(60px,7vw,80px)' }}>
         <div className="f-cinzel" style={{  fontSize: '1.2rem', color: 'rgba(255,245,232,.4)' }}>
-          <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite', fontSize: '2rem', marginBottom: '1rem' }}>✦</div>
+          <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '1rem', color: 'var(--gold)' }}><Loader2 size={32} /></div>
           <div>Loading show details...</div>
         </div>
       </div>
@@ -552,12 +652,13 @@ export default function DetailsContent({
     : 0;
 
   const epData = seasonEpisodes.length > 0
-    ? seasonEpisodes.map(e => ({ ep: e.episode_number, title: e.name, dur: e.runtime ? `${e.runtime}m` : '23m', done: false }))
+    ? seasonEpisodes.map(e => ({ ep: e.episode_number, title: e.name || `Episode ${e.episode_number}`, dur: e.runtime ? `${e.runtime}m` : '', done: false }))
     : show.epList.length > 0
     ? show.epList
-    : Array.from({ length: Math.min(show.eps, 10) }, (_, i) => ({
-        ep: i + 1, title: `Ep ${i + 1}: ${['Awakening', 'Hidden Path', 'The First Step', 'Into the Deep', 'Revelations', 'The Turn', 'Convergence', 'New Dawn', 'Eclipse', 'Final Light'][i] || 'Journey'}`,
-        dur: `${22 + (i * 5) % 8}m`, done: i < epIdx - 1,
+    // No episode metadata available (rare — season fetch failed or item has no
+    // season data). Show plain numbered rows rather than invented titles.
+    : Array.from({ length: Math.max(1, Math.min(show.eps || 1, 50)) }, (_, i) => ({
+        ep: i + 1, title: `Episode ${i + 1}`, dur: '', done: i < epIdx - 1,
       }));
 
   // Unified trailer list — works for both TMDB and AniList items
@@ -584,7 +685,7 @@ export default function DetailsContent({
   const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(show.title + ' official trailer')}`;
 
   const similar: MediaItem[] = fullDetails?.similar?.results && fullDetails.similar.results.length > 0
-    ? fullDetails.similar.results.slice(0, 6).map((r) => tmdbToMedia(r))
+    ? fullDetails.similar.results.slice(0, 6).map((r) => tmdbToMedia({ ...r, media_type: (show.media_type || 'tv') as 'movie' | 'tv' }))
     : initialSimilar.length > 0
     ? initialSimilar
     : [];
@@ -600,7 +701,7 @@ export default function DetailsContent({
     || fullDetails?.content_ratings?.results?.[0]?.rating
     || null;
 
-  const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['gallery', 'Gallery'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['related', 'More Like This']];
+  const TABS: [string, string][] = [['episodes', 'Episodes'], ['details', 'Details'], ['cast', 'Cast'], ['gallery', 'Gallery'], ['trailers', 'Trailers'], ['comments', 'Comments'], ['watchparty', 'Watch Party'], ['related', 'More Like This']];
 
   const handlePostComment = async () => {
     if (!user || !profile || !commentText.trim() || !show) return;
@@ -609,7 +710,7 @@ export default function DetailsContent({
     try {
       const res = await fetch('/api/comments', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileId: profile.id, mediaId: show.id, mediaType, content: commentText.trim(), rating: reviewRating > 0 ? reviewRating * 2 : 0 }),
+        body: JSON.stringify({ profileId: profile.id, mediaId: show.id, mediaType, content: commentText.trim(), ...(reviewRating > 0 ? { rating: reviewRating * 2 } : {}) }),
       });
       if (res.ok) {
         setCommentText('');
@@ -674,22 +775,46 @@ export default function DetailsContent({
     <div className="page" style={{ minHeight: '100vh' }}>
       {/* Hero backdrop */}
       <div style={{ position: 'relative', height: 'clamp(35vh,42vh,50vh)', overflow: 'hidden' }}>
-        <div key={show.id} role="img" aria-label={`${show.title} backdrop`} style={{ position: 'absolute', inset: 0, background: show._isAnilist && show._anilistBanner
-          ? `url(${show._anilistBanner}) center/cover no-repeat`
-          : show.backdrop_path
-          ? `url(${getBackdropUrl(show.backdrop_path, 'w1280')}) center/cover no-repeat`
+        {(() => {
+          const heroImg = show._isAnilist && show._anilistBanner ? show._anilistBanner
+            : show.backdrop_path ? getBackdropUrl(show.backdrop_path, 'w1280')
+            : null;
+          return (
+        <div key={show.id} role="img" aria-label={`${show.title} backdrop`} style={{ position: 'absolute', inset: 0, background: heroImg
+          ? undefined
           : `linear-gradient(135deg,${s.base} 0%,#18063A 40%,#2D1B5E 100%)`, animation: 'hero-swap .6s ease both' }}>
-          {(show.backdrop_path || (show._isAnilist && show._anilistBanner)) && (            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)' }} />
+          {heroImg && (
+            // A CSS background-image on this div isn't discovered by the browser's
+            // preload scanner until layout runs — it painted several seconds late
+            // (blank hero). next/image with `priority` emits an eager <link rel=preload>
+            // the scanner picks up immediately during HTML parsing, plus a blur-up
+            // placeholder so there's no blank flash while it loads.
+            <Image
+              src={heroImg}
+              alt=""
+              fill
+              priority
+              fetchPriority="high"
+              sizes="100vw"
+              placeholder="blur"
+              blurDataURL={getBlurPlaceholder(show.cs)}
+              style={{ objectFit: 'cover', zIndex: 0 }}
+            />
           )}
-          <div style={{ position: 'absolute', top: '10%', left: '45%', width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle,${s.acc}30 0%,transparent 68%)`, filter: 'blur(62px)', animation: 'aurora 12s ease-in-out infinite' }} />
-          <div style={{ position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', fontSize: 'clamp(9rem,15vw,17rem)', opacity: .04, filter: 'blur(5px)', animation: 'float 8s ease-in-out infinite', userSelect: 'none' }}>{s.em}</div>
+          {heroImg && (
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(7,4,15,.8) 0%,rgba(7,4,15,.5) 40%,rgba(7,4,15,.7) 100%)', zIndex: 1 }} />
+          )}
+          <div style={{ position: 'absolute', top: '10%', left: '45%', width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle,${s.acc}30 0%,transparent 68%)`, filter: 'blur(62px)', animation: 'aurora 12s ease-in-out infinite', zIndex: heroImg ? 2 : undefined }} />
+          <div style={{ position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', width: 'clamp(9rem,15vw,17rem)', height: 'clamp(9rem,15vw,17rem)', opacity: .04, filter: 'blur(5px)', animation: 'float 8s ease-in-out infinite', userSelect: 'none', zIndex: heroImg ? 2 : undefined, color: s.acc }}><s.icon style={{ width: '100%', height: '100%' }} /></div>
         </div>
+          );
+        })()}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 130, background: 'linear-gradient(to bottom,#07040F,transparent)', zIndex: 2 }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '65%', background: 'linear-gradient(to top,#07040F 0%,rgba(7,4,15,.82) 46%,transparent 100%)', zIndex: 2 }} />
-        <button className="btn-g" onClick={() => router.back()} style={{ position: 'absolute', top: 'clamp(70px,8vw,88px)', left: 'clamp(1rem,5vw,2.5rem)', zIndex: 10, padding: '9px 18px', fontSize: '.73rem' }}>← Back</button>
+        <button className="btn-g" onClick={() => router.back()} style={{ position: 'absolute', top: 'clamp(70px,8vw,88px)', left: 'clamp(1rem,5vw,2.5rem)', zIndex: 10, padding: '9px 18px', fontSize: '.73rem', display: 'flex', alignItems: 'center', gap: 6 }}><ArrowLeft size={14} /> Back</button>
         <div style={{ position: 'absolute', bottom: '6%', left: 'clamp(1rem,5vw,2.5rem)', right: 'clamp(1rem,5vw,2.5rem)', zIndex: 3, maxWidth: 'clamp(300px,60vw,1040px)' }}>
           <div className="s1" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '.65rem', alignItems: 'center' }}>
-            <div className="badge-r">⭐ {show.r}</div>
+            <div className="badge-r">{show.r > 0 ? <><Star size={11} fill="currentColor" /> {show.r}</> : 'New'}</div>
             {/* Maturity rating from TMDB */}
             {contentRating && (
               <div className="f-cinzel" style={{
@@ -711,14 +836,14 @@ export default function DetailsContent({
       {/* Content */}
       <div style={{ padding: '1.2rem clamp(1rem,5vw,2.5rem)', position: 'relative', zIndex: 3, maxWidth: 1040, margin: '0 auto' }}>
         <div style={{ display: 'flex', gap: '.85rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-          <button className="btn-p" onClick={() => { vibrateLong(); setPlaying(true); }}>▶ Play {show.media_type === 'tv' ? `Episode ${epIdx}` : 'Now'}</button>
+          <button className="btn-p" onClick={() => { vibrateLong(); setPlaying(true); }}><Play size={15} fill="currentColor" /> Play {show.media_type === 'tv' ? `Episode ${epIdx}` : 'Now'}</button>
           {trailerList.length > 0 && (
             <button className="btn-g" onClick={() => setShowTrailer(true)} style={{ opacity: 0.9 }}>
-              ▶ Trailer
+              <Play size={13} fill="currentColor" /> Trailer
             </button>
           )}
           <button className="btn-g" onClick={toggleWatchlist} style={{ opacity: inWatchlist ? 1 : 0.85 }}>
-            {inWatchlist ? '✓ In My List' : '+ My List'}
+            {inWatchlist ? <><Check size={14} /> In My List</> : <><Plus size={14} /> My List</>}
           </button>
           <ShareButton title={show.title} id={show.id} />
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -787,7 +912,7 @@ export default function DetailsContent({
               className="btn-g"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 24px', fontSize: '.78rem', textDecoration: 'none', color: '#FFF5E8' }}
             >
-              ▶ Watch Trailer on YouTube
+              <Play size={13} fill="currentColor" /> Watch Trailer on YouTube
             </a>
           </div>
         )}
@@ -825,14 +950,14 @@ export default function DetailsContent({
                         {epStill && (
                           <Image src={getTmdbImageUrl(epStill, 'w300')!} alt={`${show.title} — Episode ${e.ep}${e.title ? `: ${e.title}` : ''} still`} fill style={{ objectFit: 'cover', zIndex: 0 }} sizes="100px" loading="lazy" />
                         )}
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: ac ? s.acc : 'rgba(7,4,15,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.72rem', color: ac ? '#05020A' : '#FFF5E8', position: 'relative', zIndex: 1, boxShadow: ac ? `0 0 14px ${s.acc}80,3px 3px 8px rgba(0,0,0,.6)` : '' }}>{ac ? '▶' : e.ep}</div>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: ac ? s.acc : 'rgba(7,4,15,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.72rem', color: ac ? '#05020A' : '#FFF5E8', position: 'relative', zIndex: 1, boxShadow: ac ? `0 0 14px ${s.acc}80,3px 3px 8px rgba(0,0,0,.6)` : '' }}>{ac ? <Play size={12} fill="currentColor" /> : e.ep}</div>
                         {e.done && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${s.acc},${s.acc}88)`, boxShadow: `0 0 8px ${s.acc}` }} />}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div className="f-cinzel" style={{  fontSize: '.8rem', color: ac ? '#FFF5E8' : 'rgba(255,245,232,.75)', marginBottom: 3 }}>{e.title}</div>
-                        <div className="f-mono" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.35)', }}>{e.dur}{e.done ? ' · ✓' : ''}</div>
+                        <div className="f-mono" style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.35)', display: 'flex', alignItems: 'center', gap: 4 }}>{e.dur}{e.done && <>· <Check size={11} /></>}</div>
                       </div>
-                      {e.done && <span style={{ fontSize: '.68rem', color: s.acc }}>✓</span>}
+                      {e.done && <Check size={13} style={{ color: s.acc }} />}
                     </button>
                   );
                 })}
@@ -911,7 +1036,7 @@ export default function DetailsContent({
                           <Image src={edge.node.image.medium} alt={`${edge.node.name?.full || 'Staff member'} — ${edge.role || 'staff'} for ${show.title}`} width={40} height={40} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                       ) : (
-                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.9rem', boxShadow: `0 0 0 1.5px ${s.acc}40` }}>👤</div>
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 0 1.5px ${s.acc}40` }}><UserIcon size={18} /></div>
                       )}
                       <div>
                         <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{edge.node.name?.full || 'Unknown'}</div>
@@ -938,7 +1063,7 @@ export default function DetailsContent({
                               <Image src={edge.node.image.medium} alt={`${edge.node.name?.full || 'Character'} in ${show.title}`} width={36} height={36} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
                           ) : (
-                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem', flexShrink: 0 }}>👤</div>
+                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><UserIcon size={16} /></div>
                           )}
                           <div style={{ minWidth: 0 }}>
                             <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{edge.node.name?.full || 'Unknown'}</div>
@@ -980,7 +1105,7 @@ export default function DetailsContent({
                             <Image src={cover} alt={`${title} — ${edge.relationType.replace(/_/g, ' ')} of ${show.title}`} width={60} height={85} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                         ) : (
-                          <div style={{ width: 60, height: 85, borderRadius: 8, flexShrink: 0, background: 'linear-gradient(135deg,#1E1838,#0C091A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', opacity: .4 }}>🎬</div>
+                          <div style={{ width: 60, height: 85, borderRadius: 8, flexShrink: 0, background: 'linear-gradient(135deg,#1E1838,#0C091A)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: .4 }}><Film size={24} /></div>
                         )}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
@@ -1000,16 +1125,16 @@ export default function DetailsContent({
                 <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.75rem' }}>EXTERNAL LINKS</h2>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                   <a href={anilistDetail.siteUrl} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                    <span style={{ fontSize: '1rem' }}>🎌</span> AniList
+                    <Sparkles size={15} /> AniList
                   </a>
                   {anilistDetail.externalLinks.slice(0, 10).map((link, i) => (
                     <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                      {link.iconUrl ? <img src={link.iconUrl} alt={`${link.site} icon`} width={16} height={16} style={{ width: 16, height: 16, borderRadius: 2 }} loading="lazy" /> : <span style={{ fontSize: '1rem' }}>🔗</span>}
+                      {link.icon ? <img src={link.icon} alt={`${link.site} icon`} width={16} height={16} style={{ width: 16, height: 16, borderRadius: 2 }} loading="lazy" /> : <Link2 size={15} />}
                       {link.site}
                     </a>
                   ))}
                   <a href={`https://www.google.com/search?q=${encodeURIComponent(show.title + ' anime')}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                    <span style={{ fontSize: '1rem' }}>🔍</span> Google
+                    <GoogleLogo size={15} /> Google
                   </a>
                 </div>
               </section>
@@ -1081,7 +1206,7 @@ export default function DetailsContent({
                     {prov.logo_path ? (
                       <img src={`https://image.tmdb.org/t/p/w45${prov.logo_path}`} alt={`${prov.provider_name} streaming service logo`} width={28} height={28} style={{ width: 28, height: 28, borderRadius: 4 }} loading="lazy" />
                     ) : (
-                      <div style={{ width: 28, height: 28, borderRadius: 4, background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem' }}>📺</div>
+                      <div style={{ width: 28, height: 28, borderRadius: 4, background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Tv size={14} /></div>
                     )}
                     <span className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8' }}>{prov.provider_name}</span>
                   </div>
@@ -1134,21 +1259,32 @@ export default function DetailsContent({
           <section aria-label="Cast" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
             <h2 className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '.25rem' }}>CAST</h2>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {castList.map((c, i) => (
-              <Link key={c.id || c.name || i} href={c.id ? personUrl(c.id, c.name) : '#'} className="neo-card" style={{ padding: '13px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .42s ${i * 0.08}s both`, textDecoration: 'none', color: 'inherit' }}>
-                {c.profile_path ? (
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', boxShadow: `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px ${s.acc}40` }}>
-                    <Image src={getTmdbImageUrl(c.profile_path, 'w185')!} alt={c.name} width={40} height={40} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {castList.map((c, i) => {
+              const cardStyle: CSSProperties = { padding: '13px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: '1rem', animation: `card-in .42s ${i * 0.08}s both`, textDecoration: 'none', color: 'inherit' };
+              const inner = (
+                <>
+                  {c.profile_path ? (
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', boxShadow: `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px ${s.acc}40` }}>
+                      <Image src={getTmdbImageUrl(c.profile_path, 'w185')!} alt={c.name} width={40} height={40} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ) : (
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px ${s.acc}40` }}><UserIcon size={18} /></div>
+                  )}
+                  <div>
+                    <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{c.name}</div>
+                    <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)' }}>{c.character || 'Actor'}</div>
                   </div>
-                ) : (
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg,${s.acc}55,${s.acc}22)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.9rem', boxShadow: `3px 3px 10px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.22),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1.5px ${s.acc}40` }}>🌸</div>
-                )}
-                <div>
-                  <div className="f-cinzel" style={{ fontSize: '.78rem', color: '#FFF5E8', marginBottom: 2 }}>{c.name}</div>
-                  <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.38)' }}>{c.character || 'Actor'}</div>
-                </div>
-              </Link>
-            ))}
+                </>
+              );
+              // No real person ID (e.g. AniList studio-sourced cast, or the pre-fetch
+              // fallback) — there's no page to link to, so render a plain (non-clickable)
+              // card instead of a Link to '#' that looked navigable but went nowhere.
+              return c.id ? (
+                <Link key={c.id} href={personUrl(c.id, c.name)} className="neo-card" style={cardStyle}>{inner}</Link>
+              ) : (
+                <div key={c.name || i} className="neo-card" style={cardStyle}>{inner}</div>
+              );
+            })}
             </div>
           </section>
           <section aria-label="External Links" style={{ marginTop: '1.2rem' }}>
@@ -1156,34 +1292,34 @@ export default function DetailsContent({
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {!show._isAnilist && (
                 <a href={`https://www.themoviedb.org/${show.media_type === 'movie' ? 'movie' : 'tv'}/${show.id}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                  <span style={{ fontSize: '1rem' }}>🎬</span> TMDB
+                  <Film size={15} /> TMDB
                 </a>
               )}
               {!show._isAnilist && fullDetails?.imdb_id && (
                 <a href={`https://www.imdb.com/title/${fullDetails.imdb_id}/`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                  <span style={{ fontSize: '1rem' }}>📍</span> IMDb
+                  <Link2 size={15} /> IMDb
                 </a>
               )}
               {!show._isAnilist && !fullDetails?.imdb_id && (
                 <a href={`https://www.imdb.com/find/?q=${encodeURIComponent(show.title)}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                  <span style={{ fontSize: '1rem' }}>📍</span> IMDb
+                  <Link2 size={15} /> IMDb
                 </a>
               )}
               {show._isAnilist && (
                 <a href={`https://anilist.co/anime/${toAnilistId(show.id)}/`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                  <span style={{ fontSize: '1rem' }}>🎌</span> AniList
+                  <Sparkles size={15} /> AniList
                 </a>
               )}
               {fullDetails?.homepage && (
                 <a href={fullDetails.homepage} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                  <span style={{ fontSize: '1rem' }}>🌐</span> Official
+                  <Globe size={15} /> Official
                 </a>
               )}
               <a href={`https://www.google.com/search?q=${encodeURIComponent(show.title + (show.yr ? ` ${show.yr}` : ''))}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                <span style={{ fontSize: '1rem' }}>🔍</span> Google
+                <GoogleLogo size={15} /> Google
               </a>
               <a href={`https://en.wikipedia.org/wiki/${encodeURIComponent(show.title.replace(/ /g, '_'))}`} target="_blank" rel="noopener noreferrer" className="neo-card" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', color: '#FFB347', fontSize: '.78rem' }}>
-                <span style={{ fontSize: '1rem' }}>📖</span> Wikipedia
+                <BookOpen size={15} /> Wikipedia
               </a>
             </div>
           </section>
@@ -1210,7 +1346,7 @@ export default function DetailsContent({
               </div>
             ) : (
               <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.3)', fontSize: '.82rem', letterSpacing: '.1em' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '.8rem', opacity: .4 }}>🖼️</div>
+                <ImageOff size={32} style={{ marginBottom: '.8rem', opacity: .4 }} />
                 No gallery images available
               </div>
             )}
@@ -1246,7 +1382,7 @@ export default function DetailsContent({
               </div>
             ) : (
               <div className="f-cinzel" style={{ textAlign: 'center', padding: '3rem 0', color: 'rgba(255,245,232,.3)',  fontSize: '.82rem', letterSpacing: '.1em' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '.8rem', opacity: .4 }}>🎬</div>
+                <Film size={32} style={{ marginBottom: '.8rem', opacity: .4 }} />
                 No trailers available
                 <div style={{ marginTop: '1rem' }}>
                   <a
@@ -1254,9 +1390,9 @@ export default function DetailsContent({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-g"
-                    style={{ display: 'inline-block', padding: '10px 24px', fontSize: '.78rem', textDecoration: 'none', color: '#FFF5E8' }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 24px', fontSize: '.78rem', textDecoration: 'none', color: '#FFF5E8' }}
                   >
-                    ▶ Search on YouTube
+                    <Play size={13} fill="currentColor" /> Search on YouTube
                   </a>
                 </div>
               </div>
@@ -1270,7 +1406,7 @@ export default function DetailsContent({
             <h2 className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.14em', color: s.acc, marginBottom: '1rem' }}>COMMENTS ({comments.length})</h2>
             {!user || !profile ? (
               <div style={{ textAlign: 'center', padding: '2rem 0', color: 'rgba(255,245,232,.35)' }}>
-                <div style={{ fontSize: '1.5rem', marginBottom: '.5rem', opacity: .4 }}>🔒</div>
+                <Lock size={24} style={{ marginBottom: '.5rem', opacity: .4 }} />
                 <span className="f-cinzel" style={{  fontSize: '.82rem' }}>Sign in to leave a comment</span>
               </div>
             ) : (
@@ -1280,12 +1416,12 @@ export default function DetailsContent({
                   <div className="f-cinzel" style={{ fontSize: '.62rem', color: 'rgba(255,245,232,.35)',  letterSpacing: '.08em', marginBottom: '.4rem' }}>YOUR RATING</div>
                   <div style={{ display: 'flex', gap: 4 }}>
                     {[1,2,3,4,5].map(n => (
-                      <button key={n} onClick={() => setReviewRating(reviewRating === n ? 0 : n)} style={{
+                      <button key={n} onClick={() => setReviewRating(reviewRating === n ? 0 : n)} aria-label={`Rate ${n} star${n > 1 ? 's' : ''}`} style={{
                         background: 'none', border: 'none', cursor: 'pointer', padding: 2,
-                        fontSize: '1.2rem', transition: 'transform .2s',
-                        filter: n <= reviewRating ? 'none' : 'grayscale(1) opacity(.3)',
+                        display: 'flex', transition: 'transform .2s', color: 'var(--gold)',
+                        opacity: n <= reviewRating ? 1 : .3,
                         transform: n <= reviewRating ? 'scale(1.1)' : 'scale(1)',
-                      }}>⭐</button>
+                      }}><Star size={19} fill={n <= reviewRating ? 'currentColor' : 'none'} /></button>
                     ))}
                     {reviewRating > 0 && (
                       <span className="f-mono" style={{ fontSize: '.62rem', color: '#FFB347',  alignSelf: 'center', marginLeft: 6 }}>{reviewRating}/5</span>
@@ -1317,8 +1453,11 @@ export default function DetailsContent({
                         <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: 4 }}>
                           <span style={{ fontSize: '.72rem', color: '#FFF5E8', fontWeight: 600 }}>{c.profile_name || 'Anonymous'}</span>
                           {c.rating && c.rating > 0 && (
-                            <span className="f-mono" style={{ fontSize: '.62rem', color: '#FFB347', }}>
-                              {'★'.repeat(Math.round(c.rating / 2))}{'☆'.repeat(5 - Math.round(c.rating / 2))} {(c.rating / 2).toFixed(1)}
+                            <span className="f-mono" style={{ fontSize: '.62rem', color: '#FFB347', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                              {Array.from({ length: 5 }, (_, i) => (
+                                <Star key={i} size={10} fill={i < Math.round(c.rating! / 2) ? 'currentColor' : 'none'} />
+                              ))}
+                              &nbsp;{(c.rating / 2).toFixed(1)}
                             </span>
                           )}
                           <span style={{ fontSize: '.58rem', color: 'rgba(255,245,232,.22)' }}>{new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -1329,6 +1468,29 @@ export default function DetailsContent({
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {tab === 'watchparty' && (
+          <section aria-label="Watch Party" className="neo-raised" style={{ padding: '1.4rem 1.6rem', borderRadius: 16 }}>
+            {user && profile ? (
+              <WatchPartyPanel
+                showId={showId}
+                showTitle={show.title}
+                posterPath={show.poster_path || null}
+                mediaType={show.media_type === 'movie' ? 'movie' : 'tv'}
+                season={season}
+                episode={epIdx}
+                onPlaybackSync={handlePartySync}
+                profileId={profile.id}
+                profileName={profile.name || null}
+              />
+            ) : (
+              <div style={{ textAlign: 'center' }}>
+                <Lock size={24} style={{ marginBottom: '.5rem', opacity: .4 }} />
+                <span className="f-cinzel" style={{ fontSize: '.82rem', color: 'rgba(255,245,232,.4)' }}>Sign in to create or join a watch party</span>
               </div>
             )}
           </section>
@@ -1350,9 +1512,9 @@ export default function DetailsContent({
                   onClick={loadMoreSimilar}
                   disabled={loadingSimilar}
                   className="btn-g f-cinzel"
-                  style={{ padding: '10px 28px', fontSize: '.78rem',  letterSpacing: '.06em', opacity: loadingSimilar ? 0.6 : 1, cursor: loadingSimilar ? 'wait' : 'pointer' }}
+                  style={{ padding: '10px 28px', fontSize: '.78rem',  letterSpacing: '.06em', opacity: loadingSimilar ? 0.6 : 1, cursor: loadingSimilar ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}
                 >
-                  {loadingSimilar ? '✦ Loading...' : 'Show More Similar'}
+                  {loadingSimilar ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading</> : 'Show More Similar'}
                 </button>
               </div>
             )}
@@ -1378,7 +1540,7 @@ export default function DetailsContent({
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
                 <IntelligentPlayer
                   key={`player-${activeProviderName}-${epIdx}`}
-                  providers={[{ name: activeProviderName, url: activeProviderUrl, tier: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.tier as 1 | 2 | 3) || 2, category: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.category as 'all' | 'anime') || 'all', proxied: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.proxied as boolean) || false }]}
+                  providers={[{ name: activeProviderName, url: activeProviderUrl, tier: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.tier as 1 | 2 | 3) || 2, category: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.category as 'all' | 'anime') || 'all', proxied: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.proxied as boolean) || false, noSandbox: providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.noSandbox }]}
                   mediaId={show.id}
                   season={season}
                   episode={epIdx}
@@ -1409,12 +1571,12 @@ export default function DetailsContent({
                   {show.title}{show.media_type === 'tv' ? ` · S${season} E${epIdx}` : ''}
                 </div>
                 <button
-                  onClick={() => setPlaying(false)}
+                  onClick={exitPlayer}
                   className="btn-g"
-                  style={{ padding: '8px 18px', fontSize: '.78rem', pointerEvents: 'auto', flexShrink: 0 }}
+                  style={{ padding: '8px 18px', fontSize: '.78rem', pointerEvents: 'auto', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   aria-label="Exit player"
                 >
-                  ✕ Exit
+                  <CloseIcon size={13} /> Exit
                 </button>
               </div>
 
@@ -1472,7 +1634,7 @@ export default function DetailsContent({
           ) : (
             <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
               <div className="f-cinzel" style={{ fontSize: '.9rem', color: 'rgba(255,245,232,.5)', letterSpacing: '.06em' }}>No sources found</div>
-              <button className="btn-g" onClick={() => setPlaying(false)} style={{ padding: '10px 28px', fontSize: '.82rem' }}>Go Back</button>
+              <button className="btn-g" onClick={exitPlayer} style={{ padding: '10px 28px', fontSize: '.82rem' }}>Go Back</button>
             </div>
           )}
         </div>

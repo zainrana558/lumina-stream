@@ -1,6 +1,7 @@
 import { CANONICAL_BASE, TMDB_IMAGE_BASE } from '@/lib/seo/constants';
 import { tmdbFetchPages } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
+import { getStableLastmods } from '@/lib/sitemap-lastmod';
 import { mediaUrl } from '@/lib/slug';
 import { fallbackUrl, escXml } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
@@ -51,6 +52,7 @@ export async function GET() {
     all.sort((a, b) => b.popularity - a.popularity);
     const capped = all.slice(0, 2000);
 
+    const lastmods = await getStableLastmods('images', capped.map(item => item.id));
     const entries = capped.map(item => {
       const title = escXml(item.title || item.name || 'Untitled');
       const year = (item.release_date || item.first_air_date)?.slice(0, 4) || '';
@@ -66,7 +68,7 @@ export async function GET() {
       }
 
       if (images.length === 0) return null;
-      return `<url>\n<loc>${pageUrl}</loc>\n<lastmod>${now}</lastmod>\n${images.join('\n')}\n</url>`;
+      return `<url>\n<loc>${pageUrl}</loc>\n<lastmod>${lastmods[item.id] || now}</lastmod>\n${images.join('\n')}\n</url>`;
     }).filter(Boolean).join('\n\n');
 
     const body = entries || fallbackUrl(CANONICAL_BASE, now);

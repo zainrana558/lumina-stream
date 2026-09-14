@@ -7,6 +7,8 @@
  * but don't have dedicated themed pages — they route to /browse?genre=<name>.
  */
 
+import type { LucideIcon } from 'lucide-react';
+import { Sparkles, Palette, Ghost, Heart, Search, Wand2 } from 'lucide-react';
 import type { GenreCard } from '@/types';
 
 // ─── Featured (portal) genre definitions ────────────────────────────────────
@@ -14,7 +16,7 @@ import type { GenreCard } from '@/types';
 export interface PortalGenreConfig {
   key: string;
   name: string;
-  em: string;
+  icon: LucideIcon;
   col: string;
   tc: string;
   genreId: number;
@@ -34,7 +36,7 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
   {
     key: 'anime',
     name: 'Anime',
-    em: '\u26A1',
+    icon: Sparkles,
     col: 'linear-gradient(135deg,#0A0012,#2A0055)',
     tc: '#FF0096',
     genreId: 16,
@@ -48,14 +50,14 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
   {
     key: 'cartoon',
     name: 'Cartoon',
-    em: '\uD83C\uDF38',
+    icon: Palette,
     col: 'linear-gradient(135deg,#87CEEB,#B0E2FF)',
     tc: '#2D5A1B',
     genreId: 16,
     mediaType: 'tv',
     source: 'tmdb',
-    extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50', with_original_language: 'en' },
-    keywordParams: { with_keywords: '210755', sort_by: 'popularity.desc', vote_count_gte: '30' },
+    extraParams: { sort_by: 'popularity.desc', 'vote_count.gte': '50', with_original_language: 'en' },
+    keywordParams: { with_keywords: '210755', sort_by: 'popularity.desc', 'vote_count.gte': '30' },
     title: 'Cartoons',
     description: 'Explore classic and modern cartoon series. Laugh, adventure, and enjoy animated shows for all ages.',
     subGenres: ['Animation', 'Comedy', 'Family', 'Adventure', 'Fantasy', 'Music'],
@@ -63,13 +65,13 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
   {
     key: 'horror',
     name: 'Horror',
-    em: '\uD83D\uDC41',
+    icon: Ghost,
     col: 'linear-gradient(135deg,#000,#3D0000)',
     tc: '#DC143C',
     genreId: 27,
     mediaType: 'movie',
     source: 'tmdb',
-    extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50' },
+    extraParams: { sort_by: 'popularity.desc', 'vote_count.gte': '50' },
     title: 'Horror',
     description: 'Face your darkest fears with the best horror movies. From psychological thrillers to supernatural terror, find your next scare.',
     subGenres: ['Horror', 'Thriller', 'Mystery', 'Sci-Fi', 'Fantasy', 'Action'],
@@ -77,13 +79,13 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
   {
     key: 'romance',
     name: 'Romance',
-    em: '\uD83D\uDC95',
+    icon: Heart,
     col: 'linear-gradient(135deg,#1A0005,#5A001A)',
     tc: '#FF6B8A',
     genreId: 10749,
     mediaType: 'movie',
     source: 'tmdb',
-    extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50' },
+    extraParams: { sort_by: 'popularity.desc', 'vote_count.gte': '50' },
     title: 'Romance',
     description: 'Feel every heartbeat with romantic movies. From passionate love stories to tender moments, discover the best romance films.',
     subGenres: ['Romance', 'Drama', 'Comedy', 'Fantasy', 'Animation', 'Music'],
@@ -91,13 +93,13 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
   {
     key: 'mystery',
     name: 'Mystery',
-    em: '\uD83D\uDD0D',
+    icon: Search,
     col: 'linear-gradient(135deg,#050A15,#0A1A35)',
     tc: '#FFB347',
     genreId: 9648,
     mediaType: 'movie',
     source: 'tmdb',
-    extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50' },
+    extraParams: { sort_by: 'popularity.desc', 'vote_count.gte': '50' },
     title: 'Mystery',
     description: 'Unravel the unknown with mystery and thriller movies. From detective stories to mind-bending puzzles, keep guessing.',
     subGenres: ['Mystery', 'Thriller', 'Crime', 'Drama', 'Sci-Fi', 'Fantasy'],
@@ -105,13 +107,13 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
   {
     key: 'fantasy',
     name: 'Fantasy',
-    em: '\u2728',
+    icon: Wand2,
     col: 'linear-gradient(135deg,#0D0520,#1A0840)',
     tc: '#C39BD3',
     genreId: 14,
     mediaType: 'movie',
     source: 'tmdb',
-    extraParams: { sort_by: 'popularity.desc', vote_count_gte: '50' },
+    extraParams: { sort_by: 'popularity.desc', 'vote_count.gte': '50' },
     title: 'Fantasy',
     description: 'Beyond imagination awaits. Explore epic fantasy movies with magical worlds, mythical creatures, and legendary adventures.',
     subGenres: ['Fantasy', 'Adventure', 'Action', 'Drama', 'Sci-Fi', 'Animation'],
@@ -142,7 +144,7 @@ export const PORTAL_NAME_SET = new Set(PORTAL_GENRES.map(g => g.name));
 export const GCARDS: GenreCard[] = PORTAL_GENRES.map(g => ({
   key: g.key,
   name: g.name,
-  em: g.em,
+  icon: g.icon,
   col: g.col,
   tc: g.tc,
 }));
@@ -152,6 +154,7 @@ export const GENRE_NAV_LINKS = PORTAL_GENRES.map(g => ({
   key: g.key,
   label: g.name,
   color: g.tc,
+  icon: g.icon,
 }));
 
 /** Full genre list for Browse page filter chips (portal + browse-only) */

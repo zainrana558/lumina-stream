@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { studioSlug } from '@/lib/slug';
@@ -10,7 +11,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/studios`;
 
 export const metadata: Metadata = {
-  title: 'Production Studios - Film & TV Studios Directory | Lumovia',
+  title: 'Production Studios - Film & TV Studios Directory',
   description:
     'Explore major film and TV production studios including Warner Bros, Disney, Netflix, Pixar, and more. Discover which studios produce your favorite movies, TV shows, anime, and streaming originals on Lumovia.',
   alternates: { canonical: pageUrl },
@@ -165,15 +166,15 @@ export default function StudiosPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        dangerouslySetInnerHTML={{ __html: safeJsonLd({
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
           mainEntity: [

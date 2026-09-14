@@ -1,6 +1,7 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetchPages } from '@/lib/tmdb/sitemap-fetch';
 import { getSitemapCache, setSitemapCache } from '@/lib/sitemap-cache';
+import { getStableLastmods } from '@/lib/sitemap-lastmod';
 import { personUrl } from '@/lib/slug';
 import { fallbackUrl } from '@/lib/escXml';
 import { NextResponse } from 'next/server';
@@ -49,9 +50,10 @@ export async function GET() {
       return p.known_for_department === 'Directing';
     });
 
+    const lastmods = await getStableLastmods('directors', directors.map(p => p.id));
     const urls = directors.map(p => {
       const loc = `${CANONICAL_BASE}${personUrl(p.id, p.name)}`;
-      return `<url>\n<loc>${loc}</loc>\n<lastmod>${now}</lastmod>\n</url>`;
+      return `<url>\n<loc>${loc}</loc>\n<lastmod>${lastmods[p.id] || now}</lastmod>\n</url>`;
     }).join('\n\n');
 
     const body = urls || fallbackUrl(CANONICAL_BASE, now);

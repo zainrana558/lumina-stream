@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Lock, Delete } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface PinEntryModalProps {
@@ -171,8 +172,8 @@ export default function PinEntryModal({ profileName, profileColor, onSubmit, onC
         </div>
 
         {error && (
-          <div style={{ fontSize: '.72rem', color: locked ? '#FF6B8A' : '#FF4A4A', marginBottom: '1rem', minHeight: 18 }}>
-            {locked ? `🔒 ${error.replace(/locked for \d+ seconds\./, `locked for ${lockTimer}s.`)}` : error}
+          <div style={{ fontSize: '.72rem', color: locked ? '#FF6B8A' : '#FF4A4A', marginBottom: '1rem', minHeight: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+            {locked ? <><Lock size={12} /> {error.replace(/locked for \d+ seconds\./, `locked for ${lockTimer}s.`)}</> : error}
           </div>
         )}
         {!error && <div style={{ height: 18, marginBottom: '1rem' }} />}
@@ -196,9 +197,10 @@ export default function PinEntryModal({ profileName, profileColor, onSubmit, onC
                   color: '#FFF5E8', fontSize: '1.2rem',
                   cursor: locked ? 'not-allowed' : 'pointer',
                   opacity: locked ? 0.3 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                ⌫
+                <Delete size={20} />
               </button>
             ) : (
               <button

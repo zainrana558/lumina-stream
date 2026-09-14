@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { isSupabaseConfigured, createClient } from '@/lib/supabase/server';
-import { requireAuth, getVerifiedProfileId } from '@/lib/auth';
+import { requireAuth, getVerifiedProfileId, HttpError } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,27 +44,39 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient();
-    const { data } = await supabase
-      .from('watch_progress')
-      .select('position, duration, updated_at')
-      .eq('profile_id', profileId)
-      .eq('media_id', Number(mediaId))
-      .maybeSingle();
+    const runQuery = (cols: string) =>
+      supabase
+        .from('watch_progress')
+        .select(cols)
+        .eq('profile_id', profileId)
+        .eq('media_id', Number(mediaId))
+        .maybeSingle();
 
-    if (!data) {
+    let res = await runQuery('position, progress, duration, updated_at');
+    // Tolerate a live DB without the `watch_progress.position` column
+    // (migration 006) — fall back to deriving it from progress% × duration.
+    if (res.error && /position/.test(res.error.message || '')) {
+      res = await runQuery('progress, duration, updated_at');
+    }
+
+    const row = res.data as Record<string, unknown> | null;
+    if (res.error || !row) {
       return NextResponse.json({ position: 0, duration: 0 }, { headers: rateLimitHeaders(rl) });
     }
 
+    const duration = (row.duration as number) || 0;
+    const progressPct = (row.progress as number) || 0;
+    const position =
+      (row.position as number | undefined) ??
+      (duration > 0 && progressPct > 0 ? Math.round((progressPct / 100) * duration) : 0);
+
     return NextResponse.json(
-      {
-        position: (data.position as number) || 0,
-        duration: (data.duration as number) || 0,
-        updatedAt: data.updated_at,
-      },
+      { position, duration, updatedAt: row.updated_at },
       { headers: rateLimitHeaders(rl) },
     );
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: msg }, { status });
   }
 }

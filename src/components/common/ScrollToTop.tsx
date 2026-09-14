@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ArrowUp } from 'lucide-react';
 
 export default function ScrollToTop() {
   const [visible, setVisible] = useState(false);
@@ -53,7 +54,7 @@ export default function ScrollToTop() {
           style={{ transition: 'stroke-dashoffset .15s ease-out' }}
         />
       </svg>
-      <span style={{ position: 'relative', zIndex: 1 }}>↑</span>
+      <span style={{ position: 'relative', zIndex: 1, display: 'flex' }}><ArrowUp size={16} /></span>
     </button>
   );
 }

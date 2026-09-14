@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { localUserIdFromCookies } from "@/lib/supabase/cookie-session";
 
 interface AuthResult {
   supabase: SupabaseClient;
@@ -8,55 +9,29 @@ interface AuthResult {
 }
 
 /**
- * Lightweight JWT decoder — extracts payload without calling Supabase Auth.
- * Validates expiry and basic structure, but does NOT verify the signature
- * (Supabase RLS handles signature verification at the Postgres level).
- *
- * This saves 1 network round-trip to Supabase Auth per request.
+ * Thrown by requireAuth()/verifyProfileOwnership() so route handlers' generic
+ * `catch (error) { ... }` blocks can return the right status (401/403)
+ * instead of defaulting every auth failure to 500 — confirmed live: joining
+ * a watch-party room with a profile_id that fails ownership verification
+ * returned HTTP 500 with the message "Profile not found or access denied",
+ * which is a 403 condition, not a server error.
  */
-function decodeJwtLocal(token: string): { sub: string; exp?: number } | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-
-    // Decode base64url payload
-    const payload = parts[1];
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonStr = atob(base64);
-    const data = JSON.parse(jsonStr);
-
-    // Must have a subject (user ID)
-    if (typeof data.sub !== 'string' || !data.sub) return null;
-
-    // Check expiry
-    if (data.exp && Date.now() >= data.exp * 1000) return null;
-
-    return { sub: data.sub, exp: data.exp };
-  } catch {
-    return null;
+export class HttpError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = 'HttpError';
   }
 }
 
 /**
- * Extract JWT from cookies and decode locally.
- * Falls back to Supabase Auth API call if cookie is missing or expired.
+ * Extract the user id from the Supabase session cookie and decode it locally.
+ * Falls back to a Supabase Auth API call (in requireAuth) if the cookie is
+ * missing, malformed, or expired. Saves ~1 network round-trip per request.
+ * See {@link localUserIdFromCookies} for the cookie-format handling.
  */
 async function getUserIdFromCookies(): Promise<string | null> {
   const cookieStore = await cookies();
-  const allCookies = cookieStore.getAll();
-
-  // Supabase SSR stores tokens as sb-<ref>-access-token
-  const accessTokenCookie = allCookies.find(
-    c => c.name.includes('-access-token') || c.name === 'sb-access-token'
-  );
-
-  if (!accessTokenCookie?.value) return null;
-
-  const decoded = decodeJwtLocal(accessTokenCookie.value);
-  if (decoded) return decoded.sub;
-
-  // Token expired or malformed — return null (caller can decide to refresh)
-  return null;
+  return localUserIdFromCookies(cookieStore.getAll());
 }
 
 export async function requireAuth(): Promise<AuthResult> {
@@ -72,8 +47,33 @@ export async function requireAuth(): Promise<AuthResult> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  if (!user) throw new HttpError("Not authenticated", 401);
   return { supabase, userId: user.id };
+}
+
+/**
+ * Gate for operator-only pages/routes (e.g. /admin/health). requireAuth()
+ * alone only proves the caller is SOME signed-in user — there is no admin
+ * role in the schema, so every route using requireAuth() is reachable by
+ * any registered account. Checks the authenticated user's email against the
+ * ADMIN_EMAILS allowlist (comma-separated) in the environment.
+ */
+export async function requireAdmin(): Promise<AuthResult> {
+  const { supabase, userId } = await requireAuth();
+  const allowlist = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (allowlist.length === 0) throw new HttpError("Admin access not configured", 403);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const email = user?.email?.toLowerCase();
+  if (!email || !allowlist.includes(email)) {
+    throw new HttpError("Admin access required", 403);
+  }
+  return { supabase, userId };
 }
 
 export async function verifyProfileOwnership(
@@ -87,7 +87,7 @@ export async function verifyProfileOwnership(
     .eq("id", profileId)
     .eq("account_id", userId)
     .maybeSingle();
-  if (!profile) throw new Error("Profile not found or access denied");
+  if (!profile) throw new HttpError("Profile not found or access denied", 403);
 }
 
 /**

@@ -4,7 +4,7 @@
   "installCommand": "npm install",
   "headers": [
     {
-      "source": "/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap|embed).*)",
+      "source": "/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap|embed|watchlist|stats|settings|activity|collections|year-in-review|profiles).*)",
       "headers": [
         {
           "key": "Cache-Control",

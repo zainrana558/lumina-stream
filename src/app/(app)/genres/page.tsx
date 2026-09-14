@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import Link from 'next/link';
 import { PORTAL_GENRES, BROWSE_ONLY_GENRES, TMDB_GENRE_ID_MAP, type PortalGenreConfig } from '@/config/genres';
@@ -10,7 +11,7 @@ const siteUrl = CANONICAL_BASE;
 const pageUrl = `${siteUrl}/genres`;
 
 export const metadata: Metadata = {
-  title: 'All Genres - Browse Movies, TV Shows, Anime & Cartoons by Genre | Lumovia',
+  title: 'All Genres - Browse Movies, TV Shows, Anime & Cartoons by Genre',
   description:
     'Browse the complete genre catalog on Lumovia. Explore dedicated genre portals for Anime, Cartoon, Horror, Romance, Mystery, and Fantasy, plus 20+ additional genres including Action, Comedy, Drama, Sci-Fi, Thriller, Documentary, Crime, and more. Each genre page features curated titles, genre-specific descriptions, sub-genre filters, and personalized recommendations.',
   alternates: { canonical: pageUrl },
@@ -250,9 +251,9 @@ export default async function GenresPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />
 
       <style>{`
         .genre-portal-card {
@@ -373,7 +374,7 @@ export default async function GenresPage() {
                 {/* Content */}
                 <div className="portal-card-content">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <span style={{ fontSize: '1.3rem' }}>{g.em}</span>
+                    <g.icon size={21} color="#FFF5E8" />
                     <span className="f-cinzel-dec" style={{
                       fontSize: '1.1rem',
                       color: '#FFF5E8',

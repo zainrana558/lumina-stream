@@ -19,9 +19,11 @@ interface GenreIntroProps {
 }
 
 export default function GenreIntro({ text, genre }: GenreIntroProps) {
-  const [revealed, setRevealed] = useState<boolean[]>(() => new Array(text.split('').length).fill(false));
+  // Spread (not .split('')) so emoji / astral chars stay whole — otherwise a
+  // surrogate pair like 🌈 gets torn into two replacement chars (mojibake).
+  const chars = [...text];
+  const [revealed, setRevealed] = useState<boolean[]>(() => new Array(chars.length).fill(false));
   const s = GENRE_STYLES[genre] || GENRE_STYLES.anime;
-  const chars = text.split('');
 
   useEffect(() => {
     // Reset revealed array when text/genre changes (e.g. navigating between genre pages)
@@ -57,7 +59,10 @@ export default function GenreIntro({ text, genre }: GenreIntroProps) {
         if (genre === 'fantasy') color = RAINBOW[i % RAINBOW.length];
         if (genre === 'cartoon') color = RAINBOW[i % RAINBOW.length];
 
-        const jx = isHorror ? (Math.random() - 0.5) * s.jitter : isRevealed ? 0 : 0;
+        // Only jitter AFTER the char is revealed — `isRevealed` is false during
+        // SSR and at hydration (timers flip it later), so Math.random() never
+        // runs on the server-vs-client first paint → no hydration mismatch.
+        const jx = (isHorror && isRevealed) ? (Math.random() - 0.5) * s.jitter : 0;
 
         return (
           <span

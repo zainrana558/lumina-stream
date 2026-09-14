@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useRef, useCallback, useState } from 'react';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import type { MediaItem, TMDBShow } from '@/types';
 import { tmdbToMedia } from '@/types';
 import Card from './Card';
@@ -16,6 +17,22 @@ interface ContentRowProps {
   loadMoreEndpoint?: string;
   /** Extra query params appended to the endpoint */
   loadMoreParams?: Record<string, string>;
+}
+
+/**
+ * Single-type TMDB endpoints (/movie/*, /tv/*, /discover/movie, /discover/tv)
+ * don't include a `media_type` field per item — only multi-type endpoints
+ * (/trending/*, /search/multi, /discover/multi) do. tmdbToMedia() falls back
+ * to 'tv' when media_type is missing, so paginating a movie-only row without
+ * forcing it here mislabels every loaded item as a TV show and sends its
+ * card link to the wrong details endpoint. Infer from the endpoint string
+ * (the only type context "Show More" has) rather than trusting the response.
+ */
+function inferMediaType(endpoint?: string): 'movie' | 'tv' | undefined {
+  if (!endpoint) return undefined;
+  if (endpoint.startsWith('/movie/') || endpoint === '/discover/movie') return 'movie';
+  if (endpoint.startsWith('/tv/') || endpoint === '/discover/tv') return 'tv';
+  return undefined; // multi-type endpoint — trust the API's own media_type field
 }
 
 const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranked, cardRing = '', loadMoreEndpoint, loadMoreParams }: ContentRowProps) {
@@ -47,9 +64,10 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
       const res = await fetch(`/api/tmdb?endpoint=${loadMoreEndpoint}${qs}`);
       const data = await res.json();
       if (data.results && data.results.length > 0) {
+        const inferredType = inferMediaType(loadMoreEndpoint);
         const newItems = (data.results as TMDBShow[])
           .filter((r: TMDBShow) => r.poster_path)
-          .map((r: TMDBShow) => tmdbToMedia(r));
+          .map((r: TMDBShow) => tmdbToMedia(inferredType ? { ...r, media_type: inferredType } : r));
         const existingIds = new Set(allItems.map(i => i.id));
         const fresh = newItems.filter(i => !existingIds.has(i.id));
         setAllItems(prev => [...prev, ...fresh]);
@@ -69,9 +87,8 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
           <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>{title}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {([['←', -1], ['→', 1]] as const).map(([a, d]) => (
-            <button key={a} className="btn-icon" onClick={() => scroll(d)} aria-label={d < 0 ? 'Scroll left' : 'Scroll right'} style={{ width: 44, height: 44, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{a}</button>
-          ))}
+          <button className="btn-icon" onClick={() => scroll(-1)} aria-label="Scroll left" style={{ width: 44, height: 44, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ArrowLeft size={16} /></button>
+          <button className="btn-icon" onClick={() => scroll(1)} aria-label="Scroll right" style={{ width: 44, height: 44, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ArrowRight size={16} /></button>
         </div>
       </div>
       <div ref={rowRef} className="hide-scroll" style={{ display: 'flex', gap: 14, padding: '6px clamp(1rem,5vw,3rem)', overflowX: 'auto', overflowY: 'visible' }}>
@@ -101,7 +118,7 @@ const ContentRow = memo(function ContentRow({ title, sub, items, onSelect, ranke
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,179,71,.04)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
             >
               {loadingMore ? (
-                <div style={{ animation: 'spin 1.5s linear infinite', fontSize: '1.2rem' }}>✦</div>
+                <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite' }}><Loader2 size={19} /></div>
               ) : (
                 <>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>

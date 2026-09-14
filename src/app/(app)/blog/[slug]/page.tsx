@@ -12,6 +12,7 @@
  */
 
 import { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import { notFound } from 'next/navigation';
 import { tmdbFetch, tmdbFetchRaw } from '@/lib/tmdb/server';
 import { getAnimeDetail } from '@/lib/anilist/client';
@@ -101,9 +102,9 @@ ${template(
     show.type
   )}
 <div class="cta-block" style="margin-top:32px;padding:24px;border-radius:12px;background:linear-gradient(135deg,rgba(255,179,71,.1),rgba(139,120,255,.1));border:1px solid rgba(255,179,71,.2);text-align:center">
-  <p style="font-size:1.1rem;font-weight:700;color:#FFB347;margin:0 0 8px">🎬 Ready to Watch?</p>
+  <p style="font-size:1.1rem;font-weight:700;color:#FFB347;margin:0 0 8px">Ready to Watch?</p>
   <p style="margin:0 0 16px;color:rgba(255,245,232,.7)">Stream ${show.title} and thousands of more titles — completely free.</p>
-  <a href="/details/${show.id}" style="display:inline-block;padding:12px 32px;border-radius:50px;background:linear-gradient(175deg,#FFE566,#FFB347,#E07200);color:#05020A;font-weight:700;text-decoration:none;font-size:.9rem">▶ Watch Now</a>
+  <a href="/details/${show.id}" style="display:inline-block;padding:12px 32px;border-radius:50px;background:linear-gradient(175deg,#FFE566,#FFB347,#E07200);color:#05020A;font-weight:700;text-decoration:none;font-size:.9rem">Watch Now</a>
 </div>
 </article>`;
 }
@@ -318,9 +319,9 @@ export default async function BlogSlugPage({ params }: Props) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
       <BlogPost show={show} content={content} />
     </>
   );
@@ -400,17 +401,17 @@ function CuratedArticlePage({ article }: { article: BlogArticle }) {
   const curatedContent = `<article class="blog-content">
 ${article.content}
 <div class="cta-block" style="margin-top:32px;padding:24px;border-radius:12px;background:linear-gradient(135deg,rgba(255,179,71,.1),rgba(139,120,255,.1));border:1px solid rgba(255,179,71,.2);text-align:center">
-  <p style="font-size:1.1rem;font-weight:700;color:#FFB347;margin:0 0 8px">🎬 Explore More on Lumovia</p>
+  <p style="font-size:1.1rem;font-weight:700;color:#FFB347;margin:0 0 8px">Explore More on Lumovia</p>
   <p style="margin:0 0 16px;color:rgba(255,245,232,.7)">Discover thousands of movies, TV shows, and anime — completely free.</p>
-  <a href="/browse" style="display:inline-block;padding:12px 32px;border-radius:50px;background:linear-gradient(175deg,#FFE566,#FFB347,#E07200);color:#05020A;font-weight:700;text-decoration:none;font-size:.9rem">▶ Browse Catalog</a>
+  <a href="/browse" style="display:inline-block;padding:12px 32px;border-radius:50px;background:linear-gradient(175deg,#FFE566,#FFB347,#E07200);color:#05020A;font-weight:700;text-decoration:none;font-size:.9rem">Browse Catalog</a>
 </div>
 </article>`;
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
       <BlogPost show={showData} content={curatedContent} />
     </>
   );

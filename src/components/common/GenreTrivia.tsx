@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Lightbulb } from 'lucide-react';
 
 const TRIVIA: Record<string, string[]> = {
   anime: [
@@ -85,12 +86,22 @@ interface GenreTriviaProps {
 }
 
 export default function GenreTrivia({ genre, color = 'rgba(255,245,232,.35)' }: GenreTriviaProps) {
-  const [fact, setFact] = useState(() => {
-    const facts = TRIVIA[genre];
-    if (!facts || facts.length === 0) return '';
-    return facts[Math.floor(Math.random() * facts.length)];
-  });
+  // Deterministic first fact (same on server and client) — Math.random() here
+  // picked a different fact on each side and triggered a hydration mismatch on
+  // every genre page. The rotation below still randomizes, just client-only
+  // after mount, which doesn't affect hydration.
+  const [fact, setFact] = useState(() => TRIVIA[genre]?.[0] || '');
   const [fading, setFading] = useState(false);
+
+  // One-time randomize after mount (and whenever `genre` changes), so repeat
+  // visits don't always start on fact #1. Deliberately depends on [genre] only
+  // — not `fact` — so it fires once per genre instead of looping.
+  useEffect(() => {
+    const facts = TRIVIA[genre];
+    if (!facts || facts.length === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate: randomize after mount so SSR/client-first-paint stay identical
+    setFact(facts[Math.floor(Math.random() * facts.length)]);
+  }, [genre]);
 
   useEffect(() => {
     const facts = TRIVIA[genre];
@@ -133,12 +144,11 @@ export default function GenreTrivia({ genre, color = 'rgba(255,245,232,.35)' }: 
         transition: 'opacity 0.5s ease',
       }}>
         <span className="f-crimson" style={{
-          fontSize: '.85rem',
-          
+          display: 'flex',
           color: color,
           flexShrink: 0,
           fontWeight: 600,
-        }}>💡</span>
+        }}><Lightbulb size={14} /></span>
         <span className="f-crimson" style={{
           
           fontSize: 'clamp(.72rem,.85vw,.82rem)',

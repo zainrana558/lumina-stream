@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useOAuth } from '@/hooks/useOAuth';
+import { GoogleLogo, GithubLogo } from '@/components/common/BrandIcons';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -22,6 +24,16 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
+      // Server-side brute-force gate — checked before the Supabase call so
+      // repeated failed attempts against this form are rate-limited by the
+      // app itself, not only by Supabase Auth's own backend limits.
+      const gate = await fetch('/api/auth/attempt-check', { method: 'POST' });
+      if (!gate.ok) {
+        const data = await gate.json().catch(() => null);
+        setError(data?.error || 'Too many attempts. Please wait a minute before trying again.');
+        return;
+      }
+
       const { error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -57,15 +69,17 @@ export default function LoginForm() {
             className="auth-btn-oauth"
             onClick={() => handleOAuth('google')}
             disabled={loading || oauthLoading}
+            aria-label="Continue with Google"
           >
-            G
+            <GoogleLogo size={17} /> Google
           </button>
           <button
             className="auth-btn-oauth"
             onClick={() => handleOAuth('github')}
             disabled={loading || oauthLoading}
+            aria-label="Continue with GitHub"
           >
-            ⚡
+            <GithubLogo size={17} /> GitHub
           </button>
         </div>
 
@@ -81,7 +95,7 @@ export default function LoginForm() {
             <input
               className="auth-input"
               type="email"
-              placeholder="you@lumina.stream"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -107,8 +121,9 @@ export default function LoginForm() {
                 className="auth-toggle-pw"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? '🙈' : '👁'}
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
             </div>
           </div>
@@ -118,7 +133,7 @@ export default function LoginForm() {
             type="submit"
             disabled={loading}
           >
-            {loading ? <div className="auth-spinner" /> : 'Enter the Dream ✦'}
+            {loading ? <div className="auth-spinner" /> : <>Enter the Dream <ArrowRight size={16} /></>}
           </button>
         </form>
 

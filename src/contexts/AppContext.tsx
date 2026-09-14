@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 
 export interface UserProfile {
@@ -53,6 +53,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  // True while a profile fetch is in flight for the current user. Kept
+  // separate from authLoading's own setState calls — see the combined
+  // `isAuthLoading` exposed below.
+  const [profileFetching, setProfileFetching] = useState(false);
   const [pipState, setPipState] = useState<PipState | null>(null);
   const [confettiActive, setConfettiActive] = useState(false);
   const [kidsMode, setKidsMode] = useState(false);
@@ -69,6 +73,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (userId === lastFetchedUserId.current) return;
     lastFetchedUserId.current = userId;
 
+    setProfileFetching(true);
     try {
       const res = await fetch('/api/active-profile');
       if (res.ok) {
@@ -82,6 +87,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     } catch {
       // silent
+    } finally {
+      setProfileFetching(false);
     }
   }, []);
 
@@ -111,7 +118,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
           if (!cancelled) {
             setUser(session?.user ?? null);
-            if (!session?.user) setProfile(null);
+            if (!session?.user) {
+              setProfile(null);
+              setProfileFetching(false);
+            } else if (session.user.id !== lastFetchedUserId.current) {
+              // Only for a genuinely new/different user — onAuthStateChange
+              // also fires on TOKEN_REFRESHED for an already-known user
+              // whose profile is already loaded; setting this unconditionally
+              // would re-arm profileFetching on every token refresh and never
+              // get cleared (fetchProfile short-circuits for a userId it's
+              // already fetched), leaving combinedAuthLoading stuck true.
+              //
+              // Flip this in the SAME batched update as setUser (not in the
+              // separate fetchProfile effect below) so any component reading
+              // both `user` and this combined loading flag never sees a
+              // render where user is set but profile-fetch-pending isn't —
+              // see combinedAuthLoading below for why that gap mattered.
+              setProfileFetching(true);
+            }
+            // Previously cleared in the outer finally below, which ran as
+            // soon as this listener was *registered* — before Supabase had
+            // actually resolved the session. That left a window where
+            // authLoading was already false but `user` hadn't been set yet,
+            // so pages gating a redirect on `user && !profile && !authLoading`
+            // (watchlist/settings/activity/collections/stats) fired the
+            // redirect to /profiles the instant `user` arrived a moment
+            // later, even with a profile already selected.
+            setAuthLoading(false);
           }
         });
 
@@ -122,8 +155,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           setAuthLoading(false);
         }
-      } finally {
-        if (!cancelled) setAuthLoading(false);
       }
     };
 
@@ -172,13 +203,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setConfettiActive(false), 500);
   }, []);
 
-  const value = {
-    user, profile, authLoading, supabaseReady, handleSignOut, refreshProfile,
+  // Consumers (watchlist/settings/activity/collections/stats) gate a
+  // redirect-to-/profiles on authLoading being false — that must also cover
+  // "we know who the user is but haven't finished checking their selected
+  // profile yet", or a logged-in user with a real profile gets bounced.
+  const combinedAuthLoading = authLoading || (!!user && profileFetching);
+
+  // Previously a fresh object literal every render — every one of the many
+  // useApp() consumers (header, nav, every authenticated page) re-rendered
+  // on ANY AppProvider state change, including ones unrelated to what that
+  // consumer actually reads (e.g. toggling pipState re-rendering the
+  // watchlist page). The individual setters/callbacks below are already
+  // stable (useCallback / useState setters), so memoizing just needs the
+  // values that actually change in its dependency array.
+  const value = useMemo(() => ({
+    user, profile, authLoading: combinedAuthLoading, supabaseReady, handleSignOut, refreshProfile,
     pipState, openPip, closePip,
     confettiActive, triggerConfetti,
     kidsMode, setKidsMode,
     searchOpen, setSearchOpen,
-  };
+  }), [
+    user, profile, combinedAuthLoading, supabaseReady, handleSignOut, refreshProfile,
+    pipState, openPip, closePip,
+    confettiActive, triggerConfetti,
+    kidsMode, searchOpen,
+  ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

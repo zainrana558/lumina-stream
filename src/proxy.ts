@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { localUserIdFromCookies } from "@/lib/supabase/cookie-session";
 
 // ── Middleware (Next.js middleware — must be named middleware.ts) ──────────
 // Auth, security headers, rate limiting.
@@ -11,23 +12,20 @@ import { type NextRequest, NextResponse } from "next/server";
  * then falls back to supabase.auth.getUser() (which also refreshes it).
  */
 function localUserIdFromRequest(request: NextRequest): string | null {
-  try {
-    const c = request.cookies
-      .getAll()
-      .find((x) => x.name.includes("-access-token") || x.name === "sb-access-token");
-    if (!c?.value) return null;
-    let raw = c.value;
-    // supabase-ssr may store a base64- prefixed / chunked JSON array
-    if (raw.startsWith("base64-")) raw = atob(raw.slice(7));
-    const token = raw.startsWith("[") ? (JSON.parse(raw)[0] as string) : raw;
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const p = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    if (!p?.sub || (p.exp && Date.now() >= p.exp * 1000 - 30_000)) return null;
-    return p.sub as string;
-  } catch {
-    return null;
-  }
+  return localUserIdFromCookies(request.cookies.getAll());
+}
+
+// ── Protected paths — the ONLY routes an unauthenticated visitor should be
+// bounced to /login for. Everything else that reaches the auth-check branch
+// (i.e. isn't on the public allowlist below) is either a legitimate page whose
+// own UI handles "not signed in", or doesn't exist — either way it should fall
+// through to Next's normal routing (a real 404 for the latter), not get
+// redirected to a login wall. Audit finding F-06: `/anime` and even
+// deliberately-bogus URLs like `/totally-fake-path` were both landing on the
+// Sign In screen because this used to be unconditional.
+const PROTECTED_PREFIXES = ["/watchlist", "/stats", "/settings", "/activity", "/collections", "/year-in-review", "/profiles"];
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
 // ── Public paths — no auth required ────────────────────────────────────────
@@ -46,6 +44,7 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/person/") ||
     pathname.startsWith("/movie/") ||
     pathname.startsWith("/tv/") ||
+    pathname === "/anime" ||
     pathname.startsWith("/anime/") ||
     pathname.startsWith("/actor/") ||
     pathname.startsWith("/country/") ||
@@ -90,6 +89,20 @@ function isPublicPath(pathname: string): boolean {
   );
 }
 
+/**
+ * Force a response to never be stored by a shared cache. Used for every
+ * protected-path response (auth redirects AND authenticated page HTML) — those
+ * depend on the caller's auth state / carry per-user data, and the blanket
+ * `public, s-maxage=300` rule in next.config.ts would otherwise let the CF
+ * cache-proxy serve one user's redirect or private page to everyone.
+ */
+function noStore<T extends NextResponse>(response: T): T {
+  response.headers.set("Cache-Control", "private, no-store, no-cache, must-revalidate");
+  response.headers.set("CDN-Cache-Control", "no-store");
+  response.headers.set("Vary", "Cookie");
+  return response;
+}
+
 // ── Security headers ────────────────────────────────────────────────────────
 // Note: X-Frame-Options is set here but intentionally stripped by the
 // Cloudflare Worker (workers/cache-proxy.js) so that video embed iframes
@@ -100,10 +113,15 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
   const isStatic = pathname.startsWith("/_next") || /\.(svg|png|jpg|jpeg|gif|webp|ico|woff2?)$/.test(pathname);
 
   if (!isStatic) {
-    // X-Frame-Options: NOT set here. This is a streaming site that embeds
-    // third-party video providers via iframes. Setting DENY/SAMEORIGIN
-    // would block all embed players. The page itself doesn't need framing
-    // protection since it's a standalone app.
+    // X-Frame-Options / frame-ancestors: previously omitted on the theory that
+    // it would block the site's own video embeds — that's a mix-up between two
+    // different directives. frame-src (set below, unaffected by this) governs
+    // iframes Lumovia embeds; frame-ancestors / X-Frame-Options govern whether
+    // Lumovia's OWN pages can be framed BY another site. SAMEORIGIN here stops
+    // a third party from framing Lumovia for clickjacking without touching the
+    // embed players at all (audit findings: original report's F-09/security
+    // notes, and the Round-9 GitHub audit's F-08).
+    response.headers.set("X-Frame-Options", "SAMEORIGIN");
     response.headers.set("X-Content-Type-Options",   "nosniff");
     response.headers.set("X-XSS-Protection",          "1; mode=block");
     response.headers.set("Referrer-Policy",           "strict-origin-when-cross-origin");
@@ -116,31 +134,33 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
       "Content-Security-Policy",
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://*.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://www.wvxhxwntulsdrt.com https://www.wvxhxwntusldrt.com https://www.wtumqlwqhw.com https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su https://vidsrc.win https://player.cinezo.live https://vidcore.org",
+        "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://*.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su https://vidsrc.win https://player.cinezo.live https://vidcore.org",
         "style-src 'self' 'unsafe-inline'",
         "font-src 'self' data: https://fonts.gstatic.com",
-        "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://img.youtube.com https://via.placeholder.com data: blob:",
+        // media.kitsu.app: added when Kitsu became the anime-fallback image
+        // source (Round 6) — this was missed then, silently blocking every
+        // Kitsu-sourced anime poster/backdrop (CSP violations don't throw,
+        // they just drop the image), audit finding F-04.
+        "img-src 'self' https://image.tmdb.org https://s4.anilist.co https://media.kitsu.app https://img.youtube.com https://via.placeholder.com https://flagcdn.com data: blob:",
         "media-src 'self' https: blob:",
-        // Known embed providers + CDN subdomains they redirect to
-        "frame-src 'self' https: http: data: blob:"
-          + " https://vidsrc.su https://vidsrc.ru https://vidsrc.io https://vidsrc.me"
-          + " https://vidsrc.cc https://vidsrc.to https://vidsrc.rip https://vidsrc.xyz"
-          + " https://vidsrc.in https://vidsrc.net https://vidsrc.mn https://vidsrc.dev"
-          + " https://vidsrc.vip https://vidsrc.pro https://vidsrc.pm https://vidsrc.mov"
-          + " https://vidsrc.link https://vidsrc.fyi https://vidsrc.win"
-          + " https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su"
-          + " https://embed.su https://2embed.cc https://autoembed.co"
-          + " https://streamsilk.com https://streamlare.com https://nontongo.win"
-          + " https://filemoon.sx https://series9.io https://api.series9.io"
-          + " https://vaplayer.ru https://anyembed.xyz https://vidlink.pro"
-          + " https://embed.filmu.in https://pstream.org https://iframe.pstream.org"
-          + " https://player.cinezo.live https://vidcore.org"
-          + " https://vidbinge.com https://vidsrc.in https://embed.smashystream.com"
-          // Broad CDN patterns providers commonly redirect to
-          + " https://cf.*.site https://*.cloudfront.net https://*.fastly.net"
-          + " https://*.m3u8.click https://*.vidplay.site https://*.vidsrc.*",
-        "connect-src 'self' https: https://*.supabase.co https://*.supabase.com https://*.popads.net https://*.propellerads.com https://*.highperformancedformats.com",
+        // Embed players are third-party and rotate domains/CDNs constantly, so
+        // `https:` (any secure origin) is the only workable allowance. An
+        // explicit per-domain list here was both redundant (— `https:` already
+        // covers it) and, worse, contained invalid tokens (`https://cf.*.site`,
+        // `https://*.vidsrc.*` — a `*` may only lead a host) that the browser
+        // rejected and logged as a CSP error on every page load.
+        "frame-src 'self' https: data: blob:",
+        // wss: explicitly required for Supabase Realtime's websocket — `https:`
+        // does NOT cover the `wss:` scheme, so this was silently blocking the
+        // Realtime subscriptions added for NotificationBell/WatchPartyPanel
+        // (confirmed via a real browser: connection blocked, no console error
+        // shown to the user, badge/chat just never updated).
+        "connect-src 'self' https: wss://*.supabase.co wss://*.supabase.com https://*.supabase.co https://*.supabase.com https://*.popads.net https://*.propellerads.com https://*.highperformancedformats.com",
         "worker-src 'self' blob:",
+        // Defense-in-depth alongside X-Frame-Options: SAMEORIGIN below —
+        // doesn't affect the embed iframes Lumovia itself loads (that's
+        // frame-src, above); this only governs who may frame Lumovia's pages.
+        "frame-ancestors 'self'",
       ].join("; ")
     );
   }
@@ -229,7 +249,10 @@ export default async function middleware(request: NextRequest) {
   // forces full SSR + TMDB API calls on EVERY page view (~66k Worker
   // invocations/day). Public pages don't need auth — skip it.
   if (isPublicPath(pathname)) {
-    const response = NextResponse.next({ request });
+    // Bare next() — passing `{ request }` (for header rewrites we don't do here)
+    // makes middleware emit a concrete 200 response that pins the final status,
+    // so a page's notFound() renders the 404 body but can't set a 404 status.
+    const response = NextResponse.next();
 
     // Still rate-limit API routes even on public paths
     if (pathname.startsWith("/api/")) {
@@ -237,7 +260,7 @@ export default async function middleware(request: NextRequest) {
       if (!isBot(request.headers.get("user-agent"))) {
         const rl = checkGlobalRateLimit(ip);
         if (!rl.success) {
-          return NextResponse.json(
+          const limited = NextResponse.json(
             { error: "Too many requests. Please slow down." },
             {
               status: 429,
@@ -248,6 +271,8 @@ export default async function middleware(request: NextRequest) {
               },
             }
           );
+          setSecurityHeaders(limited, pathname, request);
+          return limited;
         }
         response.headers.set("X-RateLimit-Remaining", String(rl.remaining));
       }
@@ -302,14 +327,22 @@ export default async function middleware(request: NextRequest) {
     }
     const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
 
-    // Unauthenticated → /login
+    // Unauthenticated → /login, but only for actually-protected routes. Anything
+    // else that isn't on the public allowlist falls through to Next's normal
+    // routing (a real 404 for a route that doesn't exist) instead of a login
+    // wall — see the isProtectedPath comment above (audit finding F-06).
     if (!user && !isAuthPage) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      if (!isProtectedPath(pathname)) {
+        const response = NextResponse.next();
+        setSecurityHeaders(response, pathname, request);
+        return response;
+      }
+      return noStore(NextResponse.redirect(new URL("/login", request.url)));
     }
 
     // Authenticated + visiting auth page → profiles
     if (user && isAuthPage) {
-      return NextResponse.redirect(new URL("/profiles", request.url));
+      return noStore(NextResponse.redirect(new URL("/profiles", request.url)));
     }
 
     // Validate profile_id cookie ownership (prevent cookie-stuffing)
@@ -325,42 +358,52 @@ export default async function middleware(request: NextRequest) {
             .maybeSingle();
 
           if (!profile) {
-            supabaseResponse.cookies.set("profile_id", "", {
+            // Bug: the clear-cookie header was previously set on
+            // `supabaseResponse`, but the function returned a *different*,
+            // freshly-constructed NextResponse.redirect() — the clearing
+            // header never reached the browser, so the stale cookie
+            // persisted and every subsequent request re-triggered this same
+            // redirect, an infinite loop (confirmed live: net::ERR_TOO_MANY_REDIRECTS
+            // whenever a selected profile is deleted, e.g. from another
+            // device/tab, while this browser still holds its cookie).
+            const redirect = noStore(NextResponse.redirect(new URL("/profiles", request.url)));
+            redirect.cookies.set("profile_id", "", {
               path:     "/",
               maxAge:   0,
               httpOnly: true,
               secure:   process.env.NODE_ENV === "production",
               sameSite: "lax",
             });
-            return NextResponse.redirect(new URL("/profiles", request.url));
+            return redirect;
           }
         } catch {
-          supabaseResponse.cookies.set("profile_id", "", {
+          const redirect = NextResponse.redirect(new URL("/profiles", request.url));
+          redirect.cookies.set("profile_id", "", {
             path:     "/",
             maxAge:   0,
             httpOnly: true,
             secure:   process.env.NODE_ENV === "production",
             sameSite: "lax",
           });
-          return NextResponse.redirect(new URL("/profiles", request.url));
+          return redirect;
         }
       }
     }
 
     setSecurityHeaders(supabaseResponse, pathname, request);
 
-    // ── Restore public caching for SSG/ISR pages ─────────────────────────
-    // NextResponse.next({ request }) sets "private, no-cache, no-store"
-    // whenever the request object is passed (cookie mutation detection).
-    // This kills CDN caching for all pages. For public HTML pages, we
-    // restore a public cache policy so Vercel Edge + Cloudflare can cache.
-    // API routes set their own Cache-Control in their handlers.
+    // ── Caching for protected paths ──────────────────────────────────────
+    // We only reach here for paths NOT on the public allowlist — i.e. routes
+    // whose response depends on the caller's auth state or carries per-user
+    // data (/watchlist, /stats, /settings, /activity, /collections,
+    // /year-in-review, /profiles …). These must NEVER be stored by a shared
+    // cache: the CF cache-proxy keys purely on URL, so a public entry would
+    // leak one user's page (or their post-login redirect) to everyone.
+    // The blanket `public, s-maxage=300` rule in next.config.ts would do
+    // exactly that, so override it here.
     if (!pathname.startsWith("/api/")) {
-      supabaseResponse.headers.set(
-        "Cache-Control",
-        "public, s-maxage=300, stale-while-revalidate=600, max-age=60"
-      );
-      supabaseResponse.headers.set("X-MW-Cache", "set");
+      noStore(supabaseResponse);
+      supabaseResponse.headers.set("X-MW-Cache", "no-store");
     }
 
     return supabaseResponse;
@@ -370,11 +413,12 @@ export default async function middleware(request: NextRequest) {
     const isAuthPage   = pn.startsWith("/login") || pn.startsWith("/signup");
 
     if (!isAuthPage && !isPublicPath(pn)) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return noStore(NextResponse.redirect(new URL("/login", request.url)));
     }
 
-    const response = NextResponse.next({ request });
+    const response = NextResponse.next();
     setSecurityHeaders(response, pn, request);
+    if (!isPublicPath(pn) && !pn.startsWith("/api/")) noStore(response);
     return response;
   }
 }

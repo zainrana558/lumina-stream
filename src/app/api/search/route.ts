@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getValidatedEnv } from '@/lib/env';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { searchAnime, anilistToMediaItem } from '@/lib/anilist/client';
+import { searchMedia } from '@/lib/tmdb/server';
 import { tmdbToMedia } from '@/types';
 import type { TMDBShow, MediaItem } from '@/types';
 
@@ -57,6 +57,21 @@ function getAnilistFallbacks(q: string): string[] {
     // Try longest word only: "kurulus osman" → "kurulus"
     const longest = words.reduce((a, b) => a.length >= b.length ? a : b);
     if (longest.length >= 3) variants.push(longest);
+  }
+  // Individual words as-typed — catches "one word is fine, the other is
+  // typo'd" (e.g. "jojo's bizarre adventur" — "jojo's" alone still matches).
+  for (const w of words) if (!variants.includes(w)) variants.push(w);
+
+  // Progressively shorter prefixes of the whole (space-collapsed) query.
+  // AniList — like TMDB — matches prefixes reliably even when the tail is
+  // wrong (confirmed empirically: "Demon Slaye" finds "Demon Slayer" fine),
+  // so trimming from the end recovers typos that land late in the string.
+  // Kept short (a handful of lengths, not every single one) since this only
+  // runs after every other variant has already come up empty.
+  const minLen = Math.max(4, Math.ceil(noSpace.length * 0.5));
+  for (let len = q.length - 2; len >= minLen; len -= Math.max(1, Math.round((q.length - minLen) / 4))) {
+    const prefix = q.slice(0, len).trim();
+    if (prefix && !variants.includes(prefix)) variants.push(prefix);
   }
 
   return variants;
@@ -165,36 +180,24 @@ export async function GET(request: NextRequest) {
 }
 
 // ─── TMDB search (already fuzzy natively) ────────────────────────────────
+//
+// Goes through searchMedia()/tmdbFetch() — the same shared, Redis-cached,
+// correctly-authenticated (X-Worker-Key) path every other TMDB call in the
+// app uses. This function used to build its own fetch() + headers by hand,
+// duplicating (and diverging from) that logic: it never set X-Worker-Key,
+// so every request the Cloudflare api-cache Worker received from here was
+// rejected with 403 — confirmed live in prod.log. That meant /api/search's
+// "shows" tab has been silently returning ZERO TMDB movie/TV results for
+// its entire lifetime; only AniList results (mislabeled as generic "shows")
+// were ever coming back, e.g. searching "Fight Club" returned only
+// anime titles that happen to contain the word "Fight".
 
 async function fetchTmdbSearch(query: string, page: number) {
   try {
-    const env = getValidatedEnv();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    const params = new URLSearchParams({ query, page: String(page) });
-
-    const API_CACHE_URL = process.env.API_CACHE_URL;
-    let fetchUrl: string;
-    if (API_CACHE_URL) {
-      fetchUrl = `${API_CACHE_URL}/tmdb/search/multi?${params}`;
-      if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
-      else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
-    } else {
-      if (env.TMDB_BEARER_TOKEN) {
-        headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
-      } else {
-        params.set('api_key', env.TMDB_API_KEY!);
-      }
-      fetchUrl = `https://api.themoviedb.org/3/search/multi?${params}`;
-    }
-
-    const res = await fetch(fetchUrl, { headers });
-
-    if (!res.ok) return { items: [], totalPages: 0, totalResults: 0 };
-
-    const data = await res.json();
+    const data = await searchMedia(query, String(page));
     const items = (data.results || [])
-      .filter((r: TMDBShow) => r.poster_path && (r.media_type === 'movie' || r.media_type === 'tv'))
-      .map((r: TMDBShow) => tmdbToMedia({ ...r, media_type: r.media_type || 'movie' }));
+      .filter((r) => r.poster_path && (r.media_type === 'movie' || r.media_type === 'tv'))
+      .map((r) => tmdbToMedia({ ...(r as unknown as TMDBShow), media_type: r.media_type as 'movie' | 'tv' }));
 
     return {
       items,
@@ -208,25 +211,65 @@ async function fetchTmdbSearch(query: string, page: number) {
 
 // ─── AniList search with fuzzy fallback ──────────────────────────────────
 
-async function fetchAnilistSearchWithFallback(query: string, page: number) {
-  // Primary search
-  let result = await fetchAnilistSearch(query, page);
+/**
+ * Is `title` actually close to what the user typed, not just something the
+ * mutated fallback query (a single word, a truncated prefix, ...) happened
+ * to match? Compares against both the full title and the title's own
+ * same-length prefix — a short/prefix query is expected to be far (in raw
+ * edit distance) from a long subtitled title it's still a correct match
+ * for (e.g. "demon slaye" vs "demon slayer: kimetsu no yaiba"), so penalize
+ * only real divergence, not length difference from a legitimate subtitle.
+ */
+function isRelevantMatch(queryNormalized: string, title: string): boolean {
+  if (!queryNormalized) return false;
+  const titleNorm = normalizeTitle(title);
+  const prefixDist = levenshtein(queryNormalized, titleNorm.slice(0, queryNormalized.length));
+  const fullDist = levenshtein(queryNormalized, titleNorm);
+  const dist = Math.min(prefixDist, fullDist);
+  return dist <= Math.max(queryNormalized.length * 0.35, 2);
+}
 
-  // If page 1 returned 0 results, try fuzzy variants
+async function fetchAnilistSearchWithFallback(query: string, page: number) {
+  // Primary search — full cascade (AniList → Kitsu → Jikan → TMDB-anime) since
+  // this is the query the user actually typed, worth the extra latency.
+  let result = await fetchAnilistSearch(query, page, true);
+
+  // If page 1 returned 0 results, try fuzzy variants. Capped — AniList's
+  // public API is already prone to its own rate limits/outages (frequently
+  // returns 403 under load), so a 0-result query shouldn't fire an unbounded
+  // chain of sequential requests at it. Each variant is AniList-only
+  // (cascade off): these are already low-confidence guesses, and cascading
+  // all 4 providers through every one of up to 6 variants would compound
+  // into several seconds of sequential requests for what's mostly going to
+  // be genuine misses anyway.
   if (page === 1 && result.items.length === 0) {
-    const fallbacks = getAnilistFallbacks(query);
+    const fallbacks = getAnilistFallbacks(query).slice(0, 6);
+    const queryNormalized = normalizeTitle(query);
     for (const variant of fallbacks) {
-      result = await fetchAnilistSearch(variant, 1);
-      if (result.items.length > 0) break;
+      const candidate = await fetchAnilistSearch(variant, 1, false);
+      if (candidate.items.length === 0) continue;
+      // A short/generic fallback variant (a single common word, a very
+      // short prefix) can return real AniList hits that have nothing to do
+      // with what the user typed — confirmed live: "Brething Bad" (a typo'd
+      // TV show, not anime at all) fell back to the bare word "bad" and
+      // returned a page of unrelated anime titles that merely happened to
+      // rank for that generic term. Only keep hits that are actually close
+      // to the ORIGINAL query, not just to the mutated variant that found
+      // them.
+      const relevant = candidate.items.filter(i => isRelevantMatch(queryNormalized, i.title));
+      if (relevant.length > 0) {
+        result = { ...candidate, items: relevant };
+        break;
+      }
     }
   }
 
   return result;
 }
 
-async function fetchAnilistSearch(query: string, page: number) {
+async function fetchAnilistSearch(query: string, page: number, cascade = true) {
   try {
-    const data = await searchAnime(query, page, 15);
+    const data = await searchAnime(query, page, 15, { cascade });
     const items = data.media.map(m => anilistToMediaItem(m));
     return {
       items,
@@ -266,52 +309,82 @@ function buildSuggestionsFromResults(normalizedQ: string, tmdbItems: MediaItem[]
 }
 
 /**
- * When we have 0 results, ask TMDB directly for fuzzy matches.
- * TMDB's search API handles typos natively — this gives us real "did you mean" titles.
+ * Raw TMDB multi-search — just the titles, no ranking. Shared by the fuzzy
+ * fallback below. Goes through the same searchMedia() path as the main
+ * search (see the comment on fetchTmdbSearch above) instead of building its
+ * own unauthenticated request.
  */
-async function fetchTmdbSuggestions(originalQuery: string, normalizedQ: string): Promise<string[]> {
+async function fetchTmdbTitles(query: string): Promise<string[]> {
   try {
-    const env = getValidatedEnv();
-    const headers: Record<string, string> = {};
-    const params = new URLSearchParams({ query: originalQuery });
-
-    const API_CACHE_URL = process.env.API_CACHE_URL;
-    let fetchUrl: string;
-    if (API_CACHE_URL) {
-      fetchUrl = `${API_CACHE_URL}/tmdb/search/multi?${params}`;
-      if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
-      else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
-    } else {
-      if (env.TMDB_BEARER_TOKEN) {
-        headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
-      } else {
-        params.set('api_key', env.TMDB_API_KEY!);
-      }
-      fetchUrl = `https://api.themoviedb.org/3/search/multi?${params}`;
-    }
-
-    const res = await fetch(fetchUrl, { headers });
-
-    if (!res.ok) return [];
-
-    const data = await res.json();
-    const titles: string[] = (data.results || [])
+    const data = await searchMedia(query);
+    return (data.results || [])
       .slice(0, 10)
-      .map((r: TMDBShow) => r.title || r.name || '')
+      .map((r) => r.title || r.name || '')
       .filter(Boolean);
-
-    if (titles.length === 0) return [];
-
-    // Rank by Levenshtein distance to user's query
-    const scored = titles
-      .map(title => ({ title, dist: levenshtein(normalizedQ, normalizeTitle(title)) }))
-      .sort((a, b) => a.dist - b.dist);
-
-    return scored
-      .slice(0, 3)
-      .filter(s => s.dist <= Math.max(normalizedQ.length * 0.7, 2))
-      .map(s => s.title);
   } catch {
     return [];
   }
+}
+
+/**
+ * When we have 0 results, ask TMDB for fuzzy matches. TMDB's own search is
+ * NOT fuzzy in practice — confirmed empirically: "Intersteller" returns zero
+ * results even though it's one letter off "Interstellar", while the shared
+ * prefix "Interstel" finds it fine, and for multi-word queries a single
+ * correctly-spelled word (e.g. "Bad" out of "Brething Bad") surfaces the
+ * right title on its own. So instead of trusting TMDB with the literal
+ * (possibly misspelled) query, try a handful of derived variants and rank
+ * whatever comes back by edit distance to what the user actually typed.
+ */
+async function fetchTmdbSuggestions(originalQuery: string, normalizedQ: string): Promise<string[]> {
+  const candidates = new Map<string, number>(); // title -> best (lowest) distance seen
+
+  const tryQuery = async (q: string) => {
+    if (!q || q.length < 3) return;
+    const titles = await fetchTmdbTitles(q);
+    for (const title of titles) {
+      const dist = levenshtein(normalizedQ, normalizeTitle(title));
+      const prev = candidates.get(title);
+      if (prev === undefined || dist < prev) candidates.set(title, dist);
+    }
+  };
+
+  // 1. The query as typed — works for typos TMDB's own matching tolerates.
+  await tryQuery(originalQuery);
+
+  // 2. Progressively shorter prefixes of the normalized query. TMDB matches
+  //    prefixes reliably even when the tail is wrong (typos usually land
+  //    mid-to-late in a word), so trimming from the end until something
+  //    matches recovers most single-typo cases without guessing the typo's
+  //    exact position. Bounded to ~5 tries so a genuinely 0-result query
+  //    doesn't add a long chain of sequential round-trips.
+  if (candidates.size === 0) {
+    const collapsed = normalizedQ.replace(/\s+/g, ' ').trim();
+    const minLen = Math.max(4, Math.ceil(collapsed.length * 0.5));
+    const lengths: number[] = [];
+    for (let len = collapsed.length - 2; len >= minLen && lengths.length < 5; len -= Math.max(1, Math.round((collapsed.length - minLen) / 5))) {
+      lengths.push(len);
+    }
+    for (const len of lengths) {
+      await tryQuery(collapsed.slice(0, len).trim());
+      if (candidates.size > 0) break; // stop at the first prefix that finds anything
+    }
+  }
+
+  // 3. Per-word fallback for multi-word queries — handles "one word is
+  //    typo'd, the rest are fine" (e.g. "Brething Bad": neither the full
+  //    phrase nor a shared prefix helps since the typo is near the front of
+  //    the first word, but "Bad" alone finds Breaking Bad directly).
+  if (candidates.size === 0) {
+    const words = normalizedQ.split(/\s+/).filter(w => w.length >= 3);
+    for (const w of words) await tryQuery(w);
+  }
+
+  if (candidates.size === 0) return [];
+
+  return Array.from(candidates.entries())
+    .sort((a, b) => a[1] - b[1])
+    .filter(([, dist]) => dist <= Math.max(normalizedQ.length * 0.7, 2))
+    .slice(0, 3)
+    .map(([title]) => title);
 }

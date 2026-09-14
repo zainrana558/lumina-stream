@@ -274,6 +274,8 @@ export default function IntelligentPlayer({
     );
   }
 
+  const isNoSandbox = !!(currentProvider as { noSandbox?: boolean }).noSandbox;
+
   return (
     <div className="intelligent-player" style={{ position: 'relative', width: '100%', height: '100%', background: '#000', overflow: 'hidden' }}>
       {/* Iframe */}
@@ -283,17 +285,70 @@ export default function IntelligentPlayer({
         className="intelligent-player-iframe"
         style={{ width: '100%', height: '100%', border: 'none', position: 'absolute', top: 0, left: 0 }}
         allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-        // For proxied providers (same-origin), sandbox creates an opaque origin
-        // so the parent page's CSP script-src doesn't block the provider's JS.
-        // allow-scripts: provider's JS player needs to execute
-        // allow-forms: some providers submit search/settings forms
-        // NO allow-same-origin: this is what makes it an opaque origin (bypasses CSP)
-        {...((currentProvider as { proxied?: boolean }).proxied ? { sandbox: 'allow-scripts allow-forms allow-popups' } : {})}
+        referrerPolicy="no-referrer"
+        // Sandbox EVERY embed EXCEPT ones explicitly marked noSandbox. The
+        // tokens deliberately EXCLUDE:
+        //   • allow-popups / allow-popups-to-escape-sandbox — kills the pop-under
+        //     and "click play → opens cloudorchestranova.com" ad redirects that
+        //     ride along with several third-party sources.
+        //   • allow-top-navigation* — an embed can no longer navigate the whole
+        //     tab away from Lumovia.
+        // Proxied (same-origin) providers must stay an opaque origin (no
+        // allow-same-origin) so the page CSP script-src doesn't block their JS;
+        // direct providers get allow-same-origin so their player can reach its
+        // own storage/cookies (many refuse to start otherwise).
+        //
+        // noSandbox providers (see StreamProvider.noSandbox): their own JS
+        // refuses to play inside ANY sandboxed iframe regardless of which
+        // tokens are granted — confirmed live by testing with allow-popups +
+        // allow-top-navigation added and no change, only full removal works.
+        // Kept at low tier (never the default pick) and paired with the
+        // on-screen warning below — omitting `sandbox` here is a deliberate,
+        // scoped, user-authorized tradeoff for these specific sources only,
+        // not a blanket change.
+        sandbox={
+          isNoSandbox
+            ? undefined
+            : (currentProvider as { proxied?: boolean }).proxied
+              ? 'allow-scripts allow-forms allow-presentation'
+              : 'allow-scripts allow-same-origin allow-forms allow-presentation'
+        }
         onLoad={() => {
           // Iframe content loaded — notify parent to clear the failover timer
           onIframeLoad?.();
         }}
+        onError={() => {
+          // Iframe failed to load (e.g. blocked/unreachable source) — surface the
+          // error overlay and report it, instead of leaving `iframeError` (and the
+          // onError callback) permanently unused while the user stares at a blank frame.
+          setIframeError(true);
+          onError?.(currentProvider.name, 'Failed to load embed');
+        }}
       />
+
+      {isNoSandbox && (
+        <div
+          role="alert"
+          style={{
+            // Sole call site (DetailsContent.tsx) renders this inside a fixed,
+            // full-viewport overlay with the site's own nav (z-index 998,
+            // ~64px tall) painted above it, plus a provider dropdown around
+            // top:50-84px, z-index 10001 — top:0 would sit invisibly behind
+            // both. Cleared below both, and matched to that same 10001 tier,
+            // so the warning is never silently hidden the way top:0 was
+            // (confirmed live: getBoundingClientRect showed the element
+            // painting fully behind the nav at top:0).
+            position: 'absolute', top: 96, left: 0, right: 0, zIndex: 10001,
+            padding: '8px 14px', fontSize: '.78rem', lineHeight: 1.4,
+            background: 'rgba(120,40,0,.88)', color: '#FFF5E8',
+            display: 'flex', alignItems: 'center', gap: 8,
+            pointerEvents: 'none',
+          }}
+        >
+          <span aria-hidden="true">⚠</span>
+          This source may open extra tabs or pop-ups. If one opens, don&apos;t trust it or enter any information — just close it and come back here.
+        </div>
+      )}
 
       {/* Resume watching prompt */}
       {resumePosition && (

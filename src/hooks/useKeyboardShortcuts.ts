@@ -1,9 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, CirclePlay, ClipboardList,
+  Hash, Keyboard, Maximize, MessageCircle, RefreshCw, SkipBack, SkipForward,
+  Tv, X, type LucideIcon,
+} from 'lucide-react';
 
 export interface ShortcutFeedback {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   timestamp: number;
 }
@@ -36,7 +41,7 @@ export function useKeyboardShortcuts(
   const [shortcutsVisible, setShortcutsVisible] = useState(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showFeedback = useCallback((icon: string, label: string) => {
+  const showFeedback = useCallback((icon: LucideIcon, label: string) => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     setFeedback({ icon, label, timestamp: Date.now() });
     feedbackTimerRef.current = setTimeout(() => setFeedback(null), 1200);
@@ -56,7 +61,7 @@ export function useKeyboardShortcuts(
       if (shortcutsVisible && e.key === '?') {
         e.preventDefault();
         toggleShortcuts();
-        showFeedback('?', 'Shortcuts hidden');
+        showFeedback(Keyboard, 'Shortcuts hidden');
         return;
       }
 
@@ -66,97 +71,97 @@ export function useKeyboardShortcuts(
         case 'K':
           e.preventDefault();
           handlers.onTogglePlayPause?.();
-          showFeedback('⏯', e.key === ' ' ? 'Space' : 'K');
+          showFeedback(CirclePlay, e.key === ' ' ? 'Space' : 'K');
           break;
         case 'f':
         case 'F':
           e.preventDefault();
           handlers.onToggleFullscreen?.();
-          showFeedback('⛶', 'Fullscreen');
+          showFeedback(Maximize, 'Fullscreen');
           break;
         case 'Escape':
           e.preventDefault();
           if (shortcutsVisible) {
             toggleShortcuts();
-            showFeedback('?', 'Shortcuts hidden');
+            showFeedback(Keyboard, 'Shortcuts hidden');
           } else {
             handlers.onExit?.();
-            showFeedback('✕', 'Exit');
+            showFeedback(X, 'Exit');
           }
           break;
         case ',':
           e.preventDefault();
           handlers.onPreviousEpisode?.();
-          showFeedback('⏮', 'Prev Episode');
+          showFeedback(SkipBack, 'Prev Episode');
           break;
         case '.':
           e.preventDefault();
           handlers.onNextEpisode?.();
-          showFeedback('⏭', 'Next Episode');
+          showFeedback(SkipForward, 'Next Episode');
           break;
         case 'n':
         case 'N':
           e.preventDefault();
           handlers.onNextEpisode?.();
-          showFeedback('⏭', 'Next Episode');
+          showFeedback(SkipForward, 'Next Episode');
           break;
         case 'p':
         case 'P':
           if (e.shiftKey) {
             e.preventDefault();
             handlers.onPreviousEpisode?.();
-            showFeedback('⏮', 'Prev Episode');
+            showFeedback(SkipBack, 'Prev Episode');
           } else {
             e.preventDefault();
             handlers.onPopOutPip?.();
-            showFeedback('📺', 'PiP Mode');
+            showFeedback(Tv, 'PiP Mode');
           }
           break;
         case 'Tab':
           e.preventDefault();
           handlers.onSwitchProvider?.();
-          showFeedback('🔄', 'Next Server');
+          showFeedback(RefreshCw, 'Next Server');
           break;
         case 's':
         case 'S':
           if (e.shiftKey) {
             e.preventDefault();
             handlers.onPreviousSeason?.();
-            showFeedback('⏮', 'Prev Season');
+            showFeedback(SkipBack, 'Prev Season');
           } else {
             e.preventDefault();
             handlers.onNextSeason?.();
-            showFeedback('⏭', 'Next Season');
+            showFeedback(SkipForward, 'Next Season');
           }
           break;
         case 'w':
         case 'W':
           e.preventDefault();
           handlers.onToggleWatchlist?.();
-          showFeedback('📋', 'My List');
+          showFeedback(ClipboardList, 'My List');
           break;
         case 'l':
         case 'L':
           e.preventDefault();
           handlers.onGoBack?.();
-          showFeedback('←', 'Back');
+          showFeedback(ArrowLeft, 'Back');
           break;
         case 't':
           if (e.shiftKey) {
             e.preventDefault();
             handlers.onPrevTab?.();
-            showFeedback('◂', 'Prev Tab');
+            showFeedback(ChevronLeft, 'Prev Tab');
           } else {
             e.preventDefault();
             handlers.onNextTab?.();
-            showFeedback('▸', 'Next Tab');
+            showFeedback(ChevronRight, 'Next Tab');
           }
           break;
         case 'g':
         case 'G':
           e.preventDefault();
           handlers.onScrollToTop?.();
-          showFeedback('⬆', 'Top');
+          showFeedback(ArrowUp, 'Top');
           break;
         case '1': case '2': case '3': case '4': case '5':
         case '6': case '7': case '8': case '9':
@@ -164,19 +169,19 @@ export function useKeyboardShortcuts(
             e.preventDefault();
             const epNum = parseInt(e.key, 10);
             handlers.onJumpToEpisode?.(epNum);
-            showFeedback(`E${epNum}`, `Episode ${epNum}`);
+            showFeedback(Hash, `Episode ${epNum}`);
           }
           break;
         case 'c':
         case 'C':
           e.preventDefault();
           handlers.onToggleSubtitles?.();
-          showFeedback('💬', 'Subtitles');
+          showFeedback(MessageCircle, 'Subtitles');
           break;
         case '?':
           e.preventDefault();
           toggleShortcuts();
-          showFeedback('⌨', 'Shortcuts');
+          showFeedback(Keyboard, 'Shortcuts');
           break;
       }
     };

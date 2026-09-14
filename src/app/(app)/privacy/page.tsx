@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 
@@ -6,10 +7,11 @@ export const dynamic = 'force-static';
 export const revalidate = 86400;
 
 const siteUrl = CANONICAL_BASE;
+const siteHost = siteUrl.replace(/^https?:\/\//, '');
 const pageUrl = `${siteUrl}/privacy`;
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy - Lumovia',
+  title: 'Privacy Policy',
   description: 'Lumovia privacy policy. Learn how we collect, use, and protect your personal information, including data from Supabase authentication, TMDB, AniList, and third-party embed providers.',
   alternates: { canonical: pageUrl },
   openGraph: { type: 'website', url: pageUrl, title: 'Privacy Policy - Lumovia', description: 'Learn how Lumovia handles your data and protects your privacy.', siteName: 'Lumovia', images: [{ url: `${siteUrl}/og/og-genres.png`, width: 1344, height: 768, alt: 'Lumovia' }] },
@@ -33,7 +35,7 @@ const webPageJsonLd = {
   url: pageUrl,
   isPartOf: { '@type': 'WebSite', name: 'Lumovia', url: siteUrl },
   datePublished: '2026-07-07',
-  dateModified: '2026-07-07',
+  dateModified: '2026-09-14',
 };
 
 const p = { className: 'f-crimson', style: { fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', color: 'rgba(255,245,232,.7)', lineHeight: 1.8, marginBottom: 12 } as React.CSSProperties };
@@ -44,16 +46,16 @@ const b = { style: { color: '#FFB347' } as React.CSSProperties };
 export default function PrivacyPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(webPageJsonLd) }} />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 'clamp(60px,7vw,80px) 20px 60px' }}>
         <h1 className="f-cinzel-dec" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#FFF5E8', marginBottom: 16, letterSpacing: '.02em' }}>Privacy Policy</h1>
-        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 12 }}>Last updated: July 7, 2026</p>
-        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 48 }}>Effective date: July 7, 2026</p>
+        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 12 }}>Last updated: September 14, 2026</p>
+        <p className="f-crimson" style={{ fontSize: '.85rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.8, marginBottom: 48 }}>Effective date: September 14, 2026</p>
 
         <h2 {...h2}>1. Introduction</h2>
         <p {...ps}>
-          Lumovia (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the website at lumovia-stream-omega.vercel.app (the &quot;Service&quot;). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our Service. We respect your privacy and are committed to protecting your personal data. This policy applies to all visitors, including both authenticated and unauthenticated users, and is incorporated into our <Link href="/terms" style={{ color: '#FFB347' }}>Terms of Service</Link> by reference. Please also review our <Link href="/cookies" style={{ color: '#FFB347' }}>Cookie Policy</Link> for information about how we use cookies and similar technologies.
+          Lumovia (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the website at {siteHost} (the &quot;Service&quot;). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our Service. We respect your privacy and are committed to protecting your personal data. This policy applies to all visitors, including both authenticated and unauthenticated users, and is incorporated into our <Link href="/terms" style={{ color: '#FFB347' }}>Terms of Service</Link> by reference. Please also review our <Link href="/cookies" style={{ color: '#FFB347' }}>Cookie Policy</Link> for information about how we use cookies and similar technologies.
         </p>
 
         <h2 {...h2}>2. Information We Collect</h2>
@@ -89,7 +91,10 @@ export default function PrivacyPage() {
           <strong {...b}>Upstash Redis.</strong> Used exclusively for server-side rate limiting. Your IP is temporarily stored with automatic expiration and is not persisted, aggregated, or used for any purpose other than rate limiting.
         </p>
         <p {...p}>
-          <strong {...b}>Embed Streaming Providers.</strong> Third-party embed providers (such as vidsrc.fyi, vidsrc.pm, autoembed.co, and others) are independent services operated by entities unaffiliated with Lumovia. These providers may set their own cookies and collect data independently. We do not control these services and have no visibility into their data practices — review their individual privacy policies before using them. Please see our <Link href="/disclaimer" style={{ color: '#FFB347' }}>Disclaimer</Link> for our full position on third-party content.
+          <strong {...b}>Embed Streaming Providers.</strong> Third-party embed providers (such as vidlux.xyz, vidzy.org, vidlink.pro, vidsrc.pm, vidfast.vc, and others — the specific set in active rotation changes over time as we monitor provider reliability) are independent services operated by entities unaffiliated with Lumovia. These providers may set their own cookies, run their own scripts inside the embedded player, and collect data independently. We do not control these services and have no visibility into their data practices — review their individual privacy policies before using them. Please see our <Link href="/disclaimer" style={{ color: '#FFB347' }}>Disclaimer</Link> for our full position on third-party content.
+        </p>
+        <p {...ps}>
+          <strong {...b}>Sandbox Restrictions on Embedded Players.</strong> By default, embedded players run inside a browser <code style={{ background: 'rgba(255,255,255,.06)', padding: '1px 5px', borderRadius: 4 }}>sandbox</code> that blocks pop-ups and prevents the embed from navigating your whole tab away from Lumovia. A small number of lower-priority providers refuse to play video at all under that restriction; for those specific sources only, we relax the sandbox so playback works, and we show an on-screen warning while that source is active. When one of these sources is selected, treat any tab, window, or page that opens unexpectedly as untrusted — close it without entering any information, and it will not affect your Lumovia account or data. See our <Link href="/disclaimer" style={{ color: '#FFB347' }}>Disclaimer</Link> for more on third-party embed risk.
         </p>
         <p {...ps}>
           <strong {...b}>Advertising Partners.</strong> To support our free service, we may work with advertising partners such as PopAds, Adsterra, PropellerAds, and related networks. These partners may collect anonymized device information, browsing patterns, and interaction data to serve relevant advertisements. Ad networks may set their own cookies and use tracking technologies subject to their respective privacy policies. You can opt out of interest-based advertising through tools provided by the <a href="https://www.networkadvertising.org" target="_blank" rel="noopener noreferrer" style={{ color: '#FFB347' }}>Network Advertising Initiative</a>.

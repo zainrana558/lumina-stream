@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { ArrowLeft, X, Camera, Loader2, Baby, Pencil, Check } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { createProfile, deleteProfile } from '@/actions/profiles';
 import { useApp } from '@/contexts/AppContext';
+import { safeRedirectPath } from '@/lib/utils';
 
 interface ProfileData {
   id: string;
@@ -39,7 +41,7 @@ function formatBytes(bytes: number): string {
 export default function ProfileSelector({ profiles }: { profiles: ProfileData[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextUrl = searchParams.get('next') || '/';
+  const nextUrl = safeRedirectPath(searchParams.get('next'));
   const supabase = createClient();
   const { refreshProfile, handleSignOut } = useApp();
 
@@ -241,8 +243,8 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
         <div className="ps-header">
           <h1>LUMOVIA</h1>
           <p>Who&apos;s watching tonight?</p>
-          <button className="ps-signout" onClick={handleSignOutNav}>
-            ← Sign Out
+          <button className="ps-signout" onClick={handleSignOutNav} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <ArrowLeft size={14} /> Sign Out
           </button>
         </div>
 
@@ -258,7 +260,7 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                 disabled={deleting === profile.id}
                 title="Delete profile"
               >
-                {deleting === profile.id ? '...' : '✕'}
+                {deleting === profile.id ? '...' : <X size={14} />}
               </button>
 
               {/* Avatar - clickable for upload */}
@@ -286,7 +288,7 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                 }}
                 className="avatar-hover-overlay"
                 >
-                  <span style={{ fontSize: '1.2rem' }}>📷</span>
+                  <Camera size={18} color="#FFF5E8" />
                 </div>
 
                 {/* Upload spinner */}
@@ -296,7 +298,7 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                     background: 'rgba(0,0,0,.7)', display: 'flex',
                     alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <div style={{ animation: 'spin 1s linear infinite', fontSize: '1.1rem' }}>✦</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1s linear infinite' }}><Loader2 size={18} /></div>
                   </div>
                 )}
               </div>
@@ -321,8 +323,9 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                   padding: '2px 8px', borderRadius: 10,
                   border: '1px solid rgba(120,214,33,.25)',
                   marginBottom: '.4rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                 }}>
-                  👶 KIDS
+                  <Baby size={12} /> KIDS
                 </div>
               )}
 
@@ -340,9 +343,10 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                     borderRadius: 6, border: '1px solid rgba(255,255,255,.1)',
                     background: 'rgba(255,255,255,.04)', color: 'rgba(255,245,232,.5)',
                     cursor: 'pointer', transition: 'all .2s', marginTop: '.3rem',
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
                   }}
                 >
-                  ✏ Edit
+                  <Pencil size={11} /> Edit
                 </button>
               )}
 
@@ -373,9 +377,10 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                     padding: '4px 0',
                   }}>
                     <span className="f-cinzel" style={{
-                      fontSize: '.65rem', 
+                      fontSize: '.65rem',
                       color: 'rgba(255,245,232,.5)', letterSpacing: '.05em',
-                    }}>👶 Kids Mode</span>
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                    }}><Baby size={12} /> Kids Mode</span>
                     <button
                       onClick={() => setEditKids(!editKids)}
                       style={{
@@ -404,12 +409,13 @@ export default function ProfileSelector({ profiles }: { profiles: ProfileData[] 
                       style={{
                         flex: 1, padding: '5px 0', borderRadius: 8,
                         background: 'rgba(255,179,71,.15)', border: '1px solid rgba(255,179,71,.3)',
-                        color: '#FFB347', 
+                        color: '#FFB347',
                         fontSize: '.58rem', letterSpacing: '.06em',
                         cursor: saving ? 'wait' : 'pointer', transition: 'all .2s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                       }}
                     >
-                      {saving ? '...' : '✓ Save'}
+                      {saving ? '...' : <><Check size={12} /> Save</>}
                     </button>
                     <button className="f-cinzel"
                       onClick={(e) => { e.stopPropagation(); setEditingId(null); }}

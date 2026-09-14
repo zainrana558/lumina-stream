@@ -317,18 +317,28 @@ export async function getSelectionMetrics(): Promise<Record<string, {
       });
       cursor = Number(nextCursor);
 
-      for (const key of keys) {
-        const data = await client.hgetall(key) as Record<string, string> | null;
-        if (!data || !data.count) continue;
+      // Batch HGETALL via pipeline instead of one round-trip per key —
+      // same pattern already used by the hourly rollup below.
+      if (keys.length > 0) {
+        const pipeline = client.pipeline();
+        for (const key of keys) {
+          pipeline.hgetall(key);
+        }
+        const results = await pipeline.exec();
 
-        const providerName = key.replace('metric:selection:', '');
-        const count = parseInt(data.count, 10) || 0;
-        result[providerName] = {
-          count,
-          avgLatency: count > 0 ? Math.round((parseFloat(data.totalLatency) || 0) / count) : 0,
-          avgScore: count > 0 ? Math.round(((parseFloat(data.totalScore) || 0) / count) * 100) / 100 : 0,
-          fallbacks: parseInt(data.fallbacks, 10) || 0,
-        };
+        for (let i = 0; i < keys.length; i++) {
+          const data = (results as [unknown, Record<string, string>][] | null)?.[i]?.[1] as Record<string, string> | null | undefined;
+          if (!data || !data.count) continue;
+
+          const providerName = keys[i].replace('metric:selection:', '');
+          const count = parseInt(data.count, 10) || 0;
+          result[providerName] = {
+            count,
+            avgLatency: count > 0 ? Math.round((parseFloat(data.totalLatency) || 0) / count) : 0,
+            avgScore: count > 0 ? Math.round(((parseFloat(data.totalScore) || 0) / count) * 100) / 100 : 0,
+            fallbacks: parseInt(data.fallbacks, 10) || 0,
+          };
+        }
       }
     } while (cursor > 0);
 
@@ -363,23 +373,32 @@ export async function getHealthMetrics(): Promise<Record<string, {
       });
       cursor = Number(nextCursor);
 
-      for (const key of keys) {
-        const data = await client.hgetall(key) as Record<string, string> | null;
-        if (!data || !data.checks) continue;
+      // Batch HGETALL via pipeline instead of one round-trip per key.
+      if (keys.length > 0) {
+        const pipeline = client.pipeline();
+        for (const key of keys) {
+          pipeline.hgetall(key);
+        }
+        const results = await pipeline.exec();
 
-        const providerName = key.replace('metric:health:', '');
-        const checks = parseInt(data.checks, 10) || 0;
-        const passes = parseInt(data.passes, 10) || 0;
-        const fails = parseInt(data.fails, 10) || 0;
+        for (let i = 0; i < keys.length; i++) {
+          const data = (results as [unknown, Record<string, string>][] | null)?.[i]?.[1] as Record<string, string> | null | undefined;
+          if (!data || !data.checks) continue;
 
-        result[providerName] = {
-          checks,
-          passes,
-          fails,
-          passRate: checks > 0 ? Math.round((passes / checks) * 1000) / 10 : 0,
-          lastCheckAt: data.lastCheckAt || null,
-          lastFailAt: data.lastFailAt || null,
-        };
+          const providerName = keys[i].replace('metric:health:', '');
+          const checks = parseInt(data.checks, 10) || 0;
+          const passes = parseInt(data.passes, 10) || 0;
+          const fails = parseInt(data.fails, 10) || 0;
+
+          result[providerName] = {
+            checks,
+            passes,
+            fails,
+            passRate: checks > 0 ? Math.round((passes / checks) * 1000) / 10 : 0,
+            lastCheckAt: data.lastCheckAt || null,
+            lastFailAt: data.lastFailAt || null,
+          };
+        }
       }
     } while (cursor > 0);
 

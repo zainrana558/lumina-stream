@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useRef, useEffect, useCallback, startTransition, useDeferredValue } from 'react';
+import { Search, SearchX, Loader2, Star } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { MediaItem, SortKey, TMDBShow } from '@/types';
 import { GENRES_ALL, PORTAL_NAME_SET, TMDB_GENRE_NAME_MAP } from '@/styles/themes';
@@ -11,6 +12,14 @@ import { SLUG_TO_COUNTRY, SLUG_TO_LANGUAGE } from '@/lib/slug';
 
 interface BrowseClientProps {
   initialShows: MediaItem[];
+  // Server-resolved fallbacks for filters reached via a next.config.ts rewrite
+  // (/country/:slug, /language/:slug, /studio/:slug) — useSearchParams() sees
+  // no query string for those since the browser URL is never rewritten.
+  initialCountry?: string;
+  initialLanguage?: string;
+  initialQ?: string;
+  initialGenre?: string;
+  initialMood?: string;
 }
 
 const ITEMS_PER_GROUP = 5;
@@ -76,15 +85,22 @@ const MOOD_CONFIG: Record<string, {
   },
 };
 
-export default function BrowseClient({ initialShows }: BrowseClientProps) {
+export default function BrowseClient({
+  initialShows,
+  initialCountry = '',
+  initialLanguage = '',
+  initialQ = '',
+  initialGenre = '',
+  initialMood = '',
+}: BrowseClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const moodParam = searchParams.get('mood')?.toLowerCase() || '';
+  const moodParam = (searchParams.get('mood') || initialMood).toLowerCase() || '';
   const moodConfig = moodParam ? MOOD_CONFIG[moodParam] : null;
-  const genreParam = searchParams.get('genre') || '';
+  const genreParam = searchParams.get('genre') || initialGenre || '';
   // Resolve slug-based params to ISO codes (e.g. "japan" → "JP", "japanese" → "ja")
-  const rawCountry = searchParams.get('country') || '';
-  const rawLanguage = searchParams.get('language') || '';
+  const rawCountry = searchParams.get('country') || initialCountry || '';
+  const rawLanguage = searchParams.get('language') || initialLanguage || '';
   const countryParam = SLUG_TO_COUNTRY[rawCountry] || rawCountry;
   const languageParam = SLUG_TO_LANGUAGE[rawLanguage] || rawLanguage;
 
@@ -97,7 +113,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     return 'All';
   });
   const [q, setQ] = useState(() => {
-    const rawQ = searchParams.get('q') || '';
+    const rawQ = searchParams.get('q') || initialQ || '';
     // Convert slug-style query back to readable text (e.g. "warner-bros" → "Warner Bros")
     if (rawQ.includes('-') && !rawQ.includes(' ')) {
       return rawQ.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -238,28 +254,43 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     }
   }, [browseSource, isMoodMode]);
 
-  // ─── Genre URL param: fetch genre-specific data from TMDB ──────────────────
-  // When user navigates to /browse?genre=Action, fetch that genre from TMDB
-  // instead of only client-side filtering the initial ~80 trending shows.
+  // ─── Genre/country/language URL params: fetch filtered data from TMDB ──────
+  // When user navigates to /browse?genre=Action and/or ?country=US/?language=ja
+  // (the latter two arrive via the /country/:slug and /language/:slug rewrites),
+  // fetch that filter combination from TMDB instead of only client-side
+  // filtering the initial ~80 trending shows. Previously this only fired when
+  // genreParam was set, so /country/us and /language/en silently rendered the
+  // generic unfiltered catalog — country/language alone are valid API filters
+  // (see /api/browse/route.ts) and must trigger the fetch on their own too.
   const genreFetchInitRef = useRef(false);
   const genreIdRef = useRef<number | null>(null);
   const countryRef = useRef(countryParam);
   const languageRef = useRef(languageParam);
   useEffect(() => {
-    if (!genreParam || isMoodMode || (genreFetchInitRef.current && countryRef.current === countryParam && languageRef.current === languageParam)) return;
-    // Only fetch for non-portal genres (portal genres have their own /genre/[slug] pages)
-    if (PORTAL_NAME_SET.has(genreParam)) return;
+    if (isMoodMode) return;
+    // Portal genres (e.g. Anime, Cartoon) have their own /genre/[slug] pages
+    if (genreParam && PORTAL_NAME_SET.has(genreParam)) return;
 
-    const genreId = TMDB_GENRE_NAME_MAP[genreParam];
-    if (!genreId) return;
+    const genreId = genreParam ? TMDB_GENRE_NAME_MAP[genreParam] : undefined;
+    if (genreParam && !genreId) return; // unrecognized named genre — nothing to fetch
+    if (!genreId && !countryParam && !languageParam) return; // nothing to filter by — keep initial SSR data
+
+    if (
+      genreFetchInitRef.current &&
+      genreIdRef.current === (genreId ?? null) &&
+      countryRef.current === countryParam &&
+      languageRef.current === languageParam
+    ) {
+      return; // already fetched this exact filter combination
+    }
 
     genreFetchInitRef.current = true;
-    genreIdRef.current = genreId;
+    genreIdRef.current = genreId ?? null;
     countryRef.current = countryParam;
     languageRef.current = languageParam;
     setMoodLoading(true);
 
-    fetch(`/api/browse${browseQs({ genre: String(genreId), page: '1', sortBy: 'popularity.desc' })}`)
+    fetch(`/api/browse${browseQs({ ...(genreId ? { genre: String(genreId) } : {}), page: '1', sortBy: 'popularity.desc' })}`)
       .then(r => r.json())
       .then(data => {
         const items: TMDBShow[] = data.results || [];
@@ -272,7 +303,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       })
       .catch(() => {})
       .finally(() => setMoodLoading(false));
-  }, [genreParam, isMoodMode]);
+  }, [genreParam, isMoodMode, countryParam, languageParam]);
 
   // Debounced search — hits both TMDB + AniList via /api/search
   useEffect(() => {
@@ -452,7 +483,6 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
     } finally {
       setLoadingMore(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingMore, hasMore, isSearching, isMoodMode, searchPage, searchTotalPages, activeQuery, browseSource, animePage, moodConfig]);
 
   // Get the combined source list for browse mode
@@ -624,7 +654,7 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
         {!moodLoading && (
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.3rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ position: 'relative', flex: '1 1 260px' }}>
-              <span style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,245,232,.28)', fontSize: '1rem' }}>🔍</span>
+              <span style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,245,232,.28)', display: 'flex' }}><Search size={16} /></span>
               <input className="inp" style={{ paddingLeft: 42 }} placeholder="Search TMDB + AniList…" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
             <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="neo-select">
@@ -672,7 +702,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
           <div className="f-cinzel" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255,245,232,.28)',  letterSpacing: '.1em' }}>
             {isSearching && activeQuery ? (
               <>
-                <div style={{ fontSize: '1rem', marginBottom: '.8rem' }}>✦ No results for &ldquo;{activeQuery}&rdquo;</div>
+                <SearchX size={28} style={{ color: 'rgba(255,245,232,.25)', marginBottom: '.6rem' }} />
+                <div style={{ fontSize: '1rem', marginBottom: '.8rem' }}>No results for &ldquo;{activeQuery}&rdquo;</div>
                 <div style={{ fontSize: '.72rem', color: 'rgba(255,245,232,.22)', marginBottom: '1.2rem' }}>
                   Try checking the spelling, or use fewer words
                 </div>
@@ -702,11 +733,17 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
                   </div>
                 )}
               </>
-            ) : '✦ No shows found ✦'}
+            ) : (
+              <>
+                <SearchX size={28} style={{ color: 'rgba(255,245,232,.25)', marginBottom: '.6rem' }} />
+                <div>No shows found</div>
+              </>
+            )}
           </div>
         ) : list.length === 0 ? (
           <div className="f-cinzel" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0', color: 'rgba(255,245,232,.28)',  letterSpacing: '.1em' }}>
-            ✦ Searching…
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.6rem' }}><Loader2 size={22} /></div>
+            Searching…
           </div>
         ) : (
           <>
@@ -731,7 +768,9 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
                       flexWrap: 'wrap',
                       alignItems: 'center',
                     }}>
-                      <span className="badge-r" style={{ fontSize: '.58rem', padding: '2px 8px' }}>⭐ {s.r}</span>
+                      <span className="badge-r" style={{ fontSize: '.58rem', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {s.r > 0 ? <><Star size={10} fill="currentColor" /> {s.r}</> : 'New'}
+                      </span>
                       {s.genre.slice(0, 2).map(g => (
                         <span key={g} className="gtag" style={{ fontSize: '.55rem', padding: '2px 8px' }}>{g}</span>
                       ))}
@@ -750,7 +789,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       {/* Loading indicator for initial search */}
       {searchLoading && searchResults.length === 0 && (
         <div className="f-cinzel" style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em', position: 'relative', zIndex: 3 }}>
-          ✦ Searching TMDB + AniList…
+          <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.4rem' }}><Loader2 size={16} /></div>
+          Searching TMDB + AniList…
         </div>
       )}
 
@@ -758,7 +798,8 @@ export default function BrowseClient({ initialShows }: BrowseClientProps) {
       <div ref={sentinelRef} style={{ height: 1, padding: '2rem 0' }} />
       {loadingMore && (
         <div className="f-cinzel" style={{ textAlign: 'center', padding: '0 0 4rem', color: 'rgba(255,245,232,.35)', fontSize: '.8rem', letterSpacing: '.08em', position: 'relative', zIndex: 3 }}>
-          ✦ Loading…
+          <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite', marginBottom: '.4rem' }}><Loader2 size={16} /></div>
+          Loading…
         </div>
       )}
     </div>

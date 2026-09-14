@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAuth, verifyProfileOwnership } from '@/lib/auth';
+import { requireAuth, verifyProfileOwnership, HttpError } from '@/lib/auth';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { collectionAddItemSchema, collectionRemoveItemSchema } from '@/lib/schemas';
 import { csrfGuard } from '@/lib/csrf';
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Atomic: single RPC handles MAX + INSERT in one transaction
-    const { data: inserted, error } = await supabase.rpc(
+    let { error } = await supabase.rpc(
       'insert_collection_item_atomically',
       {
         p_collection_id: id,
@@ -87,6 +87,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         p_poster_path: posterPath || null,
       }
     );
+
+    // The live RPC has an ambiguous `order_index` reference (fixed in migration
+    // 006). Until that lands, fall back to a plain read-then-insert — a tiny
+    // TOCTOU window on order_index is acceptable for a personal collection.
+    if (error && /ambiguous|does not exist|could not find the function/i.test(error.message || '')) {
+      const { data: last } = await supabase
+        .from('collection_items')
+        .select('order_index')
+        .eq('collection_id', id)
+        .order('order_index', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const nextOrder = ((last?.order_index as number | undefined) ?? 0) + 1;
+      ({ error } = await supabase.from('collection_items').insert({
+        collection_id: id,
+        media_id: mediaId,
+        media_type: mediaType,
+        title: title || '',
+        poster_path: posterPath || null,
+        order_index: nextOrder,
+      }));
+    }
 
     if (error) {
       if (error.code === '23505') {
@@ -104,7 +126,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -154,6 +177,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = error instanceof HttpError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

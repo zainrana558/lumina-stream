@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth';
 import { tmdbFetch } from '@/lib/tmdb/server';
 import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 import { getCached, setCache } from '@/lib/cache';
+import { remindersCheckSchema } from '@/lib/schemas';
 
 interface ReminderItem {
   mediaId: number;
@@ -44,9 +45,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ alerts: [], checkedAt: new Date().toISOString(), error: 'Not authenticated' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const reminders: ReminderItem[] = body.reminders || [];
-    const lastCheckTime: string = body.lastCheck || new Date(0).toISOString();
+    const body = await request.json().catch(() => null);
+    const parsed = remindersCheckSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { alerts: [], checkedAt: new Date().toISOString(), error: 'Invalid request: ' + parsed.error.issues.map(i => i.message).join(', ') },
+        { status: 400 },
+      );
+    }
+    const reminders: ReminderItem[] = parsed.data.reminders;
+    const lastCheckTime: string = parsed.data.lastCheck || new Date(0).toISOString();
 
     // Build a cache key from reminder IDs + lastCheck
     const reminderIds = reminders.map(r => `${r.mediaType}-${r.mediaId}`).sort().join(',');

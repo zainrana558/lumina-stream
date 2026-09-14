@@ -20,7 +20,11 @@ export async function GET(request: NextRequest) {
     const yearTo = searchParams.get('yearTo') || '';
     const minRating = searchParams.get('minRating') || '';
     const sortBy = searchParams.get('sortBy') || 'popularity.desc';
-    const page = searchParams.get('page') || '1';
+    // TMDB rejects page 0, negative, non-numeric, or over its 500-page cap
+    // with a 400 — clamp instead of forwarding whatever the client sent
+    // verbatim (was surfacing as an unhandled 500 for any of those).
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const page = String(Number.isFinite(rawPage) ? Math.min(500, Math.max(1, rawPage)) : 1);
     const language = searchParams.get('language') || '';
     const country = searchParams.get('country') || '';
 
@@ -30,7 +34,11 @@ export async function GET(request: NextRequest) {
     if (minRating) baseParams['vote_average.gte'] = minRating;
     if (minRating) baseParams['vote_count.gte'] = '10';
     if (language && language !== 'all') baseParams.with_original_language = language;
-    if (country && country !== 'all') baseParams.watch_region = country;
+    // `watch_region` only affects TMDB watch-provider annotations — it does NOT
+    // filter discover results by itself (confirmed live: identical result sets
+    // with and without it). `with_origin_country` is the actual "content
+    // produced in country X" filter.
+    if (country && country !== 'all') baseParams.with_origin_country = country;
 
     const fetchMedia = async (mt: 'movie' | 'tv') => {
       const p = { ...baseParams };
@@ -40,25 +48,35 @@ export async function GET(request: NextRequest) {
       if (yearTo) {
         p[mt === 'tv' ? 'first_air_date.lte' : 'primary_release_date.lte'] = `${yearTo}-12-31`;
       }
-      const data = await tmdbFetch<{ results?: TMDBShow[]; total_pages: number; total_results: number }>(
+      const data = await tmdbFetch<{ results?: TMDBShow[]; total_pages?: number; total_results?: number }>(
         `/discover/${mt}`, p
       );
-      return (data.results || []).map(r => ({ ...r, media_type: mt }));
+      return {
+        results: (data.results || []).map(r => ({ ...r, media_type: mt })),
+        // TMDB itself caps discover pagination at 500
+        totalPages: Math.min(data.total_pages || 1, 500),
+        totalResults: data.total_results || 0,
+      };
     };
 
     let results: TMDBShow[];
+    let totalPages: number;
+    let totalResults: number;
 
     if (mediaType === 'all') {
       const [movies, tv] = await Promise.all([fetchMedia('movie'), fetchMedia('tv')]);
-      results = [...movies, ...tv];
+      results = [...movies.results, ...tv.results];
       results.sort((a, b) => b.popularity - a.popularity);
+      totalPages = Math.max(movies.totalPages, tv.totalPages);
+      totalResults = movies.totalResults + tv.totalResults;
     } else {
-      results = await fetchMedia(mediaType as 'movie' | 'tv');
+      const r = await fetchMedia(mediaType as 'movie' | 'tv');
+      results = r.results;
+      totalPages = r.totalPages;
+      totalResults = r.totalResults;
     }
 
-    const totalResults = results.length;
-
-    const data = { results, total_results: totalResults, total_pages: 500, page: Number(page) };
+    const data = { results, total_results: totalResults, total_pages: totalPages, page: Number(page) };
 
     return NextResponse.json(data, {
       headers: {

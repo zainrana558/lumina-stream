@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { Calendar } from 'lucide-react';
 
 export default function ReleaseCalendarError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const router = useRouter();
@@ -16,9 +17,9 @@ export default function ReleaseCalendarError({ error, reset }: { error: Error & 
         <div style={{
           width: 80, height: 80, borderRadius: '50%', margin: '0 auto 1.5rem',
           background: 'linear-gradient(135deg, rgba(78,205,196,.15) 0%, rgba(255,179,71,.15) 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ECDC4',
           boxShadow: '8px 8px 24px rgba(0,0,0,.82), -4px -4px 11px rgba(45,25,90,.28), inset 0 1.5px 0 rgba(255,255,255,.048)',
-        }}>📅</div>
+        }}><Calendar size={32} /></div>
         <h2 className="f-cinzel" style={{
           fontSize: '1.4rem',
           color: 'rgba(255,245,232,.8)', letterSpacing: '.08em', marginBottom: '1rem',

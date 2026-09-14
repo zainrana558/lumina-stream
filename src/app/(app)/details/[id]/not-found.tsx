@@ -1,4 +1,16 @@
 import Link from 'next/link';
+import { Sparkles, Home } from 'lucide-react';
+import type { Metadata } from 'next';
+
+// This segment has a loading.tsx, which makes Next.js start streaming the
+// response (200) before the page component's async notFound() check can
+// run — a known App Router limitation where the HTTP status can't be
+// changed to 404 once streaming has begun. The page content is correct
+// either way; noindex keeps search engines from crawling/indexing these
+// as if they were real, live show pages.
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+};
 
 export default function DetailsNotFound() {
   return (
@@ -15,7 +27,7 @@ export default function DetailsNotFound() {
           boxShadow: '8px 8px 24px rgba(0,0,0,.82), -4px -4px 11px rgba(45,25,90,.28), inset 0 1.5px 0 rgba(255,255,255,.048)',
           animation: 'breathe 3s ease-in-out infinite',
         }}>
-          <span role="img" aria-hidden="true">&#x2728;</span>
+          <Sparkles size={32} color="currentColor" />
         </div>
         <h2 className="f-cinzel" style={{
            fontSize: '1.4rem',
@@ -28,7 +40,7 @@ export default function DetailsNotFound() {
           We couldn't find a show with this ID. It may have been removed or the URL is incorrect.
         </p>
         <div style={{ display: 'flex', gap: '.85rem', justifyContent: 'center' }}>
-          <Link href="/" className="btn-p">✦ Go Home</Link>
+          <Link href="/" className="btn-p"><Home size={16} /> Go Home</Link>
           <Link href="/browse" className="btn-g">Browse Shows</Link>
         </div>
       </div>

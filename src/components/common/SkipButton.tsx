@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 
 export default function SkipButton({ type, onSkip }: { type: 'intro' | 'credits'; onSkip: () => void }) {
   const [visible, setVisible] = useState(false);
@@ -24,16 +25,18 @@ export default function SkipButton({ type, onSkip }: { type: 'intro' | 'credits'
         padding: '10px 22px', borderRadius: 8,
         background: 'rgba(0,0,0,.75)', border: '1px solid rgba(255,255,255,.2)',
         backdropFilter: 'blur(8px)',
-        color: '#FFF5E8', 
+        color: '#FFF5E8',
         fontSize: '.82rem', fontWeight: 600, letterSpacing: '.04em',
         cursor: 'pointer', transition: 'all .25s',
         boxShadow: '2px 2px 12px rgba(0,0,0,.5)',
         animation: 'skip-slide-in .3s ease both',
+        display: 'flex', alignItems: 'center', gap: 8,
       }}
       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,179,71,.25)'; e.currentTarget.style.borderColor = 'rgba(255,179,71,.5)'; }}
       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,.75)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.2)'; }}
     >
-      {type === 'intro' ? 'Skip Intro  →' : 'Skip Credits  →'}
+      {type === 'intro' ? 'Skip Intro' : 'Skip Credits'}
+      <ArrowRight size={14} />
     </button>
   );
 }

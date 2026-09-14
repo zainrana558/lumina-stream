@@ -10,6 +10,7 @@
  */
 
 import Link from 'next/link';
+import { safeJsonLd } from '@/lib/jsonld';
 import { SITE_URL } from '@/lib/seo/metadata';
 import { personUrl, mediaUrl } from '@/lib/slug';
 
@@ -315,7 +316,7 @@ export default function DetailSeoContent(props: SeoContentProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }} />
 
       <article className="seo-detail f-crimson" aria-label={`Information about ${title}`}>
         <h1 className="f-cinzel-dec">{title}{year ? ` (${year})` : ''}</h1>

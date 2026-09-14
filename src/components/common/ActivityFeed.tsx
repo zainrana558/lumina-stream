@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { Play, Check, Star, MessageCircle, ClipboardList, Pencil, Loader2, type LucideIcon } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 
 interface ActivityItem {
@@ -16,14 +17,14 @@ interface ActivityItem {
   profile: { id: string; name: string; avatar_url: string | null };
 }
 
-const ACTIVITY_CONFIG: Record<string, { verb: string; icon: string; color: string }> = {
-  watched: { verb: 'watched', icon: '▶', color: '#4ECDC4' },
-  completed: { verb: 'finished watching', icon: '✓', color: '#78D621' },
-  added_to_watchlist: { verb: 'added to watchlist', icon: '★', color: '#FFB347' },
-  commented: { verb: 'commented on', icon: '💬', color: '#8B78FF' },
-  rated: { verb: 'rated', icon: '⭐', color: '#FFE566' },
-  created_list: { verb: 'created list', icon: '📋', color: '#FF6B8A' },
-  updated_list: { verb: 'updated list', icon: '✏', color: '#FF6B8A' },
+const ACTIVITY_CONFIG: Record<string, { verb: string; icon: LucideIcon; color: string }> = {
+  watched: { verb: 'watched', icon: Play, color: '#4ECDC4' },
+  completed: { verb: 'finished watching', icon: Check, color: '#78D621' },
+  added_to_watchlist: { verb: 'added to watchlist', icon: Star, color: '#FFB347' },
+  commented: { verb: 'commented on', icon: MessageCircle, color: '#8B78FF' },
+  rated: { verb: 'rated', icon: Star, color: '#FFE566' },
+  created_list: { verb: 'created list', icon: ClipboardList, color: '#FF6B8A' },
+  updated_list: { verb: 'updated list', icon: Pencil, color: '#FF6B8A' },
 };
 
 function timeAgo(dateStr: string): string {
@@ -202,7 +203,7 @@ export default function ActivityFeed({ feedMode = false }: { feedMode?: boolean 
       {hasMore && <div ref={loaderRef} style={{ height: 60 }} />}
       {loading && page > 1 && (
         <div className="f-cinzel" style={{ textAlign: 'center', padding: '1rem', color: 'rgba(255,245,232,.3)',  fontSize: '.72rem' }}>
-          <div style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite' }}>✦</div>
+          <div style={{ display: 'flex', justifyContent: 'center', animation: 'spin 1.5s linear infinite' }}><Loader2 size={16} /></div>
         </div>
       )}
     </div>

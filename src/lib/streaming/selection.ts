@@ -44,6 +44,7 @@ export async function selectProviders(options: SelectionOptions): Promise<EmbedR
     url: item.url,
     tier: item.tier as EmbedResult['tier'],
     category: (item.category === 'anime' ? 'anime' : 'all') as EmbedResult['category'],
+    noSandbox: item.noSandbox,
   }));
 }
 

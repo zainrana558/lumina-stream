@@ -49,3 +49,16 @@ export function createClient() {
     SUPABASE_ANON_KEY
   );
 }
+
+/**
+ * The realtime client authenticates as `anon` until the current session's JWT
+ * is explicitly handed to it — subscribing to a postgres_changes channel
+ * before this resolves joins successfully, but RLS then evaluates auth.uid()
+ * as null and silently delivers nothing (confirmed against a real browser:
+ * the join succeeds, no events ever arrive). Call this before `.channel(...)`
+ * on any client whose subscriptions rely on an auth.uid()-scoped RLS policy.
+ */
+export async function ensureRealtimeAuth(supabase: ReturnType<typeof createClient>): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) supabase.realtime.setAuth(session.access_token);
+}

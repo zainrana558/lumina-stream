@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { VolumeX, Volume1, Volume2, SkipBack, SkipForward, Rewind, FastForward, Play, Pause, PictureInPicture, X } from 'lucide-react';
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -76,8 +77,8 @@ export default function PlayerControls({
 
       {/* Volume slider */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <button onClick={onToggleMute} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: '#FFF5E8', width: 28, textAlign: 'center' }}>
-          {muted || volume === 0 ? '🔇' : volume < 50 ? '🔉' : '🔊'}
+        <button onClick={onToggleMute} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#FFF5E8', width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {muted || volume === 0 ? <VolumeX size={16} /> : volume < 50 ? <Volume1 size={16} /> : <Volume2 size={16} />}
         </button>
         <input
           type="range" min={0} max={100} value={muted ? 0 : volume}
@@ -94,17 +95,17 @@ export default function PlayerControls({
             width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.08)',
             border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '.85rem', color: '#FFF5E8', transition: 'all .2s',
-          }}>⏮</button>
+            color: '#FFF5E8', transition: 'all .2s',
+          }}><SkipBack size={15} /></button>
           {/* Replay 30s */}
           <button onClick={onReplay} title="Replay 30 seconds" style={{
             width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,.1)',
             border: '1px solid rgba(255,255,255,.12)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1rem', color: '#FFF5E8', transition: 'all .2s',
+            color: '#FFF5E8', transition: 'all .2s',
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <span style={{ transform: 'scaleX(-1)' }}>▶</span><span className="f-mono" style={{ fontSize: '.55rem', marginLeft: 1 }}>30</span>
+              <Rewind size={16} /><span className="f-mono" style={{ fontSize: '.55rem', marginLeft: 1 }}>30</span>
             </span>
           </button>
           {/* Play/Pause */}
@@ -112,18 +113,18 @@ export default function PlayerControls({
             width: 48, height: 48, borderRadius: '50%',
             background: 'rgba(255,179,71,.2)', border: '1.5px solid rgba(255,179,71,.5)',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.3rem', color: '#FFF5E8', transition: 'all .2s',
+            color: '#FFF5E8', transition: 'all .2s',
             boxShadow: '0 0 16px rgba(255,179,71,.2)',
-          }}>{isPlaying ? '⏸' : '▶'}</button>
+          }}>{isPlaying ? <Pause size={21} fill="currentColor" /> : <Play size={21} fill="currentColor" />}</button>
           {/* Forward 30s — uses onForward prop (sends postMessage to iframe from parent) */}
           <button onClick={handleForward} title="Forward 30 seconds" style={{
             width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,.1)',
             border: '1px solid rgba(255,255,255,.12)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1rem', color: '#FFF5E8', transition: 'all .2s',
+            color: '#FFF5E8', transition: 'all .2s',
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-              <span className="f-mono" style={{ fontSize: '.55rem', marginRight: 1 }}>30</span><span>▶</span>
+              <span className="f-mono" style={{ fontSize: '.55rem', marginRight: 1 }}>30</span><FastForward size={16} />
             </span>
           </button>
           {/* Next Episode */}
@@ -131,8 +132,8 @@ export default function PlayerControls({
             width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.08)',
             border: '1px solid rgba(255,255,255,.1)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '.85rem', color: '#FFF5E8', transition: 'all .2s',
-          }}>⏭</button>
+            color: '#FFF5E8', transition: 'all .2s',
+          }}><SkipForward size={15} /></button>
         </div>
 
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -178,9 +179,9 @@ export default function PlayerControls({
             color: subtitlesOn ? 'rgba(255,179,71,.9)' : '#FFF5E8', cursor: 'pointer',
           }}>CC</button>
           {/* PiP */}
-          <button onClick={onPip} title="Picture in Picture" className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem' }}>⟶ PiP</button>
+          <button onClick={onPip} title="Picture in Picture" className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem', display: 'inline-flex', alignItems: 'center', gap: 5 }}><PictureInPicture size={13} /> PiP</button>
           {/* Exit */}
-          <button onClick={onExit} className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem' }}>✕ Exit</button>
+          <button onClick={onExit} className="btn-g" style={{ padding: '7px 16px', fontSize: '.72rem', display: 'inline-flex', alignItems: 'center', gap: 5 }}><X size={13} /> Exit</button>
         </div>
       </div>
     </div>

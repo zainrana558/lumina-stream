@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Moon } from 'lucide-react';
 
 interface StillWatchingProps {
   showName: string;
@@ -32,7 +33,7 @@ export default function StillWatching({ showName, onContinue, onBreak }: StillWa
         boxShadow: '8px 8px 32px rgba(0,0,0,.8), 0 0 80px rgba(139,120,255,.06)',
         maxWidth: 420, width: '90%',
       }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🌙</div>
+        <div style={{ display: 'flex', justifyContent: 'center', color: 'rgba(255,179,71,.8)', marginBottom: '1rem' }}><Moon size={40} /></div>
         <h2 className="f-cinzel-dec" style={{  fontSize: '1.4rem', color: '#FFF5E8', marginBottom: '.5rem' }}>Still Watching?</h2>
         <p className="f-crimson" style={{  fontSize: '.92rem', color: 'rgba(255,245,232,.6)', lineHeight: 1.6, marginBottom: '.3rem' }}>
           Are you still watching <span style={{ color: 'rgba(255,179,71,.8)', fontWeight: 600 }}>{showName}</span>?

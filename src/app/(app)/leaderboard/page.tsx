@@ -1,4 +1,5 @@
 import { CANONICAL_BASE } from '@/lib/seo/constants';
+import { safeJsonLd } from '@/lib/jsonld';
 import LeaderboardClient from './LeaderboardClient';
 
 const siteUrl = CANONICAL_BASE;
@@ -48,9 +49,9 @@ const breadcrumbJsonLd = {
 export default function LeaderboardPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [

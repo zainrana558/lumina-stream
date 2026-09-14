@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Drama, Calendar, Cake, MapPin, Link2, Star, Film, ChevronUp, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import Card from '@/components/common/Card';
 import type { MediaItem } from '@/types';
@@ -146,7 +147,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 130, background: 'linear-gradient(to bottom,#07040F,transparent)', zIndex: 2 }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%', background: 'linear-gradient(to top,#07040F 0%,rgba(7,4,15,.85) 50%,transparent 100%)', zIndex: 2 }} />
 
-        <button className="btn-g" onClick={() => router.back()} style={{ position: 'absolute', top: 'clamp(70px,8vw,88px)', left: 'clamp(1rem,5vw,2.5rem)', zIndex: 10, padding: '9px 18px', fontSize: '.73rem' }}>← Back</button>
+        <button className="btn-g" onClick={() => router.back()} style={{ position: 'absolute', top: 'clamp(70px,8vw,88px)', left: 'clamp(1rem,5vw,2.5rem)', zIndex: 10, padding: '9px 18px', fontSize: '.73rem', display: 'flex', alignItems: 'center', gap: 6 }}><ArrowLeft size={14} /> Back</button>
 
         <div style={{ position: 'absolute', bottom: '8%', left: 'clamp(1rem,5vw,2.5rem)', right: 'clamp(1rem,5vw,2.5rem)', zIndex: 3, maxWidth: 'clamp(300px,60vw,1040px)', display: 'flex', gap: 'clamp(1.5rem,3vw,2.5rem)', alignItems: 'flex-end' }}>
           {/* Profile Photo */}
@@ -166,7 +167,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
-              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1E1838,#0C091A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem' }}>🎭</div>
+              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1E1838,#0C091A)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Drama size={64} color="rgba(255,245,232,.3)" /></div>
             )}
           </div>
 
@@ -188,9 +189,9 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
               marginBottom: '.5rem', lineHeight: 1.1,
             }}>{person.name}</h1>
             <div className="f-crimson" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap',  fontSize: '.88rem', color: 'rgba(255,245,232,.55)' }}>
-              {person.birthday && <span>📅 {formatDate(person.birthday)}</span>}
-              {age && <span>🎂 {age}</span>}
-              {person.place_of_birth && <span>📍 {person.place_of_birth}</span>}
+              {person.birthday && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Calendar size={14} /> {formatDate(person.birthday)}</span>}
+              {age && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Cake size={14} /> {age}</span>}
+              {person.place_of_birth && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><MapPin size={14} /> {person.place_of_birth}</span>}
             </div>
           </div>
         </div>
@@ -223,14 +224,15 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
               <button className="f-cinzel" onClick={() => setBioExpanded(!bioExpanded)} style={{
                 background: 'none', border: 'none', cursor: 'pointer', color: '#FFB347',
                  fontSize: '.72rem', marginTop: '.5rem', padding: 0,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
               }}>
-                {bioExpanded ? '▲ Show less' : '▼ Read more'}
+                {bioExpanded ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> Read more</>}
               </button>
             )}
             {person.homepage && (
               <div style={{ marginTop: '1rem' }}>
-                <a href={person.homepage} target="_blank" rel="noopener noreferrer" className="btn-g" style={{ display: 'inline-block', padding: '8px 16px', fontSize: '.72rem', textDecoration: 'none' }}>
-                  🔗 Official Website
+                <a href={person.homepage} target="_blank" rel="noopener noreferrer" className="btn-g" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: '.72rem', textDecoration: 'none' }}>
+                  <Link2 size={13} /> Official Website
                 </a>
               </div>
             )}
@@ -257,7 +259,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
               <div>
                 <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.5)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5, }}>Most recognized for</div>
-                <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>🌟 Known For</div>
+                <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)', display: 'flex', alignItems: 'center', gap: 8 }}><Star size={20} fill="currentColor" /> Known For</div>
               </div>
             </div>
             <div className="hide-scroll" style={{ display: 'flex', gap: 14, padding: '6px 0', overflowX: 'auto', overflowY: 'visible' }}>
@@ -290,7 +292,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div>
                   <div className="f-cinzel" style={{ fontSize: '8.5px', color: 'rgba(255,245,232,.5)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 5 }}>Coming soon</div>
-                  <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>📅 Upcoming Projects</div>
+                  <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)', display: 'flex', alignItems: 'center', gap: 8 }}><Calendar size={20} /> Upcoming Projects</div>
                 </div>
               </div>
               <div className="hide-scroll" style={{ display: 'flex', gap: 14, padding: '6px 0', overflowX: 'auto', overflowY: 'visible' }}>
@@ -309,7 +311,7 @@ export default function PersonPageClient({ person }: { person: PersonData }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: '.75rem' }}>
               <div>
-                <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)' }}>🎬 Full Filmography</div>
+                <div className="sec" style={{ fontSize: 'clamp(1rem,2vw,1.25rem)', display: 'flex', alignItems: 'center', gap: 8 }}><Film size={20} /> Full Filmography</div>
                 <div className="f-crimson" style={{ fontSize: '.72rem', color: 'rgba(255,245,232,.5)',  marginTop: 4 }}>
                   {filteredCredits.length} titles
                 </div>

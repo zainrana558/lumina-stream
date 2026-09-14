@@ -35,6 +35,11 @@ const nextConfig: NextConfig = {
       { source: '/tv/:slug', destination: '/details/:slug?mt=tv' },
       // /anime/one-piece-1999-100000164 → /details/100000164?mt=anime
       { source: '/anime/:slug', destination: '/details/:slug?mt=anime' },
+      // /anime (bare hub, sitemap-submitted at the same priority as /movies
+      // and /tv-shows) had no route at all and fell through to a login wall
+      // for guests (audit finding F-06) — serve the same portal /genre/anime
+      // does, at the URL siblings /movies and /tv-shows use.
+      { source: '/anime', destination: '/genre/anime' },
       // /actor/leonardo-dicaprio-287 → /person/287
       { source: '/actor/:slug', destination: '/person/:slug' },
       // /country/japan → /browse?country=JP
@@ -58,7 +63,11 @@ const nextConfig: NextConfig = {
         // Note: CSP and security headers are set by src/proxy.ts (auth/security layer).
         // Do NOT duplicate CSP here — the browser intersects both policies,
         // which can break scripts, iframes, and ad network integrations.
-        source: '/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap).*)',
+        // The excluded segments include the auth-gated / per-user routes
+        // (watchlist, stats, settings, activity, collections, year-in-review,
+        // profiles): those must never get a `public` cache policy — the proxy
+        // marks them `private, no-store` instead. See src/proxy.ts::noStore.
+        source: '/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap|watchlist|stats|settings|activity|collections|year-in-review|profiles).*)',
         headers: [
           {
             key: 'Cache-Control',
