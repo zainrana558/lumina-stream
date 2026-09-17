@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Facebook, Instagram, Twitter, Youtube, type LucideIcon } from 'lucide-react';
 import { GCARDS } from '@/config/genres';
+import NewsletterSignup from '@/components/common/NewsletterSignup';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -61,25 +62,28 @@ const SOCIAL_ICONS: { Icon: LucideIcon; label: string }[] = [
 export default function Footer() {
   return (
     <footer style={{
-      position: 'relative', zIndex: 3, background: '#05030C',
+      position: 'relative', zIndex: 3, background: 'var(--bg)',
       borderTop: '1px solid rgba(255,255,255,.055)',
       padding: '3rem clamp(1rem,5vw,3rem) 2.5rem',
       boxShadow: '0 -6px 0 rgba(0,0,0,.7),0 -10px 38px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04)',
     }}>
+      <div style={{ marginBottom: '2.2rem', paddingBottom: '2.2rem', borderBottom: '1px solid rgba(255,255,255,.055)' }}>
+        <NewsletterSignup />
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
         <div>
           <Link href="/" className="logo" style={{ fontSize: '1.25rem', display: 'block', marginBottom: '.6rem', textDecoration: 'none', color: 'inherit' }}>LUMOVIA</Link>
-          <p className="f-crimson" style={{ fontSize: '.88rem', color: 'rgba(255,245,232,.4)', lineHeight: 1.68 }}>Free streaming catalog for movies, TV shows, anime &amp; cartoons.</p>
+          <p className="f-crimson" style={{ fontSize: '.88rem', color: 'rgba(var(--txt-rgb),.4)', lineHeight: 1.68 }}>Free streaming catalog for movies, TV shows, anime &amp; cartoons.</p>
         </div>
         {FOOTER_SECTIONS.map(([t, links]) => (
           <div key={String(t)}>
-            <div className="f-cinzel" style={{ fontSize: '.65rem', letterSpacing: '.14em', color: 'rgba(255,179,71,.6)', marginBottom: '.9rem' }}>{String(t).toUpperCase()}</div>
+            <div className="f-cinzel" style={{ fontSize: '.65rem', letterSpacing: '.14em', color: 'rgba(var(--gold-rgb),.6)', marginBottom: '.9rem' }}>{String(t).toUpperCase()}</div>
             {links.map(l => (
               <Link
                 className="f-crimson"
                 key={l.label}
                 href={l.href}
-                style={{ fontSize: '.86rem', color: 'rgba(255,245,232,.38)', marginBottom: '.42rem', display: 'block', transition: 'color .25s', textDecoration: 'none' }}
+                style={{ fontSize: '.86rem', color: 'rgba(var(--txt-rgb),.38)', marginBottom: '.42rem', display: 'block', transition: 'color .25s', textDecoration: 'none' }}
               >
                 {l.label}
               </Link>
@@ -88,16 +92,16 @@ export default function Footer() {
         ))}
       </div>
       <div style={{ borderTop: '1px solid rgba(255,255,255,.055)', paddingTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-        <div className="f-mono" style={{ fontSize: '.62rem', letterSpacing: '.09em', color: 'rgba(255,245,232,.22)' }}>
+        <div className="f-mono" style={{ fontSize: '.62rem', letterSpacing: '.09em', color: 'rgba(var(--txt-rgb),.22)' }}>
           &copy; 2026 LUMOVIA &middot; ALL RIGHTS RESERVED<br />
-          <span style={{ color: 'rgba(255,245,232,.15)' }}>
+          <span style={{ color: 'rgba(var(--txt-rgb),.15)' }}>
             Lumovia does not host, upload, or stream any video files. Content is provided by independent third-party providers. Users are responsible for verifying compliance with their local laws.
           </span>
           <span style={{ display: 'block', marginTop: '.5rem' }}>
             Data powered by{' '}
-            <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,245,232,.3)', textDecoration: 'none' }}>TMDB</a>
+            <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(var(--txt-rgb),.3)', textDecoration: 'none' }}>TMDB</a>
             {' & '}
-            <a href="https://anilist.co/" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,245,232,.3)', textDecoration: 'none' }}>AniList</a>
+            <a href="https://anilist.co/" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(var(--txt-rgb),.3)', textDecoration: 'none' }}>AniList</a>
           </span>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
@@ -106,7 +110,7 @@ export default function Footer() {
               key={label}
               aria-hidden="true"
               className="footer-icon"
-              style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0C091A', boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.04)', transition: 'all .25s', color: 'rgba(255,245,232,.18)' }}
+              style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--s1)', boxShadow: '3px 3px 8px rgba(0,0,0,.7),-1px -1px 4px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.04)', transition: 'all .25s', color: 'rgba(var(--txt-rgb),.18)' }}
             ><Icon size={14} /></span>
           ))}
         </div>

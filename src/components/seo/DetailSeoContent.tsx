@@ -319,7 +319,10 @@ export default function DetailSeoContent(props: SeoContentProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }} />
 
       <article className="seo-detail f-crimson" aria-label={`Information about ${title}`}>
-        <h1 className="f-cinzel-dec">{title}{year ? ` (${year})` : ''}</h1>
+        {/* This block's title duplicates the hero's own h1 (DetailsContent.tsx)
+            further up the same page — kept as h2 so the page has exactly
+            one h1, not two competing for the same primary-heading signal. */}
+        <h2 className="f-cinzel-dec">{title}{year ? ` (${year})` : ''}</h2>
         {tagline && <div className="tagline f-crimson">{tagline}</div>}
 
         <div className="meta-line">

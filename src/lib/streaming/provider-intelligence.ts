@@ -150,14 +150,23 @@ const TV_POOL: ProviderPool = {
 // UPDATE 2026-09-17: 2Embed Anime, Cinezo Anime (Sub) — the default
 // auto-picked anime provider until this fix — Cinezo Anime (Dub), and
 // VidSrc CC Anime are all confirmed dead (see providers.ts for the specific
-// failure mode of each) and removed from this pool. Only Vidy Anime and
-// VidNest Anime render real, correct anime content right now.
+// failure mode of each) and removed from this pool. Vidy Anime and VidNest
+// Anime render real, correct content. Megavid Anime (Sub)/(Dub) — found the
+// same day to replace the four dead entries — are the new default: sandbox-
+// safe, and sub/dub confirmed genuinely different via captured network
+// requests (different HLS session UUIDs, sub ships 3 caption tracks vs
+// dub's 1). TryEmbed Anime (Sub)/(Dub) also found and verified the same
+// day, real sub/dub content confirmed, but ~60% of test renders failed
+// with the player's own timeout error — kept in the pool as a backup, not
+// promoted to GENERAL_PROVIDERS-style top billing, given that failure rate.
 const ANIME_POOL: ProviderPool = {
   name: 'anime',
   category: 'anime',
   providers: [
+    'Megavid Anime (Sub)', 'Megavid Anime (Dub)',
     ...GENERAL_PROVIDERS,
     'VidNest Anime', 'Vidy Anime',
+    'TryEmbed Anime (Sub)', 'TryEmbed Anime (Dub)',
   ],
 };
 
@@ -188,6 +197,16 @@ const PROVIDER_CAPABILITIES: Record<string, {
   // confirmed via screenshot — rated a notch above VidNest on quality/subs.
   'Vidy':               { subtitleSupport: 0.85, quality: 0.95, avgSpeed: 0.7 },
   'Vidy Anime':         { subtitleSupport: 0.85, quality: 0.95, avgSpeed: 0.7 },
+  // 2026-09-17 find — sandboxed-safe, sub/dub confirmed genuinely distinct
+  // via network-level HLS/caption-track inspection (not just a URL guess).
+  // Rated close to Vidy: reliable across every test render this sweep.
+  'Megavid Anime (Sub)':   { subtitleSupport: 0.9, quality: 0.85, avgSpeed: 0.7 },
+  'Megavid Anime (Dub)':   { subtitleSupport: 0.3, quality: 0.85, avgSpeed: 0.7 },
+  // Same day, same sandbox-safe/genuine-sub-dub profile, but ~60% of test
+  // renders failed with the player's own timeout error — avgSpeed docked
+  // to reflect that unreliability; kept as a backup, not a default pick.
+  'TryEmbed Anime (Sub)':  { subtitleSupport: 0.9, quality: 0.8,  avgSpeed: 0.4 },
+  'TryEmbed Anime (Dub)':  { subtitleSupport: 0.3, quality: 0.8,  avgSpeed: 0.4 },
   'VidLink':            { subtitleSupport: 0.75, quality: 0.85, avgSpeed: 0.65 },
   'VidSrc IO':          { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.65 },
   'Videasy':            { subtitleSupport: 0.6,  quality: 0.8,  avgSpeed: 0.65 },
@@ -379,6 +398,25 @@ const PROBE_TIMEOUT = 2500;       // per-probe hard timeout
 const PROBE_BUDGET_MS = 2200;     // overall wall-clock cap for the whole probe round
 const MAX_PARALLEL_PROBES = 5;    // Only probe top candidates
 
+/**
+ * A bare `User-Agent`-only fetch reads as a bot to at least one live
+ * provider (Megavid: confirmed 403 with just a UA header, confirmed 200
+ * with this full set — 2026-09-17, same domain, same URL, only the headers
+ * changed) — a crude Cloudflare header-completeness check, not real
+ * fingerprinting, since it's satisfied by ordinary headers a browser always
+ * sends anyway. Applying this broadly rather than just to Megavid since any
+ * other provider doing the same crude check benefits too, and it costs
+ * nothing for ones that don't care.
+ */
+const PROBE_HEADERS: Record<string, string> = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Sec-Fetch-Dest': 'iframe',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'cross-site',
+};
+
 interface ProbeResult {
   name: string;
   alive: boolean;
@@ -394,7 +432,7 @@ async function probeProvider(url: string, name: string): Promise<ProbeResult> {
       method: 'GET',
       redirect: 'follow', // Follow redirects to reach the actual embed page
       signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+      headers: PROBE_HEADERS,
     });
     clearTimeout(timeout);
     const latency = Date.now() - start;

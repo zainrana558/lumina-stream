@@ -19,8 +19,10 @@ const PipPlayer = lazy(() => import('@/components/common/PipPlayer'));
 const ShortcutOverlay = lazy(() => import('@/components/common/ShortcutOverlay'));
 const Confetti = lazy(() => import('@/components/common/Confetti'));
 import { ToastProvider } from '@/components/common/ToastProvider';
+import { ConfirmProvider } from '@/components/common/ConfirmProvider';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 const CookieConsent = lazy(() => import('@/components/layout/CookieConsent'));
+const FloatingContactButton = lazy(() => import('@/components/common/FloatingContactButton'));
 const Footer = lazy(() => import('@/components/layout/Footer'));
 const ClientHealthMonitor = lazy(() => import('@/components/common/ClientHealthMonitor'));
 
@@ -341,6 +343,11 @@ function AppShell({ children }: { children: ReactNode }) {
         <CookieConsent />
       </Suspense>
 
+      {/* Persistent contact widget */}
+      <Suspense fallback={null}>
+        <FloatingContactButton />
+      </Suspense>
+
       {/* Site footer — hidden on details pages */}
       {!pathname.startsWith('/details') && <Footer />}
 
@@ -359,9 +366,11 @@ export default function ClientShell({ children }: { children: ReactNode }) {
   return (
     <AppProvider>
       <ToastProvider>
-        <ErrorBoundary>
-          <AppShell>{children}</AppShell>
-        </ErrorBoundary>
+        <ConfirmProvider>
+          <ErrorBoundary>
+            <AppShell>{children}</AppShell>
+          </ErrorBoundary>
+        </ConfirmProvider>
       </ToastProvider>
     </AppProvider>
   );

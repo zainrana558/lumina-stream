@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { safeJsonLd } from '@/lib/jsonld';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CANONICAL_BASE } from '@/lib/seo/constants';
 import { tmdbFetch, getImageUrl, type TMDBListResponse, type TMDBPerson } from '@/lib/tmdb/server';
 import { personUrl } from '@/lib/slug';
@@ -195,7 +196,7 @@ export default async function ActorsPage() {
                   transition: 'background .2s, border-color .2s',
                 }}
               >
-                <img
+                <Image
                   src={getImageUrl(actor.profile_path, 'w185')}
                   alt={actor.name}
                   width={120}

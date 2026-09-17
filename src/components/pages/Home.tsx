@@ -302,7 +302,13 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF4444', animation: 'pulse-dot 1.5s ease-in-out infinite' }} />
           <span className="f-cinzel" style={{  fontSize: '.64rem', letterSpacing: '.15em', color: 'rgba(255,179,71,.9)' }}>FEATURED SERIES</span>
         </div>
-        <h1 className="h1 s2" style={{ fontSize: 'clamp(2.2rem,5.5vw,5.2rem)', marginBottom: '.85rem' }}>{F.title}</h1>
+        {/* Visually the hero's big display heading, but semantically this
+            names ONE rotating featured title, not the page — the page's
+            own h1 (its actual subject: Lumovia itself) lives in the SEO
+            block further down page.tsx. Two h1s on one page hurts SEO
+            header hierarchy, so this stays an h2 despite the "h1" CSS
+            class name (that class only controls font size/weight). */}
+        <h2 className="h1 s2" style={{ fontSize: 'clamp(2.2rem,5.5vw,5.2rem)', marginBottom: '.85rem' }}>{F.title}</h2>
         <p className="s3 f-cinzel" style={{  fontSize: 'clamp(.73rem,.98vw,.88rem)', letterSpacing: '.06em', color: 'rgba(255,245,232,.52)', marginBottom: '.72rem' }}>{F.sub || F.genre[0]}</p>
         <p className="s4 f-crimson" style={{  fontSize: 'clamp(.9rem,1.2vw,1.05rem)', lineHeight: 1.78, color: 'rgba(255,245,232,.68)', maxWidth: 530, marginBottom: '1.4rem' }}>{F.desc.slice(0, 130)}…</p>
         <div className="s4" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1.8rem' }}>

@@ -3,13 +3,15 @@
 import { useState } from 'react';
 import { Check, Share2 } from 'lucide-react';
 import { useToast } from '@/components/common/ToastProvider';
+import { withUtm } from '@/lib/utm';
 
 export default function ShareButton({ title, id }: { title: string; id: number }) {
   const { addToast } = useToast();
   const [shared, setShared] = useState(false);
 
   const handleShare = async () => {
-    const url = typeof window !== 'undefined' ? `${window.location.origin}/details/${id}` : '';
+    const rawUrl = typeof window !== 'undefined' ? `${window.location.origin}/details/${id}` : '';
+    const url = rawUrl ? withUtm(rawUrl, { source: 'share_button', medium: 'social', campaign: 'title_share' }) : '';
     const text = `Check out ${title} on Lumovia!`;
 
     try {

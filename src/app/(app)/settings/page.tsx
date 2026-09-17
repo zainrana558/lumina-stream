@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
 import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
+import { useConfirm } from '@/components/common/ConfirmProvider';
 import AuthLoading from '@/components/common/AuthLoading';
 import Image from 'next/image';
 import {
@@ -211,6 +212,7 @@ function AccountSection({
   onSignOut: () => void;
   showToast: (msg: string) => void;
 }) {
+  const confirm = useConfirm();
   return (
     <div style={{ animation: 'card-in .3s both' }}>
       <SectionHeader icon={User} title="Account" subtitle="Your account information and session management" />
@@ -254,7 +256,7 @@ function AccountSection({
           DANGER ZONE
         </div>
         <button className="f-cinzel"
-          onClick={() => { if (confirm('Are you sure you want to sign out?')) { onSignOut(); } }}
+          onClick={async () => { if (await confirm({ message: 'Are you sure you want to sign out?', confirmLabel: 'Sign Out', variant: 'danger' })) { onSignOut(); } }}
           style={{
             width: '100%', padding: '.7rem', borderRadius: 10, border: 'none',
             cursor: 'pointer',  fontSize: '.72rem',
@@ -534,9 +536,16 @@ function NotificationsSection({ showToast }: { showToast: (msg: string) => void 
 
 function PrivacySection({ showToast }: { showToast: (msg: string) => void }) {
   const [clearing, setClearing] = useState(false);
+  const confirm = useConfirm();
 
   const handleClearWatchlist = async () => {
-    if (!confirm('Are you sure you want to clear your entire watchlist? This cannot be undone.')) return;
+    const ok = await confirm({
+      title: 'Clear watchlist?',
+      message: 'This removes every title from your watchlist. This cannot be undone.',
+      confirmLabel: 'Clear Watchlist',
+      variant: 'danger',
+    });
+    if (!ok) return;
     setClearing(true);
     try {
       const res = await fetch('/api/watchlist', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clearAll: true }) });

@@ -85,6 +85,17 @@ export default function RootLayout({
   return (
     <html lang="en-US" suppressHydrationWarning className={`${cinzelDec.variable} ${cinzel.variable} ${crimson.variable}`}>
       <head>
+        {/* Applies the saved light/dark choice before first paint — runs
+            synchronously in <head>, ahead of hydration, so a light-mode
+            visitor never sees a flash of the default dark theme first.
+            suppressHydrationWarning on <html> above is required for this:
+            React would otherwise flag the attribute this script adds as a
+            server/client mismatch. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('lumina-color-scheme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}`,
+          }}
+        />
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
         <link rel="preconnect" href="https://api-cache.zainrana553.workers.dev" />

@@ -75,6 +75,22 @@ if (typeof globalThis !== 'undefined') {
   }, 60_000);
 }
 
+// A bare User-Agent-only fetch reads as a bot to at least one live provider
+// (Megavid: confirmed 403 with just a UA header, confirmed 200 with this
+// full set — 2026-09-17, same domain/URL, only headers changed) — a crude
+// Cloudflare header-completeness check, not real fingerprinting. Duplicated
+// from provider-intelligence.ts's identical PROBE_HEADERS rather than
+// imported — that module already imports FROM this one, so importing back
+// would be circular.
+const PING_HEADERS: Record<string, string> = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Sec-Fetch-Dest': 'iframe',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'cross-site',
+};
+
 /**
  * Check if a single provider is reachable AND allows iframe embedding.
  * Uses GET with redirect:'follow' (NOT manual) because:
@@ -91,7 +107,7 @@ async function pingProvider(url: string): Promise<{ alive: boolean; latencyMs: n
       method: 'GET',
       redirect: 'follow', // Follow redirects to reach the actual embed page
       signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+      headers: PING_HEADERS,
     });
     clearTimeout(timeout);
     const latencyMs = Date.now() - start;
@@ -253,6 +269,11 @@ export async function maybeCheckOneProvider(): Promise<void> {
   lastCheckTime = now;
 
   const sampleUrl = provider.getMovieUrl(getHealthCheckMovieId()); // Well-known movie for health ping
+  // Anime-only providers (no movie/tv route — see providers.ts) return ''
+  // here by design; fetch('') throws, which pingProvider's catch turns into
+  // a false "alive:false" — not a real dead signal, just an unanswerable
+  // question for a movie-based ping. Skip rather than poison health state.
+  if (!sampleUrl) return;
   const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
 
   await processHealthResult(provider, alive, latencyMs, framesBlocked);
@@ -299,6 +320,9 @@ export async function triggerBatchHealthCheck(): Promise<void> {
   await Promise.all(
     batch.map(async (provider) => {
       const sampleUrl = provider.getMovieUrl(getHealthCheckMovieId());
+      // See maybeCheckOneProvider's matching comment — anime-only providers
+      // legitimately have no movie URL to ping.
+      if (!sampleUrl) return;
       const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
       await processHealthResult(provider, alive, latencyMs, framesBlocked);
     })
@@ -329,6 +353,13 @@ export async function startupBurstCheck(): Promise<void> {
   Promise.all(
     topProviders.map(async (provider) => {
       const sampleUrl = provider.getMovieUrl(getHealthCheckMovieId());
+      // See maybeCheckOneProvider's matching comment — anime-only providers
+      // legitimately have no movie URL to ping. This is exactly the call
+      // site that first surfaced the bug: tier-1 anime-only providers (e.g.
+      // Megavid Anime) got probed here on cold start, fetch('') threw, and
+      // that got recorded as a real "dead" signal that then excluded them
+      // from every subsequent request via getDeadProviders().
+      if (!sampleUrl) return;
       const { alive, latencyMs, framesBlocked } = await pingProvider(sampleUrl);
       await processHealthResult(provider, alive, latencyMs, framesBlocked);
     })

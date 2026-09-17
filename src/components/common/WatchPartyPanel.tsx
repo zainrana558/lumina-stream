@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Check, Circle, Clapperboard, Copy, PartyPopper, RefreshCw, Star } from 'lucide-react';
 import { CS } from '@/styles/themes';
 import { createClient, ensureRealtimeAuth } from '@/lib/supabase/client';
+import { useConfirm } from '@/components/common/ConfirmProvider';
 
 interface Participant {
   profile_id: string;
@@ -238,8 +239,17 @@ export default function WatchPartyPanel({
     } catch { setError('Network error'); }
   };
 
+  const confirm = useConfirm();
   const handleLeave = async () => {
     if (!profileId || !room) return;
+    const ok = await confirm({
+      message: isHostControl
+        ? "You're the host — leaving will end the watch party for everyone in the room."
+        : 'Leave this watch party?',
+      confirmLabel: 'Leave',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await fetch('/api/watch-party/leave', {
         method: 'POST',

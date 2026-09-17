@@ -146,6 +146,67 @@ const activeProviders: StreamProvider[] = [
     getAnimeUrl: (malId, ep) => `https://vidsrc.cc/v2/embed/anime/${malId}/${ep}/sub`,
   },
 
+  // Found + live-verified 2026-09-17 to replace the four dead entries above.
+  // Real headless-Chromium render, production sandbox attributes intact
+  // (no noSandbox needed — works fine sandboxed), real AoT ep1 + One Piece
+  // ep1. Sub/dub genuinely differ — confirmed via captured network requests:
+  // sub and dub hit different HLS session UUIDs and sub ships 3 caption
+  // tracks (en/pt/es) vs dub's 1 (en) — the pattern you'd expect for a real
+  // subbed-vs-dubbed release, not two copies of the same stream. Anime-only
+  // backend (no documented movie/tv route), so getMovieUrl/getTvUrl return
+  // '' — getAnimeEmbedUrls filters empty URLs out, and getAniListUrl (which
+  // this app always has an anilistId to call) is tried first anyway.
+  {
+    name: "Megavid Anime (Sub)",
+    tier: 1, category: "anime",
+    getMovieUrl: () => '',
+    getTvUrl: () => '',
+    getAniListUrl: (anilistId, ep) => `https://megavid.buzz/ani/${anilistId}/${ep}/sub`,
+  },
+  {
+    name: "Megavid Anime (Dub)",
+    tier: 1, category: "anime",
+    getMovieUrl: () => '',
+    getTvUrl: () => '',
+    getAniListUrl: (anilistId, ep) => `https://megavid.buzz/ani/${anilistId}/${ep}/dub`,
+  },
+  // Also found + verified 2026-09-17, also sandbox-safe, also genuine
+  // sub/dub — but flaky: 3 of 8 test renders (AoT + One Piece, sub + dub,
+  // mixed) came back playing real, correctly-timed content; 5 came back
+  // with the player's own "STREAM FAILED TO LOAD OR TIMED OUT" error, with
+  // no correlation to sub vs dub specifically — reads as general backend
+  // instability, not a broken track. Kept at tier 2, an explicit backup
+  // behind Megavid rather than a default pick, given the ~60% failure rate
+  // observed in this sweep.
+  {
+    name: "TryEmbed Anime (Sub)",
+    tier: 2, category: "anime",
+    getMovieUrl: () => '',
+    getTvUrl: () => '',
+    getAniListUrl: (anilistId, ep) => `https://tryembed.us.cc/embed/anime/${anilistId}/${ep}/sub?lang-type=false`,
+  },
+  {
+    name: "TryEmbed Anime (Dub)",
+    tier: 2, category: "anime",
+    getMovieUrl: () => '',
+    getTvUrl: () => '',
+    getAniListUrl: (anilistId, ep) => `https://tryembed.us.cc/embed/anime/${anilistId}/${ep}/dub?lang-type=false`,
+  },
+  // Checked in the same 2026-09-17 pass, NOT added — confirmed dead, not
+  // just untried:
+  //   - MegaPlay (megaplay.buzz) — every test (AoT + One Piece, sub + dub,
+  //     both /ani/ and /mal/ routes) hit the identical real backend error
+  //     "Error Code: 410" (file removed/copyright). Consistent across the
+  //     two most universally-cataloged anime that exist — an abandoned
+  //     backend, not a per-title gap.
+  //   - AniXo (anixo.buzz) and VidPlus (player.vidplus.to) — both blocked
+  //     by a Cloudflare bot-challenge (403, cf-mitigated: challenge) on
+  //     direct fetch AND render as a permanently blank iframe either way —
+  //     a different failure mode from the sandbox-JS-rejection pattern
+  //     elsewhere in this file, and one headless Chromium (what this app's
+  //     own health-check cron uses) can't pass regardless of sandbox.
+  //   - animeplay.cfd — hosting account itself suspended, nothing to test.
+
   // ══════════════════════════════════════════════════════════════════
   // GENERAL TIER 1 — movies + TV
   // Re-swept 2026-09-16 through the REAL production app end to end: real

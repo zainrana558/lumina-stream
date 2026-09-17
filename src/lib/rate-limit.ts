@@ -24,7 +24,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { getRedis } from '@/lib/redis';
 
 // ---- Rate limiter presets ----
-type LimiterType = 'global' | 'tmdb' | 'search' | 'auth' | 'write' | 'embed' | 'stats' | 'leaderboard';
+type LimiterType = 'global' | 'tmdb' | 'search' | 'auth' | 'write' | 'embed' | 'stats' | 'leaderboard' | 'newsletter';
 
 // Duration strings matching Upstash's `${number} ${Unit}` type
 type DurationStr = `${number} s` | `${number} m` | `${number} h`;
@@ -46,6 +46,8 @@ const LIMITS: Record<LimiterType, { tokens: number; window: DurationStr }> = {
   stats:       { tokens: 15, window: '60 s' },
   // Leaderboard: 30 req per 60s (cached, low DB cost)
   leaderboard: { tokens: 30, window: '60 s' },
+  // Newsletter signup: unauthenticated public form, strict to deter spam bots
+  newsletter:  { tokens: 3, window: '60 s' },
 };
 
 // Window durations in ms for in-memory fallback + batch sync
@@ -58,6 +60,7 @@ const WINDOW_MS: Record<LimiterType, number> = {
   embed:       10_000,
   stats:       60_000,
   leaderboard: 60_000,
+  newsletter:  60_000,
 };
 
 type RatelimitInstance = Ratelimit;

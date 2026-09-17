@@ -206,6 +206,12 @@ export const remindersCheckSchema = z.object({
   lastCheck: z.string().optional(),
 });
 
+// ---- Newsletter ----
+export const newsletterSignupSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  source: z.string().max(50).optional().default('footer'),
+});
+
 // ---- Playback event ----
 export const playbackEventSchema = z.object({
   mediaId: z.union([z.string(), z.number()]),

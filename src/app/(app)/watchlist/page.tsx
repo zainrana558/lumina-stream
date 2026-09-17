@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import type { MediaItem } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/components/common/ToastProvider';
+import { useConfirm } from '@/components/common/ConfirmProvider';
 import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
 import AuthLoading from '@/components/common/AuthLoading';
 import Image from 'next/image';
 import { getPosterUrl } from '@/lib/images';
+import { withUtm } from '@/lib/utm';
 import { Lock, ClipboardList, Share2, Bell, Loader2, Moon, Film, X, Sparkles } from 'lucide-react';
 
 interface WatchlistItem {
@@ -42,6 +44,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 export default function WatchlistPage() {
   const { user, profile, authLoading, supabaseReady } = useApp();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [reminders, setReminders] = useState<ReminderItem[]>([]);
@@ -87,6 +90,8 @@ export default function WatchlistPage() {
   useEffect(() => { queueMicrotask(fetchWatchlist); queueMicrotask(fetchReminders); }, [fetchReminders]);
 
   const handleRemove = async (item: WatchlistItem) => {
+    const ok = await confirm({ message: `Remove "${item.title}" from your watchlist?`, confirmLabel: 'Remove', variant: 'danger' });
+    if (!ok) return;
     try {
       await fetch('/api/watchlist', {
         method: 'DELETE', headers: { 'Content-Type': 'application/json' },
@@ -113,7 +118,9 @@ export default function WatchlistPage() {
     const shareData = {
       title: `${profile?.name || 'My'} Lumovia Watchlist`,
       text: `Check out my watchlist on Lumovia! I have ${items.length} ${items.length === 1 ? 'title' : 'titles'} saved.`,
-      url: typeof window !== 'undefined' ? window.location.href : '',
+      url: typeof window !== 'undefined'
+        ? withUtm(window.location.href, { source: 'share_button', medium: 'social', campaign: 'watchlist_share' })
+        : '',
     };
 
     if (typeof navigator !== 'undefined' && navigator.share) {

@@ -6,6 +6,7 @@ import { useApp } from '@/contexts/AppContext';
 import SupabaseNotConfigured from '@/components/common/SupabaseNotConfigured';
 import AuthLoading from '@/components/common/AuthLoading';
 import { CollectionCard, CreateCollectionModal, CollectionDetail } from '@/components/common/Collections';
+import { useConfirm } from '@/components/common/ConfirmProvider';
 import { ClipboardList, Loader2, X, ArrowLeft } from 'lucide-react';
 
 interface Collection {
@@ -27,6 +28,7 @@ export default function CollectionsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const fetchCollections = useCallback(async () => {
     if (!profile) return;
@@ -69,7 +71,13 @@ export default function CollectionsPage() {
 
   const handleDelete = async (collectionId: string) => {
     if (!profile) return;
-    if (!confirm('Delete this collection? This cannot be undone.')) return;
+    const ok = await confirm({
+      title: 'Delete collection?',
+      message: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await fetch('/api/collections', {
         method: 'DELETE',

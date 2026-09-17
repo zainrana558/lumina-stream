@@ -165,7 +165,7 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
                 transform: 'translateX(-50%)',
                 marginTop: 12,
                 minWidth: 180,
-                background: '#0C091A',
+                background: 'var(--s1)',
                 border: '1px solid rgba(255,255,255,.06)',
                 borderRadius: 14,
                 boxShadow: '10px 10px 28px rgba(0,0,0,.88),-4px -4px 12px rgba(45,25,90,.25),inset 0 1.5px 0 rgba(255,255,255,.05),inset 0 -1px 0 rgba(0,0,0,.15),0 0 0 1px rgba(255,255,255,.05)',
@@ -194,7 +194,7 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <g.icon size={14} color={g.color} style={{ flexShrink: 0 }} />
-                  <span className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.06em', color: '#FFF5E8' }}>{g.label}</span>
+                  <span className="f-cinzel" style={{  fontSize: '.72rem', letterSpacing: '.06em', color: 'var(--txt)' }}>{g.label}</span>
                 </div>
               ))}
             </div>
@@ -229,7 +229,7 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
                 transform: 'translateX(-50%)',
                 marginTop: 12,
                 minWidth: 180,
-                background: '#0C091A',
+                background: 'var(--s1)',
                 border: '1px solid rgba(255,255,255,.06)',
                 borderRadius: 14,
                 boxShadow: '10px 10px 28px rgba(0,0,0,.88),-4px -4px 12px rgba(45,25,90,.25),inset 0 1.5px 0 rgba(255,255,255,.05),inset 0 -1px 0 rgba(0,0,0,.15),0 0 0 1px rgba(255,255,255,.05)',
@@ -271,7 +271,7 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,179,71,.5)', flexShrink: 0 }} />
-                  <span className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.06em', color: '#FFF5E8' }}>{item.label}</span>
+                  <span className="f-cinzel" style={{ fontSize: '.72rem', letterSpacing: '.06em', color: 'var(--txt)' }}>{item.label}</span>
                 </div>
               ))}
             </div>
@@ -305,7 +305,7 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
               {drop && (
                 <div className="dropdown" role="menu" aria-label="User dropdown">
                   <div style={{ padding: '.85rem 1.1rem', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
-                    <div className="f-cinzel" style={{  fontSize: '.76rem', color: '#FFF5E8', marginBottom: 2 }}>{displayName}</div>
+                    <div className="f-cinzel" style={{  fontSize: '.76rem', color: 'var(--txt)', marginBottom: 2 }}>{displayName}</div>
                     {displayEmail && <div style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)' }}>{displayEmail}</div>}
                   </div>
                   {([
@@ -339,13 +339,13 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', fontSize: '.9rem',
                   boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)',
-                  color: '#FFF5E8',
+                  color: 'var(--txt)',
                 }}
               ><span style={{ display: 'flex' }}><UserIcon size={18} /></span></button>
               {drop && (
                 <div className="dropdown" role="menu" aria-label="Guest dropdown">
                   <div style={{ padding: '.85rem 1.1rem', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
-                    <div className="f-cinzel" style={{  fontSize: '.76rem', color: '#FFF5E8', marginBottom: 2 }}>Guest</div>
+                    <div className="f-cinzel" style={{  fontSize: '.76rem', color: 'var(--txt)', marginBottom: 2 }}>Guest</div>
                     <div style={{ fontSize: '.7rem', color: 'rgba(255,245,232,.4)' }}>Sign in to save progress</div>
                   </div>
                   <div className="dd-item" role="menuitem" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') { setDrop(false); router.push('/login'); } }} onClick={() => { setDrop(false); router.push('/login'); }}>
@@ -372,7 +372,7 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
             top: 64,
             left: 0,
             right: 0,
-            background: '#0C091A',
+            background: 'var(--s1)',
             borderBottom: '1px solid rgba(255,255,255,.055)',
             boxShadow: '0 12px 32px rgba(0,0,0,.8)',
             zIndex: 996,

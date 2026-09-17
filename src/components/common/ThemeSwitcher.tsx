@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Check, Palette } from 'lucide-react';
+import { Check, Palette, Sun, Moon as MoonIcon } from 'lucide-react';
 import { CS } from '@/styles/themes';
 
 const THEME_NAMES = ['Moon', 'Lightning', 'Leaf', 'Fire', 'Ocean', 'Spark', 'Sunrise', 'Galaxy'] as const;
+const SCHEME_KEY = 'lumina-color-scheme';
 
 export default function ThemeSwitcher() {
   const [open, setOpen] = useState(false);
@@ -17,7 +18,24 @@ export default function ThemeSwitcher() {
     }
     return 0;
   });
+  // Mirrors the inline anti-flash script in layout.tsx — that script already
+  // set the DOM attribute before paint; this just syncs React state to match
+  // so the toggle UI reflects the real current state on first render.
+  const [scheme, setScheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined') return 'dark';
+    return localStorage.getItem(SCHEME_KEY) === 'light' ? 'light' : 'dark';
+  });
   const ref = useRef<HTMLDivElement>(null);
+
+  const selectScheme = (next: 'dark' | 'light') => {
+    setScheme(next);
+    localStorage.setItem(SCHEME_KEY, next);
+    if (next === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  };
 
   const applyTheme = (idx: number) => {
     const scheme = CS[idx];
@@ -120,6 +138,37 @@ export default function ThemeSwitcher() {
             color: CS[active].acc, letterSpacing: '.1em', marginTop: 2,
           }}>
             {THEME_NAMES[active]}
+          </div>
+
+          {/* Light/dark toggle — separate axis from the accent-color grid
+              above (that picks --accent, this picks the base palette) */}
+          <div style={{ gridColumn: '1/-1', display: 'flex', gap: 6, marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(var(--txt-rgb),.08)' }}>
+            <button
+              onClick={() => selectScheme('dark')}
+              className="f-cinzel"
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
+                fontSize: '.62rem', letterSpacing: '.06em',
+                background: scheme === 'dark' ? 'rgba(var(--txt-rgb),.1)' : 'transparent',
+                color: scheme === 'dark' ? 'var(--txt)' : 'rgba(var(--txt-rgb),.4)',
+              }}
+            >
+              <MoonIcon size={12} /> Dark
+            </button>
+            <button
+              onClick={() => selectScheme('light')}
+              className="f-cinzel"
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
+                fontSize: '.62rem', letterSpacing: '.06em',
+                background: scheme === 'light' ? 'rgba(var(--txt-rgb),.1)' : 'transparent',
+                color: scheme === 'light' ? 'var(--txt)' : 'rgba(var(--txt-rgb),.4)',
+              }}
+            >
+              <Sun size={12} /> Light
+            </button>
           </div>
         </div>
       )}
