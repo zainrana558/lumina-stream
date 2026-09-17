@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { localUserIdFromCookies } from "@/lib/supabase/cookie-session";
+import { rateLimit } from "@/lib/rate-limit";
 
 // ── Middleware (Next.js middleware — must be named middleware.ts) ──────────
 // Auth, security headers, rate limiting.
@@ -50,8 +51,15 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/country/") ||
     pathname.startsWith("/language/") ||
     pathname.startsWith("/studio/") ||
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/signup") ||
+    // /login and /signup are deliberately NOT here, even though they look
+    // like static pages — they need the full auth check below to redirect
+    // an already-authenticated visitor to /profiles (isAuthPage, ~line 344)
+    // and to be excluded from the shared cache (~line 404). Both of those
+    // were dead code / a caching leak while these two were on this list:
+    // the fast path returned before either check ever ran, so a logged-in
+    // user could get served a stale, edge-cached login page instead of
+    // being redirected. isAuthPage is computed separately below and
+    // doesn't depend on this list, so removing them here is the whole fix.
     pathname.startsWith("/movies") ||
     pathname.startsWith("/tv-shows") ||
     pathname.startsWith("/top-rated") ||
@@ -199,34 +207,19 @@ function getClientIp(request: NextRequest): string {
   return request.headers.get("x-real-ip") || "unknown";
 }
 
-// ── Global in-memory rate limiter (fallback when Redis is unavailable) ──────
-const globalRateMap = new Map<string, { count: number; resetAt: number }>();
-const GLOBAL_LIMIT     = 120;
-const GLOBAL_WINDOW_MS = 10_000; // 10 s
-
-function checkGlobalRateLimit(ip: string): { success: boolean; remaining: number } {
-  const now   = Date.now();
-  const entry = globalRateMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    globalRateMap.set(ip, { count: 1, resetAt: now + GLOBAL_WINDOW_MS });
-    return { success: true, remaining: GLOBAL_LIMIT - 1 };
-  }
-  if (entry.count >= GLOBAL_LIMIT) return { success: false, remaining: 0 };
-
-  entry.count++;
-  return { success: true, remaining: GLOBAL_LIMIT - entry.count };
-}
-
-// Purge stale entries every 60s to prevent unbounded memory growth
-if (typeof globalThis !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, val] of globalRateMap.entries()) {
-      if (now > val.resetAt) globalRateMap.delete(key);
-    }
-  }, 60_000);
-}
+// ── Global rate limiter for public-path API calls ───────────────────────────
+// This used to be its own pure in-memory Map, despite a comment claiming it
+// was "a fallback when Redis is unavailable" — it never actually tried
+// Redis at all. That's the same class of bug the rate-limit.ts batching fix
+// just closed, except worse here: Next.js middleware runs across many
+// concurrent edge isolates (not just serial cold starts), so a "global"
+// 120-req/10s cap backed by a per-isolate Map was really a per-isolate cap
+// — an attacker or bursty client spread across isolates could exceed the
+// intended global limit by however many isolates were handling traffic
+// concurrently. Now reuses lib/rate-limit.ts's already Redis-backed,
+// already-fixed 'global' limiter (100 req/10s — see LIMITS there) instead
+// of maintaining a second, independent, weaker implementation of the same
+// concept in this file.
 
 // ── Known bot UA patterns — exempt from rate limiting ──────────────────────
 const BOT_PATTERNS = [
@@ -258,8 +251,9 @@ export default async function middleware(request: NextRequest) {
     if (pathname.startsWith("/api/")) {
       const ip = getClientIp(request);
       if (!isBot(request.headers.get("user-agent"))) {
-        const rl = checkGlobalRateLimit(ip);
+        const rl = await rateLimit("global", ip);
         if (!rl.success) {
+          const resetSeconds = rl.reset ? Math.ceil(rl.reset / 1000) : Math.ceil((Date.now() + 10_000) / 1000);
           const limited = NextResponse.json(
             { error: "Too many requests. Please slow down." },
             {
@@ -267,7 +261,7 @@ export default async function middleware(request: NextRequest) {
               headers: {
                 "Retry-After":          "10",
                 "X-RateLimit-Remaining": "0",
-                "X-RateLimit-Reset":     String(Math.ceil((Date.now() + GLOBAL_WINDOW_MS) / 1000)),
+                "X-RateLimit-Reset":     String(resetSeconds),
               },
             }
           );

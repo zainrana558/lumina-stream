@@ -11,6 +11,8 @@ const GenreParticles = lazy(() => import('@/components/common/GenreParticles'));
 import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
+import GenreNavTheme from '@/components/common/GenreNavTheme';
+import { PORTAL_GENRE_MAP } from '@/config/genres';
 import '@/styles/genre-cartoon.css';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
@@ -104,6 +106,7 @@ export default function CartoonPage({ initialShows }: { initialShows: MediaItem[
         paddingTop: 'clamp(60px,7vw,80px)',
         overflow: 'hidden',
       }}>
+        <GenreNavTheme acc={PORTAL_GENRE_MAP.cartoon.tc} acc2={PORTAL_GENRE_MAP.cartoon.tc2} />
         {/* Sun with rays */}
         <div style={{
           position: 'absolute', top: '4%', right: '8%', zIndex: 1, pointerEvents: 'none',

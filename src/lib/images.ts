@@ -42,6 +42,19 @@ export function getBackdropUrl(
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }
 
+// ── Hero backdrop — first item in a list that actually has one ───
+export function getHeroBackdrop(
+  items: { _anilistBanner?: string; backdrop_path?: string | null }[],
+  size: string = 'w1280',
+): string | null {
+  for (const item of items) {
+    if (item._anilistBanner) return item._anilistBanner;
+    const url = getBackdropUrl(item.backdrop_path, size);
+    if (url) return url;
+  }
+  return null;
+}
+
 // ── Profile / avatar URL ────────────────────────────────────────
 export function getProfileUrl(
   path: string | null | undefined,

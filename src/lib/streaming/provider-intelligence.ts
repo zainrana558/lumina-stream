@@ -97,23 +97,39 @@ export interface IntelligenceChain {
 // silently dropped even if it's active and working (confirmed live: a
 // provider correctly in providers.ts and passing every sandbox test still
 // never appeared in the player's dropdown until this list was updated too).
-// Full re-sweep 2026-09-14.
+//
+// IMPORTANT: this list does NOT encode priority — scoreProviderIntelligent()
+// ignores providers.ts's `tier` field entirely (tier only matters for the
+// static tier-sorted fallback path used if this whole intelligence layer
+// throws). Actual ranking here comes from getHealth()/historicalCache/
+// speedCache — see the "real fix" work in health-check.ts for why those
+// signals were blind to client-side sandbox-rejection until now.
+//
+// Full re-sweep 2026-09-16 (real production-app test, not file:///about:blank
+// — see providers.ts for the methodology note). VidFast, VidSrc CC, VidSrc CC
+// Anime, and Cinezo Anime (Sub/Dub) are still not fixed by anything — the
+// first two reject via X-Frame-Options regardless of sandbox, the Cinezo
+// pair just render blank with no error either way.
+//
+// UPDATE 2026-09-17: live-verified with real content (Inception / Breaking
+// Bad S1E1 / Attack on Titan E1), reading actual iframe content, not just
+// checking for a rejection message. 'VidNest' removed here — plays real
+// video but shows unrelated stock footage instead of the requested title
+// on both movies and TV (see providers.ts for details); VidNest Anime is
+// unaffected, tested correctly, still in ANIME_POOL below.
 const GENERAL_PROVIDERS = [
-  // Tier 1 — confirmed working end-to-end through the REAL app (real
-  // origin, real CSP, real IntelligentPlayer sandbox), not just an isolated
-  // test harness — verified for both movie and TV.
-  'VidLux', 'Vidzy',
-  // Tier 2 — currently sandbox-blocked (explicit "disable sandbox" rejection
-  // screens, confirmed via screenshot) or, for 111Movies, confirmed broken
-  // specifically in the real app's origin context despite passing an
-  // isolated file://-origin test — kept as lower-priority fallbacks; this
-  // ecosystem's domains/behavior churn constantly.
-  '111Movies', 'VidCore', 'VidFast', 'VidLink', 'VidSrc CC', 'Videasy',
-  'VidSrc IO', 'VidSrc PM', '2Embed', 'MoviesAPI',
-  // Tier 3 — noSandbox required (own JS refuses to play in ANY sandboxed
-  // iframe). Gated behind EmbedResult.noSandbox + the on-screen warning in
-  // IntelligentPlayer; kept last so it's never the default pick.
-  'VidNest',
+  // Confirmed working WITH sandbox intact — the trusted, no-tradeoff set.
+  'VidLux', 'Vidzy', 'VidCore', '2Embed', 'MoviesAPI',
+  // Confirmed working only with sandbox removed (noSandbox: true in
+  // providers.ts) — kept at tier 3 there so these are never the default.
+  'VidLink', 'VidSrc IO', 'Videasy', 'VidSrc PM', '111Movies',
+  // Still broken either way — kept as inert fallbacks, not deleted, since
+  // this ecosystem's domains/behavior churn constantly.
+  'VidFast', 'VidSrc CC',
+  // noSandbox required, same as above. Vidy is a fresh 2026-09-16 find —
+  // multi-quality, multi-server, real subtitle UI — confirmed working for
+  // movie/TV/anime once sandbox is removed.
+  'Vidy',
 ];
 
 const MOVIE_POOL: ProviderPool = {
@@ -122,20 +138,27 @@ const MOVIE_POOL: ProviderPool = {
   providers: [...GENERAL_PROVIDERS],
 };
 
+// 2Embed is fine for movies (confirmed correct, 2026-09-17) but returned a
+// completely unrelated title for a TV episode in the same sweep — excluded
+// here only, not from GENERAL_PROVIDERS as a whole, so movies keep it.
+const TV_POOL: ProviderPool = {
+  name: 'tv',
+  category: 'tv',
+  providers: GENERAL_PROVIDERS.filter((p) => p !== '2Embed'),
+};
+
+// UPDATE 2026-09-17: 2Embed Anime, Cinezo Anime (Sub) — the default
+// auto-picked anime provider until this fix — Cinezo Anime (Dub), and
+// VidSrc CC Anime are all confirmed dead (see providers.ts for the specific
+// failure mode of each) and removed from this pool. Only Vidy Anime and
+// VidNest Anime render real, correct anime content right now.
 const ANIME_POOL: ProviderPool = {
   name: 'anime',
   category: 'anime',
   providers: [
-    'Cinezo Anime (Sub)', 'Cinezo Anime (Dub)', 'VidSrc CC Anime', '2Embed Anime',
     ...GENERAL_PROVIDERS,
-    'VidNest Anime',
+    'VidNest Anime', 'Vidy Anime',
   ],
-};
-
-const TV_POOL: ProviderPool = {
-  name: 'tv',
-  category: 'tv',
-  providers: [...GENERAL_PROVIDERS],
 };
 
 // ── Provider Capabilities ──
@@ -149,12 +172,8 @@ const PROVIDER_CAPABILITIES: Record<string, {
   // Active set — 2026-09-10 sweep
   'VidCore':            { subtitleSupport: 0.9,  quality: 0.9,  avgSpeed: 0.75 },
   'VidFast':            { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.8 },
-  'VidLink':            { subtitleSupport: 0.75, quality: 0.85, avgSpeed: 0.8 },
   'VidSrc CC':          { subtitleSupport: 0.8,  quality: 0.9,  avgSpeed: 0.7 },
   'VidSrc CC Anime':    { subtitleSupport: 0.8,  quality: 0.85, avgSpeed: 0.7 },
-  'Videasy':            { subtitleSupport: 0.6,  quality: 0.8,  avgSpeed: 0.75 },
-  'VidSrc IO':          { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.7 },
-  'VidSrc PM':          { subtitleSupport: 0.5,  quality: 0.7,  avgSpeed: 0.6 },
   '2Embed':             { subtitleSupport: 0.6,  quality: 0.75, avgSpeed: 0.6 },
   '2Embed Anime':       { subtitleSupport: 0.6,  quality: 0.75, avgSpeed: 0.6 },
   'MoviesAPI':          { subtitleSupport: 0.4,  quality: 0.75, avgSpeed: 0.7 },
@@ -165,6 +184,15 @@ const PROVIDER_CAPABILITIES: Record<string, {
   // demands sandbox removal), so quality is rated well but not top-of-pool.
   'VidNest':            { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.65 },
   'VidNest Anime':      { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.65 },
+  // Genuine multi-server (2160p down to 480p) + real subtitle/audio picker,
+  // confirmed via screenshot — rated a notch above VidNest on quality/subs.
+  'Vidy':               { subtitleSupport: 0.85, quality: 0.95, avgSpeed: 0.7 },
+  'Vidy Anime':         { subtitleSupport: 0.85, quality: 0.95, avgSpeed: 0.7 },
+  'VidLink':            { subtitleSupport: 0.75, quality: 0.85, avgSpeed: 0.65 },
+  'VidSrc IO':          { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.65 },
+  'Videasy':            { subtitleSupport: 0.6,  quality: 0.8,  avgSpeed: 0.65 },
+  'VidSrc PM':          { subtitleSupport: 0.5,  quality: 0.7,  avgSpeed: 0.55 },
+  '111Movies':          { subtitleSupport: 0.6,  quality: 0.8,  avgSpeed: 0.65 },
   // Replacement-pool hints
   'VidSrc SU':          { subtitleSupport: 0.8,  quality: 0.85, avgSpeed: 0.7 },
   'VidSrc RU':          { subtitleSupport: 0.7,  quality: 0.85, avgSpeed: 0.7 },

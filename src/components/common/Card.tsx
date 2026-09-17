@@ -102,6 +102,7 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
               placeholder="blur"
               blurDataURL={getBlurPlaceholder(show.cs)}
               onError={() => setImgFailed(true)}
+              className="poster-img"
               style={{
                 objectFit: 'cover',
                 zIndex: 0,
@@ -159,6 +160,12 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
         <div className="cinfo" style={{ zIndex: hasPoster ? 3 : undefined }}>
           <div className="f-cinzel" style={{  fontWeight: 700, fontSize: sz === 'sm' ? '.78' : '.92rem', color: '#FFF5E8', marginBottom: 3, textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>{show.title}</div>
           {sz !== 'sm' && show.eps > 0 && <div style={{ fontSize: '.68rem', color: 'rgba(255,245,232,.6)' }}>{show.genre.slice(0, 2).join(' · ')} · {show.eps} eps</div>}
+          {/* Revealed on hover only — year + status aren't shown anywhere
+              else on the card, so this is genuinely new information rather
+              than a duplicate of the always-visible line above. */}
+          {sz !== 'sm' && (show.yr || show.st) && (
+            <div className="cinfo-extra">{[show.yr || null, show.st].filter(Boolean).join(' · ')}</div>
+          )}
         </div>
       </div>
     </Link>

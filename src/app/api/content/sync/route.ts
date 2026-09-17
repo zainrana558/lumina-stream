@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
     const cronHeader = request.headers.get('x-cron-secret');
 
     const isCron = CRON_SECRET && cronHeader === CRON_SECRET;
-    const isAdmin = authHeader === `Bearer ${process.env.ADMIN_API_KEY}`;
+    // Fail closed when ADMIN_API_KEY is unset — otherwise the template
+    // literal below evaluates to the literal string "Bearer undefined",
+    // and anyone sending that exact header passes the admin check.
+    const isAdmin = !!process.env.ADMIN_API_KEY && authHeader === `Bearer ${process.env.ADMIN_API_KEY}`;
 
     if (!isCron && !isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

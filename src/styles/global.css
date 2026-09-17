@@ -42,6 +42,11 @@ body{background:#07040F;color:#FFF5E8;font-family:var(--font-crimson),serif;over
   --txt:#FFF5E8;--muted:rgba(255,245,232,.42);
   --ns-d:rgba(0,0,0,.82);--ns-l:rgba(45,25,90,.28);
   --accent:#FFB347;--accent2:rgba(255,107,138,.8);--accent3:rgba(139,120,255,.8);--accent-base:#14052E;
+  /* Nav/chip/search theme pair — default gold+violet, overridden per genre
+     page (see GenreNavTheme.tsx) via setProperty on this same root. Kept
+     separate from --accent/--accent2/--accent3 above, which are the
+     user-controlled ThemeSwitcher palette and shouldn't fight this. */
+  --nav-acc:var(--gold);--nav-acc2:var(--vio);
   --pad:clamp(1rem,5vw,3rem);
   /* ── Scale tokens (additive — organize spacing/radii without touching the
      existing shadow-heavy visual style, which stays exactly as designed) ── */
@@ -55,6 +60,13 @@ body{background:#07040F;color:#FFF5E8;font-family:var(--font-crimson),serif;over
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#211D3A,#19162E);border-radius:2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 1px 3px rgba(0,0,0,.4)}
 .hide-scroll::-webkit-scrollbar{display:none}
 .hide-scroll{-ms-overflow-style:none;scrollbar-width:none}
+
+/* Collection card delete button — hover-revealed on devices that have a
+   hover state; touch devices never fire hover, so it must default visible
+   there instead, or it's an undiscoverable blind tap target. */
+.collection-delete-btn{opacity:0}
+@media (hover:hover){.collection-delete-btn:hover{opacity:1}}
+@media (hover:none){.collection-delete-btn{opacity:.75}}
 
 /* ═══════════════════════════════════════════
    ANIMATIONS (preserve all existing)
@@ -170,18 +182,28 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
    BUTTONS (with hover/focus states in CSS)
    ═══════════════════════════════════════════ */
 .btn-p{
+  /* Clay treatment — from the "tactile surfaces" direction: a colored inner
+     shadow (not just black) so the button reads as a solid inflated piece
+     of material rather than a flat gradient with a generic dark inset, plus
+     a spring easing on press/release instead of a linear one. Reserved for
+     .btn-p (primary actions) only — .btn-g/.btn-icon keep their existing,
+     quieter neumorphic treatment so the tactile weight stays reserved for
+     the handful of actions that matter most. Pill shape and brand gradient
+     unchanged, so this reads as an upgrade to the existing button, not a
+     different button.
+  */
   position:relative;display:inline-flex;align-items:center;justify-content:center;gap:7px;
   padding:13px 32px;border-radius:50px;border:none;cursor:pointer;
   font-family:var(--font-cinzel),serif;font-size:.84rem;font-weight:700;letter-spacing:.09em;
   color:#05020A;
-  background:linear-gradient(175deg,#FFE566 0%,#FFB347 26%,#FF8C00 66%,#E07200 100%);
+  background:linear-gradient(165deg,#FFEB99 0%,#FFC252 22%,#FFB347 45%,#FF8C00 72%,#E07200 100%);
   background-size:200% 200%;animation:g-flow 3s ease infinite;
-  box-shadow:inset 0 2px 2px rgba(255,255,255,.55),inset 0 -2px 3px rgba(0,0,0,.32),0 6px 0 #7A3800,0 9px 22px rgba(255,140,0,.52),0 2px 8px rgba(0,0,0,.58),0 0 0 1.5px rgba(255,195,75,.2);
-  transform:translateY(0);transition:transform .1s,box-shadow .1s;overflow:hidden;white-space:nowrap;will-change:transform;
+  box-shadow:inset 0 3px 4px rgba(255,255,255,.68),inset 0 -6px 10px rgba(122,56,0,.42),0 6px 0 #7A3800,0 9px 22px rgba(255,140,0,.52),0 2px 8px rgba(0,0,0,.58),0 0 0 1.5px rgba(255,195,75,.2);
+  transform:translateY(0) scale(1);transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease;overflow:hidden;white-space:nowrap;will-change:transform;
 }
 .btn-p::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.08;background:repeating-linear-gradient(0deg,rgba(255,255,255,0) 0px,rgba(255,255,255,.15) 1px,rgba(255,255,255,0) 2px)}
-.btn-p:hover{transform:translateY(-3px);box-shadow:inset 0 2px 2px rgba(255,255,255,.55),inset 0 -2px 3px rgba(0,0,0,.32),0 9px 0 #7A3800,0 16px 34px rgba(255,140,0,.65),0 4px 12px rgba(0,0,0,.62),0 0 0 1.5px rgba(255,195,75,.28),0 0 55px rgba(255,179,71,.2)}
-.btn-p:active{transform:translateY(5px);box-shadow:inset 0 3px 5px rgba(0,0,0,.38),0 1px 0 #7A3800}
+.btn-p:hover{transform:translateY(-4px) scale(1.025);box-shadow:inset 0 3px 4px rgba(255,255,255,.72),inset 0 -7px 12px rgba(122,56,0,.46),0 10px 0 #7A3800,0 20px 38px rgba(255,140,0,.62),0 4px 12px rgba(0,0,0,.62),0 0 0 1.5px rgba(255,195,75,.3),0 0 60px rgba(255,179,71,.22)}
+.btn-p:active{transform:translateY(4px) scale(.97);transition:transform .12s cubic-bezier(.4,0,.6,1),box-shadow .12s ease;box-shadow:inset 0 5px 9px rgba(122,56,0,.55),inset 0 -1px 2px rgba(255,255,255,.35),0 2px 0 #7A3800,0 3px 10px rgba(0,0,0,.4)}
 .btn-p:disabled{opacity:.6;cursor:not-allowed;transform:none!important}
 .btn-p::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.14) 0%,transparent 40%);border-radius:inherit;pointer-events:none}
 
@@ -215,6 +237,21 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .btn-icon:active{transform:translateY(3px);box-shadow:inset 0 2.5px 5px rgba(0,0,0,.5),0 1px 0 #080512}
 .btn-icon svg{width:16px;height:16px}
 
+/* Shard cut — diamond icon buttons, used only in the header row (nav
+   search/hamburger/keyboard, the notification bell) so a PIN pad or a
+   carousel arrow elsewhere isn't forced into the same silhouette. */
+.btn-icon-shard{
+  border-radius:0;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+  background:color-mix(in srgb, var(--nav-acc) 12%, #130F26);
+  border:1px solid color-mix(in srgb, var(--nav-acc) 30%, transparent);
+}
+.btn-icon-shard:hover{
+  background:linear-gradient(135deg,var(--nav-acc),var(--nav-acc2));
+  color:#0A0410;
+  border-color:transparent;
+}
+
 /* ═══════════════════════════════════════════
    CARD (3D tilt)
    ═══════════════════════════════════════════ */
@@ -227,26 +264,67 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .cshine{position:absolute;inset:0;opacity:0;transition:opacity .2s;z-index:3;pointer-events:none}
 .cinfo{position:absolute;bottom:0;left:0;right:0;padding:.85rem .95rem .82rem;background:linear-gradient(to top,rgba(3,1,10,.98) 0%,rgba(3,1,10,.75) 50%,transparent 100%);z-index:4}
 
+/* "Cinematic poster interaction" — layered on top of the existing JS-driven
+   3D tilt above, not replacing it. The tilt sets `transform` on the outer
+   .card (the <Link>) via mousemove; everything here animates a DIFFERENT
+   element (the poster image, the rating badge, a new info line), so both
+   run at once with no transform conflict — tilt gives the card weight,
+   these give the content inside it a reveal. */
+.poster-img{transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.card:hover .poster-img{transform:scale(1.08)}
+.card .badge-r{transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.card:hover .badge-r{transform:scale(1.12) rotate(-3deg)}
+.cinfo-extra{
+  max-height:0;opacity:0;margin-top:0;overflow:hidden;
+  font-family:var(--font-cinzel),serif;font-size:.64rem;letter-spacing:.05em;color:rgba(255,179,71,.85);
+  transition:max-height .4s cubic-bezier(.2,.8,.2,1),opacity .3s ease,margin-top .4s cubic-bezier(.2,.8,.2,1);
+}
+.card:hover .cinfo-extra{max-height:20px;opacity:1;margin-top:4px}
+
 /* ═══════════════════════════════════════════
    INPUTS
    ═══════════════════════════════════════════ */
 .inp{
-  width:100%;padding:13px 18px;background:#090716;
-  border:1px solid rgba(255,255,255,.06);border-radius:12px;
+  width:100%;padding:13px 20px 13px 18px;background:#090716;
+  border:1px solid rgba(255,255,255,.06);
+  clip-path:polygon(16px 0,100% 0,calc(100% - 16px) 100%,0 100%);
   color:var(--txt);font-family:var(--font-crimson),serif;font-size:1rem;outline:none;
   box-shadow:inset 5px 5px 16px rgba(0,0,0,.78),inset -2px -2px 6px rgba(35,20,75,.2),inset 0 2px 4px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.018);
   transition:all .3s;
 }
-.inp:focus{border-color:rgba(255,179,71,.45);box-shadow:inset 5px 5px 16px rgba(0,0,0,.72),inset -2px -2px 6px rgba(35,20,75,.2),inset 0 2px 4px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,179,71,.08),0 0 0 3px rgba(255,179,71,.12),0 0 24px rgba(255,179,71,.06)}
+.inp:focus{border-color:color-mix(in srgb, var(--nav-acc) 45%, transparent);box-shadow:inset 5px 5px 16px rgba(0,0,0,.72),inset -2px -2px 6px rgba(35,20,75,.2),inset 0 2px 4px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,179,71,.08),0 0 0 3px color-mix(in srgb, var(--nav-acc) 12%, transparent),0 0 24px color-mix(in srgb, var(--nav-acc) 6%, transparent)}
 .inp::placeholder{color:rgba(255,245,232,.22)}
 
 /* ═══════════════════════════════════════════
    NAVIGATION
    ═══════════════════════════════════════════ */
 .nav{position:fixed;top:0;left:0;right:0;z-index:998;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(1rem,4vw,3.5rem);background:#0A0718;border-bottom:1px solid rgba(255,255,255,.04);box-shadow:0 4px 0 rgba(0,0,0,.7),0 8px 28px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.05),inset 0 -1px 0 rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.03)}
-.nl{position:relative;color:rgba(255,245,232,.5);font-family:var(--font-cinzel),serif;font-size:.78rem;letter-spacing:.12em;font-weight:500;cursor:pointer;transition:color .3s}
-.nl::after{content:'';position:absolute;bottom:-6px;left:0;right:0;height:2px;border-radius:1px;background:var(--gold);box-shadow:0 0 8px rgba(255,179,71,.5),0 2px 4px rgba(0,0,0,.4);transform:scaleX(0);transition:transform .3s cubic-bezier(.4,0,.2,1)}
-.nl:hover,.nl.on{color:var(--gold)}.nl:hover::after,.nl.on::after{transform:scaleX(1)}
+/* Shard cut — parallelogram tabs, filling with the page's --nav-acc/--nav-acc2
+   pair on hover/active instead of the old underline-only treatment. */
+.nl{
+  display:inline-flex;align-items:center;
+  color:rgba(255,245,232,.55);font-family:var(--font-cinzel),serif;font-size:.76rem;letter-spacing:.1em;font-weight:500;
+  cursor:pointer;padding:9px 22px 9px 15px;
+  clip-path:polygon(0 0,100% 0,calc(100% - 12px) 100%,0 100%);
+  background:color-mix(in srgb, var(--nav-acc) 8%, transparent);
+  border:1px solid color-mix(in srgb, var(--nav-acc) 24%, transparent);
+  transition:background .25s,border-color .25s,color .25s;
+}
+.nl:hover,.nl.on{
+  color:#0A0410;
+  background:linear-gradient(120deg,var(--nav-acc2),var(--nav-acc));
+  border-color:transparent;
+}
+
+/* Shard cut — hexagonal avatar with two facet overlays standing in for the
+   old circular badge; background/border stay inline (profile-driven). */
+.nav-avatar{
+  position:relative;
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+}
+.nav-avatar::before{content:'';position:absolute;inset:0;clip-path:polygon(50% 0%,100% 25%,50% 50%);background:rgba(255,255,255,.22);pointer-events:none}
+.nav-avatar::after{content:'';position:absolute;inset:0;clip-path:polygon(0% 75%,50% 50%,50% 100%);background:rgba(0,0,0,.2);pointer-events:none}
+.nav-avatar span{position:relative;z-index:2}
 
 /* ═══════════════════════════════════════════
    BADGES & TAGS
@@ -297,8 +375,24 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 /* ═══════════════════════════════════════════
    CHIPS & PROGRESS
    ═══════════════════════════════════════════ */
-.chip{cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1);font-family:var(--font-cinzel),serif;font-size:.72rem;font-weight:500;letter-spacing:.08em;padding:10px 18px;border-radius:8px;background:var(--s1);color:rgba(255,245,232,.5);box-shadow:4px 4px 10px rgba(0,0,0,.68),-2px -2px 5px rgba(45,25,90,.18),inset 0 1.5px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.1);border:none;min-height:44px;display:inline-flex;align-items:center}
-.chip.on{background:#090716;color:var(--gold);box-shadow:inset 4px 4px 10px rgba(0,0,0,.7),inset -2px -2px 5px rgba(35,20,75,.2),0 0 0 1px rgba(255,179,71,.35),0 0 18px rgba(255,179,71,.1)}
+/* Shard cut — elongated hex tag, replacing the pill. Fills with the page's
+   --nav-acc/--nav-acc2 pair on active/hover instead of the old inset-pressed look. */
+.chip{
+  cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1);
+  font-family:var(--font-cinzel),serif;font-size:.7rem;font-weight:500;letter-spacing:.06em;
+  padding:10px 20px;
+  clip-path:polygon(9px 0,calc(100% - 9px) 0,100% 50%,calc(100% - 9px) 100%,9px 100%,0 50%);
+  background:color-mix(in srgb, var(--nav-acc) 8%, var(--s1));
+  color:rgba(255,245,232,.5);
+  border:1px solid color-mix(in srgb, var(--nav-acc) 20%, transparent);
+  min-height:44px;display:inline-flex;align-items:center;
+}
+.chip.on,.chip:hover{
+  color:#0A0410;
+  background:linear-gradient(120deg,var(--nav-acc2),var(--nav-acc));
+  border-color:transparent;
+  box-shadow:0 0 18px color-mix(in srgb, var(--nav-acc) 25%, transparent);
+}
 .prog-bar{height:4px;border-radius:3px;overflow:hidden;background:#090716;box-shadow:inset 2px 2px 5px rgba(0,0,0,.7),inset -1px -1px 3px rgba(45,25,90,.18)}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--rose));border-radius:3px;box-shadow:0 0 8px rgba(255,179,71,.5)}
 .scrubber{-webkit-appearance:none;appearance:none;height:4px;border-radius:3px;outline:none;cursor:pointer;width:100%;background:linear-gradient(to right,#FF85A1 var(--v,28%),#0A0718 var(--v,28%));box-shadow:inset 2px 2px 5px rgba(0,0,0,.7);animation:sg 3s ease-in-out infinite}
@@ -322,7 +416,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
    BOTTOM NAV (mobile)
    ═══════════════════════════════════════════ */
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:997;height:62px;background:#0A0718;border-top:1px solid rgba(255,255,255,.04);box-shadow:0 -4px 0 rgba(0,0,0,.7),0 -8px 28px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.15);align-items:center;justify-content:space-around}
-.bn{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:rgba(255,245,232,.35);transition:color .25s,transform .15s;position:relative;padding:4px 0}
+.bn{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:rgba(255,245,232,.35);transition:color .25s,transform .15s;position:relative;min-height:48px;padding:4px 0}
 .bn:active{transform:scale(.92)}
 .bn.on{color:var(--gold)}.bn .lb{font-family:var(--font-cinzel),serif;font-size:.5rem;letter-spacing:.08em}
 

@@ -11,6 +11,9 @@ const GenreParticles = lazy(() => import('@/components/common/GenreParticles'));
 import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
+import GenreNavTheme from '@/components/common/GenreNavTheme';
+import { PORTAL_GENRE_MAP } from '@/config/genres';
+import { getHeroBackdrop } from '@/lib/images';
 import '@/styles/genre-horror.css';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
@@ -80,6 +83,7 @@ export default function HorrorPage({ initialShows }: { initialShows: MediaItem[]
     dur: `${2 + (i % 3) * 0.8}s`,
     w: 2 + (i % 3),
   })), []);
+  const heroBackdrop = useMemo(() => getHeroBackdrop(initialShows), [initialShows]);
   const fogLayers = useMemo(() => Array.from({ length: 3 }, (_, i) => ({
     id: i,
     top: `${55 + i * 12}%`,
@@ -96,6 +100,17 @@ export default function HorrorPage({ initialShows }: { initialShows: MediaItem[]
         paddingTop: 'clamp(60px,7vw,80px)',
         overflow: 'hidden',
       }}>
+        <GenreNavTheme acc={PORTAL_GENRE_MAP.horror.tc} acc2={PORTAL_GENRE_MAP.horror.tc2} />
+
+        {/* Hero backdrop — top result's own image, dissolving into the page */}
+        {heroBackdrop && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+            backgroundImage: `linear-gradient(180deg, rgba(10,0,0,.42) 0%, rgba(10,0,0,.82) 55%, #0A0000 100%), url(${heroBackdrop})`,
+            backgroundSize: 'cover', backgroundPosition: 'center 22%',
+          }} />
+        )}
+
         {/* Background radial gradients */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',

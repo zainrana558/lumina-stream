@@ -10,6 +10,9 @@ const SakuraCanvas = lazy(() => import('@/components/common/SakuraCanvas'));
 import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
+import GenreNavTheme from '@/components/common/GenreNavTheme';
+import { PORTAL_GENRE_MAP } from '@/config/genres';
+import { getHeroBackdrop } from '@/lib/images';
 import '@/styles/genre-anime.css';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
@@ -69,6 +72,8 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
     return result;
   }, [shows, searchTerm, sortBy, activeGenre]);
 
+  const heroBackdrop = useMemo(() => getHeroBackdrop(initialShows), [initialShows]);
+
   return (
     <div className="page" style={{
         position: 'relative',
@@ -77,6 +82,16 @@ export default function AnimePage({ initialShows }: { initialShows: MediaItem[] 
         paddingTop: 'clamp(60px,7vw,80px)',
         overflow: 'hidden',
       }}>
+        <GenreNavTheme acc={PORTAL_GENRE_MAP.anime.tc} acc2={PORTAL_GENRE_MAP.anime.tc2} />
+
+        {/* Hero backdrop — top result's own banner, dissolving into the page */}
+        {heroBackdrop && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+            backgroundImage: `linear-gradient(180deg, rgba(26,10,18,.35) 0%, rgba(13,6,16,.78) 55%, #0a0510 100%), url(${heroBackdrop})`,
+            backgroundSize: 'cover', backgroundPosition: 'center 22%',
+          }} />
+        )}
 
         {/* ── Background: Cherry blossom tree ── */}
         <div style={{

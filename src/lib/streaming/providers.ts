@@ -9,7 +9,8 @@
  * TIER 1 = Top providers chosen for quality, diversity, speed & stability
  * TIER 2 = Backup providers
  *
- * Last full test: 2026-07-07 — all active providers verified 200 OK, no frame-block
+ * Last full test: 2026-09-16 — real production-app sweep (see GENERAL TIER 1
+ * comment below for methodology), not just a 200-OK reachability check.
  */
 
 // ---- Types ----
@@ -90,61 +91,83 @@ const activeProviders: StreamProvider[] = [
   // ══════════════════════════════════════════════════════════════════
   // ANIME TIER 1 — dedicated anime embeds (shown first for anime content)
   // ══════════════════════════════════════════════════════════════════
+  // Re-swept 2026-09-16 through the REAL production app (real origin, real
+  // CSP, actual provider <select> in DetailsContent, screenshotted at
+  // t=5/10/15/20s — not a synthetic file:// or about:blank test, which the
+  // 111Movies lesson below already showed gives false results for
+  // origin-sensitive providers).
+  //
+  // UPDATE 2026-09-17: re-swept all four live, real Attack on Titan episode,
+  // real sandboxed iframe matching IntelligentPlayer.tsx exactly. All four
+  // are now confirmed DEAD and excluded from provider-intelligence.ts's
+  // ANIME_POOL (they must be in BOTH this file and that pool to ever be
+  // selected — removing from the pool is enough, these StreamProvider
+  // entries are kept here as inert history/re-check candidates, same
+  // policy as VidFast/VidSrc CC below):
+  //   - 2Embed Anime: previously the one confirmed working; now shows its
+  //     own explicit "Sandbox not allowed — Remove sandbox from the iframe
+  //     to play" rejection. That claim above is no longer true.
+  //   - Cinezo Anime (Sub) — the DEFAULT auto-picked anime provider before
+  //     this fix — and Cinezo Anime (Dub): genuinely blank iframe, zero
+  //     content, confirmed on THREE separate sweeps over three different
+  //     days (09-14, 09-16, 09-17). Past the point of "transient outage";
+  //     treated as dead until a future check finds otherwise.
+  //   - VidSrc CC Anime: confirmed structurally dead via a direct real-origin
+  //     sandboxed-iframe test — 403 + "X-Frame-Options: sameorigin", the
+  //     same non-sandbox-related block as VidFast/VidSrc CC below.
+  // Only Vidy Anime and VidNest Anime (tier 3, noSandbox) render correctly
+  // right now — see those entries further down.
+  {
+    name: "2Embed Anime",
+    tier: 1, category: "anime",
+    getMovieUrl: (id) => `https://www.2embed.cc/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://www.2embed.cc/embed/tv/${id}/${s}/${e}`,
+    getAnimeUrl: (malId) => `https://www.2embed.cc/embed/anime/${malId}`,
+  },
   {
     name: "Cinezo Anime (Sub)",
-    tier: 1, category: "anime",
+    tier: 2, category: "anime",
     getMovieUrl: (id) => `https://player.cinezo.live/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
     getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}`,
   },
   {
     name: "Cinezo Anime (Dub)",
-    tier: 1, category: "anime",
+    tier: 2, category: "anime",
     getMovieUrl: (id) => `https://player.cinezo.live/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s}/${e}`,
     getAniListUrl: (anilistId, ep) => `https://player.cinezo.live/embed/anime/${anilistId}/${ep}?dub=true`,
   },
   {
     name: "VidSrc CC Anime",
-    tier: 1, category: "anime",
+    tier: 2, category: "anime",
     getMovieUrl: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
     getAnimeUrl: (malId, ep) => `https://vidsrc.cc/v2/embed/anime/${malId}/${ep}/sub`,
   },
-  {
-    name: "2Embed Anime",
-    tier: 2, category: "anime",
-    getMovieUrl: (id) => `https://www.2embed.cc/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://www.2embed.cc/embed/tv/${id}/${s}/${e}`,
-    getAnimeUrl: (malId) => `https://www.2embed.cc/embed/anime/${malId}`,
-  },
 
   // ══════════════════════════════════════════════════════════════════
   // GENERAL TIER 1 — movies + TV
-  // Re-swept 2026-09-14. VidLux is the one confirmed working end-to-end
-  // through the REAL production app (real origin, real CSP, real
-  // IntelligentPlayer sandbox) — verified with an actual screenshot of it
-  // playing real content. Everything else here was live-tested with a
-  // sandboxed iframe matching the exact production sandbox attribute
-  // (allow-scripts allow-same-origin allow-forms allow-presentation, no
-  // popups/top-nav). Most of the wider vidsrc-alternative ecosystem has
-  // adopted client-side JS that detects ANY iframe sandbox attribute
-  // (regardless of which tokens are granted — confirmed by testing with
-  // allow-popups/allow-top-navigation added too, no change) and refuses to
-  // play, showing "please disable sandbox" instead of video.
+  // Re-swept 2026-09-16 through the REAL production app end to end: real
+  // origin, real CSP, the actual provider <select> in DetailsContent,
+  // cycled option by option with a 5-8s settle + screenshot each (not the
+  // synthetic file:///about:blank sandbox test the 2026-09-14 sweep used,
+  // which the 111Movies case below already showed gives false results for
+  // origin-sensitive providers — several entries that sweep marked dead
+  // turned out to render fine here).
   //
-  // 111Movies is deliberately NOT here despite passing an isolated
-  // file://-origin sandbox test: it failed when actually played through the
-  // real app (real https origin) — its backend (vidlove.cc) showed "This
-  // site broke the player" and refused to embed. A file:// parent origin
-  // isn't a fully faithful stand-in for the real embedding context; the
-  // ones below were all re-verified through a real HTTPS-origin test page
-  // (served from the live app's own domain, not file://) after that lesson.
+  // VidCore is the new default: 98% live score, confirmed actually
+  // playing (real progress timestamp advancing). VidLux — the previous
+  // default — is demoted, not removed: it mounts a player shell
+  // ("CONNECTING SPIDER") but never gets past 0:00/0:00 even after 30s,
+  // with "[Encryption] Decrypt failed" in its own console. That's a
+  // same-provider transient/decrypt-scheme issue, not a sandbox rejection,
+  // so it's kept as a fallback rather than deleted.
   {
-    name: "VidLux",
+    name: "VidCore",
     tier: 1, category: "all",
-    getMovieUrl: (id) => `https://vidlux.xyz/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidlux.xyz/embed/tv/${id}/${s}/${e}`,
+    getMovieUrl: (id) => `https://vidcore.org/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidcore.org/embed/tv/${id}/${s}/${e}`,
   },
   {
     // vidzy.org / vidzy.cc / vidapi.qzz.io are the same backend (confirmed —
@@ -158,63 +181,17 @@ const activeProviders: StreamProvider[] = [
   },
 
   // ══════════════════════════════════════════════════════════════════
-  // GENERAL TIER 2 — currently sandbox-blocked as of the 2026-09-14 sweep
-  // (each confirmed via screenshot: explicit "disable sandbox" rejection,
-  // not a network/reachability failure) or, for 111Movies, confirmed
-  // broken specifically in the real app's origin context. Kept as
-  // lower-priority fallbacks rather than deleted — this whole ecosystem's
-  // domains and behavior churn constantly, and the health-check/swap
-  // system in registry.ts already demotes/replaces providers that fail
-  // live checks. Re-sweep periodically.
+  // GENERAL TIER 2 — confirmed working (real player UI, poster + play
+  // button) in the same 2026-09-16 real-app sweep, just not the default
+  // pick. VidLux demoted here from tier 1 — see note above.
+  //
+  // UPDATE 2026-09-17 (2Embed): re-swept with a real movie AND a real TV
+  // episode. Movie is fine ("Inception (2010)", correct). TV is NOT — it
+  // loaded a completely unrelated title, "Butchered (2003)", instead of
+  // the requested show. Excluded from provider-intelligence.ts's TV_POOL
+  // specifically (still included for movies, where it's confirmed correct)
+  // rather than removed outright.
   // ══════════════════════════════════════════════════════════════════
-  {
-    name: "111Movies",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://111movies.com/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://111movies.com/tv/${id}/${s}/${e}`,
-  },
-  {
-    name: "VidCore",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidcore.org/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidcore.org/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    name: "VidFast",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidfast.vc/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidfast.vc/tv/${id}/${s}/${e}`,
-  },
-  {
-    name: "VidLink",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidlink.pro/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
-  },
-  {
-    name: "VidSrc CC",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    name: "Videasy",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://player.videasy.to/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://player.videasy.to/tv/${id}/${s}/${e}`,
-  },
-  {
-    name: "VidSrc IO",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.io/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.io/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    name: "VidSrc PM",
-    tier: 2, category: "all",
-    getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`,
-    getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
-  },
   {
     name: "2Embed",
     tier: 2, category: "all",
@@ -227,21 +204,108 @@ const activeProviders: StreamProvider[] = [
     getMovieUrl: (id) => `https://moviesapi.to/movie/${id}`,
     getTvUrl: (id, s, e) => `https://moviesapi.to/tv/${id}-${s}-${e}`,
   },
+  {
+    name: "VidLux",
+    tier: 2, category: "all",
+    getMovieUrl: (id) => `https://vidlux.xyz/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidlux.xyz/embed/tv/${id}/${s}/${e}`,
+  },
 
   // ══════════════════════════════════════════════════════════════════
-  // GENERAL/ANIME TIER 3 — noSandbox required. Same "own JS refuses to
-  // play inside ANY sandboxed iframe" pattern as the rejections above,
-  // confirmed via direct A/B testing (adding allow-popups/allow-top-nav
-  // tokens didn't help; only fully omitting the sandbox attribute does).
-  // Gated behind the noSandbox flag + on-screen warning in
-  // IntelligentPlayer, kept at the lowest tier so it's never the
-  // default pick. VidNest is unique in this registry: one backend
-  // serves movie + TV + anime (via AniList ID) in a single service, so
-  // it's listed twice — once as a general entry and once as an
-  // anime-category entry (VidNest Anime) — matching the existing
-  // 2Embed / 2Embed Anime split pattern so it surfaces correctly in
-  // both the general and anime dropdown groupings.
-  // ══════════════════════════════════════════════════════════════════
+  // GENERAL TIER 3 — noSandbox required. Same "own JS refuses to play
+  // inside ANY sandboxed iframe" pattern for all of these, each individually
+  // confirmed by direct A/B test on 2026-09-16 (identical iframe, only the
+  // sandbox attribute removed) — with sandbox: explicit rejection text
+  // ("Please Disable Sandbox" / "Playback blocked" / etc). Without it: a
+  // real player, poster + play button, screenshotted. This is a deliberate,
+  // scoped trade-off — pop-under ads and full-tab-hijack redirects are no
+  // longer contained for these specific sources — accepted here because the
+  // sandboxed pool alone was too thin. Gated behind the noSandbox flag +
+  // on-screen warning in IntelligentPlayer, kept at the lowest tier so
+  // sandboxed providers are always tried first.
+  //
+  // NOT added despite being tested the same way: VidFast, VidSrc CC, and
+  // VidSrc CC Anime reject with X-Frame-Options: sameorigin, a server-side
+  // header check that has nothing to do with the sandbox attribute —
+  // confirmed still blocked with sandbox fully removed. Cinezo Anime
+  // (Sub/Dub) reject with neither an error nor a rejection message, just a
+  // permanently blank frame, with or without sandbox — a real outage or a
+  // different bug, not a sandbox issue. noSandbox would add the ad/redirect
+  // risk for these with zero playback benefit, so none of the four got it.
+  {
+    name: "VidLink",
+    tier: 3, category: "all",
+    getMovieUrl: (id) => `https://vidlink.pro/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
+    noSandbox: true,
+  },
+  {
+    name: "VidSrc IO",
+    tier: 3, category: "all",
+    getMovieUrl: (id) => `https://vidsrc.io/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.io/embed/tv/${id}/${s}/${e}`,
+    noSandbox: true,
+  },
+  {
+    name: "Videasy",
+    tier: 3, category: "all",
+    getMovieUrl: (id) => `https://player.videasy.to/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://player.videasy.to/tv/${id}/${s}/${e}`,
+    noSandbox: true,
+  },
+  {
+    // Confirmed via a real loading spinner replacing the explicit "Playback
+    // blocked" rejection once sandbox was removed — didn't finish loading
+    // inside this sweep's wait window, so treat as likely-good rather than
+    // fully confirmed; re-check if it doesn't pan out live.
+    name: "VidSrc PM",
+    tier: 3, category: "all",
+    getMovieUrl: (id) => `https://vidsrc.pm/embed/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidsrc.pm/embed/tv/${id}/${s}/${e}`,
+    noSandbox: true,
+  },
+  {
+    name: "111Movies",
+    tier: 3, category: "all",
+    getMovieUrl: (id) => `https://111movies.com/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://111movies.com/tv/${id}/${s}/${e}`,
+    noSandbox: true,
+  },
+  // New find, 2026-09-16: multi-quality (480p-4K), multi-server, real
+  // subtitle/audio UI — confirmed via real screenshot for movie, TV, AND
+  // anime (same backend serves all three, like VidNest). Sandboxed shows
+  // "Iframe Sandbox Detected" and refuses to play; fully working the moment
+  // sandbox is removed.
+  {
+    name: "Vidy",
+    tier: 3, category: "all",
+    getMovieUrl: (id) => `https://vidy.st/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidy.st/tv/${id}/${s}/${e}`,
+    noSandbox: true,
+  },
+  {
+    name: "Vidy Anime",
+    tier: 3, category: "anime",
+    getMovieUrl: (id) => `https://vidy.st/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vidy.st/tv/${id}/${s}/${e}`,
+    getAniListUrl: (anilistId, ep) => `https://vidy.st/anime/${anilistId}/${ep}`,
+    noSandbox: true,
+  },
+  // VidNest (and Vidy above) each have one backend serving movie + TV +
+  // anime (via AniList ID) in a single service, so both are listed twice —
+  // once as a general entry and once as an anime-category entry — matching
+  // the 2Embed / 2Embed Anime split so they surface correctly in both
+  // dropdown groupings.
+  // UPDATE 2026-09-17: re-swept with a real movie AND TV episode — the
+  // iframe does mount and a video genuinely plays (timestamp advances,
+  // matches the real runtime), but the visible content is unrelated stock
+  // footage both times (b&w aerial rooftops for the movie, a canyon/rock
+  // landscape for the TV episode), not the requested title. Reads as a
+  // generic buffering/loading loop rather than confirmed playback of the
+  // right thing. Excluded from provider-intelligence.ts's GENERAL_PROVIDERS
+  // (movie + TV) for that reason. VidNest Anime below is unaffected — it
+  // tested correctly (Kodansha splash + advancing timer on the right
+  // episode) and is a separate pool entry.
   {
     name: "VidNest",
     tier: 3, category: "all",

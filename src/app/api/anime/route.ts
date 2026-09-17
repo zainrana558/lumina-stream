@@ -44,6 +44,22 @@ export async function GET(request: NextRequest) {
       search: 'anilist-search',
     };
     const cacheCategory = typeToCategory[type] || 'anilist-search';
+    // Mirrors workers/cache-proxy.js's API_CATEGORY_TTL for these same
+    // anilist-* categories — that's the edge worker's real per-category TTL;
+    // this response's own Cache-Control was previously a flat 900s for every
+    // category regardless of X-Cache-Category, so any downstream cache that
+    // reads Cache-Control directly (rather than the worker's CDN-Cache-Control
+    // override) saw the wrong TTL for everything except trending/airing.
+    const CATEGORY_TTL: Record<string, number> = {
+      'anilist-trending': 900,
+      'anilist-popular': 1800,
+      'anilist-seasonal': 1800,
+      'anilist-airing': 900,
+      'anilist-upcoming': 3600,
+      'anilist-search': 600,
+      'anilist-all': 1800,
+    };
+    const ttl = CATEGORY_TTL[cacheCategory] ?? 900;
 
     let results;
 
@@ -95,7 +111,7 @@ export async function GET(request: NextRequest) {
       headers: {
         ...rateLimitHeaders(rl),
         'X-Cache-Category': cacheCategory,
-        'Cache-Control': `public, s-maxage=900, stale-while-revalidate=1800`,
+        'Cache-Control': `public, s-maxage=${ttl}, stale-while-revalidate=${ttl * 2}`,
       },
     });
   } catch (error: unknown) {

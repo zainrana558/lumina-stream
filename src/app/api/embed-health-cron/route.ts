@@ -91,6 +91,14 @@ export async function GET(request: Request) {
       url = `${cacheUrl}/tmdb/genre/movie/list?language=en-US`;
       if (env.TMDB_BEARER_TOKEN) headers['X-TMDB-Auth'] = env.TMDB_BEARER_TOKEN;
       else if (env.TMDB_API_KEY) headers['X-TMDB-Key'] = env.TMDB_API_KEY;
+      // The worker rejects everything with 403 Unauthorized without this —
+      // it's a separate abuse-prevention secret from the TMDB token itself.
+      // tmdb/server.ts's real fetch path already sends it; this check was
+      // never updated to match, so it always 403'd here despite the app's
+      // real TMDB traffic working the entire time. Confirmed by reproducing
+      // this exact request by hand: 403 without the header, 200 with it.
+      const workerKey = process.env.WORKER_KEY;
+      if (workerKey) headers['X-Worker-Key'] = workerKey;
     } else {
       if (env.TMDB_BEARER_TOKEN) {
         headers['Authorization'] = `Bearer ${env.TMDB_BEARER_TOKEN}`;
@@ -126,7 +134,13 @@ export async function GET(request: Request) {
   const supabaseCheck = checkService('Supabase', async () => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     if (!url) throw new Error('Not configured');
-    const res = await fetch(`${url}/rest/v1/`, {
+    // PostgREST's bare /rest/v1/ root serves the OpenAPI schema, which
+    // requires the service_role key — the anon key always gets 401 there
+    // ("Only the `service_role` API key can be used for this endpoint"),
+    // regardless of whether the project/key are actually fine. Query a real
+    // table instead, same as every other authenticated request the app
+    // makes — confirmed by hand: 401 on /rest/v1/, 200 on this.
+    const res = await fetch(`${url}/rest/v1/profiles?select=id&limit=1`, {
       headers: {
         'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
         'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
@@ -153,7 +167,18 @@ export async function GET(request: Request) {
   serviceResults.push(tmdb, anilist, supabase, redis);
 
   // ── 2. Staggered Provider Health Checks ──
-
+  // This tier gate only controls the granular per-tier pingProviderForCron +
+  // emitHealthMetric pass below — it is NOT the thing providing coverage.
+  // checkAllProviders() a little further down runs unconditionally, every
+  // single invocation, and already checks every active provider regardless
+  // of what minuteOfDay comes out to. So even under Vercel's daily cron
+  // (vercel.json currently has this route on `0 6 * * *`), every provider
+  // still gets a real reachability + X-Frame-Options/CSP check once a day —
+  // the tier math below just stops producing its own separate, more
+  // granular metrics between invocations spaced further apart than 5-30
+  // min, it doesn't leave anything unchecked. (Previously documented here
+  // as "the staggered-tier design collapses" under infrequent invocation —
+  // that overstated it; re-verified against the actual call order below.)
   const allProviders = getAllProviders();
   const now = new Date();
   const minuteOfDay = now.getUTCHours() * 60 + now.getUTCMinutes();
@@ -226,6 +251,60 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── 2b. Real browser render-check — rotating batch ──
+  // Everything above is a fetch(): reachable + no X-Frame-Options/CSP block.
+  // That's necessary but not sufficient — several providers return 200 OK
+  // with no blocking header and still refuse to play, because their own JS
+  // only checks "am I inside a sandboxed iframe" once real browser code
+  // runs, which a server-side fetch never triggers. This step actually
+  // renders each provider the way a visitor would (real Chromium, the same
+  // sandbox attribute IntelligentPlayer.tsx sets) and reads back the
+  // result. Expensive relative to a fetch, so only a small rotating batch
+  // runs per tick — full registry coverage over a few hours, not every 30
+  // min. Only high-confidence verdicts ('alive' | 'dead') touch the health
+  // store; 'unknown' (a blank frame with no rejection message — several
+  // genuinely-working providers render almost no text) leaves the existing
+  // signal untouched rather than guessing.
+  let renderChecked: { name: string; verdict: string }[] = [];
+  const { isRenderCheckAvailable } = await import('@/lib/streaming/render-check');
+  const renderCheckAvailable = isRenderCheckAvailable();
+  // Explicit and visible instead of silently trying, failing, and reporting
+  // 'unknown' for every provider forever — see isRenderCheckAvailable()'s
+  // own doc comment for why this can't work on Vercel today. Surfaced in
+  // the response below so a Vercel deployment shows this in its cron logs
+  // instead of a mysteriously permanently-stale render-check signal.
+  const renderCheckSkipped = renderCheckAvailable
+    ? null
+    : 'Serverless environment (process.env.VERCEL set) — no serverless-Chromium build installed, skipping.';
+  try {
+    if (renderCheckAvailable) {
+      const RENDER_BATCH_SIZE = 3;
+      const RENDER_ROTATION_MINUTES = 30; // matches the actual cron cadence
+      const slot = Math.floor(Date.now() / (RENDER_ROTATION_MINUTES * 60 * 1000));
+      const rotationTargets = allProviders.filter((p) => !!p.getMovieUrl);
+      if (rotationTargets.length > 0) {
+        const startIdx = (slot * RENDER_BATCH_SIZE) % rotationTargets.length;
+        const batch = Array.from({ length: Math.min(RENDER_BATCH_SIZE, rotationTargets.length) }, (_, i) =>
+          rotationTargets[(startIdx + i) % rotationTargets.length],
+        );
+        const { renderCheckBatch } = await import('@/lib/streaming/render-check');
+        const { reportClientHealth } = await import('@/lib/streaming/health-check');
+        const verdicts = await renderCheckBatch(
+          batch.map((p) => ({ name: p.name, url: p.getMovieUrl(550), noSandbox: p.noSandbox, proxied: (p as { useProxy?: boolean }).useProxy })),
+        );
+        for (const [name, verdict] of verdicts) {
+          renderChecked.push({ name, verdict });
+          if (verdict === 'alive' || verdict === 'dead') {
+            await reportClientHealth(name, verdict === 'alive');
+          }
+        }
+      }
+    }
+  } catch {
+    // Playwright unavailable or crashed — the cheap fetch-based checks above
+    // already ran, so provider health still has a signal either way.
+  }
+
   // ── 3. Aggregate Metrics (if this is a 5-min boundary) ──
 
   if (minuteOfDay % 5 === 0) {
@@ -267,6 +346,11 @@ export async function GET(request: Request) {
         alive: s.alive,
         latency_ms: s.latency_ms,
       })),
+    },
+    renderCheck: {
+      note: 'Real headless-browser render check — the only layer that catches client-side sandbox-rejection. Small rotating batch per tick, not the whole registry.',
+      skipped: renderCheckSkipped,
+      checked: renderChecked,
     },
   });
 }

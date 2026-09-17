@@ -113,14 +113,14 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
 
   const avatarBg = profile
     ? `linear-gradient(135deg,${profile.avatar_url || '#8B78FF'},${profile.avatar_url || '#FF6B8A'})`
-    : 'linear-gradient(135deg,rgba(255,179,71,.38),rgba(139,120,255,.38))';
+    : 'linear-gradient(135deg,color-mix(in srgb, var(--nav-acc) 38%, transparent),color-mix(in srgb, var(--nav-acc2) 38%, transparent))';
 
   return (
     <nav className="nav" aria-label="Main navigation">
       <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(.6rem,2vw,1.2rem)' }}>
         {/* Hamburger for mobile */}
         <button
-          className="btn-icon"
+          className="btn-icon btn-icon-shard"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
@@ -280,27 +280,27 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
       </div>
 
       <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center' }}>
-        <button className="btn-icon" onClick={openSearch} aria-label="Open search"><Search size={16} /></button>
+        <button className="btn-icon btn-icon-shard" onClick={openSearch} aria-label="Open search"><Search size={16} /></button>
         <NotificationBell />
-        <button className="btn-icon desktop-only" onClick={() => onShowShortcuts?.()} aria-label="Keyboard shortcuts" style={{ opacity: .6 }}><Keyboard size={16} /></button>
+        <button className="btn-icon btn-icon-shard desktop-only" onClick={() => onShowShortcuts?.()} aria-label="Keyboard shortcuts" style={{ opacity: .6 }}><Keyboard size={16} /></button>
         <div ref={dropRef} style={{ position: 'relative' }}>
           {user ? (
             <>
-              <button className="f-cinzel"
+              <button className="f-cinzel nav-avatar"
                 onClick={() => setDrop(!drop)}
                 aria-expanded={drop}
                 aria-haspopup="true"
                 aria-label="User menu"
                 style={{
-                  width: 44, height: 44, borderRadius: '50%',
+                  width: 44, height: 44,
                   background: avatarBg,
-                  border: '2px solid rgba(255,179,71,.38)',
+                  border: '2px solid color-mix(in srgb, var(--nav-acc) 45%, transparent)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', fontSize: '.9rem',  fontWeight: 700, color: '#05020A',
                   boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2),inset 0 1px 0 rgba(255,255,255,.1)',
                 }}
               >
-                {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
+                <span>{profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}</span>
               </button>
               {drop && (
                 <div className="dropdown" role="menu" aria-label="User dropdown">
@@ -327,20 +327,21 @@ function Nav({ page, go, openSearch, user, profile, onSignOut, onShowShortcuts }
           ) : (
             <>
               <button
+                className="nav-avatar"
                 onClick={() => setDrop(!drop)}
                 aria-expanded={drop}
                 aria-haspopup="true"
                 aria-label="Guest menu"
                 style={{
-                  width: 44, height: 44, borderRadius: '50%',
-                  background: 'linear-gradient(135deg,rgba(255,179,71,.38),rgba(139,120,255,.38))',
-                  border: '2px solid rgba(255,179,71,.38)',
+                  width: 44, height: 44,
+                  background: 'linear-gradient(135deg,color-mix(in srgb, var(--nav-acc) 38%, transparent),color-mix(in srgb, var(--nav-acc2) 38%, transparent))',
+                  border: '2px solid color-mix(in srgb, var(--nav-acc) 45%, transparent)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', fontSize: '.9rem',
                   boxShadow: '4px 4px 12px rgba(0,0,0,.7),-2px -2px 6px rgba(45,25,90,.2)',
                   color: '#FFF5E8',
                 }}
-              ><UserIcon size={18} /></button>
+              ><span style={{ display: 'flex' }}><UserIcon size={18} /></span></button>
               {drop && (
                 <div className="dropdown" role="menu" aria-label="Guest dropdown">
                   <div style={{ padding: '.85rem 1.1rem', borderBottom: '1px solid rgba(255,255,255,.05)' }}>

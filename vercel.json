@@ -4,7 +4,7 @@
   "installCommand": "npm install",
   "headers": [
     {
-      "source": "/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap|embed|watchlist|stats|settings|activity|collections|year-in-review|profiles).*)",
+      "source": "/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap|embed|watchlist|stats|settings|activity|collections|year-in-review|profiles|login|signup).*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -21,6 +21,10 @@
     {
       "path": "/api/embed-health-cron",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/playback/aggregate",
+      "schedule": "17 * * * *"
     }
   ]
 }

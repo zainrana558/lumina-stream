@@ -1,10 +1,23 @@
 /**
  * Upstash Redis-based rate limiter with batched Redis checks
  *
- * Uses Upstash free tier (10K commands/day):
- * - In-memory batching: only hits Redis every 10th request per limiter+IP
  * - Sliding window counter for API routes
  * - Graceful fallback to in-memory if Upstash is unavailable
+ * - BATCH_SIZE=1: syncs to Redis on every request. This used to be 10 (only
+ *   sync every 10th request) to save Upstash commands, but that meant each
+ *   serverless instance's local counter could run up to 9 requests stale
+ *   before the next sync — fine on this self-hosted single-process
+ *   deployment (one counter, always accurate), but on a multi-instance
+ *   platform (Vercel) each instance keeps its own independent local
+ *   counter, so an attacker spread across N concurrent instances could
+ *   exceed the configured limit by roughly N× before any instance's sync
+ *   caught up. Confirmed ~3 Upstash commands per sync (EVALSHA + the
+ *   sliding-window script's own INCRBY + PEXPIRE, each metered separately —
+ *   verified against live per-command stats, not assumed), so this is a
+ *   real ~10x increase in rate-limit-related Redis usage, accepted
+ *   deliberately in exchange for closing that gap. Still async/fire-and-
+ *   forget, not awaited — see batchMemoryCheck's own comment for exactly
+ *   what that does and doesn't fix.
  */
 
 import { Ratelimit } from '@upstash/ratelimit';
@@ -70,9 +83,10 @@ function getLimiter(type: LimiterType): RatelimitInstance | null {
 }
 
 // ---- In-memory batch tracking ----
-// Every (BATCH_SIZE - 1) requests are counted in memory for free.
-// On the BATCH_SIZE-th request, we sync to Redis to stay accurate.
-const BATCH_SIZE = 10;
+// Was 10 (sync every 10th request); now 1 (sync every request) — see the
+// file header comment for the multi-instance-concurrency reasoning and the
+// real Upstash command-volume cost this trades for it.
+const BATCH_SIZE = 1;
 
 interface BatchEntry {
   count: number;       // requests counted since last Redis sync
@@ -91,6 +105,21 @@ function getBatchKey(type: LimiterType, identifier: string): string {
 /**
  * In-memory rate check with batched Redis sync.
  * Returns true if allowed, false if rate limited.
+ *
+ * Honest limit of BATCH_SIZE=1: every ALLOW/DENY decision below is still
+ * made from this instance's own local `entry` state, synchronously, before
+ * the Redis call even resolves — `redisLimiter.limit()` is fire-and-forget
+ * (`.then()`/`.catch()`, never awaited), because awaiting it would block
+ * every rate-limited request on a real network round-trip to Upstash. So
+ * BATCH_SIZE=1 does not make this a zero-race, fully-authoritative
+ * multi-instance limiter; it shrinks the exploitable staleness window from
+ * "up to (BATCH_SIZE-1) requests this instance hasn't told Redis about yet"
+ * down to "however many requests this instance handles inside one Redis
+ * round-trip" (typically low tens of ms) — a real, large reduction, not a
+ * mathematical guarantee. A genuine zero-race version would need to await
+ * the Redis result and use it directly, which trades this latency cost for
+ * per-request correctness — a different, bigger change than what was asked
+ * for here.
  */
 function batchMemoryCheck(
   type: LimiterType,

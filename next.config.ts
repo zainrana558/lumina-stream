@@ -67,7 +67,7 @@ const nextConfig: NextConfig = {
         // (watchlist, stats, settings, activity, collections, year-in-review,
         // profiles): those must never get a `public` cache policy — the proxy
         // marks them `private, no-store` instead. See src/proxy.ts::noStore.
-        source: '/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap|watchlist|stats|settings|activity|collections|year-in-review|profiles).*)',
+        source: '/((?!api|auth|_next/static|_next/image|favicon|logo|og|manifest|robots|sitemap|watchlist|stats|settings|activity|collections|year-in-review|profiles|login|signup).*)',
         headers: [
           {
             key: 'Cache-Control',

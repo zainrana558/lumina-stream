@@ -11,6 +11,9 @@ const GenreParticles = lazy(() => import('@/components/common/GenreParticles'));
 import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
+import GenreNavTheme from '@/components/common/GenreNavTheme';
+import { PORTAL_GENRE_MAP } from '@/config/genres';
+import { getHeroBackdrop } from '@/lib/images';
 import '@/styles/genre-romance.css';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
@@ -90,6 +93,7 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
     color: ['#FFB3C1', '#FF69B4', '#FFD1DC', '#FF4D6D'][i % 4],
     sway: -30 + i * 8,
   })), []);
+  const heroBackdrop = useMemo(() => getHeroBackdrop(initialShows), [initialShows]);
 
   return (
     <div className="page" style={{
@@ -99,6 +103,17 @@ export default function RomancePage({ initialShows }: { initialShows: MediaItem[
         paddingTop: 'clamp(60px,7vw,80px)',
         overflow: 'hidden',
       }}>
+        <GenreNavTheme acc={PORTAL_GENRE_MAP.romance.tc} acc2={PORTAL_GENRE_MAP.romance.tc2} />
+
+        {/* Hero backdrop — top result's own image, dissolving into the page */}
+        {heroBackdrop && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+            backgroundImage: `linear-gradient(180deg, rgba(13,0,8,.4) 0%, rgba(13,0,8,.8) 55%, #0D0008 100%), url(${heroBackdrop})`,
+            backgroundSize: 'cover', backgroundPosition: 'center 22%',
+          }} />
+        )}
+
         {/* Background radial gradients */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',

@@ -155,14 +155,30 @@ async function getTMDBData() {
     const tvPopular   = filterPosters(get('tvPopular'));
     const topRated    = filterPosters(get('topRated'));
     const upcoming    = get('upcoming'); // no poster filter for upcoming (featured might need non-poster items)
-    const action      = filterPosters(get('action'));
-    const comedy      = filterPosters(get('comedy'));
-    const scifi       = filterPosters(get('scifi'));
+    // TMDB's `with_genres` filter is an ANY-match — a movie is included if
+    // the genre appears anywhere in its genre_ids, not only as its primary
+    // identity. Left unfiltered, the "Comedy" row picks up things like
+    // Moana (genre_ids: Family, Fantasy, Comedy, Adventure — comedy 3rd)
+    // or Toy Story 5 (Animation, Family, Comedy, Adventure — comedy 3rd),
+    // which reads as "why is this fantasy movie in my comedy row" even
+    // though the movie IS tagged comedy, just not primarily. Keep only
+    // items where the target genre is one of the first two listed (TMDB
+    // orders genre_ids roughly by relevance), falling back to the
+    // unfiltered list if too few survive — same fallback shape as dedupe()
+    // below, so a thin genre never leaves a row too small to show.
+    const byPrimaryGenre = (items: TMDBShow[], genreId: number, min = 8): TMDBShow[] => {
+      const strong = items.filter(r => (r.genre_ids || []).slice(0, 2).includes(genreId));
+      return strong.length >= min ? strong : items;
+    };
+
+    const action      = byPrimaryGenre(filterPosters(get('action')), 28);
+    const comedy      = byPrimaryGenre(filterPosters(get('comedy')), 35);
+    const scifi       = byPrimaryGenre(filterPosters(get('scifi')), 878);
     const nowPlaying  = filterPosters(get('nowPlaying'));
     const airingToday = filterPosters(get('airingToday'));
     const onTheAir    = filterPosters(get('onTheAir'));
-    const drama       = filterPosters(get('drama'));
-    const thriller    = filterPosters(get('thriller'));
+    const drama       = byPrimaryGenre(filterPosters(get('drama')), 18);
+    const thriller    = byPrimaryGenre(filterPosters(get('thriller')), 53);
     const hiddenGems  = filterPosters(get('hiddenGems'));
     const acclaimed   = filterPosters(get('acclaimed'));
 
@@ -245,20 +261,36 @@ async function getTMDBData() {
       fantasy: 'Beyond imagination awaits',
     };
 
-    // Pick backdrops from already-fetched row data
-    const pickBackdrop = (items: TMDBShow[]) => {
+    // Pick backdrops from already-fetched row data. None of these 6 portal
+    // genres (Cartoon/Horror/Romance/Mystery/Fantasy) has its own fetch —
+    // by design, to avoid 6 extra API calls just for one image each — so
+    // each borrows from the nearest already-fetched row. A *random* pick
+    // from that row was wrong often: the Fantasy card could show a plain
+    // Sci-Fi backdrop with no fantasy element at all, the Horror card a
+    // Thriller with no horror element, etc. Instead, prefer items within
+    // that row that ALSO carry the actual target genre as one of their
+    // tags (e.g. a sci-fi movie that's also tagged Fantasy=14) — still
+    // zero extra requests, just a targeted pick instead of a random one —
+    // falling back to the full row if nothing in it happens to match.
+    const pickBackdrop = (items: TMDBShow[], preferGenreId?: number) => {
       const withBackdrop = items.filter(r => r.backdrop_path);
-      if (!withBackdrop.length) return null;
-      return withBackdrop[Math.floor(Math.random() * withBackdrop.length)].backdrop_path!;
+      const pool = preferGenreId
+        ? (() => {
+            const targeted = withBackdrop.filter(r => (r.genre_ids || []).includes(preferGenreId));
+            return targeted.length ? targeted : withBackdrop;
+          })()
+        : withBackdrop;
+      if (!pool.length) return null;
+      return pool[Math.floor(Math.random() * pool.length)].backdrop_path!;
     };
 
     const genreFeatured: GenreFeatured[] = [
       { key: 'anime',   name: 'Anime',   backdrop: anilistBanner, title: '', count: 5000, tagline: GENRE_TAGLINES.anime },
-      { key: 'cartoon', name: 'Cartoon', backdrop: pickBackdrop(comedy),               title: '', count: 800,  tagline: GENRE_TAGLINES.cartoon },
-      { key: 'horror',  name: 'Horror',  backdrop: pickBackdrop(thriller),             title: '', count: 1200, tagline: GENRE_TAGLINES.horror },
-      { key: 'romance', name: 'Romance', backdrop: pickBackdrop(drama),                title: '', count: 1500, tagline: GENRE_TAGLINES.romance },
-      { key: 'mystery', name: 'Mystery', backdrop: pickBackdrop(acclaimed),            title: '', count: 900,  tagline: GENRE_TAGLINES.mystery },
-      { key: 'fantasy', name: 'Fantasy', backdrop: pickBackdrop(scifi),                title: '', count: 1100, tagline: GENRE_TAGLINES.fantasy },
+      { key: 'cartoon', name: 'Cartoon', backdrop: pickBackdrop(comedy, 16),               title: '', count: 800,  tagline: GENRE_TAGLINES.cartoon },    // Animation
+      { key: 'horror',  name: 'Horror',  backdrop: pickBackdrop(thriller, 27),             title: '', count: 1200, tagline: GENRE_TAGLINES.horror },     // Horror
+      { key: 'romance', name: 'Romance', backdrop: pickBackdrop(drama, 10749),             title: '', count: 1500, tagline: GENRE_TAGLINES.romance },    // Romance
+      { key: 'mystery', name: 'Mystery', backdrop: pickBackdrop(acclaimed, 9648),          title: '', count: 900,  tagline: GENRE_TAGLINES.mystery },    // Mystery
+      { key: 'fantasy', name: 'Fantasy', backdrop: pickBackdrop(scifi, 14),                title: '', count: 1100, tagline: GENRE_TAGLINES.fantasy },    // Fantasy
     ].map(gf => ({
       ...gf,
       title: gf.title || gf.name,

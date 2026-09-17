@@ -11,6 +11,9 @@ const GenreParticles = lazy(() => import('@/components/common/GenreParticles'));
 import GenreTrivia from '@/components/common/GenreTrivia';
 import GenreIntro from '@/components/common/GenreIntro';
 import { trackGenreVisit } from '@/components/common/GenreProgress';
+import GenreNavTheme from '@/components/common/GenreNavTheme';
+import { PORTAL_GENRE_MAP } from '@/config/genres';
+import { getHeroBackdrop } from '@/lib/images';
 import '@/styles/genre-mystery.css';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
@@ -87,6 +90,7 @@ export default function MysteryPage({ initialShows }: { initialShows: MediaItem[
     delay: `${i * 4}s`,
     dur: `${12 + i * 3}s`,
   })), []);
+  const heroBackdrop = useMemo(() => getHeroBackdrop(initialShows), [initialShows]);
 
   return (
     <div className="page" style={{
@@ -96,6 +100,17 @@ export default function MysteryPage({ initialShows }: { initialShows: MediaItem[
         paddingTop: 'clamp(60px,7vw,80px)',
         overflow: 'hidden',
       }}>
+        <GenreNavTheme acc={PORTAL_GENRE_MAP.mystery.tc} acc2={PORTAL_GENRE_MAP.mystery.tc2} />
+
+        {/* Hero backdrop — top result's own image, dissolving into the page */}
+        {heroBackdrop && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+            backgroundImage: `linear-gradient(180deg, rgba(5,10,21,.4) 0%, rgba(5,10,21,.8) 55%, #050A15 100%), url(${heroBackdrop})`,
+            backgroundSize: 'cover', backgroundPosition: 'center 22%',
+          }} />
+        )}
+
         {/* Background: dark blue with golden lamp glow */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',

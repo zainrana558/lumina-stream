@@ -171,20 +171,24 @@ export default function CollectionsPage() {
                   collection={col}
                   onClick={() => setSelectedCollection(col.id)}
                 />
-                {/* Delete button */}
+                {/* Delete button — opacity is set in CSS, not inline, so the
+                    @media (hover:none) rule in global.css can make it
+                    always-visible on touch devices, which have no hover
+                    state to reveal it with otherwise. */}
                 <button
+                  className="collection-delete-btn"
                   onClick={(e) => { e.stopPropagation(); handleDelete(col.id); }}
                   style={{
-                    position: 'absolute', top: 8, right: 8, zIndex: 5,
-                    width: 28, height: 28, borderRadius: '50%',
+                    position: 'absolute', top: 6, right: 6, zIndex: 5,
+                    width: 44, height: 44, borderRadius: '50%',
                     background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)',
                     border: '1px solid rgba(255,255,255,.08)',
                     color: 'rgba(255,245,232,.5)', fontSize: '.7rem',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    opacity: 0, transition: 'opacity .2s',
+                    transition: 'opacity .2s',
                   }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; (e.currentTarget as HTMLElement).style.color = '#FF4A4A'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = ''; }}
                   aria-label="Delete collection"
                 >
                   <X size={14} />

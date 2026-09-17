@@ -39,6 +39,18 @@ interface Petal {
   turbFreq1: number;
   turbFreq2: number;
   windVar: number;       // per-petal baseWind variation
+  // ── Depth (added for real 3D read, not just 2D confetti) ──
+  // depth 0 = far background plane, 1 = right in front of the camera.
+  // Every visual property below derives from this single number so near
+  // and far petals genuinely look like they're at different distances
+  // instead of the same flat sprite just resized.
+  depth: number;
+  depthBucket: 0 | 1 | 2;   // which of the 3 blur tiers this petal draws in
+  // Tumble — rotation through the Z axis (turning to show its edge), not
+  // just spinning flat in the XY plane. This is the single biggest "reads
+  // as 3D" cue: a real falling petal isn't always face-on to the viewer.
+  flipPhase: number;
+  flipFreq: number;
 }
 
 const COLORS = [
@@ -56,14 +68,24 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
   const y = spread ? Math.random() * h * 1.2 - h * 0.1 : -sz * 2 - Math.random() * h * 0.5;
   const rand = Math.random;
   const amp = tier === 'tiny' ? 0.7 : tier === 'medium' ? 1.0 : 1.4;
+  // Depth biased by tier (tiny petals tend far, large tend near) but with
+  // enough spread within each tier that "tiny" isn't just "always blurry" —
+  // real depth-of-field mixes sizes at every distance.
+  const depth = tier === 'tiny' ? 0.15 + rand() * 0.4
+    : tier === 'medium' ? 0.3 + rand() * 0.55
+    : 0.55 + rand() * 0.45;
+  const depthBucket: 0 | 1 | 2 = depth < 0.4 ? 0 : depth < 0.72 ? 1 : 2;
   return {
-    x, y, size: sz,
+    x, y, size: sz * (0.65 + depth * 0.65),
     rotation: rand() * Math.PI * 2,
     hue: col.h + (rand() - 0.5) * 8,
     sat: col.s + (rand() - 0.5) * 5,
     lit: col.l + (rand() - 0.5) * 5,
-    opacity: tier === 'tiny' ? 0.35 + rand() * 0.3 : 0.6 + rand() * 0.3,
-    fallSpeed: 0.06 + rand() * 0.45 + (tier === 'tiny' ? 0.03 : 0),
+    opacity: (tier === 'tiny' ? 0.35 + rand() * 0.3 : 0.6 + rand() * 0.3) * (0.5 + depth * 0.55),
+    fallSpeed: (0.06 + rand() * 0.45 + (tier === 'tiny' ? 0.03 : 0)) * (0.55 + depth * 0.85),
+    depth, depthBucket,
+    flipPhase: rand() * Math.PI * 2,
+    flipFreq: 0.12 + rand() * 0.3,
     // Layer 1: slow broad sweep — wider variation
     swayAmp1: (15 + rand() * 55) * amp,
     swayFreq1: 0.08 + rand() * 0.35,
@@ -104,10 +126,33 @@ function createPetal(w: number, h: number, tier: 'tiny' | 'medium' | 'large', sp
 
 function drawPetal(ctx: CanvasRenderingContext2D, p: Petal) {
   const hs = p.size * 0.5;
+  // Tumble through the Z axis (turning to show its edge), not just spinning
+  // flat — a real falling petal isn't always face-on to the viewer. As
+  // `flip` crosses 0 the petal squashes down to a sliver, exactly like a
+  // flat object seen edge-on, then opens back up on the other side.
+  const flip = Math.cos(p.flipPhase);
+  // Depth softness is baked into a gradient bloom, never a ctx.filter blur
+  // pass — canvas `filter: blur()` renders visibly stepped/blocky on a lot
+  // of real GPUs at the small radii these particles need. A wider, softer
+  // gradient falloff behind the shape reads as distance and is always
+  // smooth because it's just another fill, not a separate compositing pass.
+  const haze = 1 - p.depth;
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.rotation);
-  ctx.globalAlpha = p.opacity;
+  ctx.scale(flip, 1);
+  // Dims slightly as it turns edge-on — less surface facing the (implied)
+  // light source — and brightens back up as it swings face-on again.
+  ctx.globalAlpha = p.opacity * (0.6 + Math.abs(flip) * 0.4);
+
+  if (haze > 0.15) {
+    const bloomR = hs * (1.6 + haze * 1.4);
+    const bloom = ctx.createRadialGradient(0, 0, 0, 0, 0, bloomR);
+    bloom.addColorStop(0, `hsla(${p.hue}, ${p.sat}%, ${p.lit}%, ${0.3 * haze})`);
+    bloom.addColorStop(1, `hsla(${p.hue}, ${p.sat}%, ${p.lit}%, 0)`);
+    ctx.fillStyle = bloom;
+    ctx.beginPath(); ctx.arc(0, 0, bloomR, 0, Math.PI * 2); ctx.fill();
+  }
 
   ctx.beginPath();
   ctx.moveTo(0, -hs);
@@ -115,10 +160,14 @@ function drawPetal(ctx: CanvasRenderingContext2D, p: Petal) {
   ctx.bezierCurveTo(-hs, hs * 0.2, -hs * 0.8, -hs * 0.6, 0, -hs);
   ctx.closePath();
 
+  // Sat/lift nudged by haze too — far petals read a touch softer/paler,
+  // real atmospheric perspective, not just "the same petal but smaller".
+  const sat = p.sat * (1 - haze * 0.25);
   const g = ctx.createLinearGradient(0, -hs, 0, hs);
-  g.addColorStop(0, `hsla(${p.hue}, ${Math.min(100, p.sat - 30)}%, ${Math.min(97, p.lit + 12)}%, 1)`);
-  g.addColorStop(0.4, `hsla(${p.hue}, ${p.sat}%, ${p.lit}%, 1)`);
-  g.addColorStop(1, `hsla(${p.hue - 5}, ${Math.min(100, p.sat + 10)}%, ${Math.max(50, p.lit - 15)}%, 1)`);
+  g.addColorStop(0, `hsla(${p.hue}, ${Math.min(100, sat - 30)}%, ${Math.min(97, p.lit + 12)}%, 1)`);
+  g.addColorStop(0.35, `hsla(${p.hue}, ${sat}%, ${Math.min(96, p.lit + 4)}%, 1)`);
+  g.addColorStop(0.65, `hsla(${p.hue}, ${sat}%, ${p.lit}%, 1)`);
+  g.addColorStop(1, `hsla(${p.hue - 5}, ${Math.min(100, sat + 10)}%, ${Math.max(50, p.lit - 15)}%, 1)`);
   ctx.fillStyle = g;
   ctx.fill();
 
@@ -126,7 +175,7 @@ function drawPetal(ctx: CanvasRenderingContext2D, p: Petal) {
     ctx.beginPath();
     ctx.moveTo(0, -hs * 0.6);
     ctx.quadraticCurveTo(hs * 0.05, 0, 0, hs * 0.7);
-    ctx.strokeStyle = `hsla(${p.hue}, ${p.sat}%, ${Math.max(40, p.lit - 25)}%, ${p.opacity * 0.3})`;
+    ctx.strokeStyle = `hsla(${p.hue}, ${sat}%, ${Math.max(40, p.lit - 25)}%, ${p.opacity * 0.3})`;
     ctx.lineWidth = 0.6;
     ctx.stroke();
   }
@@ -143,6 +192,17 @@ export default function SakuraCanvas() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Cursor parallax — near petals (high depth) shift more than far ones as
+    // the pointer moves, the same multi-plane depth cue real cameras and
+    // game menus use. Tracked in a ref, not state, so it never re-renders.
+    const pointer = { x: 0, y: 0 };
+    const onPointerMove = (e: PointerEvent) => {
+      pointer.x = (e.clientX / window.innerWidth - 0.5) * 2;
+      pointer.y = (e.clientY / window.innerHeight - 0.5) * 2;
+    };
+    window.addEventListener('pointermove', onPointerMove);
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -330,7 +390,26 @@ export default function SakuraCanvas() {
         if (p.x < -100) p.x = cw + 80;
         if (p.x > cw + 100) p.x = -80;
 
-        drawPetal(ctx, p);
+        // Advance the Z-axis tumble
+        p.flipPhase += p.flipFreq * 0.02 * dt;
+      }
+
+      // ── Draw in 3 depth passes: far → mid → near ──
+      // Near petals draw last so they correctly occlude far ones,
+      // reinforcing the depth order. Parallax offset is applied here, at
+      // draw time, so it never perturbs the physics sim above — near
+      // petals (bucket 2) shift more with the pointer than far ones
+      // (bucket 0), the actual depth cue a fixed single-plane canvas can't
+      // give you on its own. Softness itself comes from drawPetal's own
+      // bloom gradient, not a ctx.filter pass (see the comment there).
+      const BUCKET_PARALLAX = [4, 11, 22] as const;
+      for (let b = 0; b < 3; b++) {
+        ctx.save();
+        ctx.translate(pointer.x * BUCKET_PARALLAX[b], pointer.y * BUCKET_PARALLAX[b] * 0.6);
+        for (const p of petals) {
+          if (p.depthBucket === b) drawPetal(ctx, p);
+        }
+        ctx.restore();
       }
 
       rafRef.current = requestAnimationFrame(animate);
@@ -340,6 +419,7 @@ export default function SakuraCanvas() {
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', onPointerMove);
     };
   }, []);
 

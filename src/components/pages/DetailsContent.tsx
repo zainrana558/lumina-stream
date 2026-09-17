@@ -846,7 +846,16 @@ export default function DetailsContent({
             {inWatchlist ? <><Check size={14} /> In My List</> : <><Plus size={14} /> My List</>}
           </button>
           <ShareButton title={show.title} id={show.id} />
-          <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* flexBasis:100% forces this onto its own row inside the parent's
+              flex-wrap instead of trying to fit beside Play/Trailer/List/Share
+              — without it, a flex item's default min-width:auto refuses to
+              shrink below its unwrapped content size (10 fixed 36px buttons +
+              gaps ≈ 396px), which is wider than a ~360px mobile viewport
+              minus padding, so it forced the whole page to scroll
+              horizontally instead of wrapping. Confirmed live: this exact row
+              was the cause on every movie/TV/anime detail page at mobile
+              widths. */}
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', flexBasis: '100%' }}>
             {[1,2,3,4,5,6,7,8,9,10].map(n => (
               <button className="f-cinzel" key={n} onClick={() => handleRate(n)} aria-label={'Rate ' + n + ' out of 10'} style={{
                 width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
@@ -922,9 +931,15 @@ export default function DetailsContent({
           <p className="f-crimson" style={{  lineHeight: 1.85, color: 'rgba(255,245,232,.8)', fontSize: 'clamp(.95rem,1.2vw,1.05rem)' }}>{show.desc}</p>
         </section>
 
-        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,.06)', marginBottom: '1.8rem', gap: 0 }}>
+        {/* 8 tabs in a plain unwrapped flex row is wider than any phone
+            screen with no way to reach the rest — was forcing the entire
+            page to scroll horizontally on mobile (confirmed live: this row
+            alone accounted for the overflow on every movie/TV/anime detail
+            page). overflowX:auto + flexShrink:0 makes the row itself scroll
+            instead, same pattern GenreToolbar already uses for its chip row. */}
+        <div className="hide-scroll" style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,.06)', marginBottom: '1.8rem', gap: 0, overflowX: 'auto' }}>
           {TABS.map(([tabId, lbl]) => (
-            <button key={tabId} className={`tab-btn${tab === tabId ? ' on' : ''}`} onClick={() => setTab(tabId)} style={{ padding: '11px 20px', background: 'none', border: 'none', outline: 'none', color: tab === tabId ? 'var(--gold)' : 'rgba(255,245,232,.35)', transition: 'color .22s' }}>{lbl}</button>
+            <button key={tabId} className={`tab-btn${tab === tabId ? ' on' : ''}`} onClick={() => setTab(tabId)} style={{ padding: '11px 20px', background: 'none', border: 'none', outline: 'none', color: tab === tabId ? 'var(--gold)' : 'rgba(255,245,232,.35)', transition: 'color .22s', flexShrink: 0, whiteSpace: 'nowrap' }}>{lbl}</button>
           ))}
         </div>
 

@@ -19,6 +19,8 @@ export interface PortalGenreConfig {
   icon: LucideIcon;
   col: string;
   tc: string;
+  /** Secondary accent — pairs with tc for the nav's two-tone gem gradient */
+  tc2: string;
   genreId: number;
   mediaType: 'movie' | 'tv';
   source: 'tmdb' | 'anilist';
@@ -39,6 +41,7 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
     icon: Sparkles,
     col: 'linear-gradient(135deg,#0A0012,#2A0055)',
     tc: '#FF0096',
+    tc2: '#FF8AD8',
     genreId: 16,
     mediaType: 'tv',
     source: 'anilist',
@@ -52,7 +55,10 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
     name: 'Cartoon',
     icon: Palette,
     col: 'linear-gradient(135deg,#87CEEB,#B0E2FF)',
-    tc: '#2D5A1B',
+    // Lifted from the original #2D5A1B — too dark/muddy to hold a nav
+    // gradient fill at small sizes; same hue, several steps lighter.
+    tc: '#3D7A28',
+    tc2: '#5FC9EE',
     genreId: 16,
     mediaType: 'tv',
     source: 'tmdb',
@@ -68,6 +74,7 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
     icon: Ghost,
     col: 'linear-gradient(135deg,#000,#3D0000)',
     tc: '#DC143C',
+    tc2: '#FF6A45',
     genreId: 27,
     mediaType: 'movie',
     source: 'tmdb',
@@ -82,6 +89,7 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
     icon: Heart,
     col: 'linear-gradient(135deg,#1A0005,#5A001A)',
     tc: '#FF6B8A',
+    tc2: '#FFD9A0',
     genreId: 10749,
     mediaType: 'movie',
     source: 'tmdb',
@@ -96,6 +104,7 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
     icon: Search,
     col: 'linear-gradient(135deg,#050A15,#0A1A35)',
     tc: '#FFB347',
+    tc2: '#8FD9FF',
     genreId: 9648,
     mediaType: 'movie',
     source: 'tmdb',
@@ -110,6 +119,7 @@ export const PORTAL_GENRES: PortalGenreConfig[] = [
     icon: Wand2,
     col: 'linear-gradient(135deg,#0D0520,#1A0840)',
     tc: '#C39BD3',
+    tc2: '#FFE066',
     genreId: 14,
     mediaType: 'movie',
     source: 'tmdb',
