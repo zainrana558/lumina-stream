@@ -5,6 +5,16 @@
  *   0.3 * latency + 0.4 * successRate + 0.15 * tierBonus + 0.1 * recencyBonus + 0.05 * clientReportBonus
  *
  * Integrates with L12 Learning System for an additional learned bonus.
+ *
+ * NOTE 2026-09-23: grepped the whole src/ tree — scoreProvider() and
+ * scoreAndSortProviders() below are never called from anywhere. The live
+ * selection path (/api/embed's smart mode) uses provider-intelligence.ts's
+ * selectWithIntelligence() exclusively, which has its own separate scoring
+ * formula. This module's updateProviderSignal() IS live (called from
+ * provider-intelligence.ts's recordProviderResult()), so signalStore isn't
+ * dead — just the scoring functions that would read it. Left as-is rather
+ * than removed, since it's not this task's scope and something may depend
+ * on it existing; flagging so it isn't mistaken for the real scoring path.
  */
 
 import { getHealth } from '@/lib/streaming/health-check';
@@ -90,9 +100,12 @@ export async function scoreProvider(provider: EmbedResult): Promise<ProviderScor
     learnedBonus: 0,
   };
 
-  // Fetch learned bonus from L12 (async)
+  // Fetch learned bonus from L12 (async). This module has no content-type
+  // context of its own (see the file header note) — 'tv' matches the same
+  // ultimate fallback used elsewhere (resolveContentType in
+  // content-intelligence.ts) rather than inventing a different default.
   try {
-    signals.learnedBonus = await getLearnedProviderBonus(provider.name);
+    signals.learnedBonus = await getLearnedProviderBonus(provider.name, 'tv');
   } catch {
     signals.learnedBonus = 0;
   }

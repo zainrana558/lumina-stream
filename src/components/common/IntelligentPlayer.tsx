@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import type { EmbedResult } from '@/lib/streaming/providers';
 
 interface IntelligentPlayerProps {
@@ -23,6 +24,10 @@ interface IntelligentPlayerProps {
   providers: EmbedResult[];
   /** Media ID for resume/event tracking */
   mediaId: number;
+  /** Content type — used only to scope playback-event learning signals
+   * (see /api/playback/event) so a provider's movie/TV/anime performance
+   * is tracked separately instead of blended into one score. */
+  contentType?: 'movie' | 'tv' | 'anime';
   /** Season number (TV only) */
   season?: number;
   /** Episode number (TV only) */
@@ -50,6 +55,7 @@ interface SkipMarker {
 export default function IntelligentPlayer({
   providers,
   mediaId,
+  contentType = 'tv',
   season = 1,
   episode = 1,
   title,
@@ -69,6 +75,7 @@ export default function IntelligentPlayer({
   const [skipMarkers, setSkipMarkers] = useState<SkipMarker[]>([]);
   const [resumePosition, setResumePosition] = useState<number | null>(null);
   const [iframeError, setIframeError] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState<'up' | 'down' | null>(null);
 
   // ---- Refs ----
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -77,6 +84,9 @@ export default function IntelligentPlayer({
   const skipCheckInterval = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const currentProvider = providers[currentProviderIndex] || providers[0];
+
+  // Reset explicit feedback state whenever the active provider changes.
+  useEffect(() => { setFeedbackGiven(null); }, [currentProviderIndex]);
 
   // ---- Fetch resume position ----
   useEffect(() => {
@@ -147,7 +157,10 @@ export default function IntelligentPlayer({
 
   const reportEvent = useCallback(
     (eventType: string, metadata?: Record<string, unknown>) => {
-      if (!isAuthenticated || !currentProvider) return;
+      // Reported for guests too — the learning system needs signal from
+      // logged-out playback, not just authenticated sessions (the API
+      // route records these anonymously; see migration 011).
+      if (!currentProvider) return;
 
       // Throttle: max 1 event per 3 seconds
       if (eventThrottleTimer.current) return;
@@ -163,6 +176,7 @@ export default function IntelligentPlayer({
           mediaId,
           provider: currentProvider.name,
           eventType,
+          contentType,
           position: currentTimeRef.current,
           duration: durationRef.current,
           metadata,
@@ -171,7 +185,36 @@ export default function IntelligentPlayer({
         // Event reporting failed — non-critical
       });
     },
-    [isAuthenticated, currentProvider, mediaId],
+    [currentProvider, mediaId, contentType],
+  );
+
+  // ---- Explicit thumbs up/down feedback ----
+  // Implicit signals (complete/error events) are noisy — one tap of explicit
+  // feedback is a much stronger training signal for the learning system.
+  // Reuses the exact same 'complete'/'error' event types the aggregate SQL
+  // already treats as success/failure (see aggregate_provider_performance
+  // in migration 010), tagged so they're distinguishable from implicit
+  // signals if that's ever needed — sent directly (not through the
+  // throttled reportEvent) since a deliberate click should never be dropped.
+  const sendFeedback = useCallback(
+    (positive: boolean) => {
+      if (!currentProvider) return;
+      setFeedbackGiven(positive ? 'up' : 'down');
+      fetch('/api/playback/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mediaId,
+          provider: currentProvider.name,
+          eventType: positive ? 'complete' : 'error',
+          contentType,
+          position: currentTimeRef.current,
+          duration: durationRef.current,
+          metadata: { explicitFeedback: true },
+        }),
+      }).catch(() => { /* non-critical */ });
+    },
+    [currentProvider, mediaId, contentType],
   );
 
   // ---- Save resume position (debounced) ----
@@ -223,18 +266,35 @@ export default function IntelligentPlayer({
   );
 
   // ---- Listen for timeUpdate from iframe & check skip markers ----
+  // `reportEvent` used to be defined but never actually called anywhere in
+  // this component — the entire L12 learning pipeline (provider-
+  // intelligence.ts, learning.ts) had a working backend wired to a
+  // client that never sent it a single real playback signal. Wired here:
+  // a 'complete' event once a session crosses 90% watched (matches the
+  // exact threshold aggregate_provider_performance() already uses to
+  // count "successful_plays"), reported once per media/provider via the ref guard.
+  const completeReportedRef = useRef<string | null>(null);
   useEffect(() => {
     function handleMessage(e: MessageEvent) {
       if (e.data?.type === 'lumina:timeUpdate') {
         const time = typeof e.data.time === 'number' ? e.data.time : 0;
+        const dur = typeof e.data.duration === 'number' ? e.data.duration : 0;
         setCurrentTime(time);
-        if (e.data.duration) setDuration(e.data.duration);
+        if (dur) setDuration(dur);
         setIsPlaying(e.data.playing !== false);
+
+        if (dur > 0 && time / dur >= 0.9) {
+          const key = `${mediaId}:${currentProvider?.name}`;
+          if (completeReportedRef.current !== key) {
+            completeReportedRef.current = key;
+            reportEvent('complete');
+          }
+        }
       }
     }
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [mediaId, currentProvider, reportEvent]);
 
   // Check skip markers against current time
   useEffect(() => {
@@ -316,6 +376,7 @@ export default function IntelligentPlayer({
         onLoad={() => {
           // Iframe content loaded — notify parent to clear the failover timer
           onIframeLoad?.();
+          reportEvent('play');
         }}
         onError={() => {
           // Iframe failed to load (e.g. blocked/unreachable source) — surface the
@@ -323,6 +384,7 @@ export default function IntelligentPlayer({
           // onError callback) permanently unused while the user stares at a blank frame.
           setIframeError(true);
           onError?.(currentProvider.name, 'Failed to load embed');
+          reportEvent('error');
         }}
       />
 
@@ -453,6 +515,47 @@ export default function IntelligentPlayer({
           >
             ›
           </button>
+        </div>
+      )}
+
+      {/* Explicit feedback — how was this source? */}
+      {!iframeError && (
+        <div
+          style={{
+            position: 'absolute', top: 12, left: 12, zIndex: 10,
+            display: 'flex', gap: 6, alignItems: 'center',
+            background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '4px 8px',
+          }}
+        >
+          <button
+            onClick={() => sendFeedback(true)}
+            disabled={feedbackGiven !== null}
+            title="This source works well"
+            aria-label="This source works well"
+            style={{
+              background: 'none', border: 'none', cursor: feedbackGiven ? 'default' : 'pointer',
+              color: feedbackGiven === 'up' ? '#78D621' : 'rgba(255,255,255,0.75)',
+              padding: 4, display: 'flex', opacity: feedbackGiven && feedbackGiven !== 'up' ? 0.35 : 1,
+            }}
+          >
+            <ThumbsUp size={15} fill={feedbackGiven === 'up' ? 'currentColor' : 'none'} />
+          </button>
+          <button
+            onClick={() => sendFeedback(false)}
+            disabled={feedbackGiven !== null}
+            title="This source is broken or laggy"
+            aria-label="This source is broken or laggy"
+            style={{
+              background: 'none', border: 'none', cursor: feedbackGiven ? 'default' : 'pointer',
+              color: feedbackGiven === 'down' ? '#FF4A4A' : 'rgba(255,255,255,0.75)',
+              padding: 4, display: 'flex', opacity: feedbackGiven && feedbackGiven !== 'down' ? 0.35 : 1,
+            }}
+          >
+            <ThumbsDown size={15} fill={feedbackGiven === 'down' ? 'currentColor' : 'none'} />
+          </button>
+          {feedbackGiven && (
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', paddingRight: 2 }}>Thanks!</span>
+          )}
         </div>
       )}
 

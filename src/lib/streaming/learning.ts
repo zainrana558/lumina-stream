@@ -6,6 +6,21 @@
  *
  * Flow: Playback events → DB → aggregated provider_performance → Redis cache → scoring bonus
  * Bonus range: -0.2 (terrible) to +0.2 (excellent)
+ *
+ * UPDATE 2026-09-23: this whole pipeline used to be keyed by provider name
+ * ALONE — verified live that the same provider scored identically for two
+ * completely unrelated movies, because nothing here was keyed by content
+ * type. A provider reliable for movies but bad for TV (a real, already-
+ * observed case) got one blended score across everything, so the system
+ * had no way to learn that split on its own. Every function here now takes
+ * a contentType and keys its cache/DB rows by (provider, contentType).
+ *
+ * Also fixed the same day: aggregate_provider_performance() (the SQL RPC
+ * that turns raw playback_analytics rows into provider_performance) was
+ * never called from any application code — provider_performance had
+ * likely been sitting empty this whole time, making the DB-backed bonus a
+ * silent no-op regardless of the content-type issue. syncPerformanceToRedis()
+ * below now calls it before reading.
  */
 
 import { getRedis } from '@/lib/redis';
@@ -24,12 +39,18 @@ export type PlaybackEventType =
   | 'quality_change'
   | 'provider_switch';
 
+export type LearningContentType = 'movie' | 'tv' | 'anime';
+
 export interface PlaybackEvent {
-  userId: string;
-  profileId: string;
+  /** Null for guest/anonymous playback — still recorded (see migration
+   * 011_anon_playback_events.sql) so guest sessions feed the learning
+   * system instead of being invisible to it. */
+  userId: string | null;
+  profileId: string | null;
   mediaId: number;
   provider: string;
   eventType: PlaybackEventType;
+  contentType: LearningContentType;
   timestamp: number;
   position?: number;
   duration?: number;
@@ -38,6 +59,7 @@ export interface PlaybackEvent {
 
 export interface ProviderStats {
   provider: string;
+  contentType: LearningContentType;
   totalPlays: number;
   successfulPlays: number;
   avgBufferTime: number;
@@ -67,6 +89,7 @@ export async function recordPlaybackEvent(event: PlaybackEvent): Promise<void> {
       media_id: event.mediaId,
       provider: event.provider,
       event_type: event.eventType,
+      content_type: event.contentType,
       timestamp: new Date(event.timestamp).toISOString(),
       position: event.position ?? null,
       duration: event.duration ?? null,
@@ -79,17 +102,25 @@ export async function recordPlaybackEvent(event: PlaybackEvent): Promise<void> {
 
 // ---- Learned Scoring Bonus ----
 
+/** Cache key includes contentType so movie/tv/anime bonuses never blend. */
+function bonusCacheKey(provider: string, contentType: LearningContentType): string {
+  return `${BONUS_CACHE_PREFIX}${contentType}:${provider}`;
+}
+
 /**
- * Get the learned scoring bonus for a specific provider.
- * Checks Redis cache first, falls back to DB aggregation.
+ * Get the learned scoring bonus for a specific provider, scoped to one
+ * content type. Checks Redis cache first, falls back to DB aggregation.
  * Returns a value between -0.2 and +0.2.
  */
-export async function getLearnedProviderBonus(provider: string): Promise<number> {
+export async function getLearnedProviderBonus(
+  provider: string,
+  contentType: LearningContentType,
+): Promise<number> {
   // Try Redis cache first
   const redis = getRedis();
   if (redis) {
     try {
-      const cached = await redis.get<string>(`${BONUS_CACHE_PREFIX}${provider}`);
+      const cached = await redis.get<string>(bonusCacheKey(provider, contentType));
       if (cached) {
         const parsed = JSON.parse(cached) as { bonus: number; cachedAt: number };
         if (Date.now() - parsed.cachedAt < BONUS_CACHE_TTL * 1000) {
@@ -110,6 +141,7 @@ export async function getLearnedProviderBonus(provider: string): Promise<number>
       .from('provider_performance')
       .select('*')
       .eq('provider', provider)
+      .eq('content_type', contentType)
       .single();
 
     if (!data) return 0;
@@ -119,7 +151,7 @@ export async function getLearnedProviderBonus(provider: string): Promise<number>
     if (redis) {
       try {
         await redis.set(
-          `${BONUS_CACHE_PREFIX}${provider}`,
+          bonusCacheKey(provider, contentType),
           JSON.stringify({ bonus, cachedAt: Date.now() }) as unknown as string,
           { ex: BONUS_CACHE_TTL },
         );
@@ -134,20 +166,23 @@ export async function getLearnedProviderBonus(provider: string): Promise<number>
 }
 
 /**
- * Get all learned provider scores.
- * Returns a Map of provider name → bonus (-0.2 to +0.2).
+ * Get all learned provider scores for ONE content type.
+ * Returns a Map of provider name → bonus (-0.2 to +0.2). A provider's
+ * movie bonus and TV bonus are tracked completely separately — a caller
+ * scoring anime candidates only ever sees anime-scoped bonuses.
  */
-export async function getAllLearnedScores(): Promise<Map<string, number>> {
+export async function getAllLearnedScores(contentType: LearningContentType): Promise<Map<string, number>> {
   const scores = new Map<string, number>();
   const redis = getRedis();
+  const prefix = `${BONUS_CACHE_PREFIX}${contentType}:`;
 
   // Try Redis batch
   if (redis) {
     try {
-      // Use scan to find all bonus keys
+      // Use scan to find all bonus keys for this content type only
       let cursor = '0';
       do {
-        const result = await redis.scan(cursor, { match: `${BONUS_CACHE_PREFIX}*`, count: 50 });
+        const result = await redis.scan(cursor, { match: `${prefix}*`, count: 50 });
         cursor = result[0] as string;
         const keys = result[1] as string[];
 
@@ -158,7 +193,7 @@ export async function getAllLearnedScores(): Promise<Map<string, number>> {
               try {
                 const parsed = JSON.parse(values[i]) as { bonus: number; cachedAt: number };
                 if (Date.now() - parsed.cachedAt < BONUS_CACHE_TTL * 1000) {
-                  const provider = keys[i].replace(BONUS_CACHE_PREFIX, '');
+                  const provider = keys[i].replace(prefix, '');
                   scores.set(provider, parsed.bonus);
                 }
               } catch {
@@ -181,8 +216,9 @@ export async function getAllLearnedScores(): Promise<Map<string, number>> {
   // Negative cache: without the /api/playback/aggregate cron the
   // provider_performance table is often empty, and this ran a full
   // `select(*)` on EVERY embed request (~150-400ms Supabase RTT each time).
-  // Skip the DB for 5 min after we see it's empty / unavailable.
-  const EMPTY_MARK = 'lumina:learn:empty';
+  // Skip the DB for 5 min after we see it's empty / unavailable. Scoped per
+  // content type — an empty anime bucket shouldn't suppress a movie lookup.
+  const EMPTY_MARK = `lumina:learn:empty:${contentType}`;
   if (redis) {
     try {
       if (await redis.get(EMPTY_MARK)) return scores;
@@ -194,6 +230,7 @@ export async function getAllLearnedScores(): Promise<Map<string, number>> {
     const { data } = await supabase
       .from('provider_performance')
       .select('provider,total_plays,successful_plays,error_count,avg_buffer_time,avg_watch_duration')
+      .eq('content_type', contentType)
       .limit(200);
     if (!data || data.length === 0) {
       if (redis) { try { await redis.set(EMPTY_MARK, '1', { ex: 300 }); } catch {} }
@@ -208,7 +245,7 @@ export async function getAllLearnedScores(): Promise<Map<string, number>> {
       if (redis) {
         try {
           await redis.set(
-            `${BONUS_CACHE_PREFIX}${row.provider}`,
+            bonusCacheKey(row.provider as string, contentType),
             JSON.stringify({ bonus, cachedAt: Date.now() }) as unknown as string,
             { ex: BONUS_CACHE_TTL },
           );
@@ -225,6 +262,16 @@ export async function getAllLearnedScores(): Promise<Map<string, number>> {
 /**
  * Sync aggregated provider performance from DB to Redis cache.
  * Called by the /api/playback/aggregate cron endpoint.
+ *
+ * UPDATE 2026-09-23: this used to ONLY read provider_performance and cache
+ * it — it never actually ran the aggregation that fills provider_performance
+ * from the raw playback_analytics event log in the first place. Grepped the
+ * whole src/ tree: aggregate_provider_performance() (the RPC that does that
+ * aggregation, defined in supabase/migrations/006 and updated in 010) was
+ * never called from anywhere. So this whole DB-backed bonus had likely been
+ * a silent no-op since it was built — provider_performance stayed empty,
+ * every getLearnedProviderBonus() call fell through to bonus=0. Now calls
+ * the RPC first so there's actually something to sync.
  */
 export async function syncPerformanceToRedis(): Promise<number> {
   if (!isSupabaseConfigured()) return 0;
@@ -234,6 +281,15 @@ export async function syncPerformanceToRedis(): Promise<number> {
 
   try {
     const supabase = await createClient();
+
+    try {
+      await supabase.rpc('aggregate_provider_performance');
+    } catch (aggError) {
+      // Don't abort the sync over this — stale cached data from a previous
+      // successful aggregation is still better than none.
+      console.error('[Learning] aggregate_provider_performance RPC failed:', aggError);
+    }
+
     const { data } = await supabase.from('provider_performance').select('*');
     if (!data || data.length === 0) return 0;
 
@@ -241,9 +297,10 @@ export async function syncPerformanceToRedis(): Promise<number> {
     let synced = 0;
 
     for (const row of data) {
+      const contentType = (row.content_type as LearningContentType) || 'tv';
       const bonus = computeBonus(row);
       pipeline.set(
-        `${BONUS_CACHE_PREFIX}${row.provider}`,
+        bonusCacheKey(row.provider as string, contentType),
         JSON.stringify({ bonus, cachedAt: Date.now() }) as unknown as string,
         { ex: BONUS_CACHE_TTL },
       );
@@ -279,6 +336,7 @@ export async function getProviderStats(provider?: string): Promise<ProviderStats
 
     return data.map((row) => ({
       provider: row.provider as string,
+      contentType: (row.content_type as LearningContentType) || 'tv',
       totalPlays: (row.total_plays as number) || 0,
       successfulPlays: (row.successful_plays as number) || 0,
       avgBufferTime: (row.avg_buffer_time as number) || 0,

@@ -280,35 +280,53 @@ function cleanupCaches(): void {
 }
 
 // ── Historical success cache (updated by health monitor & playback events) ──
+//
+// UPDATE 2026-09-23: keyed by (contentType, name) now, not just name —
+// verified live that the same provider scored identically for two
+// completely unrelated movies, because this cache (and the DB-backed one
+// in learning.ts) blended every content type into one number. A provider
+// reliable for movies but bad for TV (a real, already-observed case) had
+// no way to be recognized as such. Health-check pings (health-check.ts)
+// always probe via getMovieUrl, so they're tagged 'movie' — an honest
+// simplification, not full per-type reachability data, but strictly
+// better than blending them into every bucket.
+
+type HistoricalContentType = 'movie' | 'tv' | 'anime';
 
 const historicalCache = new Map<string, { successRate: number; totalPlays: number; updatedAt: number }>();
 const HISTORICAL_CACHE_TTL = 15 * 60 * 1000; // 15 min
 
-export function updateHistoricalCache(name: string, success: boolean): void {
-  const existing = historicalCache.get(name) || { successRate: 0.7, totalPlays: 0, updatedAt: 0 };
+function historicalKey(name: string, contentType: HistoricalContentType): string {
+  return `${contentType}::${name}`;
+}
+
+export function updateHistoricalCache(name: string, contentType: HistoricalContentType, success: boolean): void {
+  const key = historicalKey(name, contentType);
+  const existing = historicalCache.get(key) || { successRate: 0.7, totalPlays: 0, updatedAt: 0 };
   const age = Date.now() - existing.updatedAt;
 
   // Reset if stale
   if (age > HISTORICAL_CACHE_TTL) {
-    historicalCache.set(name, { successRate: success ? 1.0 : 0.0, totalPlays: 1, updatedAt: Date.now() });
+    historicalCache.set(key, { successRate: success ? 1.0 : 0.0, totalPlays: 1, updatedAt: Date.now() });
     return;
   }
 
   // Exponential moving average (alpha = 0.1 for gradual update)
   const alpha = 0.1;
   const newRate = existing.successRate * (1 - alpha) + (success ? 1.0 : 0.0) * alpha;
-  historicalCache.set(name, {
+  historicalCache.set(key, {
     successRate: newRate,
     totalPlays: existing.totalPlays + 1,
     updatedAt: Date.now(),
   });
 }
 
-function getHistoricalScore(name: string): number {
-  const cached = historicalCache.get(name);
+function getHistoricalScore(name: string, contentType: HistoricalContentType): number {
+  const key = historicalKey(name, contentType);
+  const cached = historicalCache.get(key);
   if (cached) {
     if (Date.now() - cached.updatedAt >= HISTORICAL_CACHE_TTL) {
-      historicalCache.delete(name);
+      historicalCache.delete(key);
       return 0.7;
     }
     return cached.successRate;
@@ -340,11 +358,15 @@ function selectPool(contentType: ContentTypeResult): ProviderPool {
  */
 function scoreProviderIntelligent(
   provider: EmbedResult,
+  contentType: HistoricalContentType,
   learnedBonus: number = 0,
 ): ScoredProvider {
   const caps = PROVIDER_CAPABILITIES[provider.name];
 
-  // Signal 1: Availability (50 pts) — from health checker
+  // Signal 1: Availability (50 pts) — from health checker. Reachability is
+  // genuinely content-type-independent (a dead server is dead for
+  // everything), so this one intentionally stays global, unlike the
+  // content-scoped signals below.
   const health = getHealth(provider.name);
   const availability: number = health === true ? 1.0
     : health === false ? 0.0
@@ -359,8 +381,9 @@ function scoreProviderIntelligent(
   // Signal 4: Quality (10 pts) — from capabilities
   const quality = caps?.quality ?? 0.6;
 
-  // Signal 5: Historical Success (10 pts) — from learning + health signals
-  const historicalSuccess = getHistoricalScore(provider.name);
+  // Signal 5: Historical Success (10 pts) — content-type-scoped, see the
+  // historicalCache comment above for why.
+  const historicalSuccess = getHistoricalScore(provider.name, contentType);
 
   // Combine: 0–100 scale
   const rawScore =
@@ -423,7 +446,7 @@ interface ProbeResult {
   latencyMs: number;
 }
 
-async function probeProvider(url: string, name: string): Promise<ProbeResult> {
+async function probeProvider(url: string, name: string, contentType: HistoricalContentType): Promise<ProbeResult> {
   const start = Date.now();
   try {
     const controller = new AbortController();
@@ -440,7 +463,7 @@ async function probeProvider(url: string, name: string): Promise<ProbeResult> {
     // A 2xx/3xx that ultimately resolved means the server is reachable
     const isReachable = res.status >= 200 && res.status < 400;
     if (!isReachable) {
-      updateHistoricalCache(name, false);
+      updateHistoricalCache(name, contentType, false);
       return { name, alive: false, latencyMs: latency };
     }
 
@@ -454,13 +477,13 @@ async function probeProvider(url: string, name: string): Promise<ProbeResult> {
         xfo.includes('DENY') || xfo.includes('SAMEORIGIN') ||
         fa === "'none'" || (fa !== '' && !fa.includes('*'));
       if (isBlocked) {
-        updateHistoricalCache(name, false);
+        updateHistoricalCache(name, contentType, false);
         return { name, alive: false, latencyMs: latency };
       }
     } catch { /* opaque response — headers unreadable, assume alive */ }
 
     updateSpeedCache(name, latency);
-    updateHistoricalCache(name, true);
+    updateHistoricalCache(name, contentType, true);
     return { name, alive: true, latencyMs: latency };
   } catch (err) {
     const latency = Date.now() - start;
@@ -475,7 +498,7 @@ async function probeProvider(url: string, name: string): Promise<ProbeResult> {
       msg.includes('self-signed certificate') ||
       msg.includes('self signed certificate') ||
       msg.includes('unable to verify the first certificate');
-    if (!tlsChain) updateHistoricalCache(name, false);
+    if (!tlsChain) updateHistoricalCache(name, contentType, false);
     return { name, alive: false, latencyMs: latency };
   }
 }
@@ -487,6 +510,7 @@ async function probeProvider(url: string, name: string): Promise<ProbeResult> {
  */
 async function parallelProbe(
   candidates: EmbedResult[],
+  contentType: HistoricalContentType,
   count: number = MAX_PARALLEL_PROBES,
 ): Promise<Set<string>> {
   const toProbe = candidates.slice(0, count);
@@ -496,7 +520,7 @@ async function parallelProbe(
   // wait on them. Confirmed-alive from whoever answered in time is enough
   // (scoring falls back to tier + historical for the rest).
   const settled = await Promise.race([
-    Promise.allSettled(toProbe.map(p => probeProvider(p.url, p.name))),
+    Promise.allSettled(toProbe.map(p => probeProvider(p.url, p.name, contentType))),
     new Promise<null>(r => setTimeout(() => r(null), PROBE_BUDGET_MS)),
   ]);
 
@@ -593,11 +617,13 @@ export async function selectWithIntelligence(options: {
     // Health check failed — proceed with all candidates
   }
 
-  // Step 4: Get learned bonuses (async, non-blocking)
+  // Step 4: Get learned bonuses (async, non-blocking) — scoped to this
+  // request's own content type, so a movie request never sees an anime
+  // provider's learned bonus or vice versa.
   let learnedBonuses = new Map<string, number>();
   try {
     const { getAllLearnedScores } = await import('@/lib/streaming/learning');
-    learnedBonuses = await getAllLearnedScores();
+    learnedBonuses = await getAllLearnedScores(contentType.type);
   } catch {
     // Learning system unavailable — no bonus
   }
@@ -605,7 +631,7 @@ export async function selectWithIntelligence(options: {
   // Step 5: Score all candidates
   let scored = candidates.map(p => {
     const bonus = learnedBonuses.get(p.name) ?? 0;
-    return scoreProviderIntelligent(p, bonus);
+    return scoreProviderIntelligent(p, contentType.type, bonus);
   });
 
   // Step 6: Sort BEFORE probing so we probe top-scored providers
@@ -632,7 +658,7 @@ export async function selectWithIntelligence(options: {
         }));
 
       if (topCandidates.length > 0) {
-        const aliveFromProbe = await parallelProbe(topCandidates, topCandidates.length);
+        const aliveFromProbe = await parallelProbe(topCandidates, contentType.type, topCandidates.length);
         signalsUsed = true;
 
         // Re-score ALL candidates with updated caches (probes updated speed + historical)
@@ -642,7 +668,7 @@ export async function selectWithIntelligence(options: {
         // Build a fresh scored array, this time with real probe data in caches
         const rescored = candidates.map(p => {
           const bonus = learnedBonuses.get(p.name) ?? 0;
-          const result = scoreProviderIntelligent(p, bonus);
+          const result = scoreProviderIntelligent(p, contentType.type, bonus);
           return result;
         });
 
@@ -726,9 +752,16 @@ export async function selectWithIntelligence(options: {
 /**
  * Record a provider playback result for learning.
  * Called by the client when a provider succeeds or fails.
+ * No client caller currently sends contentType (checked — nothing calls
+ * POST /api/embed today), so this defaults to 'tv' rather than silently
+ * mis-bucketing into a fixed wrong type if/when it is wired up.
  */
-export function recordProviderResult(providerName: string, success: boolean): void {
-  updateHistoricalCache(providerName, success);
+export function recordProviderResult(
+  providerName: string,
+  success: boolean,
+  contentType: HistoricalContentType = 'tv',
+): void {
+  updateHistoricalCache(providerName, contentType, success);
   updateProviderSignal(providerName, success, true);
 }
 
@@ -742,7 +775,7 @@ export function getProviderPools(): ProviderPool[] {
 /**
  * Get detailed scoring breakdown for a provider (for admin/debug).
  */
-export function getProviderScoringDetail(name: string): ScoredProvider | null {
+export function getProviderScoringDetail(name: string, contentType: HistoricalContentType = 'tv'): ScoredProvider | null {
   const caps = PROVIDER_CAPABILITIES[name];
   const health = getHealth(name);
 
@@ -757,7 +790,7 @@ export function getProviderScoringDetail(name: string): ScoredProvider | null {
       responseSpeed: getSpeedScore(name),
       subtitleSupport: caps?.subtitleSupport ?? 0.5,
       quality: caps?.quality ?? 0.6,
-      historicalSuccess: getHistoricalScore(name),
+      historicalSuccess: getHistoricalScore(name, contentType),
       learnedBonus: 0,
     },
   };

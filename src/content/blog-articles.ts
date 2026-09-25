@@ -5,6 +5,11 @@ export interface BlogArticle {
   category: string;
   tags: string[];
   date: string;
+  /** Only set when content genuinely changes after publish — omit rather
+   * than duplicate `date`, so the page only shows a real "Updated" line
+   * when there's an actual edit to report, not a fabricated freshness
+   * signal (a pattern search engines actively penalize). */
+  updatedDate?: string;
   readTime: string;
   content: string;
 }

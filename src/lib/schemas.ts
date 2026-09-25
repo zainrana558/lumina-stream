@@ -129,6 +129,7 @@ export const watchPartyCreateSchema = z.object({
   episode: z.number().int().min(1).optional().default(1),
   title: z.string().max(200),
   poster_path: z.string().nullable().optional(),
+  is_public: z.boolean().optional().default(false),
 });
 
 export const watchPartyJoinSchema = z.object({
@@ -220,6 +221,11 @@ export const playbackEventSchema = z.object({
     'play', 'pause', 'seek', 'buffer_start', 'buffer_end',
     'error', 'complete', 'quality_change', 'provider_switch',
   ]),
+  // Defaults to 'tv' to match resolveContentType()'s own ultimate fallback
+  // (content-intelligence.ts) — so an old client that hasn't picked up this
+  // field yet degrades to the same "unknown -> tv" behavior already in use
+  // everywhere else, not a hard failure.
+  contentType: z.enum(['movie', 'tv', 'anime']).optional().default('tv'),
   position: z.number().min(0).optional(),
   duration: z.number().min(0).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),

@@ -36,11 +36,15 @@ export async function POST(request: Request) {
     }
     const { provider, alive, latencyMs } = parsed.data;
 
-    // Feed the Provider Intelligence Layer caches
+    // Feed the Provider Intelligence Layer caches. Tagged 'movie' — the
+    // client hook (useClientHealthCheck.ts) always pings a fixed reference
+    // movie URL, not whatever the user is actually watching, so 'movie' is
+    // the honest bucket rather than blending into tv/anime data it never
+    // tested.
     try {
       const { updateSpeedCache, updateHistoricalCache } = await import('@/lib/streaming/provider-intelligence');
       if (latencyMs) updateSpeedCache(provider, latencyMs);
-      updateHistoricalCache(provider, alive);
+      updateHistoricalCache(provider, 'movie', alive);
     } catch {
       // Non-critical
     }

@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid request: " + parsed.error.issues.map(i => i.message).join(', ') }, { status: 400 });
     }
-    const { profile_id, show_id, media_type, season, episode, title, poster_path } = parsed.data;
+    const { profile_id, show_id, media_type, season, episode, title, poster_path, is_public } = parsed.data;
 
     const { supabase, userId } = await requireAuth();
     await verifyProfileOwnership(supabase, profile_id, userId);
@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
         episode: episode || 1,
         title,
         poster_path: poster_path || null,
+        is_public: is_public || false,
       })
       .select("id, code")
       .single();

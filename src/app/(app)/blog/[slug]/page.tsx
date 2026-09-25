@@ -322,7 +322,7 @@ export default async function BlogSlugPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
-      <BlogPost show={show} content={content} />
+      <BlogPost show={show} content={content} publishedDate={show.year ? `${show.year}-01-01` : today} />
     </>
   );
 }
@@ -349,7 +349,7 @@ function CuratedArticlePage({ article }: { article: BlogArticle }) {
     headline: article.title,
     description: article.description,
     datePublished: article.date,
-    dateModified: article.date,
+    dateModified: article.updatedDate || article.date,
     author: {
       '@type': 'Organization',
       name: SITE_NAME,
@@ -412,7 +412,7 @@ ${article.content}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
-      <BlogPost show={showData} content={curatedContent} />
+      <BlogPost show={showData} content={curatedContent} publishedDate={article.date} updatedDate={article.updatedDate} />
     </>
   );
 }

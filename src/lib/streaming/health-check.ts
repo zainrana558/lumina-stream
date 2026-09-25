@@ -216,11 +216,14 @@ async function processHealthResult(
   // Effective alive = reachable AND doesn't block framing (unless proxied)
   const effectiveAlive = alive && !effectiveFramesBlocked;
 
-  // Feed latency to Provider Intelligence speed cache
+  // Feed latency to Provider Intelligence speed cache. Tagged 'movie' since
+  // this ping always probes via getMovieUrl — not full per-content-type
+  // reachability data, but avoids polluting the tv/anime historical buckets
+  // with a check that never actually exercised those routes.
   try {
     const { updateSpeedCache, updateHistoricalCache } = await import('@/lib/streaming/provider-intelligence');
     updateSpeedCache(provider.name, latencyMs);
-    updateHistoricalCache(provider.name, effectiveAlive);
+    updateHistoricalCache(provider.name, 'movie', effectiveAlive);
   } catch { /* non-critical */ }
 
   // Save current health
@@ -403,11 +406,11 @@ export async function checkAllProviders(): Promise<Record<string, boolean>> {
       const effectiveAlive = alive && !effectiveFramesBlocked;
       results[p.name] = effectiveAlive;
       setHealth(p.name, alive, effectiveFramesBlocked);
-      // Feed speed cache
+      // Feed speed cache — tagged 'movie', see the matching comment above.
       try {
         const { updateSpeedCache, updateHistoricalCache } = await import('@/lib/streaming/provider-intelligence');
         updateSpeedCache(p.name, latencyMs);
-        updateHistoricalCache(p.name, effectiveAlive);
+        updateHistoricalCache(p.name, 'movie', effectiveAlive);
       } catch { /* non-critical */ }
     })
   );

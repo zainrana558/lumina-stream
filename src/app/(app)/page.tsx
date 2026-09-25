@@ -190,6 +190,18 @@ async function getTMDBData() {
       return fallbackLabel;
     };
 
+    // "New This Week" badge — a genuine release-date signal (not a fake
+    // "added to the site" date the honest-freshness principle rules out).
+    // Only meaningful on rows where recency is actually the point.
+    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    const withNewBadge = (r: TMDBShow) => {
+      const date = r.release_date || r.first_air_date;
+      const isNew = !!date && (Date.now() - new Date(date).getTime()) < ONE_WEEK_MS && (Date.now() - new Date(date).getTime()) >= 0;
+      return (m: MediaItem): MediaItem => (isNew ? { ...m, isNew: true } : m);
+    };
+    const tagNew = (items: TMDBShow[], mediaType: 'movie' | 'tv') =>
+      items.map(r => withNewBadge(r)(tmdbToMedia({ ...r, media_type: mediaType })));
+
     // Filter trending to only items with backdrop_path for hero carousel
     const trendingWithBackdrop = trending.filter(r => r.backdrop_path);
     const featured = trendingWithBackdrop.slice(0, 6).map(r => tmdbToMedia(r));
@@ -221,8 +233,12 @@ async function getTMDBData() {
     trending.slice(0, 12).forEach(r => (r.media_type === 'tv' ? usedTvIds : usedMovieIds).add(r.id));
 
     // ── Trending & Popular ──
+    // "Top 10 This Week" used to be pushed here too, sourced from the exact
+    // same `trending` array as this row (just sliced to 10 + ranked=true) —
+    // measured as a near-total content duplicate of "Trending Now" right
+    // above it, not a distinct row. Kept as the single ranked presentation
+    // of that data instead of showing the same list twice.
     if (trending.length) rows.push({ title: 'Trending Now', sub: fmtCount('trending', 'Most watched this week'), items: trending.slice(0, 12).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week' });
-    if (trending.length) rows.push({ title: 'Top 10 This Week', sub: fmtCount('trending', 'Hot right now'), items: trending.slice(0, 10).map(r => tmdbToMedia(r)), endpoint: '/trending/all/week', ranked: true });
     if (popular.length) rows.push({ title: 'Popular Movies', sub: fmtCount('popular', 'Most popular right now'), items: dedupe(popular, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/popular' });
     if (tvPopular.length) rows.push({ title: 'Popular TV', sub: fmtCount('tvPopular', 'Most popular TV shows'), items: dedupe(tvPopular, usedTvIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/popular' });
     if (topRated.length) rows.push({ title: 'Top Rated', sub: fmtCount('topRated', 'Highest rated of all time'), items: dedupe(topRated, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/top_rated' });
@@ -238,8 +254,8 @@ async function getTMDBData() {
     if (animeRow) rows.push(animeRow);
 
     // ── Now Playing + TV airing ──
-    if (nowPlaying.length) rows.push({ title: 'Now Playing in Theaters', sub: fmtCount('nowPlaying', 'Currently showing in cinemas'), items: dedupe(nowPlaying, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/movie/now_playing' });
-    if (airingToday.length) rows.push({ title: 'Airing Today on TV', sub: fmtCount('airingToday', 'Episodes airing today'), items: dedupe(airingToday, usedTvIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/airing_today' });
+    if (nowPlaying.length) rows.push({ title: 'Now Playing in Theaters', sub: fmtCount('nowPlaying', 'Currently showing in cinemas'), items: tagNew(dedupe(nowPlaying, usedMovieIds).slice(0, 12), 'movie'), endpoint: '/movie/now_playing' });
+    if (airingToday.length) rows.push({ title: 'Airing Today on TV', sub: fmtCount('airingToday', 'Episodes airing today'), items: tagNew(dedupe(airingToday, usedTvIds).slice(0, 12), 'tv'), endpoint: '/tv/airing_today' });
     if (onTheAir.length) rows.push({ title: 'On The Air', sub: fmtCount('onTheAir', 'TV shows currently broadcasting'), items: dedupe(onTheAir, usedTvIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'tv' })), endpoint: '/tv/on_the_air' });
     if (drama.length) rows.push({ title: 'Drama', sub: fmtCount('drama', 'Emotional stories that move you'), items: dedupe(drama, usedMovieIds).slice(0, 12).map(r => tmdbToMedia({ ...r, media_type: 'movie' })), endpoint: '/discover/movie', params: { with_genres: '18', sort_by: 'popularity.desc' } });
 

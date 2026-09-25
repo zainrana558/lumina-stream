@@ -19,7 +19,19 @@ interface Show {
   backdrop?: string | null;
 }
 
-export default function BlogPost({ show, content }: { show: Show; content: string }) {
+export default function BlogPost({
+  show, content, publishedDate, updatedDate,
+}: {
+  show: Show;
+  content: string;
+  /** ISO date string (yyyy-mm-dd). Omit to hide the byline entirely. */
+  publishedDate?: string;
+  /** Only render "Updated" when it's a genuinely different date from
+   * publishedDate — otherwise it's a fake freshness signal, not a real one. */
+  updatedDate?: string;
+}) {
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   return (
     <div style={{
       maxWidth: 800,
@@ -36,6 +48,15 @@ export default function BlogPost({ show, content }: { show: Show; content: strin
         {' › '}
         <span style={{ color: 'rgba(255,245,232,.6)' }}>{show.title}</span>
       </div>
+
+      {(publishedDate || updatedDate) && (
+        <div style={{ fontSize: '.72rem', color: 'rgba(255,245,232,.35)', marginBottom: 8, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {publishedDate && <span>Published {fmt(publishedDate)}</span>}
+          {updatedDate && updatedDate !== publishedDate && (
+            <span style={{ color: '#FFB347' }}>Updated {fmt(updatedDate)}</span>
+          )}
+        </div>
+      )}
 
       {/* Hero */}
       <div style={{

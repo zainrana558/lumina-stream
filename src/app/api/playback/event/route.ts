@@ -31,14 +31,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Auth required for event recording
-    let userId: string;
+    // Auth is not required — guest playback is recorded anonymously (see
+    // migration 011_anon_playback_events.sql) so the learning system isn't
+    // blind to the (likely large) share of traffic that never signs in.
+    let userId: string | null = null;
     try {
       const auth = await requireAuth();
       userId = auth.userId;
-    } catch {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
+    } catch { /* guest — proceed with userId = null */ }
 
     const body = await request.json().catch(() => null);
     const parsed = playbackEventSchema.safeParse(body);
@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    const { mediaId, provider, eventType, position, duration, metadata } = parsed.data;
+    const { mediaId, provider, eventType, contentType, position, duration, metadata } = parsed.data;
 
-    const profileId = await getVerifiedProfileId(userId) || userId;
+    const profileId = userId ? (await getVerifiedProfileId(userId) || userId) : null;
 
     await recordPlaybackEvent({
       userId,
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
       mediaId: Number(mediaId),
       provider: String(provider),
       eventType: eventType as PlaybackEventType,
+      contentType,
       timestamp: Date.now(),
       position: position !== undefined ? Number(position) : undefined,
       duration: duration !== undefined ? Number(duration) : undefined,

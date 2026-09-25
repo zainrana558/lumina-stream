@@ -123,10 +123,16 @@ export async function GET(request: NextRequest) {
         checks,
       }
     : {
-        // Public shape: aggregate only, no hostnames / latencies / provider
-        // uptime ratios. `X-Admin-Key: $ADMIN_API_KEY` gets the full breakdown.
+        // Public shape: per-category booleans only — no hostnames, latencies,
+        // or provider uptime ratios (see F-15 above). `X-Admin-Key:
+        // $ADMIN_API_KEY` gets the full breakdown with numbers.
         status: allOk ? 'ok' : 'degraded',
         timestamp: new Date().toISOString(),
+        categories: {
+          site: checks.tmdb_api?.ok ?? checks.tmdb_credentials?.ok ?? true,
+          streaming: checks.embed_providers?.ok ?? true,
+          database: checks.supabase?.ok ?? true,
+        },
       };
 
   return NextResponse.json(body, {

@@ -150,6 +150,14 @@ const Card = memo(function Card({ show, onClick, sz = 'md', rank, ring = '' }: C
         <div className="badge-r" style={{ position: 'absolute', top: 9, right: 9, zIndex: 5 }}>
           {show.r > 0 ? <><Star size={11} fill="currentColor" /> {show.r}</> : 'New'}
         </div>
+        {show.isNew && (
+          <div className="f-cinzel" style={{
+            position: 'absolute', bottom: 9, left: 9, zIndex: 5,
+            padding: '2px 8px', background: '#FF4A4A', borderRadius: 20,
+            fontSize: '.56rem', fontWeight: 700, color: '#FFF5E8', letterSpacing: '.06em',
+            boxShadow: '3px 3px 9px rgba(0,0,0,.7)',
+          }}>NEW</div>
+        )}
         {show.progress > 0 && show.progress < 100 && (
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 6 }}>
             <div className="prog-bar" style={{ borderRadius: 0, height: 3 }}>

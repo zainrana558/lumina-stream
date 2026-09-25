@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { Check, Circle, Clapperboard, Copy, PartyPopper, RefreshCw, Star } from 'lucide-react';
 import { CS } from '@/styles/themes';
 import { createClient, ensureRealtimeAuth } from '@/lib/supabase/client';
@@ -63,6 +64,7 @@ export default function WatchPartyPanel({
 }: WatchPartyPanelProps) {
   const [view, setView] = useState<'lobby' | 'room'>('lobby');
   const [joinCode, setJoinCode] = useState('');
+  const [makePublic, setMakePublic] = useState(false);
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
@@ -199,6 +201,7 @@ export default function WatchPartyPanel({
           episode,
           title: showTitle,
           poster_path: posterPath,
+          is_public: makePublic,
         }),
       });
       const data = await res.json();
@@ -367,6 +370,17 @@ export default function WatchPartyPanel({
               )}
             </button>
 
+            {/* Make public opt-in — off by default; a private, code-only room
+                is the expected default, this just lets a host who wants
+                spontaneous joiners opt into discoverability. */}
+            <label
+              className="f-crimson"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '.78rem', color: 'rgba(255,245,232,.55)', cursor: 'pointer' }}
+            >
+              <input type="checkbox" checked={makePublic} onChange={(e) => setMakePublic(e.target.checked)} />
+              List this room publicly so anyone can join without a code
+            </label>
+
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.06)' }} />
@@ -398,6 +412,14 @@ export default function WatchPartyPanel({
                 {joining ? '...' : 'Join'}
               </button>
             </div>
+
+            <Link
+              href="/watch-party/browse"
+              className="f-cinzel"
+              style={{ textAlign: 'center', fontSize: '.68rem', color: 'rgba(255,179,71,.7)', textDecoration: 'none', letterSpacing: '.04em' }}
+            >
+              Or browse open public rooms →
+            </Link>
           </div>
         )}
 

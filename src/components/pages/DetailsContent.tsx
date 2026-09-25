@@ -1557,6 +1557,11 @@ export default function DetailsContent({
                   key={`player-${activeProviderName}-${epIdx}`}
                   providers={[{ name: activeProviderName, url: activeProviderUrl, tier: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.tier as 1 | 2 | 3) || 2, category: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.category as 'all' | 'anime') || 'all', proxied: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.proxied as boolean) || false, noSandbox: providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.noSandbox }]}
                   mediaId={show.id}
+                  contentType={
+                    !!show._isAnilist || !!show._malId || show.genre.some(g => g.toLowerCase() === 'anime')
+                      ? 'anime'
+                      : ((show.media_type || 'tv') as 'movie' | 'tv')
+                  }
                   season={season}
                   episode={epIdx}
                   title={show.title}

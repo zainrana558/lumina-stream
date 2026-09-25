@@ -23,6 +23,7 @@ import { ConfirmProvider } from '@/components/common/ConfirmProvider';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 const CookieConsent = lazy(() => import('@/components/layout/CookieConsent'));
 const FloatingContactButton = lazy(() => import('@/components/common/FloatingContactButton'));
+const InstallPrompt = lazy(() => import('@/components/common/InstallPrompt'));
 const Footer = lazy(() => import('@/components/layout/Footer'));
 const ClientHealthMonitor = lazy(() => import('@/components/common/ClientHealthMonitor'));
 
@@ -341,6 +342,11 @@ function AppShell({ children }: { children: ReactNode }) {
       {/* Cookie consent banner */}
       <Suspense fallback={null}>
         <CookieConsent />
+      </Suspense>
+
+      {/* Native "Add to Home Screen" prompt */}
+      <Suspense fallback={null}>
+        <InstallPrompt />
       </Suspense>
 
       {/* Persistent contact widget */}

@@ -166,6 +166,9 @@ export interface MediaItem {
   _anilistUrl?: string;
   /** AniList trailer (YouTube) */
   _anilistTrailer?: { id: string; site: string; thumbnail: string } | null;
+  /** True when release_date/first_air_date falls within the last 7 days —
+   * a real recency signal, not a fabricated "added to site" date. */
+  isNew?: boolean;
 }
 
 /**

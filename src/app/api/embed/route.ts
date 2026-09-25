@@ -179,13 +179,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { provider, success } = body as { provider?: string; success?: boolean };
+    const { provider, success, contentType } = body as {
+      provider?: string; success?: boolean; contentType?: 'movie' | 'tv' | 'anime';
+    };
 
     if (!provider || typeof success !== 'boolean') {
       return NextResponse.json({ error: 'Missing provider or success field' }, { status: 400 });
     }
 
-    recordProviderResult(provider, success);
+    recordProviderResult(provider, success, contentType);
 
     return NextResponse.json({ ok: true });
   } catch {
