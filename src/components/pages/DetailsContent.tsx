@@ -1555,7 +1555,17 @@ export default function DetailsContent({
             <>
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
                 <IntelligentPlayer
-                  key={`player-${activeProviderName}-${epIdx}`}
+                  // show.id is load-bearing here, not cosmetic: without it, two
+                  // DIFFERENT titles that both auto-select the same provider name
+                  // (very common — the top-tier providers win for most titles)
+                  // produce an IDENTICAL key. React then treats the player as the
+                  // SAME component instance across a title change instead of
+                  // remounting it, so a stale iframe/internal-state carryover
+                  // becomes possible on any navigation path that doesn't force a
+                  // full page remount first (e.g. a future "watch next"/similar-
+                  // title control inside the player itself). Keying on the show
+                  // guarantees a clean remount on every title change, full stop.
+                  key={`player-${show.id}-${activeProviderName}-${epIdx}`}
                   providers={[{ name: activeProviderName, url: activeProviderUrl, tier: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.tier as 1 | 2 | 3) || 2, category: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.category as 'all' | 'anime') || 'all', proxied: (providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.proxied as boolean) || false, noSandbox: providers[failoverChain.length > 0 ? chainIndex : selectedProvider]?.noSandbox }]}
                   mediaId={show.id}
                   contentType={

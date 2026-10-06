@@ -359,7 +359,17 @@ export default async function DetailsPage({ params, searchParams }: { params: Pr
             { '@type': 'ListItem', position: 2, name: show.title || 'Anime', item: `${SITE_URL}${mediaUrl(showId, show.title || '', 'tv', data.startDate?.year, true)}` },
           ],
         }) }} />
-        <DetailsContent showId={showId} initialShow={show} initialAnilistDetail={anilistData} />
+        {/* key=showId guarantees a full remount on every title change. Without
+            it, React may reuse this same component instance across a
+            client-side navigation to a DIFFERENT show (same component type,
+            same tree position) and only update props — DetailsContent's
+            `show` state is seeded from `initialShow` via useState() once and
+            is never re-synced afterward, so a reused instance would keep
+            rendering the PREVIOUS title's data/player until something else
+            forced a reset. Root-caused via a live audit of the
+            provider-selection path; this is the actual fix, not a patch on
+            a downstream symptom. */}
+        <DetailsContent key={showId} showId={showId} initialShow={show} initialAnilistDetail={anilistData} />
         {/* SERVER-RENDERED SEO CONTENT for AniList anime — placed AFTER DetailsContent
             so the hero backdrop (LCP element) renders first, improving LCP */}
         <DetailSeoContent
@@ -526,7 +536,10 @@ export default async function DetailsPage({ params, searchParams }: { params: Pr
           { '@type': 'ListItem', position: 2, name: title, item: `${SITE_URL}${mediaUrl(showId, title, mediaType, year)}` },
         ],
       }) }} />
+      {/* key=showId — see the AniList branch's identical comment above for why
+          this is load-bearing, not decorative. */}
       <DetailsContent
+        key={showId}
         showId={showId}
         initialShow={show}
         initialCredits={fullData?.credits?.cast?.slice(0, 8) || []}
