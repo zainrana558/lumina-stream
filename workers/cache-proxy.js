@@ -60,6 +60,29 @@ function isNeverCache(pathname) {
   );
 }
 
+// ─── Next.js client-router requests (RSC payload fetches / prefetches) ────
+// Every in-app <Link> navigation and hover-prefetch sends one of these
+// headers instead of requesting the full HTML document. The cache key below
+// is URL-only with no Vary-awareness, so caching these under the same key as
+// a plain HTML request means whichever shape got cached first (almost always
+// HTML, since that's what every first visit and crawler requests) gets
+// served back to the other kind of request too. A plain request receiving a
+// stray RSC payload is cosmetic at worst, but an RSC-header request
+// receiving a cached full HTML document breaks Next.js's client router — it
+// can't parse HTML as RSC data, so it silently falls back to a full hard
+// navigation (confirmed live: the origin's real, uncached response to an
+// RSC-header request is a 307 redirect to a `?_rsc=<hash>` URL, which the
+// cache was short-circuiting before the origin ever got to run). That hard
+// navigation is what was showing up as a 1-3s skeleton flash on every single
+// in-app click, not just first page loads. Simplest correct fix: these
+// requests never touch the edge cache at all, in either direction — they're
+// small, same-origin-only, and don't need edge caching the way a cold
+// full-page load does.
+const NEXTJS_ROUTER_HEADERS = ['rsc', 'next-router-state-tree', 'next-router-prefetch', 'next-router-segment-prefetch'];
+function isNextRouterRequest(request) {
+  return NEXTJS_ROUTER_HEADERS.some(h => request.headers.has(h));
+}
+
 // ─── Mutating API routes — never cache even if origin says otherwise ──────
 // These routes change state (POST/PATCH/DELETE) or return per-user data.
 function isMutatingApi(pathname) {
@@ -204,8 +227,10 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
   forwardHeaders.set('x-forwarded-for', existingChain ? `${existingChain}, ${clientIp}` : clientIp);
   forwardHeaders.set('x-real-ip', clientIp);
 
-  // ── Check edge cache first (GET only) ───────────────────────────────
-  if (request.method === 'GET') {
+  const isRouterRequest = isNextRouterRequest(request);
+
+  // ── Check edge cache first (GET only, never for router/RSC requests) ──
+  if (request.method === 'GET' && !isRouterRequest) {
     try {
       const cache = caches.default;
       const cacheKey = new Request(incomingUrl.toString(), { method: 'GET' });
@@ -256,7 +281,15 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
   const ttl = getCacheTTL(pathname, response.status, response.headers);
 
   // ── Set appropriate Cache-Control headers ────────────────────────────
-  if (ttl === 0) {
+  // Router/RSC responses must never carry a shared public Cache-Control —
+  // same URL, different response shape than a plain HTML request, and
+  // browsers (unlike this worker's cache key) DO honor Vary, but this proxy
+  // already strips the Next-internal Vary values before they reach the
+  // browser (see NEXTJS_INTERNAL_VARY above), so a public/cacheable header
+  // here would let the browser's own HTTP cache make the identical mistake.
+  if (isRouterRequest) {
+    responseHeaders.set('Cache-Control', 'private, no-store');
+  } else if (ttl === 0) {
     responseHeaders.set('Cache-Control', 'no-store, no-cache');
   } else if (isStaticAsset(pathname)) {
     responseHeaders.set('Cache-Control', `public, max-age=${ttl}`);
@@ -282,7 +315,9 @@ async function proxyToVercel(request, VERCEL_ORIGIN, VERCEL_HOST, ctx) {
   // ── Buffer + store in Cache API ─────────────────────────────────────
   // Needed for: HTML pages (chunked from Vercel) + API data (JSON).
   // Static assets already have Content-Length and are cached by CDN-Cache-Control.
-  if (ttl > 0 && !isStaticAsset(pathname) && request.method === 'GET') {
+  // Never store a router/RSC response under the plain URL key — see
+  // isNextRouterRequest's comment above for why that collision is the bug.
+  if (ttl > 0 && !isStaticAsset(pathname) && request.method === 'GET' && !isRouterRequest) {
     const body = await response.arrayBuffer();
 
     // NOTE: the Next app emits its own <link rel="canonical"> on every page
