@@ -103,7 +103,12 @@ export default function robots(): MetadataRoute.Robots {
           '/activity',
           '/year-in-review',
         ],
-        crawlDelay: 10,
+        // Was crawlDelay: 10 — Google ignores this directive entirely (it
+        // uses its own crawl-rate algorithm based on server response
+        // health), but Bing and other engines that DO honor it would need
+        // ~3 hours to crawl just 1,000 pages at a 10s delay. The server
+        // easily handles normal crawl concurrency; dropped entirely rather
+        // than picking an arbitrary smaller number.
       },
     ],
     sitemap: [

@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000;
-const CACHE_NAME = 'tvshows-v2';
+const CACHE_NAME = 'tvshows-v3'; // bumped: expanded page-fetch coverage, force regen instead of serving the stale smaller cache for up to 24h
 
 interface TMDBItem {
   id: number;
@@ -31,12 +31,14 @@ export async function GET() {
   const now = new Date().toISOString().split('T')[0];
 
   try {
+    // See movies.xml's identical comment — same reasoning, deep pools get a
+    // bigger page-count bump, naturally-small pools stay modest.
     const [popular, topRated, onTheAir, airingToday, trending] = await Promise.all([
-      tmdbFetchPages<TMDBItem>('/tv/popular', 5),
-      tmdbFetchPages<TMDBItem>('/tv/top_rated', 5),
-      tmdbFetchPages<TMDBItem>('/tv/on_the_air', 3),
-      tmdbFetchPages<TMDBItem>('/tv/airing_today', 2),
-      tmdbFetchPages<TMDBItem>('/trending/tv/week', 3),
+      tmdbFetchPages<TMDBItem>('/tv/popular', 25),
+      tmdbFetchPages<TMDBItem>('/tv/top_rated', 25),
+      tmdbFetchPages<TMDBItem>('/tv/on_the_air', 10),
+      tmdbFetchPages<TMDBItem>('/tv/airing_today', 10),
+      tmdbFetchPages<TMDBItem>('/trending/tv/week', 10),
     ]);
 
     const seen = new Set<number>();

@@ -10,7 +10,7 @@ import { NextResponse } from 'next/server';
 let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000;
-const CACHE_NAME = 'anime-v2';
+const CACHE_NAME = 'anime-v3'; // bumped: expanded page-fetch coverage, force regen instead of serving the stale smaller cache for up to 24h
 
 interface AnilistItem { id: number; title: string; year?: number; popularity: number; }
 
@@ -36,11 +36,17 @@ async function fetchAnime(): Promise<AnilistItem[]> {
     addBatch(all);
   }
 
+  // Each fetchPages() call is sequential internally (one AniList request at
+  // a time), so these page counts drive this route's generation latency
+  // directly — kept well short of movies.xml/tvshows.xml's bump since
+  // AniList requests run one-at-a-time per source, not in parallel. Still
+  // roughly triples total coverage (4 sources x ~50/page). Cached 24h either
+  // way, so this cost is paid once a day, not per visitor.
   await Promise.allSettled([
-    fetchPages(getTrendingAnime, 5, 50),
-    fetchPages(getPopularAnime, 5, 50),
-    fetchPages(getTopRatedAnime, 4, 50),
-    fetchPages(browseAllAnime, 6, 50),
+    fetchPages(getTrendingAnime, 12, 50),
+    fetchPages(getPopularAnime, 12, 50),
+    fetchPages(getTopRatedAnime, 10, 50),
+    fetchPages(browseAllAnime, 15, 50),
   ]);
 
   return items;

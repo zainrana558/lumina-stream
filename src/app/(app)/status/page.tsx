@@ -11,7 +11,11 @@ export const metadata: Metadata = {
   title: 'System Status — Lumovia',
   description: 'Live status of Lumovia — the site, streaming sources, and database. See at a glance if anything is currently down.',
   alternates: { canonical: pageUrl },
-  robots: { index: true, follow: true },
+  // A system-status page has zero real search demand ("Lumovia system
+  // status" isn't a query anyone runs) and no unique content worth
+  // indexing — noindex keeps crawl budget on pages that can actually
+  // rank, same reasoning as isThinContent() in src/lib/seo/metadata.ts.
+  robots: { index: false, follow: true },
 };
 
 export default function StatusPage() {

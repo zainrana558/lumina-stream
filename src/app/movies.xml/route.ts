@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 let inMemoryXml: string | null = null;
 let inMemoryAt = 0;
 const SITEMAP_TTL = 24 * 60 * 60 * 1000;
-const CACHE_NAME = 'movies-v2';
+const CACHE_NAME = 'movies-v3'; // bumped: expanded page-fetch coverage, force regen instead of serving the stale smaller cache for up to 24h
 
 interface TMDBItem {
   id: number;
@@ -31,12 +31,21 @@ export async function GET() {
   const now = new Date().toISOString().split('T')[0];
 
   try {
+    // Page counts raised from 5/5/2/2/3 (~340 pre-dedup items, ~258 live) to
+    // cover far more of the real catalog, not just the current-moment
+    // popular slice. now_playing/upcoming/airing-style lists are naturally
+    // small pools (TMDB rarely has more than ~10-15 genuinely relevant
+    // pages for them at any moment) so they stay modest; popular/top_rated
+    // are deep pools and get the biggest bump. Still a small fraction of
+    // TMDB's 500-page ceiling per list, and the 5000 cap below is the real
+    // backstop against ever exceeding the sitemap protocol's 50,000-URL
+    // limit for a single file.
     const [popular, topRated, nowPlaying, upcoming, trending] = await Promise.all([
-      tmdbFetchPages<TMDBItem>('/movie/popular', 5, { region: 'US' }),
-      tmdbFetchPages<TMDBItem>('/movie/top_rated', 5),
-      tmdbFetchPages<TMDBItem>('/movie/now_playing', 2, { region: 'US' }),
-      tmdbFetchPages<TMDBItem>('/movie/upcoming', 2, { region: 'US' }),
-      tmdbFetchPages<TMDBItem>('/trending/movie/week', 3),
+      tmdbFetchPages<TMDBItem>('/movie/popular', 25, { region: 'US' }),
+      tmdbFetchPages<TMDBItem>('/movie/top_rated', 25),
+      tmdbFetchPages<TMDBItem>('/movie/now_playing', 10, { region: 'US' }),
+      tmdbFetchPages<TMDBItem>('/movie/upcoming', 10, { region: 'US' }),
+      tmdbFetchPages<TMDBItem>('/trending/movie/week', 10),
     ]);
 
     const seen = new Set<number>();
