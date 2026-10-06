@@ -55,6 +55,7 @@ export default function TrailerModal({ trailers, showTitle, onClose }: {
             src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1&rel=0&vq=hd2160&modestbranding=1`}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
           />
         </div>
         {/* Trailer info */}

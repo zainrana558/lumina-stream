@@ -12,7 +12,6 @@ const AdScripts = lazy(() => import('@/components/common/AdScripts'));
 const AdBanner = lazy(() => import('@/components/common/AdScripts').then(m => ({ default: m.AdBanner })));
 const Nav = lazy(() => import('@/components/common/Nav'));
 const BottomNav = lazy(() => import('@/components/layout/BottomNav'));
-const ThemeSwitcher = lazy(() => import('@/components/common/ThemeSwitcher'));
 const Stars = lazy(() => import('@/components/common/Stars'));
 const SearchOverlay = lazy(() => import('@/components/common/SearchOverlay'));
 const PipPlayer = lazy(() => import('@/components/common/PipPlayer'));
@@ -22,7 +21,6 @@ import { ToastProvider } from '@/components/common/ToastProvider';
 import { ConfirmProvider } from '@/components/common/ConfirmProvider';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 const CookieConsent = lazy(() => import('@/components/layout/CookieConsent'));
-const FloatingContactButton = lazy(() => import('@/components/common/FloatingContactButton'));
 const InstallPrompt = lazy(() => import('@/components/common/InstallPrompt'));
 const Footer = lazy(() => import('@/components/layout/Footer'));
 const ClientHealthMonitor = lazy(() => import('@/components/common/ClientHealthMonitor'));
@@ -319,10 +317,7 @@ function AppShell({ children }: { children: ReactNode }) {
         />
       </Suspense>
 
-      {/* Theme switcher & confetti */}
-      <Suspense fallback={null}>
-        <ThemeSwitcher />
-      </Suspense>
+      {/* Confetti */}
       <Suspense fallback={null}>
         <Confetti active={confettiActive} />
       </Suspense>
@@ -347,11 +342,6 @@ function AppShell({ children }: { children: ReactNode }) {
       {/* Native "Add to Home Screen" prompt */}
       <Suspense fallback={null}>
         <InstallPrompt />
-      </Suspense>
-
-      {/* Persistent contact widget */}
-      <Suspense fallback={null}>
-        <FloatingContactButton />
       </Suspense>
 
       {/* Site footer — hidden on details pages */}

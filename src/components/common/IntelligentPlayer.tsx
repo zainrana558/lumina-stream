@@ -345,6 +345,7 @@ export default function IntelligentPlayer({
         className="intelligent-player-iframe"
         style={{ width: '100%', height: '100%', border: 'none', position: 'absolute', top: 0, left: 0 }}
         allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowFullScreen
         referrerPolicy="no-referrer"
         // Sandbox EVERY embed EXCEPT ones explicitly marked noSandbox. The
         // tokens deliberately EXCLUDE:

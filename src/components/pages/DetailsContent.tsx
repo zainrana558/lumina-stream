@@ -884,6 +884,7 @@ export default function DetailsContent({
                   title={`${show.title} Trailer`}
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
                 />
               ) : (
                 <>
