@@ -230,3 +230,11 @@ export const playbackEventSchema = z.object({
   duration: z.number().min(0).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
+
+// ---- Because-You-Watched recommendations ----
+export const becauseYouWatchedSchema = z.object({
+  items: z.array(z.object({
+    id: z.number().int().positive(),
+    mediaType: z.enum(['movie', 'tv']),
+  })).min(1).max(5),
+});

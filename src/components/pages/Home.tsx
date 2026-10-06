@@ -685,39 +685,30 @@ export default function Home({
     } catch { /* silent */ }
   };
 
-  // "Because You Watched" recommendations
+  // "Because You Watched" recommendations — one request instead of the
+  // previous 2-stage waterfall (up to 5 parallel genre-lookup fetches, THEN
+  // a separate discover fetch that could only start once all of those
+  // resolved). /api/recommendations/because-you-watched does the same TMDB
+  // calls server-side in one round trip, through the same Redis cache every
+  // other TMDB call on this site already uses.
   useEffect(() => {
     if (!profile || continueWatching.length === 0) return;
     let cancelled = false;
     const loadRecs = async () => {
       setLoadingRecs(true);
       try {
-        const detailsPromises = continueWatching.slice(0, 5).map(async (item) => {
-          const mt = item.media_type || 'tv';
-          try {
-            const res = await fetch(`/api/tmdb?endpoint=/${mt}/${item.id}`);
-            const data = await res.json();
-            return data.genre_ids || (data.genres || []).map((g: { id: number }) => g.id);
-          } catch { return []; }
+        const res = await fetch('/api/recommendations/because-you-watched', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: continueWatching.slice(0, 5).map(item => ({
+              id: item.id,
+              mediaType: item.media_type || 'tv',
+            })),
+          }),
         });
-        const allGenreLists = await Promise.all(detailsPromises);
-        const genreCount: Record<number, number> = {};
-        allGenreLists.forEach((ids: number[]) => ids.forEach((id: number) => { genreCount[id] = (genreCount[id] || 0) + 1; }));
-        const sortedGenres = Object.entries(genreCount).sort(([, a], [, b]) => b - a);
-        if (sortedGenres.length === 0) { setLoadingRecs(false); return; }
-        const topGenreId = sortedGenres[0][0];
-        const tvCount = continueWatching.filter(i => i.media_type === 'tv').length;
-        const mediaType = tvCount >= continueWatching.length / 2 ? 'tv' : 'movie';
-        const res = await fetch(`/api/tmdb?endpoint=/discover/${mediaType}&with_genres=${topGenreId}&sort_by=popularity.desc`);
         const data = await res.json();
-        if (!cancelled && data.results) {
-          const { tmdbToMedia } = await import('@/types');
-          const items = data.results
-            .filter((r: typeof data.results[0]) => r.poster_path)
-            .slice(0, 12)
-            .map((r: typeof data.results[0]) => tmdbToMedia({ ...r, media_type: mediaType }));
-          setRecommendedItems(items);
-        }
+        if (!cancelled && data.items) setRecommendedItems(data.items);
       } catch { /* silent */ }
       if (!cancelled) setLoadingRecs(false);
     };
