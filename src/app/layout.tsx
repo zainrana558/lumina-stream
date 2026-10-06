@@ -98,7 +98,14 @@ export default function RootLayout({
         />
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
-        <link rel="preconnect" href="https://api-cache.zainrana553.workers.dev" />
+        {/* Was hardcoded to this deployment's own Cloudflare worker — a
+            fork configuring a different API_CACHE_URL (or none at all)
+            got a useless preconnect hint pointed at infrastructure that
+            isn't theirs. Read from the same env var the actual fetch
+            logic uses (src/lib/tmdb/server.ts), skip it entirely when unset. */}
+        {process.env.API_CACHE_URL && (
+          <link rel="preconnect" href={process.env.API_CACHE_URL} />
+        )}
         <link rel="preconnect" href="https://i.ytimg.com" />
         <link rel="dns-prefetch" href="https://i.ytimg.com" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

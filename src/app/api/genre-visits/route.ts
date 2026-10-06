@@ -5,6 +5,7 @@ import { PORTAL_SLUGS } from '@/config/genres';
 import { csrfGuard } from '@/lib/csrf';
 import { ensureCsrfCookie } from '@/lib/csrf';
 import { requireAuth } from '@/lib/auth';
+import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
 /**
  * POST /api/genre-visits
@@ -20,6 +21,11 @@ export async function POST(request: NextRequest) {
   const csrfError = await csrfGuard(request);
   if (csrfError) {
     return NextResponse.json(csrfError, { status: csrfError.status });
+  }
+
+  const rl = await checkRateLimit(request, 'write');
+  if (!rl.success) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: rateLimitHeaders(rl) });
   }
 
   if (!isSupabaseConfigured()) {
