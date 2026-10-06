@@ -6,12 +6,19 @@ import type { ReactNode } from 'react';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { Bell } from 'lucide-react';
+// Nav/BottomNav were lazy-loaded with fallback={null} despite being
+// rendered unconditionally on EVERY page — that combination means the main
+// navigation bar rendered as literally nothing until its JS chunk finished
+// downloading, on every fresh page load. Code-splitting only pays off for
+// something route-specific or conditionally rendered (SearchOverlay,
+// PipPlayer, etc., still lazy below); something 100% of visits need
+// immediately belongs in the main bundle, not behind a loading gap.
+import Nav from '@/components/common/Nav';
+import BottomNav from '@/components/layout/BottomNav';
 
 // Dynamic imports — reduces initial JS bundle by code-splitting non-critical UI
 const AdScripts = lazy(() => import('@/components/common/AdScripts'));
 const AdBanner = lazy(() => import('@/components/common/AdScripts').then(m => ({ default: m.AdBanner })));
-const Nav = lazy(() => import('@/components/common/Nav'));
-const BottomNav = lazy(() => import('@/components/layout/BottomNav'));
 const Stars = lazy(() => import('@/components/common/Stars'));
 const SearchOverlay = lazy(() => import('@/components/common/SearchOverlay'));
 const PipPlayer = lazy(() => import('@/components/common/PipPlayer'));
@@ -256,17 +263,15 @@ function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Navigation */}
-      <Suspense fallback={null}>
-        <Nav
-          page={page}
-          go={go}
-          openSearch={openSearch}
-          user={user}
-          profile={profile}
-          onSignOut={handleSignOut}
-          onShowShortcuts={showShortcuts}
-        />
-      </Suspense>
+      <Nav
+        page={page}
+        go={go}
+        openSearch={openSearch}
+        user={user}
+        profile={profile}
+        onSignOut={handleSignOut}
+        onShowShortcuts={showShortcuts}
+      />
       {searchOpen && (
         <Suspense fallback={null}>
           <SearchOverlay onClose={closeSearch} />
@@ -308,14 +313,12 @@ function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Mobile bottom nav */}
-      <Suspense fallback={null}>
-        <BottomNav
-          page={page}
-          go={go}
-          openSearch={openSearch}
-          onShowShortcuts={showShortcuts}
-        />
-      </Suspense>
+      <BottomNav
+        page={page}
+        go={go}
+        openSearch={openSearch}
+        onShowShortcuts={showShortcuts}
+      />
 
       {/* Confetti */}
       <Suspense fallback={null}>
