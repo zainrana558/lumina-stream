@@ -199,7 +199,7 @@ export default function DetailsContent({
     setSelectedProvider(0);
   }, []);
 
-  useKeyboardShortcuts(true, {
+  useKeyboardShortcuts(playing, {
     onTogglePlayPause: () => { if (playing) {
       // Bug #17: Space/K should send play/pause to iframe, not close the player
       try {
@@ -584,18 +584,25 @@ export default function DetailsContent({
   // are cross-origin and never report a real position, so we estimate it from
   // wall-clock time elapsed vs. the episode/movie runtime. Rough, but enough to
   // power "Continue Watching" and the recently-watched lists.
+  const runtimeMinRef = useRef<number>(24);
   useEffect(() => {
-    if (!playing || !show || !user || !profile) return;
-    const mediaType = (show.media_type || 'tv') as 'movie' | 'tv';
+    const mediaType = (show?.media_type || 'tv') as 'movie' | 'tv';
     const curEp = seasonEpisodes.find(e => e.episode_number === epIdx);
-    const runtimeMin =
+    runtimeMinRef.current =
       mediaType === 'movie'
         ? (fullDetails as { runtime?: number } | null)?.runtime || 110
         : curEp?.runtime || 24;
-    const estDuration = Math.max(300, runtimeMin * 60);
+  }, [show?.media_type, seasonEpisodes, epIdx, fullDetails]);
+
+  useEffect(() => {
+    if (!playing || !show || !user || !profile) return;
+    const mediaType = (show.media_type || 'tv') as 'movie' | 'tv';
     const startedAt = Date.now();
     const mediaId = show.id;
+    const title = show.title;
+    const posterPath = show.poster_path || null;
     const post = () => {
+      const estDuration = Math.max(300, runtimeMinRef.current * 60);
       const elapsed = Math.floor((Date.now() - startedAt) / 1000);
       const position = Math.min(elapsed + 8, Math.round(estDuration * 0.95));
       fetch('/api/player/save-resume', {
@@ -606,8 +613,8 @@ export default function DetailsContent({
           mediaType,
           position,
           duration: estDuration,
-          title: show.title,
-          posterPath: show.poster_path || null,
+          title,
+          posterPath,
           seasonNumber: mediaType === 'tv' ? season : undefined,
           episodeNumber: mediaType === 'tv' ? epIdx : undefined,
         }),
@@ -616,7 +623,7 @@ export default function DetailsContent({
     post();
     const iv = setInterval(post, 30_000);
     return () => { post(); clearInterval(iv); };
-  }, [playing, show?.id, season, epIdx, user, profile?.id]);
+  }, [playing, show?.id, show?.media_type, show?.title, show?.poster_path, season, epIdx, user, profile?.id]);
 
   // ── Watch Party ──
   // Host: push play/pause + current episode to the room whenever they change.
@@ -1588,6 +1595,7 @@ export default function DetailsContent({
                     }
                     setIframeLoaded(true);
                   }}
+                  onError={() => handleProviderFailRef.current()}
                 />
               </div>
 

@@ -14,7 +14,7 @@
  * (e.g. after schema changes, bug fixes in tmdbToMedia, etc.)
  */
 
-import { getRedis } from '@/lib/redis';
+import { getRedis, parseRedisValue } from '@/lib/redis';
 
 // Bump this to invalidate all cached data on deploy
 const CACHE_VERSION = 'v4';
@@ -121,9 +121,9 @@ export async function getCached<T>(
   const client = getRedis();
   if (!client) return null;
   try {
-    const result = await client.get<string>(fullKey);
-    if (result) {
-      const parsed = JSON.parse(result) as T;
+    const result = await client.get<unknown>(fullKey);
+    const parsed = parseRedisValue<T>(result);
+    if (parsed !== null) {
       l1Set(fullKey, parsed, CACHE_TTL[category]);
       return parsed;
     }
@@ -204,22 +204,22 @@ export async function fetchBatchWithCache<T>(
   const keys = await Promise.all(entries.map(e => cacheKey(e.category, e.key)));
 
   // L1 memory first — pull what we can from RAM, only MGET the rest.
-  const cachedValues: (string | null)[] = new Array(entries.length).fill(null);
+  const cachedValues: (T | undefined)[] = new Array(entries.length).fill(undefined);
   const need: number[] = [];
   for (let i = 0; i < entries.length; i++) {
     const hot = l1Get(keys[i]);
-    if (hot !== undefined) cachedValues[i] = JSON.stringify(hot);
+    if (hot !== undefined) cachedValues[i] = hot as T;
     else need.push(i);
   }
 
   if (client && need.length > 0) {
     try {
-      const got = await client.mget<string[]>(...need.map(i => keys[i]));
+      const got = await client.mget<unknown[]>(...need.map(i => keys[i]));
       need.forEach((i, j) => {
-        const raw = got[j];
-        if (raw) {
-          cachedValues[i] = raw;
-          try { l1Set(keys[i], JSON.parse(raw), CACHE_TTL[entries[i].category]); } catch { /* */ }
+        const parsed = parseRedisValue<T>(got[j]);
+        if (parsed !== null) {
+          cachedValues[i] = parsed;
+          l1Set(keys[i], parsed, CACHE_TTL[entries[i].category]);
         }
       });
     } catch {
@@ -230,19 +230,15 @@ export async function fetchBatchWithCache<T>(
   const results: BatchResult<T>[] = [];
 
   {
-    // Process results: parse hits, queue misses for fetching
+    // Process results: record hits, queue misses for fetching
     const misses: number[] = [];
     const missFetchers: Array<() => Promise<T>> = [];
 
     for (let i = 0; i < entries.length; i++) {
-      const raw = cachedValues[i];
-      if (raw) {
-        try {
-          results[i] = { data: JSON.parse(raw) as T, hit: true };
-          continue;
-        } catch {
-          // Parse error — treat as miss
-        }
+      const val = cachedValues[i];
+      if (val !== undefined) {
+        results[i] = { data: val, hit: true };
+        continue;
       }
       misses.push(i);
       missFetchers.push(entries[i].fetcher);

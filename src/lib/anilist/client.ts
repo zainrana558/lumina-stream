@@ -490,6 +490,28 @@ export function anilistToMediaItem(media: AniListMedia): MediaItem {
 // ---- Public API functions ----
 
 /**
+ * Fetch primary AniList query with 24h cache, falling back to Kitsu/TMDB
+ * on failure WITHOUT poisoning the 24h primary cache with fallback data.
+ */
+async function fetchAnilistWithFallback<T>(
+  category: 'trending' | 'popular',
+  key: string,
+  primary: () => Promise<T>,
+  fallback: () => Promise<T>,
+): Promise<T> {
+  const cached = await getCached<T>(category, key);
+  if (cached) return cached;
+
+  try {
+    const data = await primary();
+    setCache(category, key, data).catch(() => {});
+    return data;
+  } catch {
+    return fallback();
+  }
+}
+
+/**
  * Get current season's anime (auto-detects season/year)
  */
 export async function getSeasonalAnime(
@@ -531,14 +553,17 @@ export async function getSeasonalAnime(
     }
   `;
 
-  return fetchWithCache('trending', `anime:v2:seasonal:${season || autoSeason}:${autoYear}:${page}:${sort}`, () =>
-    anilistPageQuery<AniListMedia>(query, {
+  return fetchAnilistWithFallback(
+    'trending',
+    `anime:v2:seasonal:${season || autoSeason}:${autoYear}:${page}:${sort}`,
+    () => anilistPageQuery<AniListMedia>(query, {
       season: season || autoSeason,
       year: autoYear,
       page,
       perPage,
       sort,
-    }).catch(() => kitsu.kitsuTrending(page)).catch(() => tmdbAnime.tmdbAnimeTrending(page))
+    }),
+    () => kitsu.kitsuTrending(page).catch(() => tmdbAnime.tmdbAnimeTrending(page)),
   );
 }
 
@@ -557,8 +582,11 @@ export async function getTrendingAnime(page = 1, perPage = 20): Promise<AniListP
     }
   `;
 
-  return fetchWithCache('trending', `anime:v2:trending:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { page, perPage }).catch(() => kitsu.kitsuTrending(page)).catch(() => tmdbAnime.tmdbAnimeTrending(page))
+  return fetchAnilistWithFallback(
+    'trending',
+    `anime:v2:trending:${page}`,
+    () => anilistPageQuery<AniListMedia>(query, { page, perPage }),
+    () => kitsu.kitsuTrending(page).catch(() => tmdbAnime.tmdbAnimeTrending(page)),
   );
 }
 
@@ -577,8 +605,11 @@ export async function getPopularAnime(page = 1, perPage = 20): Promise<AniListPa
     }
   `;
 
-  return fetchWithCache('popular', `anime:v2:popular:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { page, perPage }).catch(() => kitsu.kitsuPopular(page)).catch(() => tmdbAnime.tmdbAnimePopular(page))
+  return fetchAnilistWithFallback(
+    'popular',
+    `anime:v2:popular:${page}`,
+    () => anilistPageQuery<AniListMedia>(query, { page, perPage }),
+    () => kitsu.kitsuPopular(page).catch(() => tmdbAnime.tmdbAnimePopular(page)),
   );
 }
 
@@ -612,8 +643,11 @@ export async function getUpcomingAnime(
     }
   `;
 
-  return fetchWithCache('trending', `anime:v2:upcoming:${nextSeason}:${nextYear}:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { season: nextSeason, year: nextYear, page, perPage }).catch(() => kitsu.kitsuUpcoming(page)).catch(() => tmdbAnime.tmdbAnimeUpcoming(page))
+  return fetchAnilistWithFallback(
+    'trending',
+    `anime:v2:upcoming:${nextSeason}:${nextYear}:${page}`,
+    () => anilistPageQuery<AniListMedia>(query, { season: nextSeason, year: nextYear, page, perPage }),
+    () => kitsu.kitsuUpcoming(page).catch(() => tmdbAnime.tmdbAnimeUpcoming(page)),
   );
 }
 
@@ -632,8 +666,11 @@ export async function getAiringAnime(page = 1, perPage = 20): Promise<AniListPag
     }
   `;
 
-  return fetchWithCache('trending', `anime:v2:airing:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { page, perPage }).catch(() => kitsu.kitsuAiring(page)).catch(() => tmdbAnime.tmdbAnimeTrending(page))
+  return fetchAnilistWithFallback(
+    'trending',
+    `anime:v2:airing:${page}`,
+    () => anilistPageQuery<AniListMedia>(query, { page, perPage }),
+    () => kitsu.kitsuAiring(page).catch(() => tmdbAnime.tmdbAnimeTrending(page)),
   );
 }
 
@@ -766,10 +803,12 @@ export async function browseAllAnime(
     }
   `;
 
-  return fetchWithCache('popular', `anime:v2:all:${sort}:${page}`, () =>
-    anilistPageQuery<AniListMedia>(query, { page, perPage, sort })
-      .catch(() => (sort.includes('SCORE') ? kitsu.kitsuTopRated(page) : kitsu.kitsuPopular(page)))
-      .catch(() => tmdbAnime.tmdbAnimePopular(page))
+  return fetchAnilistWithFallback(
+    'popular',
+    `anime:v2:all:${sort}:${page}`,
+    () => anilistPageQuery<AniListMedia>(query, { page, perPage, sort }),
+    () => (sort.includes('SCORE') ? kitsu.kitsuTopRated(page) : kitsu.kitsuPopular(page))
+      .catch(() => tmdbAnime.tmdbAnimePopular(page)),
   );
 }
 

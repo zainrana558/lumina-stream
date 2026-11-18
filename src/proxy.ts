@@ -142,7 +142,7 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
       "Content-Security-Policy",
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://*.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su https://vidsrc.win https://player.cinezo.live https://vidcore.org",
+        `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV !== 'production' ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com https://www.intelligenceadx.com https://d2klx87bgzngce.cloudfront.net https://www.highperformancedformats.com https://www.highperformancecpm.com https://*.popads.net https://go.propellerads.com https://propellerads.com https://www.propellerads.com https://vidsrcme.ru https://vidsrcme.su https://vidsrc-me.ru https://vidsrc-me.su https://vidsrc.win https://player.cinezo.live https://vidcore.org`,
         "style-src 'self' 'unsafe-inline'",
         "font-src 'self' data: https://fonts.gstatic.com",
         // media.kitsu.app: added when Kitsu became the anime-fallback image
@@ -198,13 +198,15 @@ function setSecurityHeaders(response: NextResponse, pathname: string, request: N
 // ── IP extraction ───────────────────────────────────────────────────────────
 // Cloudflare Worker forwards the real client IP via cf-connecting-ip.
 // Prefer cf-connecting-ip (set by Cloudflare, cannot be spoofed by client),
-// then x-forwarded-for (set by Vercel/Cloudflare), then x-real-ip.
+// then x-real-ip (set by proxy), then x-forwarded-for.
 function getClientIp(request: NextRequest): string {
   const cfIp = request.headers.get("cf-connecting-ip");
   if (cfIp) return cfIp.split(',')[0].trim();
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return request.headers.get("x-real-ip") || "unknown";
+  if (forwarded) return forwarded.split(',').pop()?.trim() || "unknown";
+  return "unknown";
 }
 
 // ── Global rate limiter for public-path API calls ───────────────────────────

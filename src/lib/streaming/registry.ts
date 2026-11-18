@@ -13,7 +13,7 @@
  * Cache key: registry:all → Redis Hash {name → JSON ProviderRecord}
  */
 
-import { getRedis } from '@/lib/redis';
+import { getRedis, parseRedisValue } from '@/lib/redis';
 import { getAllProviders, type StreamProvider, type ProviderTier, type ProviderCategory } from '@/lib/streaming/providers';
 
 // ── Types ──
@@ -99,16 +99,13 @@ async function readFromRedis(): Promise<Map<string, ProviderRecord> | null> {
   if (!client) return null;
 
   try {
-    const data = await client.hgetall(REGISTRY_CACHE_KEY) as Record<string, string> | null;
+    const data = await client.hgetall(REGISTRY_CACHE_KEY) as Record<string, unknown> | null;
     if (!data || Object.keys(data).length === 0) return null;
 
     const records = new Map<string, ProviderRecord>();
-    for (const [name, json] of Object.entries(data)) {
-      try {
-        records.set(name, JSON.parse(json) as ProviderRecord);
-      } catch {
-        // Skip malformed entries
-      }
+    for (const [name, raw] of Object.entries(data)) {
+      const parsed = parseRedisValue<ProviderRecord>(raw);
+      if (parsed) records.set(name, parsed);
     }
 
     return records.size > 0 ? records : null;

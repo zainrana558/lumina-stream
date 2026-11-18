@@ -16,7 +16,7 @@
  * Hit rate target: >60% within TTL window.
  */
 
-import { getRedis } from '@/lib/redis';
+import { getRedis, parseRedisValue } from '@/lib/redis';
 
 // ── Types ──
 
@@ -63,10 +63,9 @@ export async function getResolvedStream(
 
   try {
     const key = resolverCacheKey(contentId, contentType, season, episode, providerId);
-    const data = await client.get<string>(key);
-    if (!data) return null;
-
-    const parsed = JSON.parse(data) as ResolvedStream;
+    const data = await client.get<unknown>(key);
+    const parsed = parseRedisValue<ResolvedStream>(data);
+    if (!parsed) return null;
 
     // Verify not expired locally (in case Redis TTL failed)
     const age = Date.now() - parsed.resolvedAt;

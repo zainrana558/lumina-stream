@@ -23,7 +23,7 @@
  * below now calls it before reading.
  */
 
-import { getRedis } from '@/lib/redis';
+import { getRedis, parseRedisValue } from '@/lib/redis';
 import { isSupabaseConfigured, createClient } from '@/lib/supabase/server';
 
 // ---- Types ----
@@ -120,12 +120,10 @@ export async function getLearnedProviderBonus(
   const redis = getRedis();
   if (redis) {
     try {
-      const cached = await redis.get<string>(bonusCacheKey(provider, contentType));
-      if (cached) {
-        const parsed = JSON.parse(cached) as { bonus: number; cachedAt: number };
-        if (Date.now() - parsed.cachedAt < BONUS_CACHE_TTL * 1000) {
-          return parsed.bonus;
-        }
+      const cached = await redis.get<unknown>(bonusCacheKey(provider, contentType));
+      const parsed = parseRedisValue<{ bonus: number; cachedAt: number }>(cached);
+      if (parsed && Date.now() - parsed.cachedAt < BONUS_CACHE_TTL * 1000) {
+        return parsed.bonus;
       }
     } catch {
       // Fall through to DB
@@ -187,18 +185,12 @@ export async function getAllLearnedScores(contentType: LearningContentType): Pro
         const keys = result[1] as string[];
 
         if (keys.length > 0) {
-          const values = await redis.mget<string[]>(...keys);
+          const values = await redis.mget<unknown[]>(...keys);
           for (let i = 0; i < keys.length; i++) {
-            if (values[i]) {
-              try {
-                const parsed = JSON.parse(values[i]) as { bonus: number; cachedAt: number };
-                if (Date.now() - parsed.cachedAt < BONUS_CACHE_TTL * 1000) {
-                  const provider = keys[i].replace(prefix, '');
-                  scores.set(provider, parsed.bonus);
-                }
-              } catch {
-                // Skip malformed entries
-              }
+            const parsed = parseRedisValue<{ bonus: number; cachedAt: number }>(values[i]);
+            if (parsed && Date.now() - parsed.cachedAt < BONUS_CACHE_TTL * 1000) {
+              const provider = keys[i].replace(prefix, '');
+              scores.set(provider, parsed.bonus);
             }
           }
         }

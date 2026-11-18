@@ -34,6 +34,22 @@ export function getRedis(): Redis | null {
 }
 
 /**
+ * Safely normalize a value returned by @upstash/redis (which auto-deserializes
+ * valid JSON into objects/arrays/primitives, but may also return a raw string).
+ */
+export function parseRedisValue<T>(raw: unknown): T | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  }
+  return raw as T;
+}
+
+/**
  * Generic cache-through helper for external API data.
  *
  * Checks Redis first; on miss, calls the fetcher and stores the result

@@ -47,16 +47,11 @@ export default function luminaImageLoader({
     return src.replace(/\/t\/p\/w\d+/, `/t/p/${size}`);
   }
 
-  // AniList images: served as-is from their CDN
-  if (src.includes(ANILIST_CDN)) {
-    return src;
+  // AniList, YouTube, and local/static images: append a URL fragment with width
+  // so Next.js 16's custom-loader width check passes without altering HTTP requests.
+  if (src.includes(ANILIST_CDN) || src.includes(YOUTUBE_CDN) || !src.includes(TMDB_CDN)) {
+    return src.includes('#') ? src : `${src}#w=${width}`;
   }
 
-  // YouTube thumbnails: add quality parameter
-  if (src.includes(YOUTUBE_CDN)) {
-    return src;
-  }
-
-  // Local/static images: pass through
   return src;
 }

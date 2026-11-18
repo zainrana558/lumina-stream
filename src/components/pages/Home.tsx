@@ -216,10 +216,12 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
       });
     };
 
+    let observer: IntersectionObserver | null = null;
+
     // Defer listener attachment until after LCP (2s) and only when hero is visible
     const timer = setTimeout(() => {
       if (!bgRef.current) return;
-      const observer = new IntersectionObserver(
+      observer = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting && !attached) {
             window.addEventListener('mousemove', fn as EventListener);
@@ -232,11 +234,11 @@ function HeroCarousel({ featured, heroWatchlist, toggleHeroWatchlist }: { featur
         { threshold: 0 }
       );
       observer.observe(bgRef.current);
-      return () => observer.disconnect();
     }, 2000);
 
     return () => {
       clearTimeout(timer);
+      observer?.disconnect();
       if (attached) window.removeEventListener('mousemove', fn as EventListener);
       if (raf) cancelAnimationFrame(raf);
     };

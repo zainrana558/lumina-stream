@@ -89,6 +89,11 @@ export default function WatchPartyPanel({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const participantsRef = useRef(participants);
+  useEffect(() => {
+    participantsRef.current = participants;
+  }, [participants]);
+
   // New chat messages via Supabase Realtime — replaces a 3s poll that hit
   // Redis rate-limiting + Supabase + the Cloudflare Worker on every tick for
   // every participant (see the caching audit: ~1,919 req/hr/participant was
@@ -112,7 +117,7 @@ export default function WatchPartyPanel({
             const row = payload.new as { id: string; profile_id: string; content: string; created_at: string };
             setMessages(prev => {
               if (prev.some(m => m.id === row.id)) return prev;
-              const sender = participants.find(p => p.profile_id === row.profile_id);
+              const sender = participantsRef.current.find(p => p.profile_id === row.profile_id);
               const newMsg: ChatMessage = {
                 id: row.id,
                 profile_id: row.profile_id,
@@ -131,7 +136,7 @@ export default function WatchPartyPanel({
     })();
 
     return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
-  }, [view, room?.id, participants]);
+  }, [view, room?.id]);
 
   // Pull the host's current playback state and push it to the player. Used
   // for the initial sync on join and on demand via the "Resync" button.

@@ -275,10 +275,25 @@ export default function IntelligentPlayer({
   // count "successful_plays"), reported once per media/provider via the ref guard.
   const completeReportedRef = useRef<string | null>(null);
   useEffect(() => {
+    let expectedOrigin: string | null = null;
+    if (currentProvider?.url) {
+      try {
+        expectedOrigin = new URL(currentProvider.url).origin;
+      } catch {
+        expectedOrigin = null;
+      }
+    }
+
     function handleMessage(e: MessageEvent) {
+      if (!iframeRef.current?.contentWindow || e.source !== iframeRef.current.contentWindow) {
+        return;
+      }
+      if (expectedOrigin && e.origin !== expectedOrigin) {
+        return;
+      }
       if (e.data?.type === 'lumina:timeUpdate') {
-        const time = typeof e.data.time === 'number' ? e.data.time : 0;
-        const dur = typeof e.data.duration === 'number' ? e.data.duration : 0;
+        const time = typeof e.data.time === 'number' && Number.isFinite(e.data.time) && e.data.time >= 0 ? e.data.time : 0;
+        const dur = typeof e.data.duration === 'number' && Number.isFinite(e.data.duration) && e.data.duration >= 0 ? e.data.duration : 0;
         setCurrentTime(time);
         if (dur) setDuration(dur);
         setIsPlaying(e.data.playing !== false);
@@ -314,7 +329,7 @@ export default function IntelligentPlayer({
     return () => {
       if (skipCheckInterval.current) clearInterval(skipCheckInterval.current);
     };
-  }, [skipMarkers, currentTime]);
+  }, [skipMarkers]);
 
   // ---- Cleanup on unmount ----
   useEffect(() => {

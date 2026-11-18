@@ -280,10 +280,11 @@ export async function checkRateLimit(
   request: Request,
   type: LimiterType = 'global'
 ): Promise<RateLimitResult> {
-  // Prefer Forwarded header (Cloudflare/Vercel), fallback to real IP, then unknown
+  // Prefer trusted proxy headers (cf-connecting-ip / x-real-ip) over client-spoofable x-forwarded-for
   const forwarded = request.headers.get('x-forwarded-for');
-  const ip = forwarded?.split(',')[0]?.trim()
-    || request.headers.get('x-real-ip')
+  const ip = request.headers.get('cf-connecting-ip')?.trim()
+    || request.headers.get('x-real-ip')?.trim()
+    || forwarded?.split(',').pop()?.trim()
     || 'unknown';
 
   return rateLimit(type, ip);

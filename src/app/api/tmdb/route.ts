@@ -84,10 +84,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate endpoint against allowed prefixes (exact match or prefix + subpath)
-    const path = endpoint.split('?')[0];
-    if (!ALLOWED_PREFIXES.some(p => path === p || path.startsWith(p))) {
+    const rawPath = endpoint.split('?')[0];
+    let decodedPath: string;
+    try {
+      decodedPath = decodeURIComponent(rawPath);
+    } catch {
       return NextResponse.json({ error: 'Invalid endpoint' }, { status: 400 });
     }
+    if (
+      decodedPath.includes('..') ||
+      decodedPath.includes('\\') ||
+      decodedPath.includes('//') ||
+      !ALLOWED_PREFIXES.some(p => rawPath === p || rawPath.startsWith(p))
+    ) {
+      return NextResponse.json({ error: 'Invalid endpoint' }, { status: 400 });
+    }
+    const path = rawPath;
 
     // Collect all extra query params
     const params = new URLSearchParams();

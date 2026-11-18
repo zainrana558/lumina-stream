@@ -41,10 +41,11 @@ export async function GET(request: NextRequest) {
     if (isSupabaseConfigured()) {
       try {
         const supabase = await createClient();
+        const escapedQuery = query.replace(/[\\%_]/g, '\\$&');
         const { data: localResults } = await supabase
           .from('content')
           .select('*')
-          .ilike('title', `%${query}%`)
+          .ilike('title', `%${escapedQuery}%`)
           .limit(20);
 
         if (localResults) {

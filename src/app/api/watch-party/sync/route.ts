@@ -106,6 +106,28 @@ export async function GET(request: NextRequest) {
       if (!participant) {
         return NextResponse.json({ error: "Not a participant of this room" }, { status: 403 });
       }
+    } else {
+      const { data: userProfiles } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", authResult.userId);
+
+      const profileIds = (userProfiles || []).map((p: { id: string }) => p.id);
+      if (profileIds.length === 0) {
+        return NextResponse.json({ error: "Not a participant of this room" }, { status: 403 });
+      }
+
+      const { data: participant } = await supabase
+        .from("watch_party_participants")
+        .select("profile_id")
+        .eq("room_id", roomId)
+        .in("profile_id", profileIds)
+        .limit(1)
+        .maybeSingle();
+
+      if (!participant) {
+        return NextResponse.json({ error: "Not a participant of this room" }, { status: 403 });
+      }
     }
 
     const { data: room, error } = await supabase

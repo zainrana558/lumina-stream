@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const mediaType = searchParams.get('mediaType') || 'all';
+    if (mediaType !== 'all' && mediaType !== 'movie' && mediaType !== 'tv') {
+      return NextResponse.json({ error: 'Invalid mediaType', results: [] }, { status: 400 });
+    }
     const genre = searchParams.get('genre') || '';
     const yearFrom = searchParams.get('yearFrom') || '';
     const yearTo = searchParams.get('yearTo') || '';

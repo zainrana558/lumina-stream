@@ -62,7 +62,10 @@ export async function GET(request: NextRequest) {
     // fetch at an arbitrary/internal target (SSRF via redirect).
     let response: Response | null = null;
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-      response = await fetch(fetchUrl.toString(), { redirect: 'manual' });
+      response = await fetch(fetchUrl.toString(), {
+        redirect: 'manual',
+        signal: AbortSignal.timeout(10_000),
+      });
       if (response.status < 300 || response.status >= 400) break;
 
       const location = response.headers.get('location');
@@ -76,6 +79,9 @@ export async function GET(request: NextRequest) {
       }
       if (nextUrl.protocol !== 'https:' || !ALLOWED_HOSTS.has(nextUrl.hostname)) {
         return NextResponse.json({ error: 'Redirect target not allowed' }, { status: 502 });
+      }
+      if (!nextUrl.searchParams.has('apikey')) {
+        nextUrl.searchParams.set('apikey', key);
       }
       fetchUrl = nextUrl;
       response = null;

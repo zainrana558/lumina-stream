@@ -58,11 +58,12 @@ export async function GET(request: NextRequest) {
 
     // Calculate total hours watched from progress durations
     const totalSeconds = (progressData || []).reduce((sum, p) => {
-      const progress = p.progress || 0;
-      const duration = p.duration || 0;
-      // Validate ranges: progress should be 0-1, duration must be positive
-      if (progress < 0 || progress > 1 || duration < 0) return sum;
-      return sum + (progress * duration);
+      const rawProgress = Number(p.progress) || 0;
+      const duration = Number(p.duration) || 0;
+      // Validate ranges: progress may be stored as 0-100 (%) or 0-1, duration must be positive
+      if (rawProgress < 0 || rawProgress > 100 || duration <= 0) return sum;
+      const fraction = rawProgress > 1 ? rawProgress / 100 : rawProgress;
+      return sum + (fraction * duration);
     }, 0);
     const totalHours = Math.round((totalSeconds / 3600) * 10) / 10;
 

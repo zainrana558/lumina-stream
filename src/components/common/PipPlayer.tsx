@@ -107,6 +107,8 @@ export default function PipPlayer({ url, title, episodeInfo, onClose, onExpand }
           src={url}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
           allow="autoplay; fullscreen"
+          referrerPolicy="no-referrer"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
         />
       </div>
 

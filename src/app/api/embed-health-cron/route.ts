@@ -47,25 +47,36 @@ async function checkService(name: string, fn: () => Promise<void>): Promise<Serv
   }
 }
 
-async function pingProviderForCron(url: string, name: string): Promise<{
+async function pingProviderForCron(url: string, _name: string): Promise<{
   alive: boolean;
   latencyMs: number;
   error: string | null;
 }> {
   const start = Date.now();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CHECK_TIMEOUT);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), CHECK_TIMEOUT);
-    const res = await fetch(url, {
+    let res = await fetch(url, {
       method: 'HEAD',
-      mode: 'no-cors',
       signal: controller.signal,
     });
-    clearTimeout(timeout);
-    return { alive: true, latencyMs: Date.now() - start, error: null };
+    if (res.status === 405 || res.status === 501) {
+      res = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+    }
+    const alive = res.ok || (res.status >= 300 && res.status < 400);
+    return {
+      alive,
+      latencyMs: Date.now() - start,
+      error: alive ? null : `HTTP ${res.status}`,
+    };
   } catch (err) {
     const error = err instanceof Error ? err.message : 'Unknown error';
     return { alive: false, latencyMs: Date.now() - start, error };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

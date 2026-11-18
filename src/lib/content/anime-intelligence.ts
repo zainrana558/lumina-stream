@@ -6,7 +6,7 @@
  * Falls back gracefully when Redis or external APIs are unavailable.
  */
 
-import { getRedis } from '@/lib/redis';
+import { getRedis, parseRedisValue } from '@/lib/redis';
 import { searchAnime } from '@/lib/anilist/client';
 import type { AniListMedia } from '@/lib/anilist/client';
 import { ANILIST_ID_OFFSET } from '@/types';
@@ -40,9 +40,9 @@ async function getCachedMapping(sourceType: string, sourceId: number): Promise<A
   if (!redis) return null;
 
   try {
-    const raw = await redis.get<string>(mappingCacheKey(sourceType, sourceId));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedMapping;
+    const raw = await redis.get<unknown>(mappingCacheKey(sourceType, sourceId));
+    const parsed = parseRedisValue<CachedMapping>(raw);
+    if (!parsed) return null;
     // Check TTL
     if (Date.now() - parsed.cachedAt > CACHE_TTL_SECONDS * 1000) return null;
     return parsed.data;
